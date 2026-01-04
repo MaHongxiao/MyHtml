@@ -46,49 +46,31 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
         /* AI Thinking Animation */
-        .typing-dot {
-            animation: typing 1.4s infinite ease-in-out both;
-        }
+        .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        
-        @keyframes typing {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
-        .result-card {
-            animation: slideUp 0.5s ease-out forwards;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        
-        @keyframes slideUp {
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .result-card { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(20px); }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
 
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-        }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .step-line::before { content: ''; position: absolute; top: 0; bottom: 0; left: 15px; width: 2px; background: #e2e8f0; z-index: 0; }
         
-        .step-line::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 15px;
-            width: 2px;
-            background: #e2e8f0;
-            z-index: 0;
+        /* Custom Tooltip Arrow for Header */
+        .header-arrow {
+            width: 0; height: 0; 
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #2563eb; /* brand-600 */
+            position: absolute; bottom: -10px; left: 40px;
         }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans h-screen flex overflow-hidden">
 
-    <!-- 左侧操作区 (40%) -->
+    <!-- 左侧操作区 (40% -> Fixed 420px) -->
     <div class="w-[420px] bg-white border-r border-slate-200 flex flex-col z-20 shadow-xl flex-shrink-0">
-        
         <!-- Header -->
         <div class="h-20 px-8 flex items-center border-b border-slate-100 bg-slate-50/50">
             <div class="flex items-center gap-3">
@@ -104,8 +86,6 @@
 
         <!-- Tool Selection & Form -->
         <div class="flex-1 overflow-y-auto p-8 space-y-8">
-            
-            <!-- 1. 工具选择 -->
             <div class="space-y-3">
                 <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">选择智能工具</label>
                 <div class="relative">
@@ -115,17 +95,10 @@
                         <option value="aql">🔍 GB/T 2828 风险抽样决策</option>
                         <option value="ccc">📘 CCC 目录 AI 判定</option>
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                        <i class="fa-solid fa-chevron-down text-xs"></i>
-                    </div>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500"><i class="fa-solid fa-chevron-down text-xs"></i></div>
                 </div>
             </div>
-
-            <!-- 2. 动态表单区域 -->
-            <div id="dynamic-form-container" class="space-y-6">
-                <!-- Form content injected by JS -->
-            </div>
-
+            <div id="dynamic-form-container" class="space-y-6"></div>
         </div>
 
         <!-- Footer Action -->
@@ -137,40 +110,56 @@
         </div>
     </div>
 
-    <!-- 右侧结果展示区 (60%) -->
-    <div class="flex-1 bg-slate-100/50 relative overflow-hidden flex flex-col">
+    <!-- 右侧结果展示区 (Flexible) -->
+    <div class="flex-1 bg-slate-50 relative overflow-hidden flex flex-col">
         
         <!-- 背景装饰 -->
-        <div class="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-100/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
-        <div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-100/40 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none"></div>
+        <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-blue-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+
+        <!-- BLUE HEADER AREA -->
+        <div id="result-header" class="bg-brand-600 text-white p-8 pb-12 shadow-lg relative shrink-0 transition-all duration-300 hidden">
+            <div class="flex justify-between items-start max-w-full mx-auto">
+                <div>
+                    <div class="flex items-center gap-3 mb-2 opacity-90">
+                        <span class="bg-white/20 backdrop-blur px-2 py-0.5 rounded text-xs font-medium border border-white/10" id="header-tag">AI Analysis</span>
+                        <span class="text-xs text-blue-100" id="header-date">2026-01-05</span>
+                    </div>
+                    <h2 class="text-3xl font-bold tracking-tight" id="header-title">分析报告</h2>
+                    <p class="text-blue-100 text-sm mt-2 max-w-2xl" id="header-desc">基于最新行业规则库与 AI 模型生成的深度分析结果。</p>
+                </div>
+                <div class="flex gap-3">
+                    <button class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm border border-white/20 transition-colors"><i class="fa-solid fa-share-nodes mr-2"></i>分享</button>
+                    <button class="bg-white text-brand-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"><i class="fa-solid fa-file-export mr-2"></i>导出 PDF</button>
+                </div>
+            </div>
+            <!-- Decorative Arrow to content -->
+            <div class="header-arrow"></div>
+        </div>
 
         <!-- 结果容器 -->
-        <div class="flex-1 overflow-y-auto p-10 relative z-10" id="result-container">
+        <div class="flex-1 overflow-y-auto p-6 md:p-8 relative z-10" id="result-container">
             
-            <!-- 空状态 (Empty State) -->
+            <!-- 空状态 -->
             <div id="state-empty" class="h-full flex flex-col items-center justify-center text-slate-400">
-                <div class="w-24 h-24 bg-white rounded-full shadow-sm flex items-center justify-center mb-6">
-                    <i class="fa-solid fa-laptop-code text-4xl text-slate-300"></i>
+                <div class="w-32 h-32 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center mb-6">
+                    <i class="fa-solid fa-chart-pie text-5xl text-slate-300"></i>
                 </div>
-                <h3 class="text-lg font-medium text-slate-600 mb-2">等待任务指令</h3>
-                <p class="text-sm max-w-xs text-center leading-relaxed">请在左侧配置参数并点击执行，AI 引擎将为您生成专业的分析报告。</p>
+                <h3 class="text-xl font-medium text-slate-600 mb-2">准备就绪</h3>
+                <p class="text-sm max-w-xs text-center leading-relaxed text-slate-500">请在左侧配置业务参数，右侧将全屏展示 AI 生成的深度分析报表。</p>
             </div>
 
-            <!-- 加载状态 (Loading) -->
+            <!-- 加载状态 -->
             <div id="state-loading" class="hidden h-full flex flex-col items-center justify-center">
                 <div class="flex gap-2 mb-6">
                     <div class="w-3 h-3 bg-brand-600 rounded-full typing-dot"></div>
                     <div class="w-3 h-3 bg-brand-600 rounded-full typing-dot"></div>
                     <div class="w-3 h-3 bg-brand-600 rounded-full typing-dot"></div>
                 </div>
-                <p class="text-brand-600 font-medium animate-pulse" id="loading-text">正在匹配 IAF MD5 规则库...</p>
-                <div class="mt-8 w-64 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                    <div class="h-full bg-brand-600 animate-[progress_2s_ease-in-out_infinite]" style="width: 30%"></div>
-                </div>
+                <p class="text-brand-600 font-medium animate-pulse text-lg" id="loading-text">AI 引擎正在运算...</p>
             </div>
 
-            <!-- 结果内容 (Dynamic) -->
-            <div id="state-result" class="hidden space-y-6 max-w-4xl mx-auto pb-10">
+            <!-- 结果内容 -->
+            <div id="state-result" class="hidden w-full h-full flex flex-col gap-6">
                 <!-- Content injected by JS -->
             </div>
 
@@ -183,163 +172,88 @@
         const forms = {
             manday: `
                 <div class="space-y-5">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5">认证标准</label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="md_std" value="QMS" checked class="peer sr-only">
-                                <div class="px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-sm font-medium peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition-all text-center">ISO 9001</div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="md_std" value="EMS" class="peer sr-only">
-                                <div class="px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-sm font-medium peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition-all text-center">ISO 14001</div>
-                            </label>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5">有效员工总数</label>
-                        <input type="number" id="md_count" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-shadow" placeholder="例如: 150">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5">复杂程度 (Risk)</label>
-                        <select id="md_risk" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none">
-                            <option value="H">高风险 (High) - 如: 核电、化工</option>
-                            <option value="M" selected>中等 (Medium) - 一般制造</option>
-                            <option value="L">低风险 (Low) - 简单组装</option>
-                        </select>
-                    </div>
-                    <div class="pt-2 border-t border-slate-100">
-                        <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
-                            <input type="checkbox" id="md_shift" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
-                            <span class="text-sm text-slate-600">包含倒班 (Shift Work)</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
-                            <input type="checkbox" id="md_multi" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
-                            <span class="text-sm text-slate-600">多场所 (Multi-site)</span>
-                        </label>
-                    </div>
-                </div>
-            `,
+                    <div><label class="block text-xs font-bold text-slate-500 mb-1.5">认证标准</label><div class="grid grid-cols-2 gap-3"><label class="cursor-pointer"><input type="radio" name="md_std" value="QMS" checked class="peer sr-only"><div class="px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-sm font-medium peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition-all text-center">ISO 9001</div></label><label class="cursor-pointer"><input type="radio" name="md_std" value="EMS" class="peer sr-only"><div class="px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-sm font-medium peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition-all text-center">ISO 14001</div></label></div></div>
+                    <div><label class="block text-xs font-bold text-slate-500 mb-1.5">有效员工总数</label><input type="number" id="md_count" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-shadow" placeholder="例如: 150"></div>
+                    <div><label class="block text-xs font-bold text-slate-500 mb-1.5">复杂程度 (Risk)</label><select id="md_risk" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none"><option value="H">高风险 (High)</option><option value="M" selected>中等 (Medium)</option><option value="L">低风险 (Low)</option></select></div>
+                    <div class="pt-2 border-t border-slate-100"><label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg"><input type="checkbox" id="md_shift" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"><span class="text-sm text-slate-600">包含倒班 (Shift Work)</span></label><label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg"><input type="checkbox" id="md_multi" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500"><span class="text-sm text-slate-600">多场所 (Multi-site)</span></label></div>
+                </div>`,
             fee: `
                 <div class="space-y-5">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5">认证模式</label>
-                        <select id="fee_mode" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none">
-                            <option value="type1">型式试验 + 获证后监督</option>
-                            <option value="type2">型式试验 + 初始工厂检查 + 获证后监督</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1.5">申请单元数</label>
-                            <input type="number" id="fee_units" value="1" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1.5">预估人天</label>
-                            <input type="number" id="fee_days" value="2.5" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5">产品类别</label>
-                        <input type="text" id="fee_product" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none" placeholder="例如: 家用冰箱">
-                    </div>
-                </div>
-            `,
+                    <div><label class="block text-xs font-bold text-slate-500 mb-1.5">认证模式</label><select id="fee_mode" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none"><option value="type1">型式试验 + 获证后监督</option><option value="type2">型式试验 + 初始工厂检查 + 获证后监督</option></select></div>
+                    <div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-slate-500 mb-1.5">申请单元数</label><input type="number" id="fee_units" value="1" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none"></div><div><label class="block text-xs font-bold text-slate-500 mb-1.5">预估人天</label><input type="number" id="fee_days" value="2.5" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none"></div></div>
+                    <div><label class="block text-xs font-bold text-slate-500 mb-1.5">产品类别</label><input type="text" id="fee_product" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none" placeholder="例如: 家用冰箱"></div>
+                </div>`,
             aql: `
                 <div class="space-y-5">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5">批量大小 (N)</label>
-                        <input type="number" id="aql_batch" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none" placeholder="输入批次总数量">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5">检验水平 (IL)</label>
-                        <div class="flex rounded-lg bg-slate-100 p-1">
-                            <button onclick="setAQLLevel(this, 'I')" class="aql-btn flex-1 py-1.5 text-xs font-medium rounded-md text-slate-500 hover:bg-white hover:shadow-sm transition-all">S-4</button>
-                            <button onclick="setAQLLevel(this, 'II')" class="aql-btn flex-1 py-1.5 text-xs font-medium rounded-md bg-white text-brand-600 shadow-sm transition-all">II (一般)</button>
-                            <button onclick="setAQLLevel(this, 'III')" class="aql-btn flex-1 py-1.5 text-xs font-medium rounded-md text-slate-500 hover:bg-white hover:shadow-sm transition-all">III (严格)</button>
-                        </div>
-                        <input type="hidden" id="aql_level" value="II">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5">接收质量限 (AQL)</label>
-                        <select id="aql_val" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none">
-                            <option value="0.65">0.65 (严苛)</option>
-                            <option value="1.5">1.5</option>
-                            <option value="2.5" selected>2.5 (常规)</option>
-                            <option value="4.0">4.0</option>
-                        </select>
-                    </div>
-                </div>
-            `,
+                    <div><label class="block text-xs font-bold text-slate-500 mb-1.5">批量大小 (N)</label><input type="number" id="aql_batch" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none" placeholder="输入批次总数量"></div>
+                    <div><label class="block text-xs font-bold text-slate-500 mb-1.5">检验水平 (IL)</label><div class="flex rounded-lg bg-slate-100 p-1"><button onclick="setAQLLevel(this, 'I')" class="aql-btn flex-1 py-1.5 text-xs font-medium rounded-md text-slate-500 hover:bg-white hover:shadow-sm transition-all">S-4</button><button onclick="setAQLLevel(this, 'II')" class="aql-btn flex-1 py-1.5 text-xs font-medium rounded-md bg-white text-brand-600 shadow-sm transition-all">II (一般)</button><button onclick="setAQLLevel(this, 'III')" class="aql-btn flex-1 py-1.5 text-xs font-medium rounded-md text-slate-500 hover:bg-white hover:shadow-sm transition-all">III (严格)</button></div><input type="hidden" id="aql_level" value="II"></div>
+                    <div><label class="block text-xs font-bold text-slate-500 mb-1.5">接收质量限 (AQL)</label><select id="aql_val" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm outline-none"><option value="0.65">0.65 (严苛)</option><option value="1.5">1.5</option><option value="2.5" selected>2.5 (常规)</option><option value="4.0">4.0</option></select></div>
+                </div>`,
             ccc: `
                 <div class="space-y-5">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1.5">产品名称或HS编码</label>
-                        <textarea id="ccc_input" rows="4" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none" placeholder="支持模糊搜索，例如：&#10;电线电缆&#10;8544421100&#10;儿童玩具"></textarea>
-                    </div>
-                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 flex gap-3">
-                        <i class="fa-solid fa-robot text-brand-600 mt-0.5"></i>
-                        <p class="text-xs text-brand-800 leading-relaxed">AI 助手将根据最新版《强制性产品认证目录》及 2025 年最新公告进行语义匹配。</p>
-                    </div>
-                </div>
-            `
+                    <div><label class="block text-xs font-bold text-slate-500 mb-1.5">产品名称或HS编码</label><textarea id="ccc_input" rows="4" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none" placeholder="支持模糊搜索，例如：&#10;电线电缆&#10;8544421100&#10;儿童玩具"></textarea></div>
+                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 flex gap-3"><i class="fa-solid fa-robot text-brand-600 mt-0.5"></i><p class="text-xs text-brand-800 leading-relaxed">AI 助手将根据最新版《强制性产品认证目录》及 2025 年最新公告进行语义匹配。</p></div>
+                </div>`
         };
-
-        // --- 2. Core Functions ---
 
         function renderForm() {
             const type = document.getElementById('tool-selector').value;
-            const container = document.getElementById('dynamic-form-container');
-            container.innerHTML = forms[type];
+            document.getElementById('dynamic-form-container').innerHTML = forms[type];
             document.getElementById('state-empty').classList.remove('hidden');
             document.getElementById('state-result').classList.add('hidden');
+            document.getElementById('result-header').classList.add('hidden');
             document.getElementById('state-loading').classList.add('hidden');
         }
 
         function setAQLLevel(btn, val) {
-            document.querySelectorAll('.aql-btn').forEach(b => {
-                b.classList.remove('bg-white', 'text-brand-600', 'shadow-sm');
-                b.classList.add('text-slate-500');
-            });
-            btn.classList.remove('text-slate-500');
-            btn.classList.add('bg-white', 'text-brand-600', 'shadow-sm');
+            document.querySelectorAll('.aql-btn').forEach(b => { b.className = 'aql-btn flex-1 py-1.5 text-xs font-medium rounded-md text-slate-500 hover:bg-white hover:shadow-sm transition-all'; });
+            btn.className = 'aql-btn flex-1 py-1.5 text-xs font-medium rounded-md bg-white text-brand-600 shadow-sm transition-all';
             document.getElementById('aql_level').value = val;
         }
 
         async function runAnalysis() {
             const type = document.getElementById('tool-selector').value;
-            
-            // Basic Validation
+            // Validation
             if (type === 'manday' && !document.getElementById('md_count').value) return alert('请输入有效员工数');
             if (type === 'aql' && !document.getElementById('aql_batch').value) return alert('请输入批量大小');
             if (type === 'ccc' && !document.getElementById('ccc_input').value) return alert('请输入查询内容');
 
             document.getElementById('state-empty').classList.add('hidden');
             document.getElementById('state-result').classList.add('hidden');
+            document.getElementById('result-header').classList.add('hidden');
             document.getElementById('state-loading').classList.remove('hidden');
             
-            const loadingTexts = {
-                manday: "正在结合 IAF MD5 与企业风险库计算...",
-                fee: "正在检索 CQC 最新收费标准与市场行情...",
-                aql: "正在构建 GB/T 2828.1 抽样模型...",
-                ccc: "AI 正在语义分析产品描述并匹配目录..."
+            // Header Info
+            const headers = {
+                manday: { title: "IAF MD5 审核人天计算报告", desc: "依据 IAF MD 5:2019 及 CQC 认证业务规则生成", tag: "人天估算" },
+                fee: { title: "认证项目全成本估算单", desc: "包含申请费、审核费、注册费及年金的综合成本分析", tag: "成本预算" },
+                aql: { title: "GB/T 2828.1 抽样方案决策书", desc: "基于统计学原理的批次质量验收抽样计划", tag: "质量控制" },
+                ccc: { title: "CCC 强制性产品认证判定书", desc: "基于最新强制性产品认证目录的 AI 语义匹配结果", tag: "合规判定" }
             };
-            document.getElementById('loading-text').innerText = loadingTexts[type];
+            
+            document.getElementById('loading-text').innerText = "AI 正在分析数据...";
+            await new Promise(r => setTimeout(r, 1000));
 
-            await new Promise(r => setTimeout(r, 1200));
-
+            // Update Header
+            document.getElementById('header-title').innerText = headers[type].title;
+            document.getElementById('header-desc').innerText = headers[type].desc;
+            document.getElementById('header-tag').innerText = headers[type].tag;
+            
             document.getElementById('state-loading').classList.add('hidden');
+            document.getElementById('result-header').classList.remove('hidden');
             const resultContainer = document.getElementById('state-result');
             resultContainer.innerHTML = generateResultHTML(type);
             resultContainer.classList.remove('hidden');
 
-            if (type === 'aql') renderAQLChart();
-            if (type === 'fee') { renderFeeChart(); renderTrendChart(); }
-            if (type === 'manday') renderRiskRadar();
+            // Render Charts based on tool type
+            setTimeout(() => {
+                if (type === 'aql') renderAQLChart();
+                if (type === 'fee') { renderFeeChart(); renderTrendChart(); }
+                if (type === 'manday') renderRiskRadar();
+            }, 100);
         }
 
-        // --- 3. Rich Result Generators ---
-
+        // --- 3. Result Generators ---
         function generateResultHTML(type) {
             if (type === 'manday') {
                 const count = parseInt(document.getElementById('md_count').value);
@@ -347,252 +261,55 @@
                 const base = count < 50 ? 4 : (count < 200 ? 8 : 12);
                 const factor = risk === 'H' ? 1.3 : (risk === 'L' ? 0.8 : 1.0);
                 const total = (base * factor).toFixed(1);
-                const stage1 = (total * 0.3).toFixed(1);
-                const stage2 = (total * 0.7).toFixed(1);
-
+                
                 return `
-                    <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6 relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-1 h-full bg-brand-500"></div>
-                        <div class="flex justify-between items-start mb-4">
-                            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-robot text-brand-600"></i> AI 计算结果</h2>
-                            <span class="bg-ai-light text-ai-dark px-3 py-1 rounded-full text-xs font-bold border border-ai-main/20">置信度 98%</span>
-                        </div>
-                        <div class="flex items-baseline gap-2 mb-2">
-                            <span class="text-5xl font-bold text-slate-800">${total}</span>
-                            <span class="text-lg text-slate-500 font-medium">人·天</span>
-                        </div>
-                        <p class="text-sm text-slate-500">依据 IAF MD 5:2019 QMS/EMS 规则</p>
-                    </div>
-
-                    <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6 delay-100">
-                        <h3 class="text-sm font-bold text-slate-700 mb-4">审核阶段分配建议</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                <div class="text-xs text-slate-500 mb-1">一阶段 (文件审核 + 现场)</div>
-                                <div class="text-xl font-bold text-slate-800">${stage1} <span class="text-xs font-normal">天</span></div>
-                                <div class="text-[10px] text-slate-400 mt-2">重点：文件合规性、管理评审</div>
+                    <div class="grid grid-cols-12 gap-6 h-full">
+                        <div class="col-span-7 flex flex-col gap-6">
+                            <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-8 relative overflow-hidden flex-1">
+                                <div class="absolute top-0 right-0 p-6 opacity-5"><i class="fa-solid fa-calculator text-9xl text-brand-600"></i></div>
+                                <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wide mb-4">建议审核总人天</h3>
+                                <div class="flex items-baseline gap-3 mb-6"><span class="text-7xl font-bold text-brand-600 tracking-tighter">${total}</span><span class="text-2xl text-slate-400">Days</span></div>
+                                <div class="flex gap-4">
+                                    <div class="bg-slate-50 rounded-xl p-4 flex-1 border border-slate-100"><div class="text-xs text-slate-500 mb-1">一阶段 (文审)</div><div class="text-xl font-bold text-slate-800">${(total*0.3).toFixed(1)} <span class="text-xs font-normal">天</span></div></div>
+                                    <div class="bg-brand-50 rounded-xl p-4 flex-1 border border-brand-100"><div class="text-xs text-brand-600 mb-1">二阶段 (现场)</div><div class="text-xl font-bold text-brand-700">${(total*0.7).toFixed(1)} <span class="text-xs font-normal">天</span></div></div>
+                                </div>
                             </div>
-                            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                                <div class="text-xs text-blue-600 mb-1">二阶段 (现场实施)</div>
-                                <div class="text-xl font-bold text-blue-800">${stage2} <span class="text-xs font-normal">天</span></div>
-                                <div class="text-[10px] text-blue-400 mt-2">重点：过程控制、绩效评价</div>
-                            </div>
+                            <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6"><h3 class="font-bold text-slate-700 mb-3 text-sm">计算因子明细</h3><div class="space-y-3 text-sm"><div class="flex justify-between border-b border-slate-50 pb-2"><span class="text-slate-500">基础人天 (Table QMS 1)</span><span class="font-mono font-bold">${base}</span></div><div class="flex justify-between border-b border-slate-50 pb-2"><span class="text-slate-500">风险系数调整</span><span class="font-mono font-bold text-brand-600">x ${factor}</span></div></div></div>
                         </div>
-                    </div>
-
-                    <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6 delay-200">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-sm font-bold text-slate-700">AI 推荐重点审核条款</h3>
-                            <span class="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">基于行业大数据</span>
+                        <div class="col-span-5 flex flex-col gap-6">
+                            <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col"><h3 class="font-bold text-slate-700 mb-4 text-sm">企业风险画像</h3><div class="flex-1 min-h-[200px]"><canvas id="riskRadar"></canvas></div></div>
+                            <div class="result-card bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg"><div class="flex items-center gap-2 mb-3 text-yellow-400 text-sm font-bold"><i class="fa-solid fa-lightbulb"></i> AI 审核建议</div><ul class="text-xs space-y-3 text-slate-300 leading-relaxed"><li>• 建议重点核查 <strong>8.5 生产过程</strong> 的参数记录完整性。</li><li>• 建议增加 0.5 人天用于多场所之间的交通时间。</li></ul></div>
                         </div>
-                        <div class="space-y-3">
-                            <div class="flex gap-3 items-start">
-                                <div class="mt-1 w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></div>
-                                <div><div class="text-sm font-medium text-slate-800">8.5 生产和服务提供</div><p class="text-xs text-slate-500">该行业常见不符合项：过程参数监控记录不全。</p></div>
-                            </div>
-                            <div class="flex gap-3 items-start">
-                                <div class="mt-1 w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0"></div>
-                                <div><div class="text-sm font-medium text-slate-800">6.1 应对风险和机遇的措施</div><p class="text-xs text-slate-500">建议核查风险评估矩阵的更新频率。</p></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="result-card h-64 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 delay-300">
-                        <h3 class="text-sm font-bold text-slate-700 mb-2">企业风险画像</h3>
-                        <canvas id="riskRadar"></canvas>
-                    </div>
-                `;
-            }
-
-            if (type === 'fee') {
-                return `
-                    <div class="result-card grid grid-cols-2 gap-4">
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                            <h3 class="text-sm text-slate-500 font-bold uppercase mb-2">预估总费用</h3>
-                            <div class="text-3xl font-bold text-slate-800">¥ 18,500</div>
-                            <div class="text-xs text-green-600 mt-1 flex items-center gap-1"><i class="fa-solid fa-arrow-down"></i> 比市场均价低 5%</div>
-                        </div>
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                            <h3 class="text-sm text-slate-500 font-bold uppercase mb-2">费用结构</h3>
-                            <div class="h-20"><canvas id="feeChart"></canvas></div>
-                        </div>
-                    </div>
-
-                    <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden delay-100">
-                        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                            <h3 class="font-bold text-sm text-slate-700">费用明细表</h3>
-                            <button class="text-xs text-brand-600 hover:underline">导出报价单</button>
-                        </div>
-                        <table class="w-full text-sm text-left">
-                            <tbody class="divide-y divide-slate-100">
-                                <tr><td class="p-4 text-slate-500">申请费 (1单元)</td><td class="p-4 text-right font-mono">1,000</td></tr>
-                                <tr><td class="p-4 text-slate-500">审核费 (4.5人天)</td><td class="p-4 text-right font-mono">13,500</td></tr>
-                                <tr><td class="p-4 text-slate-500">注册费 (固定)</td><td class="p-4 text-right font-mono">2,000</td></tr>
-                                <tr><td class="p-4 text-slate-500">首年年金</td><td class="p-4 text-right font-mono">2,000</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="result-card bg-gradient-to-r from-brand-50 to-purple-50 rounded-2xl p-6 border border-brand-100 delay-200">
-                        <h3 class="text-sm font-bold text-brand-800 mb-2"><i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>AI 成本优化建议</h3>
-                        <ul class="text-xs text-brand-700 space-y-2 list-disc pl-4">
-                            <li><strong>结合审核：</strong>若企业同时申请 QMS/EMS，可减少约 20% 的现场审核人天。</li>
-                            <li><strong>多现场抽样：</strong>如果企业有多个类似职能的办事处，可采用 √N 抽样策略降低差旅成本。</li>
-                        </ul>
-                    </div>
-
-                    <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6 delay-300">
-                        <h3 class="text-sm font-bold text-slate-700 mb-4">未来3年维护成本预测</h3>
-                        <div class="h-40"><canvas id="trendChart"></canvas></div>
-                    </div>
-                `;
-            }
-
-            if (type === 'aql') {
-                return `
-                    <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                        <div class="flex justify-between items-start mb-6">
-                            <h2 class="text-lg font-bold text-slate-800">抽样方案 (GB/T 2828.1)</h2>
-                            <span class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">字码: L</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-6 text-center mb-8">
-                            <div><div class="text-xs text-slate-400 mb-1">样本量 (n)</div><div class="text-4xl font-bold text-slate-800">200</div></div>
-                            <div><div class="text-xs text-slate-400 mb-1">接收数 (Ac)</div><div class="text-4xl font-bold text-green-600">10</div></div>
-                            <div><div class="text-xs text-slate-400 mb-1">拒收数 (Re)</div><div class="text-4xl font-bold text-red-600">11</div></div>
-                        </div>
-                        <div class="h-48"><canvas id="aqlChart"></canvas></div>
-                    </div>
-
-                    <div class="result-card grid grid-cols-2 gap-4 delay-100">
-                        <div class="bg-red-50 p-4 rounded-xl border border-red-100">
-                            <h3 class="text-xs font-bold text-red-700 mb-1">生产者风险 (α)</h3>
-                            <div class="text-2xl font-bold text-red-600">5.2%</div>
-                            <p class="text-[10px] text-red-400 mt-1">良品被误判拒收的概率</p>
-                        </div>
-                        <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
-                            <h3 class="text-xs font-bold text-orange-700 mb-1">消费者风险 (β)</h3>
-                            <div class="text-2xl font-bold text-orange-600">9.8%</div>
-                            <p class="text-[10px] text-orange-400 mt-1">劣品被误判接收的概率</p>
-                        </div>
-                    </div>
-
-                    <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6 delay-200">
-                        <h3 class="text-sm font-bold text-slate-700 mb-4">执行步骤指南</h3>
-                        <div class="relative pl-6 space-y-6 step-line">
-                            <div class="relative z-10">
-                                <span class="absolute -left-[31px] w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-bold">1</span>
-                                <h4 class="text-xs font-bold text-slate-800">批次界定</h4>
-                                <p class="text-xs text-slate-500 mt-1">确认该批次产品同型号、同工艺生产，总量 N=5000。</p>
-                            </div>
-                            <div class="relative z-10">
-                                <span class="absolute -left-[31px] w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold">2</span>
-                                <h4 class="text-xs font-bold text-slate-800">随机抽样</h4>
-                                <p class="text-xs text-slate-500 mt-1">使用随机数表从仓库不同托盘中抽取 200 个样本。</p>
-                            </div>
-                            <div class="relative z-10">
-                                <span class="absolute -left-[31px] w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold">3</span>
-                                <h4 class="text-xs font-bold text-slate-800">判定</h4>
-                                <p class="text-xs text-slate-500 mt-1">若不合格品 ≤ 10，则整批接收；若 ≥ 11，则整批拒收。</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            if (type === 'ccc') {
-                return `
-                    <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6 relative">
-                        <div class="flex gap-4">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 flex-shrink-0"><i class="fa-solid fa-check text-2xl"></i></div>
-                            <div>
-                                <h2 class="text-lg font-bold text-slate-800">属于 CCC 强制认证范围</h2>
-                                <p class="text-sm text-slate-500 mt-1">AI 匹配度：<span class="font-bold text-green-600">High (99%)</span></p>
-                            </div>
-                        </div>
-                        <div class="mt-6 bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-3">
-                            <div class="flex"><span class="w-24 text-xs font-bold text-slate-400">产品大类</span><span class="text-sm font-medium text-slate-700">01 电线电缆</span></div>
-                            <div class="flex"><span class="w-24 text-xs font-bold text-slate-400">依据标准</span><span class="text-sm font-mono text-brand-600 bg-brand-50 px-1.5 rounded">GB/T 5013</span></div>
-                        </div>
-                    </div>
-
-                    <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6 delay-100">
-                        <h3 class="text-sm font-bold text-slate-700 mb-4">关键测试项目预览 (Top 5)</h3>
-                        <div class="flex flex-wrap gap-2">
-                            <span class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">导体电阻</span>
-                            <span class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">绝缘厚度</span>
-                            <span class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">成品电压试验</span>
-                            <span class="px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 text-xs border border-slate-200">绝缘老化前后拉力</span>
-                            <span class="px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 text-xs border border-slate-200">不延燃试验</span>
-                        </div>
-                    </div>
-
-                    <div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6 delay-200">
-                        <h3 class="text-sm font-bold text-slate-700 mb-3">关联标准状态监控</h3>
-                        <ul class="space-y-3 text-sm">
-                            <li class="flex justify-between items-center"><span class="font-mono text-slate-600">GB/T 5013.1-2008</span> <span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded">现行</span></li>
-                            <li class="flex justify-between items-center"><span class="font-mono text-slate-600">GB/T 5013.2-2008</span> <span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded">现行</span></li>
-                            <li class="flex justify-between items-center"><span class="font-mono text-slate-400">GB 5013-1997</span> <span class="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded">已废止</span></li>
-                        </ul>
-                    </div>
-                `;
+                    </div>`;
+            } else if (type === 'fee') {
+                return `<div class="grid grid-cols-12 gap-6 h-full"><div class="col-span-4 result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between"><div><h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">预估总费用</h3><div class="text-4xl font-bold text-slate-800 tracking-tight">¥ 18,500</div><div class="text-xs text-green-600 mt-2 font-medium bg-green-50 inline-block px-2 py-1 rounded"><i class="fa-solid fa-check mr-1"></i> 含税价</div></div><div class="h-32 mt-4"><canvas id="feeChart"></canvas></div></div><div class="col-span-8 result-card bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"><div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center"><h3 class="font-bold text-sm text-slate-700">费用结构明细</h3><button class="text-xs text-brand-600 hover:text-brand-700 font-medium">下载报价单</button></div><div class="flex-1 overflow-auto"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-slate-500"><tr><th class="p-4 font-medium">项目</th><th class="p-4 font-medium">说明</th><th class="p-4 text-right font-medium">金额</th></tr></thead><tbody class="divide-y divide-slate-100"><tr><td class="p-4 font-medium text-slate-700">申请费</td><td class="p-4 text-slate-500 text-xs">按单元计费 (1个)</td><td class="p-4 text-right font-mono">1,000</td></tr><tr><td class="p-4 font-medium text-slate-700">审核费</td><td class="p-4 text-slate-500 text-xs">3,000元/人天 × 4.5天</td><td class="p-4 text-right font-mono">13,500</td></tr><tr><td class="p-4 font-medium text-slate-700">注册费</td><td class="p-4 text-slate-500 text-xs">固定费用</td><td class="p-4 text-right font-mono">2,000</td></tr><tr><td class="p-4 font-medium text-slate-700">年金</td><td class="p-4 text-slate-500 text-xs">证书维持费 (首年)</td><td class="p-4 text-right font-mono">2,000</td></tr></tbody></table></div></div><div class="col-span-12 grid grid-cols-2 gap-6"><div class="result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-center"><div class="flex-1"><h3 class="font-bold text-sm text-slate-700 mb-4">三年维护成本预测</h3><div class="h-32"><canvas id="trendChart"></canvas></div></div></div><div class="result-card bg-indigo-50 rounded-2xl p-6 border border-indigo-100 flex flex-col justify-center"><h3 class="font-bold text-indigo-900 text-sm mb-3 flex items-center gap-2"><i class="fa-solid fa-tags"></i> 成本优化建议</h3><ul class="text-xs text-indigo-800 space-y-2 leading-relaxed"><li class="flex gap-2"><i class="fa-solid fa-check mt-0.5 opacity-50"></i> 若包含多个体系，建议申请结合审核，可节省约 <strong>20%</strong> 审核费。</li><li class="flex gap-2"><i class="fa-solid fa-check mt-0.5 opacity-50"></i> 提前准备电子化文档，减少文审阶段整改时间。</li></ul></div></div></div>`;
+            } else if (type === 'aql') {
+                return `<div class="grid grid-cols-12 gap-6 h-full"><div class="col-span-12 result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-8 flex justify-between items-center relative overflow-hidden"><div class="absolute right-0 top-0 w-32 h-32 bg-brand-50 rounded-full blur-2xl -mr-10 -mt-10"></div><div><div class="text-xs text-slate-500 font-bold uppercase mb-1">样本量字码</div><div class="text-5xl font-bold text-brand-600 mb-2">L</div><div class="text-sm text-slate-400">正常检验一次抽样</div></div><div class="h-16 w-px bg-slate-100 mx-8"></div><div class="text-center"><div class="text-xs text-slate-500 mb-1">样本量 (n)</div><div class="text-4xl font-bold text-slate-800">200</div></div><div class="h-16 w-px bg-slate-100 mx-8"></div><div class="text-center"><div class="text-xs text-slate-500 mb-1">接收数 (Ac)</div><div class="text-4xl font-bold text-green-500">10</div></div><div class="h-16 w-px bg-slate-100 mx-8"></div><div class="text-center"><div class="text-xs text-slate-500 mb-1">拒收数 (Re)</div><div class="text-4xl font-bold text-red-500">11</div></div></div><div class="col-span-8 result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6"><h3 class="font-bold text-sm text-slate-700 mb-4">OC 曲线 (操作特性)</h3><div class="h-64"><canvas id="aqlChart"></canvas></div></div><div class="col-span-4 flex flex-col gap-6"><div class="result-card bg-red-50 rounded-2xl p-6 border border-red-100 flex-1"><h3 class="text-xs font-bold text-red-800 mb-2">生产者风险 (α)</h3><div class="text-3xl font-bold text-red-600 mb-1">5.2%</div><p class="text-[10px] text-red-400 leading-tight">良品被误判拒收的概率。建议加强出厂自检。</p></div><div class="result-card bg-orange-50 rounded-2xl p-6 border border-orange-100 flex-1"><h3 class="text-xs font-bold text-orange-800 mb-2">消费者风险 (β)</h3><div class="text-3xl font-bold text-orange-600 mb-1">9.8%</div><p class="text-[10px] text-orange-400 leading-tight">劣品被误判接收的概率。风险处于可控范围。</p></div></div></div>`;
+            } else if (type === 'ccc') {
+                return `<div class="grid grid-cols-12 gap-6"><div class="col-span-12 result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-8 flex items-center gap-6 relative overflow-hidden"><div class="absolute left-0 top-0 w-2 h-full bg-green-500"></div><div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 text-2xl flex-shrink-0"><i class="fa-solid fa-check"></i></div><div><h2 class="text-2xl font-bold text-slate-800">属于 CCC 强制认证范围</h2><p class="text-slate-500 text-sm mt-1">匹配置信度：<span class="text-green-600 font-bold">99.8%</span></p></div><div class="ml-auto text-right"><div class="text-xs text-slate-400 uppercase font-bold">产品大类</div><div class="text-lg font-medium text-slate-700">01 电线电缆</div></div></div><div class="col-span-8 result-card bg-white rounded-2xl shadow-sm border border-slate-200 p-6"><h3 class="font-bold text-sm text-slate-700 mb-4">判定依据与标准</h3><div class="space-y-4"><div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-400 shadow-sm"><i class="fa-solid fa-book"></i></div><div><div class="text-xs text-slate-500">依据标准</div><div class="text-sm font-bold text-slate-800">GB/T 5013</div></div></div><span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">现行有效</span></div><div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded bg-white flex items-center justify-center text-slate-400 shadow-sm"><i class="fa-solid fa-cube"></i></div><div><div class="text-xs text-slate-500">具体产品</div><div class="text-sm font-bold text-slate-800">额定电压450/750V及以下橡皮绝缘电线电缆</div></div></div></div></div><div class="mt-6"><h4 class="text-xs font-bold text-slate-500 mb-3">关键测试项目预览</h4><div class="flex flex-wrap gap-2"><span class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-medium shadow-sm">导体电阻</span><span class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-medium shadow-sm">绝缘厚度</span><span class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-medium shadow-sm">成品电压试验</span></div></div></div><div class="col-span-4 result-card bg-yellow-50 rounded-2xl shadow-sm border border-yellow-100 p-6"><h3 class="font-bold text-yellow-800 text-sm mb-4 flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> 专家提示</h3><p class="text-xs text-yellow-800 leading-relaxed mb-4">该产品需进行<strong>“型式试验 + 初始工厂检查 + 获证后监督”</strong>。</p><p class="text-xs text-yellow-800 leading-relaxed">注意：新版标准 GB/T 5013-202X 即将实施。</p></div></div>`;
             }
         }
 
         // --- 4. Chart Renderers ---
-
         function renderFeeChart() {
-            const ctx = document.getElementById('feeChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['审核', '申请', '注册', '年金'],
-                    datasets: [{ data: [70, 10, 10, 10], backgroundColor: ['#3b82f6', '#93c5fd', '#bfdbfe', '#cbd5e1'], borderWidth: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
-            });
+            const el = document.getElementById('feeChart');
+            if(!el) return;
+            new Chart(el.getContext('2d'), { type: 'doughnut', data: { labels: ['审核', '申请', '注册', '年金'], datasets: [{ data: [70, 10, 10, 10], backgroundColor: ['#3b82f6', '#93c5fd', '#bfdbfe', '#cbd5e1'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' } });
         }
-
         function renderTrendChart() {
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['2026', '2027', '2028'],
-                    datasets: [{
-                        label: '预估维护成本',
-                        data: [2000, 2200, 2000],
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
-            });
+            const el = document.getElementById('trendChart');
+            if(!el) return;
+            new Chart(el.getContext('2d'), { type: 'line', data: { labels: ['2026', '2027', '2028'], datasets: [{ label: '预估维护成本', data: [2000, 2200, 2000], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } } });
         }
-
         function renderRiskRadar() {
-            const ctx = document.getElementById('riskRadar').getContext('2d');
-            new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: ['人员能力','过程控制','设备设施','文件管理','绩效评价'],
-                    datasets: [{ label: '风险分布', data: [80, 60, 40, 30, 70], backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: '#3b82f6' }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
+            const el = document.getElementById('riskRadar');
+            if(!el) return;
+            new Chart(el.getContext('2d'), { type: 'radar', data: { labels: ['人员能力','过程控制','设备设施','文件管理','绩效评价'], datasets: [{ label: '风险分布', data: [80, 60, 40, 30, 70], backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: '#3b82f6' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { suggestMin: 0, ticks: { display: false } } } } });
         }
-
         function renderAQLChart() {
-            const ctx = document.getElementById('aqlChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [0, 2, 4, 6, 8, 10, 12],
-                    datasets: [{ label: '接收概率 Pa(%)', data: [100, 95, 80, 50, 20, 5, 0], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.4 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { title: { display: true, text: '接收概率' }, grid: { borderDash: [4,4] } }, x: { title: { display: true, text: '不合格品率 (%)' }, grid: { display: false } } } }
-            });
+            const el = document.getElementById('aqlChart');
+            if(!el) return;
+            new Chart(el.getContext('2d'), { type: 'line', data: { labels: [0, 2, 4, 6, 8, 10, 12], datasets: [{ label: '接收概率 Pa(%)', data: [100, 95, 80, 50, 20, 5, 0], borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { title: { display: true, text: '接收概率' }, grid: { borderDash: [4,4] } }, x: { title: { display: true, text: '不合格品率 (%)' }, grid: { display: false } } } } });
         }
 
         renderForm(); // Init
