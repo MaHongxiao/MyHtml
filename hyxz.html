@@ -60,12 +60,23 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Search Results Dropdown Animation */
+        .search-results-enter {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        .search-results-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.2s ease-out;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
 
     <!-- 主体内容 -->
-    <main class="flex-1 overflow-hidden flex flex-col relative">
+    <main class="flex-1 overflow-hidden flex flex-col relative" onclick="closeSearchResults()">
         <!-- 装饰背景 -->
         <div class="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-slate-200 to-slate-50 -z-10"></div>
 
@@ -73,20 +84,30 @@
             
             <!-- 标题区 -->
             <div class="text-center mb-8 fade-in-up">
-                <h1 class="text-3xl font-bold text-slate-800 mb-3">行业画像</h1>
+                <h1 class="text-3xl font-bold text-slate-800 mb-3">全景行业画像生成器</h1>
                 <p class="text-slate-500 text-sm">请选择或搜索您关注的细分行业，系统将为您生成涵盖市场、风险、竞争的全维度数据报告。</p>
             </div>
 
-            <!-- 搜索框 -->
-            <div class="w-full max-w-2xl mx-auto mb-8 relative fade-in-up" style="animation-delay: 0.1s;">
+            <!-- 搜索框 (功能与样式优化) -->
+            <div class="w-full max-w-2xl mx-auto mb-8 relative fade-in-up z-50" style="animation-delay: 0.1s;">
                 <div class="relative group">
-                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"></i>
+                    <i class="fa-solid fa-magnifying-glass absolute left-5 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors z-10"></i>
+                    
                     <input type="text" 
-                        class="w-full h-12 pl-12 pr-4 bg-white border border-slate-300 rounded-full shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" 
-                        placeholder="输入关键词快速直达，例如：GB/T 18384、光伏逆变器、汽车线束...">
-                    <button class="absolute right-2 top-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-1.5 rounded-full text-xs font-medium transition-colors">
+                        id="search-input"
+                        class="w-full h-14 pl-12 pr-28 bg-white border border-slate-300 rounded-full shadow-lg shadow-slate-200/50 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all placeholder-slate-400" 
+                        placeholder="输入关键词快速直达，例如：新能源汽车、光伏、机器人..."
+                        autocomplete="off"
+                        oninput="handleSearch(this.value)">
+                    
+                    <button class="absolute right-2 top-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2">
                         搜索
                     </button>
+
+                    <!-- Search Results Dropdown -->
+                    <div id="search-results" class="hidden absolute top-full left-4 right-4 mt-2 bg-white rounded-xl shadow-2xl border border-slate-100 max-h-80 overflow-y-auto z-50 divide-y divide-slate-50 search-results-enter-active">
+                        <!-- Results injected by JS -->
+                    </div>
                 </div>
             </div>
 
@@ -185,7 +206,7 @@
                     },
                     { 
                         id: 'energy_equip', name: '能源装备', 
-                        children: ['风力发电机组', '核电设备', '燃气轮机', '输变电设备']
+                        children: ['风力发电机组', '核电设备', '燃气轮机', '输变电设备', '光伏组件']
                     }
                 ]
             },
@@ -244,6 +265,23 @@
             }
         ];
 
+        // --- Search Data Preparation ---
+        let searchableItems = [];
+        industryData.forEach(l1 => {
+            l1.children.forEach(l2 => {
+                l2.children.forEach(l3 => {
+                    searchableItems.push({
+                        name: l3,
+                        l1Id: l1.id,
+                        l1Name: l1.name,
+                        l2Id: l2.id,
+                        l2Name: l2.name,
+                        pathString: `${l1.name} > ${l2.name}`
+                    });
+                });
+            });
+        });
+
         // --- State ---
         let selectedLevel1 = null;
         let selectedLevel2 = null;
@@ -252,6 +290,61 @@
         // --- Init ---
         function init() {
             renderLevel1();
+        }
+
+        // --- Search Logic ---
+        function handleSearch(query) {
+            const resultsContainer = document.getElementById('search-results');
+            if (!query.trim()) {
+                resultsContainer.classList.add('hidden');
+                return;
+            }
+
+            const filtered = searchableItems.filter(item => 
+                item.name.toLowerCase().includes(query.toLowerCase()) || 
+                item.l2Name.toLowerCase().includes(query.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                resultsContainer.innerHTML = `<div class="p-4 text-center text-slate-400 text-sm">未找到相关行业，请尝试其他关键词</div>`;
+                resultsContainer.classList.remove('hidden');
+                return;
+            }
+
+            resultsContainer.innerHTML = filtered.map(item => `
+                <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer flex justify-between items-center group" 
+                     onclick="selectFromResult('${item.l1Id}', '${item.l2Id}', '${item.name}')">
+                    <div>
+                        <div class="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">${item.name}</div>
+                        <div class="text-xs text-slate-400 mt-0.5">${item.pathString}</div>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-slate-300 group-hover:text-blue-600 transition-colors"></i>
+                </div>
+            `).join('');
+            
+            resultsContainer.classList.remove('hidden');
+        }
+
+        function selectFromResult(l1Id, l2Id, l3Name) {
+            // Close search
+            document.getElementById('search-results').classList.add('hidden');
+            document.getElementById('search-input').value = '';
+
+            // Execute selection sequence
+            handleSelect1(l1Id);
+            // Small delay to ensure DOM is ready (though synchronous here, good practice for animations)
+            setTimeout(() => handleSelect2(l2Id), 50);
+            setTimeout(() => handleSelect3(l3Name), 100);
+        }
+
+        function closeSearchResults() {
+            // Simple outside click handler
+            const dropdown = document.getElementById('search-results');
+            if (!dropdown.classList.contains('hidden')) {
+                // Check if click target is search input, if so don't close
+                // (Already handled by onclick logic order, simple approach here)
+                dropdown.classList.add('hidden');
+            }
         }
 
         // --- Renders ---
@@ -283,7 +376,6 @@
                 </div>
             `).join('');
             
-            // Auto update badge styling
             document.getElementById('step-badge-2').className = "w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 transition-colors";
         }
 
@@ -301,7 +393,6 @@
                 </div>
             `).join('');
 
-            // Auto update badge styling
             document.getElementById('step-badge-3').className = "w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 transition-colors";
         }
 
@@ -311,7 +402,7 @@
             selectedLevel2 = null;
             selectedLevel3 = null;
             
-            renderLevel1(); // Re-render to update active state
+            renderLevel1();
             renderLevel2(id);
             
             // Reset Col 3
@@ -326,18 +417,21 @@
         };
 
         window.handleSelect2 = (id) => {
+            // Find parent if not set (case for direct search jumping might need safeguard, but data structure guarantees hierarchy)
+            if(!selectedLevel1) return; 
+
             const root = industryData.find(i => i.id === selectedLevel1.id);
             selectedLevel2 = root.children.find(i => i.id === id);
             selectedLevel3 = null;
 
-            renderLevel2(selectedLevel1.id); // Update active
+            renderLevel2(selectedLevel1.id);
             renderLevel3(id);
             updatePath();
         };
 
         window.handleSelect3 = (name) => {
             selectedLevel3 = name;
-            renderLevel3(selectedLevel2.id); // Update active
+            renderLevel3(selectedLevel2.id); 
             updatePath();
         };
 
@@ -357,7 +451,7 @@
                     // Enable Button
                     btn.disabled = false;
                     btn.classList.remove('bg-slate-300', 'cursor-not-allowed');
-                    btn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'text-white', 'shadow-lg', 'shadow-blue-200');
+                    btn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'text-white', 'shadow-lg', 'shadow-blue-200', 'cursor-pointer');
                 } else {
                     btn.disabled = true;
                     btn.className = "bg-slate-300 text-white px-8 py-3 rounded-lg font-bold shadow-sm transition-all flex items-center gap-2 cursor-not-allowed";
@@ -369,22 +463,12 @@
         }
 
         window.navigateToProfile = () => {
-            // In a real app, this would use router.push with query params
-            // e.g. /profile?category=nev
-            
             const btn = document.getElementById('btn-analyze');
-            const originalText = btn.innerHTML;
-            
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 生成画像中...';
             
             setTimeout(() => {
-                // Simulate navigation to the file created in previous turn
-                // Note: In this environment, we can't truly "navigate", but we simulate the action.
-                // If the user had the file locally, this would work.
+                // In demo environment, link to the file created previously
                 window.location.href = 'industry_profile_northeast_full.html';
-                
-                // Fallback alert for demo environment if file linking isn't supported directly
-                // alert(`正在为您生成 [${selectedLevel3}] 的行业画像，即将跳转...`);
             }, 800);
         };
 
@@ -399,6 +483,11 @@
 
         // Run
         init();
+
+        // Prevent search results from closing when clicking inside input or results
+        document.querySelector('.group').addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
 
     </script>
 </body>
