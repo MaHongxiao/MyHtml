@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行业选择 | 智问通达</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans SC"', 'sans-serif'],
+                    },
+                    colors: {
+                        cqc: {
+                            blue: '#005bac',
+                            dark: '#1e293b',
+                            light: '#f1f5f9',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* 列选择项样式 */
+        .col-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s;
+        }
+        .col-item:hover { background-color: #f8fafc; }
+        .col-item.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            font-weight: 500;
+            border-left: 3px solid #2563eb;
+        }
+        .col-item i { font-size: 12px; color: #94a3b8; }
+        .col-item.active i { color: #2563eb; }
+
+        .fade-in-up { animation: fadeInUp 0.5s ease-out; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
+
+    <!-- 主体内容 -->
+    <main class="flex-1 overflow-hidden flex flex-col relative">
+        <!-- 装饰背景 -->
+        <div class="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-slate-200 to-slate-50 -z-10"></div>
+
+        <div class="flex-1 w-full max-w-7xl mx-auto p-8 flex flex-col">
+            
+            <!-- 标题区 -->
+            <div class="text-center mb-8 fade-in-up">
+                <h1 class="text-3xl font-bold text-slate-800 mb-3">行业画像</h1>
+                <p class="text-slate-500 text-sm">请选择或搜索您关注的细分行业，系统将为您生成涵盖市场、风险、竞争的全维度数据报告。</p>
+            </div>
+
+            <!-- 搜索框 -->
+            <div class="w-full max-w-2xl mx-auto mb-8 relative fade-in-up" style="animation-delay: 0.1s;">
+                <div class="relative group">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"></i>
+                    <input type="text" 
+                        class="w-full h-12 pl-12 pr-4 bg-white border border-slate-300 rounded-full shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow" 
+                        placeholder="输入关键词快速直达，例如：GB/T 18384、光伏逆变器、汽车线束...">
+                    <button class="absolute right-2 top-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-1.5 rounded-full text-xs font-medium transition-colors">
+                        搜索
+                    </button>
+                </div>
+            </div>
+
+            <!-- 核心选择器 (三级联动) -->
+            <div class="flex-1 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden flex flex-col fade-in-up" style="animation-delay: 0.2s;">
+                
+                <!-- 头部标签 -->
+                <div class="h-12 bg-slate-50 border-b border-slate-200 flex text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <div class="flex-1 px-4 flex items-center border-r border-slate-200">
+                        <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2">1</span>
+                        一级行业门类
+                    </div>
+                    <div class="flex-1 px-4 flex items-center border-r border-slate-200">
+                        <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center mr-2" id="step-badge-2">2</span>
+                        二级业务领域
+                    </div>
+                    <div class="flex-1 px-4 flex items-center">
+                        <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center mr-2" id="step-badge-3">3</span>
+                        三级细分品类
+                    </div>
+                </div>
+
+                <!-- 列容器 -->
+                <div class="flex-1 flex overflow-hidden">
+                    
+                    <!-- Level 1 Column -->
+                    <div class="flex-1 border-r border-slate-200 overflow-y-auto bg-slate-50/50" id="col-level-1">
+                        <!-- Data injected by JS -->
+                    </div>
+
+                    <!-- Level 2 Column -->
+                    <div class="flex-1 border-r border-slate-200 overflow-y-auto bg-white" id="col-level-2">
+                        <div class="h-full flex flex-col items-center justify-center text-slate-300">
+                            <i class="fa-solid fa-arrow-left text-2xl mb-2"></i>
+                            <span class="text-sm">请先选择一级行业</span>
+                        </div>
+                    </div>
+
+                    <!-- Level 3 Column -->
+                    <div class="flex-1 overflow-y-auto bg-white" id="col-level-3">
+                        <div class="h-full flex flex-col items-center justify-center text-slate-300">
+                            <span class="text-sm">请先选择二级领域</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部操作栏 -->
+                <div class="h-20 bg-slate-50 border-t border-slate-200 px-8 flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <span class="text-xs text-slate-400 mb-1">当前选择路径：</span>
+                        <div class="flex items-center gap-2 text-sm font-medium text-slate-800" id="selection-path">
+                            <span class="text-slate-400 italic">-- 未选择 --</span>
+                        </div>
+                    </div>
+                    <button id="btn-analyze" disabled onclick="navigateToProfile()" class="bg-slate-300 text-white px-8 py-3 rounded-lg font-bold shadow-sm transition-all flex items-center gap-2 cursor-not-allowed">
+                        <i class="fa-solid fa-chart-pie"></i> 开始分析
+                    </button>
+                </div>
+            </div>
+
+            <!-- 热门推荐 -->
+            <div class="mt-8 fade-in-up" style="animation-delay: 0.3s;">
+                <h3 class="text-xs font-bold text-slate-400 uppercase mb-3">热门分析方向</h3>
+                <div class="flex gap-4">
+                    <button class="bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 hover:shadow-sm px-4 py-2 rounded-lg text-sm text-slate-600 transition-all flex items-center gap-2" onclick="quickSelect('auto')">
+                        <i class="fa-solid fa-car"></i> 新能源汽车
+                    </button>
+                    <button class="bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 hover:shadow-sm px-4 py-2 rounded-lg text-sm text-slate-600 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-solar-panel"></i> 光伏组件
+                    </button>
+                    <button class="bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 hover:shadow-sm px-4 py-2 rounded-lg text-sm text-slate-600 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-robot"></i> 工业机器人
+                    </button>
+                    <button class="bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 hover:shadow-sm px-4 py-2 rounded-lg text-sm text-slate-600 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-carrot"></i> 有机农产品
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- Data Structure ---
+        const industryData = [
+            {
+                id: 'equip', name: '高端装备制造', icon: 'fa-gears',
+                children: [
+                    { 
+                        id: 'rail', name: '轨道交通装备', 
+                        children: ['动车组', '城轨车辆', '铁路信号系统', '牵引供电系统', '轨道制动系统']
+                    },
+                    { 
+                        id: 'robot', name: '智能制造与机器人', 
+                        children: ['工业机器人 (CR认证)', '数控机床', '自动化生产线', 'AGV物流车', '智能传感器']
+                    },
+                    { 
+                        id: 'energy_equip', name: '能源装备', 
+                        children: ['风力发电机组', '核电设备', '燃气轮机', '输变电设备']
+                    }
+                ]
+            },
+            {
+                id: 'auto', name: '汽车及零部件', icon: 'fa-car',
+                children: [
+                    { 
+                        id: 'nev', name: '新能源汽车', 
+                        children: ['纯电动乘用车', '插电式混合动力', '燃料电池汽车', '动力电池系统', '充电桩设施']
+                    },
+                    { 
+                        id: 'trad_auto', name: '传统燃油车', 
+                        children: ['乘用车 (M1类)', '商用车 (N类)', '专用车', '发动机']
+                    },
+                    { 
+                        id: 'parts', name: '关键零部件', 
+                        children: ['汽车线束', '安全气囊', '汽车玻璃', '轮胎', '内饰材料']
+                    },
+                    { 
+                        id: 'iov', name: '智能网联', 
+                        children: ['车联网终端', '辅助驾驶系统', '车载信息安全']
+                    }
+                ]
+            },
+            {
+                id: 'food', name: '农产品与食品', icon: 'fa-wheat-awn',
+                children: [
+                    { 
+                        id: 'organic', name: '有机产品', 
+                        children: ['有机谷物', '有机蔬菜', '有机畜禽产品', '有机加工食品']
+                    },
+                    { 
+                        id: 'gap', name: '良好农业规范 (GAP)', 
+                        children: ['作物种植', '畜禽养殖', '水产养殖']
+                    },
+                    { 
+                        id: 'process', name: '食品加工', 
+                        children: ['HACCP体系', '乳制品', '饮料', '酒类']
+                    }
+                ]
+            },
+            {
+                id: 'elec', name: '电子信息', icon: 'fa-microchip',
+                children: [
+                    { id: 'home', name: '家用电器', children: ['冰箱/冷柜', '空调', '洗衣机', '厨房电器'] },
+                    { id: 'it', name: 'IT与通讯', children: ['5G终端', '计算机', '服务器', '网络设备'] },
+                    { id: 'safe', name: '安防电子', children: ['监控摄像头', '门禁系统', '楼宇对讲'] }
+                ]
+            },
+            {
+                id: 'chem', name: '石油化工', icon: 'fa-flask',
+                children: [
+                    { id: 'material', name: '化工材料', children: ['合成树脂', '橡胶制品', '涂料', '化学试剂'] },
+                    { id: 'process_chem', name: '精细化工', children: ['农药', '染料', '胶粘剂'] }
+                ]
+            }
+        ];
+
+        // --- State ---
+        let selectedLevel1 = null;
+        let selectedLevel2 = null;
+        let selectedLevel3 = null;
+
+        // --- Init ---
+        function init() {
+            renderLevel1();
+        }
+
+        // --- Renders ---
+        function renderLevel1() {
+            const col = document.getElementById('col-level-1');
+            col.innerHTML = industryData.map(item => `
+                <div class="col-item ${selectedLevel1?.id === item.id ? 'active' : ''}" onclick="handleSelect1('${item.id}')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-md bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm">
+                            <i class="fa-solid ${item.icon}"></i>
+                        </div>
+                        <span class="text-sm">${item.name}</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            `).join('');
+        }
+
+        function renderLevel2(parentId) {
+            const parent = industryData.find(i => i.id === parentId);
+            const col = document.getElementById('col-level-2');
+            
+            if (!parent) return;
+
+            col.innerHTML = parent.children.map(item => `
+                <div class="col-item ${selectedLevel2?.id === item.id ? 'active' : ''}" onclick="handleSelect2('${item.id}')">
+                    <span class="text-sm">${item.name}</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            `).join('');
+            
+            // Auto update badge styling
+            document.getElementById('step-badge-2').className = "w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 transition-colors";
+        }
+
+        function renderLevel3(parentId) {
+            const root = industryData.find(i => i.id === selectedLevel1.id);
+            const parent = root.children.find(i => i.id === parentId);
+            const col = document.getElementById('col-level-3');
+
+            if (!parent) return;
+
+            col.innerHTML = parent.children.map(item => `
+                <div class="col-item ${selectedLevel3 === item ? 'active' : ''}" onclick="handleSelect3('${item}')">
+                    <span class="text-sm">${item}</span>
+                    ${selectedLevel3 === item ? '<i class="fa-solid fa-check text-blue-600"></i>' : ''}
+                </div>
+            `).join('');
+
+            // Auto update badge styling
+            document.getElementById('step-badge-3').className = "w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 transition-colors";
+        }
+
+        // --- Handlers ---
+        window.handleSelect1 = (id) => {
+            selectedLevel1 = industryData.find(i => i.id === id);
+            selectedLevel2 = null;
+            selectedLevel3 = null;
+            
+            renderLevel1(); // Re-render to update active state
+            renderLevel2(id);
+            
+            // Reset Col 3
+            document.getElementById('col-level-3').innerHTML = `
+                <div class="h-full flex flex-col items-center justify-center text-slate-300">
+                    <span class="text-sm">请选择二级领域</span>
+                </div>
+            `;
+            document.getElementById('step-badge-3').className = "w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center mr-2";
+            
+            updatePath();
+        };
+
+        window.handleSelect2 = (id) => {
+            const root = industryData.find(i => i.id === selectedLevel1.id);
+            selectedLevel2 = root.children.find(i => i.id === id);
+            selectedLevel3 = null;
+
+            renderLevel2(selectedLevel1.id); // Update active
+            renderLevel3(id);
+            updatePath();
+        };
+
+        window.handleSelect3 = (name) => {
+            selectedLevel3 = name;
+            renderLevel3(selectedLevel2.id); // Update active
+            updatePath();
+        };
+
+        // --- Utils ---
+        function updatePath() {
+            const pathContainer = document.getElementById('selection-path');
+            const btn = document.getElementById('btn-analyze');
+
+            if (selectedLevel1) {
+                let html = `<span class="text-blue-600 font-bold">${selectedLevel1.name}</span>`;
+                if (selectedLevel2) {
+                    html += ` <i class="fa-solid fa-angle-right text-slate-300 text-xs"></i> <span class="text-blue-600 font-bold">${selectedLevel2.name}</span>`;
+                }
+                if (selectedLevel3) {
+                    html += ` <i class="fa-solid fa-angle-right text-slate-300 text-xs"></i> <span class="text-blue-600 font-bold">${selectedLevel3}</span>`;
+                    
+                    // Enable Button
+                    btn.disabled = false;
+                    btn.classList.remove('bg-slate-300', 'cursor-not-allowed');
+                    btn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'text-white', 'shadow-lg', 'shadow-blue-200');
+                } else {
+                    btn.disabled = true;
+                    btn.className = "bg-slate-300 text-white px-8 py-3 rounded-lg font-bold shadow-sm transition-all flex items-center gap-2 cursor-not-allowed";
+                }
+                pathContainer.innerHTML = html;
+            } else {
+                pathContainer.innerHTML = '<span class="text-slate-400 italic">-- 未选择 --</span>';
+            }
+        }
+
+        window.navigateToProfile = () => {
+            // In a real app, this would use router.push with query params
+            // e.g. /profile?category=nev
+            
+            const btn = document.getElementById('btn-analyze');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 生成画像中...';
+            
+            setTimeout(() => {
+                // Simulate navigation to the file created in previous turn
+                // Note: In this environment, we can't truly "navigate", but we simulate the action.
+                // If the user had the file locally, this would work.
+                window.location.href = 'industry_profile_northeast_full.html';
+                
+                // Fallback alert for demo environment if file linking isn't supported directly
+                // alert(`正在为您生成 [${selectedLevel3}] 的行业画像，即将跳转...`);
+            }, 800);
+        };
+
+        // Quick Select Shortcut
+        window.quickSelect = (type) => {
+            if (type === 'auto') {
+                handleSelect1('auto');
+                setTimeout(() => handleSelect2('nev'), 100);
+                setTimeout(() => handleSelect3('纯电动乘用车'), 200);
+            }
+        }
+
+        // Run
+        init();
+
+    </script>
+</body>
+</html>
