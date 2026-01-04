@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>区域全景画像(东北) | 智问通达</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- WordCloud2.js -->
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans SC"', 'sans-serif'],
+                    },
+                    colors: {
+                        cqc: {
+                            blue: '#005bac',
+                            dark: '#1e293b',
+                            light: '#f1f5f9',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .anchor-link.active {
+            color: #2563eb;
+            border-right: 3px solid #2563eb;
+            background: linear-gradient(270deg, #eff6ff 0%, rgba(255,255,255,0) 100%);
+        }
+        .dropdown-check-item:hover { background-color: #f1f5f9; }
+        #word-cloud-canvas { width: 100%; height: 100%; cursor: pointer; }
+        
+        /* 热力图单元格动画 */
+        .heatmap-cell:hover { transform: scale(1.05); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); z-index: 10; border-color: #fff; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
+
+    <!-- 左侧导航 -->
+
+
+    <!-- 主内容区 -->
+    <main class="flex-1 flex flex-col min-w-0 relative">
+        
+        <!-- 顶部筛选栏 -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-20 shadow-sm">
+            <div class="flex items-center gap-6">
+                <h1 class="text-lg font-bold text-slate-800">东北区域 · 认证大数据看板</h1>
+                
+                <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-md border border-slate-200 opacity-80 cursor-not-allowed" title="当前锁定为东北区域">
+                    <i class="fa-solid fa-location-dot text-slate-500"></i>
+                    <span class="text-sm font-bold text-slate-700">东北大区 (辽/吉/黑)</span>
+                </div>
+
+                <div class="relative group">
+                    <button class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-md border border-blue-200 hover:border-blue-500 transition-colors">
+                        <i class="fa-solid fa-layer-group text-blue-600"></i>
+                        <span class="text-sm font-bold text-slate-700">行业范围：全部 (12个)</span>
+                        <i class="fa-solid fa-chevron-down text-xs text-slate-400 ml-2"></i>
+                    </button>
+                    <!-- Dropdown Content (Mock) -->
+                    <div class="absolute top-full left-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-xl hidden group-hover:block p-2 z-50">
+                        <div class="flex items-center justify-between px-2 py-1 mb-1 border-b border-slate-100">
+                            <span class="text-xs font-bold text-slate-500">多选行业</span>
+                            <span class="text-xs text-blue-600 cursor-pointer">全选</span>
+                        </div>
+                        <div class="max-h-60 overflow-y-auto space-y-1">
+                            <label class="flex items-center gap-2 px-2 py-1.5 dropdown-check-item rounded cursor-pointer"><input type="checkbox" checked class="accent-blue-600"> <span class="text-sm">高端装备制造</span></label>
+                            <label class="flex items-center gap-2 px-2 py-1.5 dropdown-check-item rounded cursor-pointer"><input type="checkbox" checked class="accent-blue-600"> <span class="text-sm">汽车及零部件</span></label>
+                            <label class="flex items-center gap-2 px-2 py-1.5 dropdown-check-item rounded cursor-pointer"><input type="checkbox" checked class="accent-blue-600"> <span class="text-sm">石油化工</span></label>
+                            <label class="flex items-center gap-2 px-2 py-1.5 dropdown-check-item rounded cursor-pointer"><input type="checkbox" checked class="accent-blue-600"> <span class="text-sm">农产品与食品</span></label>
+                            <label class="flex items-center gap-2 px-2 py-1.5 dropdown-check-item rounded cursor-pointer"><input type="checkbox" checked class="accent-blue-600"> <span class="text-sm">电子信息</span></label>
+                            <label class="flex items-center gap-2 px-2 py-1.5 dropdown-check-item rounded cursor-pointer"><input type="checkbox" checked class="accent-blue-600"> <span class="text-sm">生物医药</span></label>
+                        </div>
+                        <div class="pt-2 mt-2 border-t border-slate-100 text-center">
+                            <button class="w-full bg-blue-600 text-white text-xs py-1.5 rounded hover:bg-blue-700">确认筛选</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                 <button class="text-slate-500 hover:text-blue-600 p-2 rounded-full hover:bg-slate-100" title="刷新数据" onclick="window.location.reload()"><i class="fa-solid fa-arrows-rotate"></i></button>
+                 <button class="text-slate-500 hover:text-blue-600 p-2 rounded-full hover:bg-slate-100" title="全屏模式"><i class="fa-solid fa-expand"></i></button>
+            </div>
+        </header>
+
+        <!-- 内容滚动区 -->
+        <div id="scroll-container" class="flex-1 overflow-y-auto scroll-smooth p-6 bg-slate-100">
+            <div class="flex gap-6 max-w-[1920px] mx-auto">
+                
+                <!-- 主体内容 -->
+                <div class="flex-1 space-y-6">
+                    
+                    <!-- 1. KPI 概览 -->
+                    <section id="section-overview" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 scroll-mt-24">
+                        <!-- Cards with Drilldown -->
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500 flex justify-between items-center cursor-pointer hover:shadow-md transition-all group" onclick="openDrillDown('获证企业名录', 'enterprises')">
+                            <div>
+                                <p class="text-slate-500 text-xs font-bold uppercase">全区域获证企业</p>
+                                <h3 class="text-2xl font-bold text-slate-800 mt-1">12,450 <span class="text-xs font-normal text-slate-400">家</span></h3>
+                                <p class="text-xs text-green-600 mt-1"><i class="fa-solid fa-arrow-trend-up"></i> +4.2% 同比</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-building"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-indigo-500 flex justify-between items-center cursor-pointer hover:shadow-md transition-all group" onclick="openDrillDown('有效证书明细', 'certs')">
+                            <div>
+                                <p class="text-slate-500 text-xs font-bold uppercase">有效证书保有量</p>
+                                <h3 class="text-2xl font-bold text-slate-800 mt-1">48,201 <span class="text-xs font-normal text-slate-400">张</span></h3>
+                                <p class="text-xs text-green-600 mt-1"><i class="fa-solid fa-arrow-trend-up"></i> +6.8% 同比</p>
+                            </div>
+                            <div class="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-certificate"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500 flex justify-between items-center cursor-pointer hover:shadow-md transition-all group" onclick="openDrillDown('产业产值分析', 'value')">
+                            <div>
+                                <p class="text-slate-500 text-xs font-bold uppercase">关联产业产值估算</p>
+                                <h3 class="text-2xl font-bold text-slate-800 mt-1">8,500 <span class="text-xs font-normal text-slate-400">亿</span></h3>
+                                <p class="text-xs text-slate-400 mt-1">基于获证企业年报</p>
+                            </div>
+                            <div class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-coins"></i>
+                            </div>
+                        </div>
+                         <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-orange-500 flex justify-between items-center cursor-pointer hover:shadow-md transition-all group" onclick="openDrillDown('高风险企业清单', 'risk_list')">
+                            <div>
+                                <p class="text-slate-500 text-xs font-bold uppercase">高风险预警企业</p>
+                                <h3 class="text-2xl font-bold text-slate-800 mt-1">342 <span class="text-xs font-normal text-slate-400">家</span></h3>
+                                <p class="text-xs text-red-500 mt-1"><i class="fa-solid fa-circle-exclamation"></i> 需重点稽查</p>
+                            </div>
+                            <div class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-bell"></i>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 2. 行业构成与价值 (Composition) -->
+                    <section id="section-composition" class="scroll-mt-24">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-slate-800">全行业证书量占比</h3>
+                                    <button class="text-xs text-blue-600 hover:underline" onclick="openDrillDown('行业细分构成', 'industry_pie')">查看详情</button>
+                                </div>
+                                <div class="h-60">
+                                    <canvas id="industryPieChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-slate-800">行业价值矩阵 (规模 vs 增速 vs 产值)</h3>
+                                    <span class="text-xs text-slate-400">气泡大小 = 产值规模</span>
+                                </div>
+                                <div class="h-60">
+                                    <canvas id="industryBubbleChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 3. 区域与热力 (Geo & Heatmap) -->
+                    <section id="section-geo" class="scroll-mt-24">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <h3 class="font-bold text-slate-800 mb-4">东北三省认证活跃度对比</h3>
+                                <div class="h-64">
+                                    <canvas id="provinceBarChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-slate-800">重点城市 × 行业 密度热力图</h3>
+                                    <span class="text-xs text-slate-400">颜色越深代表企业越密集</span>
+                                </div>
+                                <div class="h-64 flex flex-col justify-center" id="heatmap-container">
+                                    <!-- HTML Generated Heatmap -->
+                                    <div class="grid grid-cols-6 gap-1 text-xs text-center">
+                                        <div class="font-bold text-slate-500"></div>
+                                        <div class="font-bold text-slate-500">装备</div>
+                                        <div class="font-bold text-slate-500">汽车</div>
+                                        <div class="font-bold text-slate-500">化工</div>
+                                        <div class="font-bold text-slate-500">农食</div>
+                                        <div class="font-bold text-slate-500">电子</div>
+
+                                        <div class="font-bold text-slate-500 self-center">沈阳</div>
+                                        <div class="bg-blue-600 text-white p-2 rounded heatmap-cell cursor-pointer" title="沈阳-装备: 520家" onclick="openDrillDown('沈阳-装备制造企业', 'heatmap_list')">Hi</div>
+                                        <div class="bg-blue-400 text-white p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('沈阳-汽车企业', 'heatmap_list')">Med</div>
+                                        <div class="bg-blue-200 text-slate-700 p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('沈阳-化工企业', 'heatmap_list')">Low</div>
+                                        <div class="bg-blue-200 text-slate-700 p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('沈阳-农食企业', 'heatmap_list')">Low</div>
+                                        <div class="bg-blue-300 text-slate-800 p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('沈阳-电子企业', 'heatmap_list')">Mid</div>
+
+                                        <div class="font-bold text-slate-500 self-center">长春</div>
+                                        <div class="bg-blue-300 text-slate-800 p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('长春-装备企业', 'heatmap_list')">Mid</div>
+                                        <div class="bg-blue-700 text-white p-2 rounded heatmap-cell cursor-pointer" title="长春-汽车: 850家" onclick="openDrillDown('长春-汽车企业', 'heatmap_list')">V.Hi</div>
+                                        <div class="bg-blue-100 text-slate-600 p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('长春-化工企业', 'heatmap_list')">Low</div>
+                                        <div class="bg-blue-500 text-white p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('长春-农食企业', 'heatmap_list')">Hi</div>
+                                        <div class="bg-blue-200 text-slate-700 p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('长春-电子企业', 'heatmap_list')">Low</div>
+                                        
+                                        <div class="font-bold text-slate-500 self-center">大连</div>
+                                        <div class="bg-blue-500 text-white p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('大连-装备企业', 'heatmap_list')">Hi</div>
+                                        <div class="bg-blue-200 text-slate-700 p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('大连-汽车企业', 'heatmap_list')">Low</div>
+                                        <div class="bg-blue-600 text-white p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('大连-化工企业', 'heatmap_list')">Hi</div>
+                                        <div class="bg-blue-400 text-white p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('大连-农食企业', 'heatmap_list')">Med</div>
+                                        <div class="bg-blue-500 text-white p-2 rounded heatmap-cell cursor-pointer" onclick="openDrillDown('大连-电子企业', 'heatmap_list')">Hi</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 4. 效率与健康度 (Efficiency & Health) -->
+                    <section id="section-efficiency" class="scroll-mt-24">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Scatter: Lab Cycle Time vs Pass Rate -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <h3 class="font-bold text-slate-800 mb-4">技术成熟度分析 (检测周期 vs 通过率)</h3>
+                                <div class="h-64">
+                                    <canvas id="efficiencyScatterChart"></canvas>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-2 text-center">横轴：平均检测周期(天) | 纵轴：一次通过率(%) | 颜色：效率评分</p>
+                            </div>
+                            <!-- Mixed: New vs Churn -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <h3 class="font-bold text-slate-800 mb-4">行业健康度 (新增发证 vs 暂停撤销)</h3>
+                                <div class="h-64">
+                                    <canvas id="churnMixedChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 5. 可持续发展与结构 (Sustainability & Structure) -->
+                    <section id="section-sustainability" class="scroll-mt-24">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Polar Area: Green Certs -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <h3 class="font-bold text-slate-800 mb-4">绿色低碳认证分布</h3>
+                                <div class="h-60 flex justify-center">
+                                    <canvas id="greenPolarChart"></canvas>
+                                </div>
+                            </div>
+                            <!-- Stacked Bar: Age Structure -->
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <h3 class="font-bold text-slate-800 mb-4">客户粘性分析 (证书持证年限结构)</h3>
+                                <div class="h-60">
+                                    <canvas id="ageStructureChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 6. 趋势与类型 (Trend & Type) -->
+                    <section id="section-trend" class="scroll-mt-24">
+                         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="font-bold text-slate-800 mb-4">重点行业发证量趋势 (近12个月)</h3>
+                            <div class="h-64">
+                                <canvas id="trendLineChart"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 7. 合规与热点 (Compliance & Words) -->
+                    <section id="section-compliance" class="scroll-mt-24">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Gauge (Doughnut simulated) -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center">
+                                <h3 class="font-bold text-slate-800 mb-2 w-full text-left">区域合规信心指数</h3>
+                                <div class="relative w-48 h-48">
+                                    <canvas id="complianceGaugeChart"></canvas>
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center pt-8">
+                                        <span class="text-4xl font-bold text-blue-600">87.5</span>
+                                        <span class="text-xs text-slate-400">分 (良好)</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-2 text-center w-3/4">基于监督抽查合格率与年检通过率综合计算</p>
+                            </div>
+                            <!-- Word Cloud -->
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="font-bold text-slate-800"><i class="fa-solid fa-cloud text-blue-400 mr-2"></i> 行业热点词云</h3>
+                                    <div class="flex gap-2 text-xs">
+                                        <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded">热门标准</span>
+                                        <span class="px-2 py-1 bg-slate-100 text-slate-500 rounded">新兴产品</span>
+                                    </div>
+                                </div>
+                                <div class="h-56 w-full relative bg-slate-50 rounded-lg border border-slate-100 overflow-hidden cursor-pointer hover:shadow-inner transition-shadow" onclick="openDrillDown('行业热点词频分析', 'word_cloud_detail')">
+                                    <canvas id="word-cloud-canvas"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Footer -->
+                    <div class="text-center text-xs text-slate-400 pt-8 pb-12">
+                        © 2026 CQC 认证大数据中心
+                    </div>
+                </div>
+
+                <!-- 右侧悬浮导航 -->
+                <nav class="hidden 2xl:block w-40 sticky top-24 h-fit pl-4 border-l border-slate-200">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase mb-4 tracking-wider">视图导航</h3>
+                    <ul class="space-y-1">
+                        <li><a href="#section-overview" class="anchor-link active block text-sm text-slate-600 hover:text-blue-600 py-1.5 px-3 rounded-r-md transition-all">核心指标</a></li>
+                        <li><a href="#section-composition" class="anchor-link block text-sm text-slate-600 hover:text-blue-600 py-1.5 px-3 rounded-r-md transition-all">行业构成</a></li>
+                        <li><a href="#section-geo" class="anchor-link block text-sm text-slate-600 hover:text-blue-600 py-1.5 px-3 rounded-r-md transition-all">区域热力</a></li>
+                        <li><a href="#section-efficiency" class="anchor-link block text-sm text-slate-600 hover:text-blue-600 py-1.5 px-3 rounded-r-md transition-all">效率与健康</a></li>
+                        <li><a href="#section-sustainability" class="anchor-link block text-sm text-slate-600 hover:text-blue-600 py-1.5 px-3 rounded-r-md transition-all">持续发展</a></li>
+                        <li><a href="#section-trend" class="anchor-link block text-sm text-slate-600 hover:text-blue-600 py-1.5 px-3 rounded-r-md transition-all">趋势分析</a></li>
+                        <li><a href="#section-compliance" class="anchor-link block text-sm text-slate-600 hover:text-blue-600 py-1.5 px-3 rounded-r-md transition-all">合规热点</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </main>
+
+    <!-- 增强版通用下钻弹窗 (Smart Drilldown Modal) -->
+    <div id="commonModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900 bg-opacity-50 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-5xl">
+                    <!-- Header -->
+                    <div class="bg-slate-50 px-4 py-3 sm:px-6 flex justify-between items-center border-b border-slate-200">
+                        <h3 class="text-lg font-bold leading-6 text-slate-900" id="modal-title">详情数据</h3>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    </div>
+                    
+                    <!-- Dynamic Filter Bar -->
+                    <div id="modal-filters" class="bg-white px-4 py-3 border-b border-slate-100 flex flex-wrap gap-3 items-center">
+                        <!-- Filters injected by JS -->
+                    </div>
+
+                    <!-- Dynamic Body -->
+                    <div class="px-4 py-5 sm:p-6 h-[500px] overflow-y-auto bg-slate-50" id="modal-content">
+                        <!-- Content injected by JS -->
+                        <div class="flex justify-center items-center h-full text-slate-400">
+                            <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> 加载数据中...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Charts Initialization ---
+
+        // Chart 1: Industry Pie (Doughnut)
+        new Chart(document.getElementById('industryPieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['高端装备', '汽车', '化工', '农食', '电子', '其他'],
+                datasets: [{ data: [30, 25, 15, 12, 10, 8], backgroundColor: ['#3b82f6', '#6366f1', '#14b8a6', '#f59e0b', '#8b5cf6', '#cbd5e1'], borderWidth: 0 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, onClick: () => openDrillDown('高端装备制造行业 - 细分画像', 'industry_pie') }
+        });
+
+        // Chart 2: Bubble (Value Matrix)
+        new Chart(document.getElementById('industryBubbleChart'), {
+            type: 'bubble',
+            data: {
+                datasets: [{
+                    label: '行业画像',
+                    data: [
+                        {x: 20, y: 30, r: 15, industry: '装备'}, 
+                        {x: 40, y: 10, r: 10, industry: '汽车'}, 
+                        {x: 10, y: 50, r: 25, industry: '化工'},
+                        {x: 30, y: 20, r: 8, industry: '农食'},
+                        {x: 25, y: 40, r: 12, industry: '电子'}
+                    ],
+                    backgroundColor: 'rgba(37, 99, 235, 0.6)', borderColor: '#2563eb'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, onClick: () => openDrillDown('高价值企业矩阵分析', 'bubble_matrix') }
+        });
+
+        // Chart 3: Province Bar
+        new Chart(document.getElementById('provinceBarChart'), {
+            type: 'bar',
+            data: { labels: ['辽宁', '吉林', '黑龙江'], datasets: [{ label: '获证企业', data: [4500, 3200, 2800], backgroundColor: '#3b82f6' }, { label: '有效证书', data: [15000, 11000, 9500], backgroundColor: '#93c5fd' }] },
+            options: { responsive: true, maintainAspectRatio: false, onClick: () => openDrillDown('分省业务数据详情', 'province_list') }
+        });
+
+        // Chart 5: Trend Line
+        new Chart(document.getElementById('trendLineChart'), {
+            type: 'line',
+            data: {
+                labels: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+                datasets: [
+                    { label: '装备制造', data: [120,132,101,134,90,230,210,220,230,250,270,300], borderColor: '#3b82f6', tension: 0.4 },
+                    { label: '汽车部件', data: [220,182,191,234,290,330,310,300,310,320,340,360], borderColor: '#6366f1', tension: 0.4 },
+                    { label: '农食产品', data: [150,232,201,154,190,330,410,400,380,360,340,320], borderColor: '#f59e0b', tension: 0.4 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, onClick: () => openDrillDown('月度发证业务流水', 'trend_detail') }
+        });
+
+        // Chart 10: Scatter (Efficiency)
+        new Chart(document.getElementById('efficiencyScatterChart'), {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: '行业技术成熟度',
+                    data: [
+                        {x: 15, y: 95, industry: '电子信息'}, {x: 45, y: 80, industry: '高端装备'}, 
+                        {x: 25, y: 92, industry: '汽车部件'}, {x: 10, y: 88, industry: '农食产品'}, {x: 35, y: 75, industry: '石油化工'}
+                    ],
+                    backgroundColor: (ctx) => {
+                        const val = ctx.raw?.y;
+                        return val > 90 ? '#22c55e' : (val < 80 ? '#f97316' : '#3b82f6');
+                    }
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { x: { title: {display:true, text:'平均检测周期(天)'}}, y: { title: {display:true, text:'一次通过率(%)'}, min: 60, max: 100 } },
+                plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.raw.industry}: ${ctx.raw.x}天, ${ctx.raw.y}%` } } },
+                onClick: () => openDrillDown('实验室检测效率与质量分析', 'efficiency_list')
+            }
+        });
+
+        // Chart 11: Mixed (Churn)
+        new Chart(document.getElementById('churnMixedChart'), {
+            type: 'bar',
+            data: {
+                labels: ['装备', '汽车', '化工', '农食', '电子'],
+                datasets: [
+                    { type: 'bar', label: '新增发证', data: [500, 600, 200, 350, 400], backgroundColor: '#3b82f6' },
+                    { type: 'line', label: '撤销/暂停率(%)', data: [2.5, 1.8, 5.2, 3.1, 2.0], borderColor: '#ef4444', yAxisID: 'y1' }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { position: 'left' }, y1: { position: 'right', grid: {drawOnChartArea: false} } },
+                onClick: () => openDrillDown('行业流失与健康度分析', 'churn_detail')
+            }
+        });
+
+        // Chart 12: Polar Area (Green)
+        new Chart(document.getElementById('greenPolarChart'), {
+            type: 'polarArea',
+            data: {
+                labels: ['节能认证', '节水认证', '低碳产品', 'RoHS', '绿色建材'],
+                datasets: [{ data: [1500, 800, 1200, 2000, 600], backgroundColor: ['#4ade80', '#60a5fa', '#2dd4bf', '#fbbf24', '#a78bfa'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, onClick: () => openDrillDown('绿色低碳认证专项报表', 'green_detail') }
+        });
+
+        // Chart 13: Stacked Bar (Age Structure)
+        new Chart(document.getElementById('ageStructureChart'), {
+            type: 'bar',
+            data: {
+                labels: ['装备', '汽车', '化工', '农食', '电子'],
+                datasets: [
+                    { label: '<1年(新客)', data: [20, 25, 10, 15, 30], backgroundColor: '#93c5fd' },
+                    { label: '1-3年(成长期)', data: [40, 35, 30, 45, 40], backgroundColor: '#3b82f6' },
+                    { label: '3-5年(稳定期)', data: [25, 30, 40, 30, 20], backgroundColor: '#1d4ed8' },
+                    { label: '>5年(忠诚)', data: [15, 10, 20, 10, 10], backgroundColor: '#1e3a8a' }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, onClick: () => openDrillDown('客户生命周期与粘性分析', 'age_detail') }
+        });
+
+        // Chart 14: Gauge (Simulated with Doughnut)
+        new Chart(document.getElementById('complianceGaugeChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['合规', '风险'],
+                datasets: [{ data: [87.5, 12.5], backgroundColor: ['#3b82f6', '#f1f5f9'], circumference: 180, rotation: 270, borderWidth: 0 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '80%', plugins: { legend: { display: false }, tooltip: { enabled: false } }, onClick: () => openDrillDown('合规稽查与风险日志', 'compliance_log') }
+        });
+
+
+        // --- 2. Word Cloud Implementation (Rich Data) ---
+        function initWordCloud() {
+            const canvas = document.getElementById('word-cloud-canvas');
+            const options = {
+                list: [
+                    ['ISO9001', 80], ['CCC认证', 70], ['新能源汽车', 60], ['智能制造', 55], 
+                    ['绿色工厂', 50], ['碳足迹', 45], ['有机产品', 40], ['IATF16949', 40],
+                    ['节能认证', 38], ['RoHS', 35], ['信息安全', 32], ['HACCP', 30],
+                    ['机器人CR', 28], ['防爆电气', 28], ['无人机', 25], ['5G通信', 25],
+                    ['特种设备', 24], ['ISO14001', 22], ['ISO45001', 20], ['车联网', 18],
+                    ['光伏逆变器', 18], ['风电叶片', 16], ['医疗器械', 15], ['轨道交通', 15],
+                    ['智能网联', 14], ['数据安全', 12], ['双碳', 12], ['绿色建材', 10],
+                    ['国推漫游', 10], ['储能系统', 10]
+                ],
+                gridSize: 6, weightFactor: 1.2, fontFamily: '"Noto Sans SC", sans-serif', color: (word, weight) => weight > 50 ? '#2563eb' : (weight > 30 ? '#0ea5e9' : '#94a3b8'), backgroundColor: 'transparent',
+                rotateRatio: 0
+            };
+            WordCloud(canvas, options);
+        }
+        setTimeout(initWordCloud, 500);
+
+
+        // --- 3. Dynamic Content Generators ---
+
+        function openDrillDown(title, type) {
+            const modal = document.getElementById('commonModal');
+            const modalTitle = document.getElementById('modal-title');
+            const filterContainer = document.getElementById('modal-filters');
+            const contentContainer = document.getElementById('modal-content');
+            
+            modal.classList.remove('hidden');
+            modalTitle.innerText = title;
+            filterContainer.innerHTML = generateFilters(type);
+            
+            contentContainer.innerHTML = '<div class="flex justify-center items-center h-full text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-2"></i> 数据加载中...</div>';
+
+            setTimeout(() => {
+                let contentHTML = '';
+                switch(type) {
+                    case 'industry_pie': contentHTML = generateIndustryPieDetail(); break;
+                    case 'bubble_matrix': contentHTML = generateValueMatrixDetail(); break;
+                    case 'efficiency_list': contentHTML = generateEfficiencyTable(); break;
+                    case 'trend_detail': contentHTML = generateTrendDetail(); break;
+                    case 'churn_detail': contentHTML = generateChurnDetail(); break;
+                    case 'green_detail': contentHTML = generateGreenDetail(); break;
+                    case 'age_detail': contentHTML = generateAgeDetail(); break;
+                    case 'compliance_log': contentHTML = generateComplianceDetail(); break;
+                    case 'word_cloud_detail': contentHTML = generateWordCloudDetail(); break;
+                    default: contentHTML = generateStandardTable(type); // Fallback
+                }
+                contentContainer.innerHTML = contentHTML;
+            }, 300);
+        }
+
+        function generateFilters(type) {
+            let base = `
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" placeholder="搜索..." class="pl-8 pr-3 py-1.5 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 w-48">
+                </div>
+            `;
+            if (type === 'green_detail') {
+                base += `<select class="py-1.5 pl-2 text-sm border border-slate-300 rounded-md"><option>所有绿色类别</option><option>节能</option><option>RoHS</option></select>`;
+            } else if (type === 'compliance_log') {
+                base += `<select class="py-1.5 pl-2 text-sm border border-slate-300 rounded-md"><option>所有风险等级</option><option>高风险</option><option>中风险</option></select>`;
+            } else {
+                base += `<select class="py-1.5 pl-2 text-sm border border-slate-300 rounded-md"><option>所有城市</option><option>沈阳</option><option>大连</option><option>长春</option></select>`;
+            }
+            return base + `<button class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm ml-auto hover:bg-blue-700">导出</button>`;
+        }
+
+        // --- Content Generators (HTML Strings) ---
+
+        function generateIndustryPieDetail() {
+            return `
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-4 rounded border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-3 border-l-4 border-blue-500 pl-2">高端装备细分领域</h4>
+                        <div class="space-y-3">
+                            <div><div class="flex justify-between text-sm mb-1"><span>数控机床</span><span class="font-bold">35%</span></div><div class="w-full bg-slate-100 rounded-full h-2"><div class="bg-blue-500 h-2 rounded-full" style="width: 35%"></div></div></div>
+                            <div><div class="flex justify-between text-sm mb-1"><span>轨道交通装备</span><span class="font-bold">28%</span></div><div class="w-full bg-slate-100 rounded-full h-2"><div class="bg-blue-400 h-2 rounded-full" style="width: 28%"></div></div></div>
+                            <div><div class="flex justify-between text-sm mb-1"><span>机器人与智能装备</span><span class="font-bold">22%</span></div><div class="w-full bg-slate-100 rounded-full h-2"><div class="bg-blue-300 h-2 rounded-full" style="width: 22%"></div></div></div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-3 border-l-4 border-indigo-500 pl-2">该领域头部企业 TOP 5</h4>
+                        <ul class="divide-y divide-slate-100 text-sm">
+                            <li class="py-2 flex justify-between items-center"><span>沈阳鼓风机集团</span><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">AAA级</span></li>
+                            <li class="py-2 flex justify-between items-center"><span>中车长春轨道客车</span><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">AAA级</span></li>
+                            <li class="py-2 flex justify-between items-center"><span>哈尔滨电气集团</span><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">AAA级</span></li>
+                            <li class="py-2 flex justify-between items-center"><span>中国一重集团</span><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs">AA+级</span></li>
+                            <li class="py-2 flex justify-between items-center"><span>沈阳新松机器人</span><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs">AA+级</span></li>
+                        </ul>
+                    </div>
+                </div>
+                ${generateStandardTable('list', true)}
+            `;
+        }
+
+        function generateValueMatrixDetail() {
+            return `
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-green-50 p-4 rounded border border-green-200">
+                        <h4 class="font-bold text-green-800 mb-2">💎 高价值/高增长 (明星业务)</h4>
+                        <ul class="text-sm list-disc pl-4 text-green-700">
+                            <li>新能源汽车零部件 (长春/沈阳)</li>
+                            <li>工业机器人与自动化 (沈阳)</li>
+                            <li>高端医疗影像设备 (大连)</li>
+                        </ul>
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded border border-yellow-200">
+                        <h4 class="font-bold text-yellow-800 mb-2">💰 高价值/低增长 (现金牛)</h4>
+                        <ul class="text-sm list-disc pl-4 text-yellow-700">
+                            <li>石油化工装备 (抚顺/大庆)</li>
+                            <li>重型矿山机械 (鞍山)</li>
+                            <li>绿色有机农产品 (黑龙江全域)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="bg-white rounded border border-slate-200 overflow-hidden">
+                    <div class="px-4 py-2 bg-slate-50 font-bold text-sm text-slate-600 border-b border-slate-200">企业价值评估明细</div>
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50"><tr><th class="p-3 text-left">企业名称</th><th class="p-3">产值规模</th><th class="p-3">年审通过率</th><th class="p-3">证书增长</th><th class="p-3">评级</th></tr></thead>
+                        <tbody class="bg-white divide-y divide-slate-100">
+                            <tr><td class="p-3">一汽-大众汽车有限公司</td><td class="p-3">500亿+</td><td class="p-3">100%</td><td class="p-3 text-green-600">+12%</td><td class="p-3"><span class="bg-blue-100 text-blue-800 px-2 rounded text-xs">S级</span></td></tr>
+                            <tr><td class="p-3">恒力石化(大连)有限公司</td><td class="p-3">200亿+</td><td class="p-3">98%</td><td class="p-3 text-slate-400">0%</td><td class="p-3"><span class="bg-blue-100 text-blue-800 px-2 rounded text-xs">A级</span></td></tr>
+                            <tr><td class="p-3">长光卫星技术有限公司</td><td class="p-3">15亿</td><td class="p-3">100%</td><td class="p-3 text-green-600">+45%</td><td class="p-3"><span class="bg-green-100 text-green-800 px-2 rounded text-xs">S+级</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function generateEfficiencyTable() {
+            const data = [
+                { lab: "CQC沈阳分中心实验室", cat: "低压电器", cycle: "12天", avg: "15天", pass: "98%", status: "优" },
+                { lab: "长春汽车检测中心", cat: "汽车零部件", cycle: "25天", avg: "28天", pass: "92%", status: "良" },
+                { lab: "哈尔滨电工仪表所", cat: "仪器仪表", cycle: "15天", avg: "20天", pass: "95%", status: "优" },
+                { lab: "辽宁安全科学研究院", cat: "防爆电气", cycle: "30天", avg: "30天", pass: "85%", status: "中" }
+            ];
+            return `
+                <div class="mb-4 text-sm text-slate-600 bg-blue-50 p-3 rounded border border-blue-100">
+                    <i class="fa-solid fa-circle-info text-blue-500 mr-1"></i> 数据说明：检测周期对比行业平均水平，通过率基于近12个月首检数据。
+                </div>
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50"><tr><th class="p-3 text-left text-xs font-bold text-slate-500">检测机构</th><th class="p-3 text-left text-xs font-bold text-slate-500">类别</th><th class="p-3 text-left text-xs font-bold text-slate-500">机构周期</th><th class="p-3 text-left text-xs font-bold text-slate-500">行业均值</th><th class="p-3 text-left text-xs font-bold text-slate-500">一次通过率</th><th class="p-3 text-left text-xs font-bold text-slate-500">效率评级</th></tr></thead>
+                    <tbody class="bg-white divide-y divide-slate-200">
+                        ${data.map(d => `
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 text-sm font-medium text-slate-900">${d.lab}</td>
+                                <td class="p-3 text-sm text-slate-500">${d.cat}</td>
+                                <td class="p-3 text-sm font-bold text-slate-700">${d.cycle}</td>
+                                <td class="p-3 text-sm text-slate-400">${d.avg}</td>
+                                <td class="p-3 text-sm text-blue-600 font-bold">${d.pass}</td>
+                                <td class="p-3"><span class="px-2 py-1 rounded text-xs ${d.status==='优'?'bg-green-100 text-green-700':d.status==='良'?'bg-blue-100 text-blue-700':'bg-yellow-100 text-yellow-700'}">${d.status}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function generateTrendDetail() {
+            return `
+                <div class="h-64 bg-white border border-slate-200 rounded p-4 mb-4">
+                    <p class="text-xs text-slate-400 text-center">[此处为细分月度趋势图的大图展示区]</p>
+                    <canvas id="drillTrendChart"></canvas>
+                </div>
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50"><tr><th class="p-3 text-left text-xs font-bold text-slate-500">月份</th><th class="p-3 text-left text-xs font-bold text-slate-500">新增发证</th><th class="p-3 text-left text-xs font-bold text-slate-500">暂停/撤销</th><th class="p-3 text-left text-xs font-bold text-slate-500">净增长</th><th class="p-3 text-left text-xs font-bold text-slate-500">环比变化</th></tr></thead>
+                    <tbody class="bg-white divide-y divide-slate-200">
+                        <tr><td class="p-3 text-sm text-slate-900">2025-12</td><td class="p-3 text-sm text-green-600">+300</td><td class="p-3 text-sm text-red-500">-12</td><td class="p-3 text-sm font-bold text-slate-700">288</td><td class="p-3 text-sm text-green-600"><i class="fa-solid fa-arrow-up"></i> 5.2%</td></tr>
+                        <tr><td class="p-3 text-sm text-slate-900">2025-11</td><td class="p-3 text-sm text-green-600">+270</td><td class="p-3 text-sm text-red-500">-15</td><td class="p-3 text-sm font-bold text-slate-700">255</td><td class="p-3 text-sm text-green-600"><i class="fa-solid fa-arrow-up"></i> 2.1%</td></tr>
+                        <tr><td class="p-3 text-sm text-slate-900">2025-10</td><td class="p-3 text-sm text-green-600">+250</td><td class="p-3 text-sm text-red-500">-8</td><td class="p-3 text-sm font-bold text-slate-700">242</td><td class="p-3 text-sm text-slate-400">-</td></tr>
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function generateChurnDetail() {
+            return `
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="p-4 border rounded bg-red-50 border-red-100">
+                        <div class="text-sm font-bold text-red-700 mb-1">本月流失 (撤销/注销)</div>
+                        <div class="text-2xl font-bold text-red-600">32 <span class="text-xs font-normal text-red-400">家企业</span></div>
+                    </div>
+                    <div class="p-4 border rounded bg-orange-50 border-orange-100">
+                        <div class="text-sm font-bold text-orange-700 mb-1">本月暂停 (可恢复)</div>
+                        <div class="text-2xl font-bold text-orange-600">45 <span class="text-xs font-normal text-orange-400">家企业</span></div>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded overflow-hidden">
+                    <div class="px-4 py-2 bg-slate-50 text-sm font-bold text-slate-600 border-b border-slate-200">重点关注流失企业清单</div>
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-white"><tr><th class="p-3 text-left">企业名称</th><th class="p-3">行业</th><th class="p-3">状态变动</th><th class="p-3">原因</th><th class="p-3">处理日期</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td class="p-3 text-slate-900">抚顺石化工程建设有限公司</td><td class="p-3 text-slate-500">化工</td><td class="p-3"><span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs">撤销</span></td><td class="p-3 text-slate-500">严重违规/虚假材料</td><td class="p-3 text-slate-500">2025-12-10</td></tr>
+                            <tr><td class="p-3 text-slate-900">哈尔滨佳木斯电机厂</td><td class="p-3 text-slate-500">电子</td><td class="p-3"><span class="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs">暂停</span></td><td class="p-3 text-slate-500">监督抽查不合格</td><td class="p-3 text-slate-500">2025-12-05</td></tr>
+                            <tr><td class="p-3 text-slate-900">辽宁天一机械有限公司</td><td class="p-3 text-slate-500">装备</td><td class="p-3"><span class="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs">暂停</span></td><td class="p-3 text-slate-500">未按期申请年审</td><td class="p-3 text-slate-500">2025-11-28</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function generateGreenDetail() {
+            return `
+                <div class="p-4 bg-emerald-50 rounded border border-emerald-100 mb-4 flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold text-emerald-800">双碳政策响应进度</h4>
+                        <p class="text-xs text-emerald-600 mt-1">东北区域绿色认证企业占比已达 18.5%，同比提升 3.2%</p>
+                    </div>
+                    <div class="text-3xl font-bold text-emerald-600">18.5%</div>
+                </div>
+                ${generateStandardTable('green_list', true)}
+            `;
+        }
+
+        function generateAgeDetail() {
+            return `
+                <div class="grid grid-cols-4 gap-4 mb-4 text-center">
+                    <div class="p-3 border rounded bg-slate-50"><div class="text-xs text-slate-500">新客户 (<1年)</div><div class="font-bold text-blue-600">15%</div></div>
+                    <div class="p-3 border rounded bg-slate-50"><div class="text-xs text-slate-500">成长期 (1-3年)</div><div class="font-bold text-blue-600">35%</div></div>
+                    <div class="p-3 border rounded bg-slate-50"><div class="text-xs text-slate-500">成熟期 (3-5年)</div><div class="font-bold text-blue-600">30%</div></div>
+                    <div class="p-3 border rounded bg-blue-50 border-blue-200"><div class="text-xs text-blue-800">忠诚客户 (>5年)</div><div class="font-bold text-blue-800">20%</div></div>
+                </div>
+                <div class="bg-white border border-slate-200 rounded overflow-hidden">
+                    <div class="px-4 py-2 bg-slate-50 text-sm font-bold text-slate-600">即将流失预警 (未续证 > 60天)</div>
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-white"><tr><th class="p-3 text-left">企业名称</th><th class="p-3">持证年限</th><th class="p-3">预警等级</th><th class="p-3">最后联络</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td class="p-3">大连XX食品厂</td><td class="p-3">4年</td><td class="p-3 text-red-500 font-bold">高</td><td class="p-3 text-slate-500">2025-10-01</td></tr>
+                            <tr><td class="p-3">吉林XX建材公司</td><td class="p-3">2年</td><td class="p-3 text-orange-500 font-bold">中</td><td class="p-3 text-slate-500">2025-11-15</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function generateComplianceDetail() {
+            return `
+                <div class="flex gap-4 mb-4">
+                    <div class="flex-1 bg-white border border-slate-200 rounded p-4">
+                        <h4 class="font-bold text-sm text-slate-700">监督抽查合格率</h4>
+                        <div class="mt-2 w-full bg-slate-100 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width: 92%"></div></div>
+                        <div class="mt-1 text-right text-xs text-green-600 font-bold">92%</div>
+                    </div>
+                    <div class="flex-1 bg-white border border-slate-200 rounded p-4">
+                        <h4 class="font-bold text-sm text-slate-700">工厂检查通过率</h4>
+                        <div class="mt-2 w-full bg-slate-100 rounded-full h-2"><div class="bg-blue-500 h-2 rounded-full" style="width: 96%"></div></div>
+                        <div class="mt-1 text-right text-xs text-blue-600 font-bold">96%</div>
+                    </div>
+                </div>
+                ${generateStandardTable('risk_list', true)}
+            `;
+        }
+
+        function generateWordCloudDetail() {
+            return `
+                <div class="p-4 mb-4 bg-slate-50 border border-slate-200 rounded">
+                    <h3 class="font-bold text-slate-800 mb-2">热词透视: <span class="text-blue-600">新能源汽车</span></h3>
+                    <p class="text-sm text-slate-600">关联企业数: <span class="font-bold">850</span> 家 | 关联证书: <span class="font-bold">2,100</span> 张 | 增长率: <span class="text-green-600">+45%</span></p>
+                </div>
+                <div class="bg-white border border-slate-200 rounded overflow-hidden">
+                    <div class="px-4 py-2 bg-slate-50 text-sm font-bold text-slate-600">关联头部企业</div>
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-white"><tr><th class="p-3 text-left">企业名称</th><th class="p-3">城市</th><th class="p-3">核心产品</th><th class="p-3">认证标准</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td class="p-3">一汽-大众汽车有限公司</td><td class="p-3">长春</td><td class="p-3">ID.4 CROZZ</td><td class="p-3 font-mono text-slate-500">GB 18384-2020</td></tr>
+                            <tr><td class="p-3">华晨宝马汽车有限公司</td><td class="p-3">沈阳</td><td class="p-3">iX3</td><td class="p-3 font-mono text-slate-500">GB 38031-2020</td></tr>
+                            <tr><td class="p-3">红旗新能源工厂</td><td class="p-3">长春</td><td class="p-3">E-HS9</td><td class="p-3 font-mono text-slate-500">GB/T 31498</td></tr>
+                            <tr><td class="p-3">亿纬锂能(沈阳)储能公司</td><td class="p-3">沈阳</td><td class="p-3">动力电池包</td><td class="p-3 font-mono text-slate-500">UN 38.3</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function generateStandardTable(type, embedded = false) {
+            let data = [
+                { name: "一汽-大众汽车有限公司", city: "长春", industry: "汽车", cert: "CCC-2024-8821", status: "有效", note: "年度审核通过" },
+                { name: "沈阳鼓风机集团核电泵业", city: "沈阳", industry: "装备", cert: "CQC-2023-0012", status: "有效", note: "新增核级认证" },
+                { name: "哈药集团制药六厂", city: "哈尔滨", industry: "医药", cert: "GMP-2022-1102", status: "有效", note: "-" },
+                { name: "鞍钢集团工程技术有限公司", city: "鞍山", industry: "装备", cert: "ISO-2021-9921", status: "即将过期", note: "需在30天内复评" },
+                { name: "大连重工·起重集团", city: "大连", industry: "装备", cert: "CQC-2023-4412", status: "有效", note: "-" },
+                { name: "吉林化纤集团", city: "吉林", industry: "化工", cert: "ISO-2024-1123", status: "有效", note: "绿色工厂示范" },
+                { name: "锦州万得汽车集团", city: "锦州", industry: "汽车", cert: "IATF-2023-0021", status: "有效", note: "-" },
+                { name: "哈尔滨电气集团佳木斯电机", city: "佳木斯", industry: "电子", cert: "CCC-2022-3312", status: "暂停", note: "监督抽查不合格" },
+                { name: "北大荒农垦集团", city: "哈尔滨", industry: "农食", cert: "ORG-2024-5512", status: "有效", note: "有机产品续期" },
+                { name: "沈阳新松机器人自动化", city: "沈阳", industry: "电子", cert: "CR-2023-7721", status: "有效", note: "机器人CR认证" },
+                { name: "抚顺石化工程建设", city: "抚顺", industry: "化工", cert: "ISO-2021-4412", status: "撤销", note: "严重违规" },
+                { name: "长春轨道客车股份", city: "长春", industry: "装备", cert: "IRIS-2024-1100", status: "有效", note: "高铁标准" },
+                { name: "华晨宝马汽车有限公司", city: "沈阳", industry: "汽车", cert: "CCC-2024-5566", status: "有效", note: "新车型准入" },
+                { name: "大庆油田装备制造", city: "大庆", industry: "装备", cert: "API-2023-8899", status: "有效", note: "-" }
+            ];
+
+            if (type.includes('risk') || type.includes('churn') || type.includes('compliance')) {
+                data = data.filter(d => d.status !== '有效' || d.note.includes('过期'));
+            } else if (type.includes('green')) {
+                data = data.filter(d => d.industry === '化工' || d.industry === '农食');
+            } else if (type.includes('heatmap_list') || type.includes('province_list')) {
+                data = data.sort(() => 0.5 - Math.random());
+            }
+
+            const rows = data.map(item => {
+                let statusClass = 'bg-green-100 text-green-800';
+                if (item.status.includes('暂停')) statusClass = 'bg-orange-100 text-orange-800';
+                if (item.status.includes('撤销') || item.status.includes('过期')) statusClass = 'bg-red-100 text-red-800';
+
+                return `
+                <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100">
+                    <td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-slate-900">${item.name}</td>
+                    <td class="whitespace-nowrap px-3 py-3 text-sm text-slate-500">${item.city}</td>
+                    <td class="whitespace-nowrap px-3 py-3 text-sm text-slate-500">${item.industry}</td>
+                    <td class="whitespace-nowrap px-3 py-3 text-sm text-slate-500 font-mono">${item.cert}</td>
+                    <td class="whitespace-nowrap px-3 py-3 text-sm"><span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${statusClass}">${item.status}</span></td>
+                    <td class="whitespace-nowrap px-3 py-3 text-sm text-slate-500">${item.note}</td>
+                    <td class="whitespace-nowrap px-3 py-3 text-sm text-blue-600 cursor-pointer hover:underline">查看</td>
+                </tr>`;
+            }).join('');
+
+            return `
+                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg ${embedded ? '' : 'mt-2'}">
+                    <table class="min-w-full divide-y divide-slate-300">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="py-3.5 pl-4 pr-3 text-left text-xs font-bold uppercase text-slate-500">企业名称</th>
+                                <th class="px-3 py-3.5 text-left text-xs font-bold uppercase text-slate-500">城市</th>
+                                <th class="px-3 py-3.5 text-left text-xs font-bold uppercase text-slate-500">行业</th>
+                                <th class="px-3 py-3.5 text-left text-xs font-bold uppercase text-slate-500">证书编号</th>
+                                <th class="px-3 py-3.5 text-left text-xs font-bold uppercase text-slate-500">状态</th>
+                                <th class="px-3 py-3.5 text-left text-xs font-bold uppercase text-slate-500">备注/风险项</th>
+                                <th class="px-3 py-3.5 text-left text-xs font-bold uppercase text-slate-500">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 bg-white">${rows}</tbody>
+                    </table>
+                </div>
+                ${embedded ? '' : `<div class="mt-4 flex justify-between items-center"><span class="text-sm text-slate-500">共 ${data.length} 条数据</span><div class="flex gap-1"><button class="px-3 py-1 border rounded text-sm text-slate-600">上一页</button><button class="px-3 py-1 border rounded text-sm text-white bg-blue-600">1</button><button class="px-3 py-1 border rounded text-sm text-slate-600">下一页</button></div></div>`}
+            `;
+        }
+
+        function closeModal() {
+            document.getElementById('commonModal').classList.add('hidden');
+        }
+
+        // --- 4. Scroll Spy ---
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.anchor-link');
+        const scrollContainer = document.getElementById('scroll-container');
+
+        scrollContainer.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                if (scrollContainer.scrollTop >= (section.offsetTop - 200)) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').includes(current)) link.classList.add('active');
+            });
+        });
+
+    </script>
+</body>
+</html>
