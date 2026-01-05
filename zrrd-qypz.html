@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>区域范围配置 | 中认睿达</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cqc: {
+                            blue: '#1e40af', // 深蓝
+                            light: '#eff6ff',
+                            hover: '#dbeafe',
+                            border: '#e2e8f0',
+                            text: '#334155'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        body { font-family: "Microsoft YaHei", sans-serif; }
+
+        /* Column Panel Styles */
+        
+        .col-panel {
+            flex: 1;
+            border-right: 1px solid #e2e8f0;
+            overflow-y: auto;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+        .col-panel:last-child { border-right: none; }
+        
+        /* List Item */
+        .list-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.15s;
+            border-bottom: 1px solid transparent;
+        }
+        .list-item:hover { background-color: #f8fafc; }
+        .list-item.active { background-color: #eff6ff; color: #1e40af; font-weight: 500; border-left: 3px solid #1e40af; padding-left: 13px; }
+        
+        /* Checkbox */
+        .custom-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #cbd5e1;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .custom-checkbox:hover { border-color: #1e40af; }
+        
+        .custom-checkbox.checked {
+            background-color: #1e40af;
+            border-color: #1e40af;
+        }
+        .custom-checkbox.checked::after {
+            content: '\f00c'; font-family: "Font Awesome 6 Free"; font-weight: 900; color: white; font-size: 10px;
+        }
+        
+        .custom-checkbox.indeterminate {
+            background-color: #1e40af;
+            border-color: #1e40af;
+        }
+        .custom-checkbox.indeterminate::after {
+            content: ''; width: 8px; height: 2px; background-color: white; border-radius: 1px;
+        }
+
+        /* Tree View in Preview */
+        .tree-node { margin-left: 20px; border-left: 1px dashed #e2e8f0; }
+        .tree-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 4px 0; 
+            font-size: 13px; 
+            color: #475569;
+        }
+        .tree-icon { width: 16px; text-align: center; margin-right: 6px; color: #94a3b8; font-size: 10px; }
+
+        /* Animation */
+        .fade-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans h-screen flex flex-col">
+
+    <!-- 顶部操作栏 -->
+    <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm flex-shrink-0 z-20">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 bg-cqc-blue rounded flex items-center justify-center text-white font-bold"><i class="fa-solid fa-sliders"></i></div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">区域查看范围配置</h1>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-xs text-slate-500">当前绑定大区：</span>
+                    <span class="bg-blue-50 text-cqc-blue text-xs px-2 py-0.5 rounded border border-blue-100 font-medium">东北区域</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="resetToDefault()" class="px-4 py-2 bg-white border border-slate-300 text-slate-600 rounded hover:bg-slate-50 hover:text-cqc-blue transition-colors text-sm font-medium flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-rotate-left"></i> 恢复默认范围
+            </button>
+            <button onclick="saveConfig()" class="px-6 py-2 bg-cqc-blue text-white rounded hover:bg-blue-800 transition-colors text-sm font-medium shadow-md flex items-center gap-2">
+                <i class="fa-solid fa-floppy-disk"></i> 保存生效
+            </button>
+        </div>
+    </header>
+
+    <!-- 主体区域 -->
+    <main class="flex-1 overflow-hidden p-6 flex gap-6">
+        
+        <!-- 左侧：级联选择器 -->
+        <div class="flex-1 bg-white rounded-lg border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+            <!-- Headers -->
+            <div class="h-12 bg-slate-50 border-b border-slate-200 flex text-sm font-bold text-slate-600">
+                <div class="flex-1 px-4 flex items-center border-r border-slate-200">
+                    <span class="w-2 h-4 bg-cqc-blue rounded-sm mr-2"></span> 大区 / 省份
+                </div>
+                <div class="flex-1 px-4 flex items-center border-r border-slate-200">城市</div>
+                <div class="flex-1 px-4 flex items-center">区 / 县</div>
+            </div>
+
+            <!-- Columns -->
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Col 1: Region & Province (Tree-like list) -->
+                <div class="col-panel" id="col-1">
+                    <!-- Injected by JS -->
+                </div>
+                
+                <!-- Col 2: City -->
+                <div class="col-panel" id="col-2">
+                    <div class="h-full flex flex-col items-center justify-center text-slate-300 text-sm">
+                        <i class="fa-solid fa-arrow-left mb-2 text-2xl opacity-20"></i> 请选择左侧省份
+                    </div>
+                </div>
+
+                <!-- Col 3: District -->
+                <div class="col-panel" id="col-3">
+                    <div class="h-full flex flex-col items-center justify-center text-slate-300 text-sm">
+                         请选择城市
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：已选预览 (Tree Structure) -->
+        <div class="w-80 bg-white rounded-lg border border-slate-200 shadow-sm flex flex-col overflow-hidden flex-shrink-0">
+            <div class="h-12 bg-slate-50 border-b border-slate-200 px-4 flex items-center justify-between flex-shrink-0">
+                <span class="text-sm font-bold text-slate-700"><i class="fa-solid fa-list-check mr-2 text-cqc-blue"></i> 已选范围预览</span>
+                <span class="text-xs text-slate-500 bg-white border px-2 py-0.5 rounded-full shadow-sm" id="count-badge">0 项</span>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4" id="summary-tree">
+                <!-- Tree Injected Here -->
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- 1. Data Structure (Based on CSV Logic) ---
+        // 0 -> Regions -> Provinces -> Cities -> Districts
+        const db = {
+            nodes: {
+                "root": { id: "root", name: "根", children: ["1", "2", "3"] },
+                
+                // Regions
+                "1": { id: "1", name: "东北区域", parent: "root", children: ["210000", "220000", "230000"] },
+                "2": { id: "2", name: "华北区域", parent: "root", children: ["110000"] }, 
+                "3": { id: "3", name: "华东区域", parent: "root", children: ["310000", "320000"] },
+
+                // Provinces (Northeast)
+                "210000": { id: "210000", name: "辽宁省", parent: "1", children: ["210100", "210200"] },
+                "220000": { id: "220000", name: "吉林省", parent: "1", children: ["220100"] },
+                "230000": { id: "230000", name: "黑龙江省", parent: "1", children: ["230100"] },
+                
+                // Provinces (Other)
+                "110000": { id: "110000", name: "北京市", parent: "2", children: ["110100"] },
+                "310000": { id: "310000", name: "上海市", parent: "3", children: ["310100"] },
+                "320000": { id: "320000", name: "江苏省", parent: "3", children: ["320100", "320500"] },
+
+                // Cities (Liaoning)
+                "210100": { id: "210100", name: "沈阳市", parent: "210000", children: ["210102", "210103", "210104", "210105", "210106"] },
+                "210200": { id: "210200", name: "大连市", parent: "210000", children: ["210202", "210203", "210204", "210211"] },
+
+                // Cities (Others Mock)
+                "220100": { id: "220100", name: "长春市", parent: "220000", children: ["220102", "220103"] },
+                "230100": { id: "230100", name: "哈尔滨市", parent: "230000", children: ["230102", "230103"] },
+                "110100": { id: "110100", name: "市辖区", parent: "110000", children: ["110101", "110102"] },
+                "310100": { id: "310100", name: "市辖区", parent: "310000", children: ["310101", "310104"] },
+                "320100": { id: "320100", name: "南京市", parent: "320000", children: ["320102", "320104"] },
+                "320500": { id: "320500", name: "苏州市", parent: "320000", children: ["320505", "320506"] },
+
+                // Districts (Mock)
+                "210102": { id: "210102", name: "和平区", parent: "210100" }, "210103": { id: "210103", name: "沈河区", parent: "210100" },
+                "210104": { id: "210104", name: "大东区", parent: "210100" }, "210105": { id: "210105", name: "皇姑区", parent: "210100" },
+                "210106": { id: "210106", name: "铁西区", parent: "210100" },
+                "210202": { id: "210202", name: "中山区", parent: "210200" }, "210203": { id: "210203", name: "西岗区", parent: "210200" },
+                "210204": { id: "210204", name: "沙河口区", parent: "210200" }, "210211": { id: "210211", name: "甘井子区", parent: "210200" },
+                
+                "220102": { id: "220102", name: "南关区", parent: "220100" }, "220103": { id: "220103", name: "宽城区", parent: "220100" },
+                "230102": { id: "230102", name: "道里区", parent: "230100" }, "230103": { id: "230103", name: "南岗区", parent: "230100" },
+                "110101": { id: "110101", name: "东城区", parent: "110100" }, "110102": { id: "110102", name: "西城区", parent: "110100" },
+                "310101": { id: "310101", name: "黄浦区", parent: "310100" }, "310104": { id: "310104", name: "徐汇区", parent: "310100" },
+                "320102": { id: "320102", name: "玄武区", parent: "320100" }, "320104": { id: "320104", name: "秦淮区", parent: "320100" },
+                "320505": { id: "320505", name: "虎丘区", parent: "320500" }, "320506": { id: "320506", name: "吴中区", parent: "320500" },
+            }
+        };
+
+        // Default Config: Northeast Region
+        const DEFAULT_REGION_ID = "1";
+        
+        // --- 2. State Management ---
+        
+        // Map of selected LEAF node IDs: { "210102": true, ... }
+        let selectedLeaves = new Set();
+        
+        // UI Selection State (for columns)
+        let selectedRegionId = null; // Can be a Region ID (1) or Province ID (210000) depending on structure, here Region is purely structural group
+        let selectedProvinceId = null;
+        let selectedCityId = null;
+        
+        // --- 3. Logic Helpers ---
+
+        // Get all leaf IDs under a node (recursive)
+        function getLeaves(nodeId) {
+            const node = db.nodes[nodeId];
+            if (!node.children || node.children.length === 0) return [nodeId];
+            let leaves = [];
+            node.children.forEach(childId => leaves.push(...getLeaves(childId)));
+            return leaves;
+        }
+
+        // Get status of a node: 1 (Checked), 0 (Unchecked), -1 (Indeterminate)
+        function getNodeStatus(nodeId) {
+            const leaves = getLeaves(nodeId);
+            if (leaves.length === 0) return 0;
+            
+            let allChecked = true;
+            let allUnchecked = true;
+            
+            for (const leafId of leaves) {
+                if (selectedLeaves.has(leafId)) allUnchecked = false;
+                else allChecked = false;
+            }
+            
+            if (allChecked) return 1;
+            if (allUnchecked) return 0;
+            return -1;
+        }
+
+        // Toggle Node Logic
+        function toggleNode(nodeId) {
+            const currentStatus = getNodeStatus(nodeId);
+            const leaves = getLeaves(nodeId);
+            const shouldCheck = currentStatus !== 1; // If not fully checked, select all. If fully checked, deselect all.
+            
+            leaves.forEach(leafId => {
+                if (shouldCheck) selectedLeaves.add(leafId);
+                else selectedLeaves.delete(leafId);
+            });
+            
+            renderAll();
+        }
+
+        // Set specific status (used for Reset)
+        function setNodeStatus(nodeId, status) {
+            const leaves = getLeaves(nodeId);
+            leaves.forEach(leafId => {
+                if (status) selectedLeaves.add(leafId);
+                else selectedLeaves.delete(leafId);
+            });
+        }
+
+        // --- 4. Renderers ---
+
+        function renderCheckbox(nodeId) {
+            const status = getNodeStatus(nodeId);
+            let css = "custom-checkbox";
+            if (status === 1) css += " checked";
+            else if (status === -1) css += " indeterminate";
+            return `<div class="${css}" onclick="event.stopPropagation(); toggleNode('${nodeId}')"></div>`;
+        }
+
+        function renderAll() {
+            renderCol1();
+            if (selectedProvinceId) renderCol2(selectedProvinceId);
+            if (selectedCityId) renderCol3(selectedCityId);
+            renderPreviewTree();
+        }
+
+        // Col 1: Regions & Provinces
+        function renderCol1() {
+            const container = document.getElementById('col-1');
+            const regions = db.nodes["root"].children; // ["1", "2", "3"]
+            
+            let html = '';
+            
+            regions.forEach(rid => {
+                const region = db.nodes[rid];
+                // Region Header (Group) - Collapsible logic could be added, here expanded
+                const rStatus = getNodeStatus(rid);
+                
+                html += `
+                    <div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between group">
+                        <div class="flex items-center gap-2">
+                            ${renderCheckbox(rid)}
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">${region.name}</span>
+                        </div>
+                    </div>
+                `;
+
+                // Provinces under Region
+                region.children.forEach(pid => {
+                    const prov = db.nodes[pid];
+                    const activeClass = selectedProvinceId === pid ? 'active' : '';
+                    
+                    html += `
+                        <div class="list-item ${activeClass}" onclick="handleProvinceClick('${pid}')">
+                            <div class="flex items-center">
+                                ${renderCheckbox(pid)}
+                                <span class="text-sm ml-2">${prov.name}</span>
+                                <i class="fa-solid fa-chevron-right text-xs text-slate-300"></i>
+                            </div>
+                            
+                        </div>
+                    `;
+                });
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Col 2: Cities
+        function renderCol2(pid) {
+            const container = document.getElementById('col-2');
+            const province = db.nodes[pid];
+            
+            if (!province.children || province.children.length === 0) {
+                container.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-slate-300 text-sm">无下级城市</div>';
+                return;
+            }
+
+            const html = province.children.map(cid => {
+                const city = db.nodes[cid];
+                const activeClass = selectedCityId === cid ? 'active' : '';
+                return `
+                    <div class="list-item ${activeClass}" onclick="handleCityClick('${cid}')">
+                        <div class="flex items-center">
+                            ${renderCheckbox(cid)}
+                            <span class="text-sm ml-2">${city.name}</span>
+                            <i class="fa-solid fa-chevron-right text-xs text-slate-300"></i>
+                        </div>
+                        
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        // Col 3: Districts
+        function renderCol3(cid) {
+            const container = document.getElementById('col-3');
+            const city = db.nodes[cid];
+            
+            if (!city.children || city.children.length === 0) {
+                container.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-slate-300 text-sm">无下级区县</div>';
+                return;
+            }
+
+            const html = city.children.map(did => {
+                const district = db.nodes[did];
+                return `
+                    <div class="list-item" onclick="toggleNode('${did}')">
+                        <div class="flex items-center">
+                            ${renderCheckbox(did)}
+                            <span class="text-sm ml-2">${district.name}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        // Preview Tree Renderer
+        function renderPreviewTree() {
+            const container = document.getElementById('summary-tree');
+            let totalCount = 0;
+            
+            // Build a tree of selected items only
+            // Logic: Iterate Regions -> Provinces -> Cities -> Districts
+            // If full parent selected, show parent only? User wants "Tree Structure".
+            // Let's show the full hierarchy of selected items, collapsing full selections.
+            
+            let html = '';
+            
+            db.nodes["root"].children.forEach(rid => {
+                const rStatus = getNodeStatus(rid);
+                if (rStatus === 0) return; // Skip unchecked regions
+                
+                // Region is root of display
+                let regionHtml = '';
+                let hasProvince = false;
+                
+                db.nodes[rid].children.forEach(pid => {
+                    const pStatus = getNodeStatus(pid);
+                    if (pStatus === 0) return;
+                    hasProvince = true;
+                    
+                    // Province Level
+                    let provHtml = '';
+                    let hasCity = false;
+                    
+                    if (pStatus === 1) {
+                        // Full Province Selected
+                         provHtml += `
+                            <div class="pl-4 py-1.5 flex items-center gap-2 text-sm text-slate-700">
+                                <i class="fa-solid fa-map text-cqc-blue text-xs w-4"></i>
+                                <span>${db.nodes[pid].name} <span class="text-xs text-slate-400 bg-slate-100 px-1 rounded ml-1">全省</span></span>
+                            </div>
+                        `;
+                        totalCount++;
+                    } else {
+                        // Partial Province
+                        provHtml += `
+                            <div class="pl-4 py-1.5 flex items-center gap-2 text-sm text-slate-700 font-bold">
+                                <i class="fa-solid fa-angle-down text-slate-300 text-xs w-4"></i>
+                                <span>${db.nodes[pid].name}</span>
+                            </div>
+                        `;
+                        
+                        db.nodes[pid].children.forEach(cid => {
+                            const cStatus = getNodeStatus(cid);
+                            if (cStatus === 0) return;
+                            hasCity = true;
+                            
+                            if (cStatus === 1) {
+                                // Full City Selected
+                                provHtml += `
+                                    <div class="pl-10 py-1 flex items-center gap-2 text-xs text-slate-600">
+                                        <i class="fa-solid fa-city text-indigo-400 text-[10px] w-4"></i>
+                                        <span>${db.nodes[cid].name} <span class="text-[10px] text-slate-400 bg-slate-100 px-1 rounded ml-1">全市</span></span>
+                                    </div>
+                                `;
+                                totalCount++;
+                            } else {
+                                // Partial City
+                                provHtml += `
+                                    <div class="pl-10 py-1 flex items-center gap-2 text-xs text-slate-600 font-medium">
+                                        <i class="fa-solid fa-angle-right text-slate-300 text-[10px] w-4"></i>
+                                        <span>${db.nodes[cid].name}</span>
+                                    </div>
+                                `;
+                                
+                                db.nodes[cid].children.forEach(did => {
+                                    if (selectedLeaves.has(did)) {
+                                        provHtml += `
+                                            <div class="pl-16 py-0.5 flex items-center gap-2 text-xs text-slate-500">
+                                                <span class="w-1 h-1 rounded-full bg-slate-300 ml-1.5 mr-2.5"></span>
+                                                <span>${db.nodes[did].name}</span>
+                                            </div>
+                                        `;
+                                        totalCount++;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    regionHtml += provHtml;
+                });
+                
+                if (hasProvince) {
+                    html += `
+                        <div class="mb-3">
+                            <div class="flex items-center gap-2 py-1.5 border-b border-slate-50 text-sm font-bold text-slate-800">
+                                <i class="fa-solid fa-layer-group text-slate-400 text-xs"></i>
+                                ${db.nodes[rid].name}
+                            </div>
+                            <div class="mt-1">${regionHtml}</div>
+                        </div>
+                    `;
+                }
+            });
+            
+            if (html === '') html = '<div class="flex flex-col items-center justify-center h-40 text-slate-300 text-xs"><i class="fa-regular fa-folder-open text-2xl mb-2"></i>暂无选定区域</div>';
+            
+            container.innerHTML = html;
+            document.getElementById('count-badge').innerText = `${totalCount} 个节点`;
+        }
+
+        // --- 5. Event Handlers ---
+
+        function handleProvinceClick(pid) {
+            selectedProvinceId = pid;
+            selectedCityId = null;
+            renderAll();
+        }
+
+        function handleCityClick(cid) {
+            selectedCityId = cid;
+            renderCol3(cid);
+            
+            // Update active states manually to avoid full re-render flickering
+            document.querySelectorAll('#col-2 .list-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        function resetToDefault() {
+            selectedLeaves.clear();
+            setNodeStatus(DEFAULT_REGION_ID, true); // Select All Northeast
+            
+            // Reset UI View to Default
+            selectedProvinceId = null;
+            selectedCityId = null;
+            renderAll();
+            
+            // Optional: Expand first default province for better UX
+            handleProvinceClick(db.nodes[DEFAULT_REGION_ID].children[0]);
+        }
+
+        function saveConfig() {
+            const btn = document.querySelector('button i.fa-save').parentNode;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 保存中...';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> 保存成功';
+                btn.classList.replace('bg-cqc-blue', 'bg-green-600');
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.replace('bg-green-600', 'bg-cqc-blue');
+                }, 2000);
+            }, 800);
+        }
+
+        // --- Init ---
+        resetToDefault();
+
+    </script>
+</body>
+</html>
