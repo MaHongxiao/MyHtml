@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>认证机构详情 - 认监委</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        // Tailwind 自定义配置（匹配腾讯云设计风格）
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // 腾讯云主色调：科技深蓝 + 辅助色
+                        primary: '#0052D9', 
+                        primaryLight: '#E8F3FF',
+                        primaryHover: '#0047B8',
+                        secondary: '#F7FAFC', // 浅灰背景
+                        border: '#E1E5EB',    // 轻量边框
+                        textMain: '#172B4D',  // 主文本（深灰蓝）
+                        textSecondary: '#5E6C84', // 次要文本
+                        textTertiary: '#8993A4',  // 三级文本
+                        cardBg: '#FFFFFF',    // 卡片背景
+                        tableHover: '#F5F8FF', // 表格行hover
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Microsoft YaHei', 'sans-serif'], // 腾讯云常用字体
+                    },
+                    borderRadius: {
+                        'cloud': '8px', // 腾讯云风格大圆角
+                        'cloud-sm': '4px',
+                    },
+                    boxShadow: {
+                        'cloud-card': '0 2px 8px 0 rgba(0, 0, 0, 0.08)', // 卡片轻阴影
+                        'cloud-modal': '0 4px 20px 0 rgba(0, 0, 0, 0.12)', // 弹窗阴影
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            /* 腾讯云风格表格样式 */
+            .table-cloud {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            .table-cloud td, .table-cloud th {
+                border: 1px solid theme('colors.border');
+                padding: 12px 16px;
+                text-align: left;
+            }
+            .table-cloud th {
+                background-color: theme('colors.secondary');
+                font-weight: 600;
+                color: theme('colors.textMain');
+                border-bottom: 2px solid theme('colors.primaryLight');
+            }
+            .table-cloud tr:hover {
+                background-color: theme('colors.tableHover');
+                transition: background-color 0.2s ease;
+            }
+            /* 腾讯云风格弹窗遮罩 */
+            .modal-cloud-mask {
+                background-color: rgba(0, 0, 0, 0.4);
+                backdrop-filter: blur(1px);
+            }
+            /* 腾讯云风格Tab激活态 */
+            .tab-cloud-active {
+                border-bottom: 2px solid theme('colors.primary');
+                color: theme('colors.primary');
+                font-weight: 600;
+                position: relative;
+            }
+            /* 按钮通用样式优化 */
+            .btn-cloud {
+                transition: all 0.2s ease;
+                border-radius: theme('borderRadius.cloud-sm');
+            }
+            .btn-cloud-primary {
+                background-color: theme('colors.primary');
+                color: white;
+                border: none;
+            }
+            .btn-cloud-primary:hover {
+                background-color: theme('colors.primaryHover');
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(0, 82, 217, 0.2);
+            }
+            .btn-cloud-primary:active {
+                transform: translateY(0);
+                box-shadow: 0 1px 2px rgba(0, 82, 217, 0.2);
+            }
+            .btn-cloud-default {
+                background-color: white;
+                color: theme('colors.textMain');
+                border: 1px solid theme('colors.border');
+            }
+            .btn-cloud-default:hover {
+                background-color: theme('colors.secondary');
+                border-color: theme('colors.primaryLight');
+            }
+            /* 下拉框样式优化 */
+            .select-cloud {
+                border: 1px solid theme('colors.border');
+                border-radius: theme('borderRadius.cloud-sm');
+                padding: 8px 12px;
+                transition: border-color 0.2s ease;
+            }
+            .select-cloud:focus {
+                outline: none;
+                border-color: theme('colors.primary');
+                box-shadow: 0 0 0 2px rgba(0, 82, 217, 0.1);
+            }
+        }
+    </style>
+</head>
+<body class="bg-secondary font-sans text-textMain min-h-screen">
+    <div class="max-w-7xl mx-auto p-4 md:p-8">
+        <!-- 页面标题 - 腾讯云风格头部 -->
+        <div class="mb-8">
+            <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-textMain">示例认证机构</h1>
+            <p class="text-textSecondary mt-2">查看认证机构的完整信息、年度报告及认证规则</p>
+        </div>
+
+        <!-- 1. 机构基本信息模块 - 腾讯云风格卡片 -->
+        <div class="bg-cardBg rounded-cloud shadow-cloud-card mb-6 overflow-hidden">
+            <div class="bg-primary text-white py-4 px-6 font-medium text-lg">机构基本信息</div>
+            <div class="p-6">
+                <table class="table-cloud">
+                    <tbody>
+                        <tr>
+                            <td class="w-1/4 bg-secondary font-medium text-textMain">机构批准号</td>
+                            <td>CNCA-R-2020-1234</td>
+                            <td class="w-1/4 bg-secondary font-medium text-textMain">颁发日期</td>
+                            <td>2020-01-01</td>
+                        </tr>
+                        <tr>
+                            <td class="bg-secondary font-medium text-textMain">机构名称</td>
+                            <td>示例认证有限公司</td>
+                            <td class="bg-secondary font-medium text-textMain">有效期至</td>
+                            <td>2025-12-31</td>
+                        </tr>
+                        <tr>
+                            <td class="bg-secondary font-medium text-textMain">机构状态</td>
+                            <td><span class="bg-green-100 text-green-800 px-2 py-1 rounded-cloud-sm text-sm">有效</span></td>
+                            <td class="bg-secondary font-medium text-textMain">统一社会信用代码</td>
+                            <td>91110108XXXXXXXXXX</td>
+                        </tr>
+                        <tr>
+                            <td class="bg-secondary font-medium text-textMain">法定代表人</td>
+                            <td>张三</td>
+                            <td class="bg-secondary font-medium text-textMain">批准书签发日期</td>
+                            <td>2020-01-01</td>
+                        </tr>
+                        <tr>
+                            <td class="bg-secondary font-medium text-textMain">法人类型</td>
+                            <td>企业法人</td>
+                            <td class="bg-secondary font-medium text-textMain">注册资本</td>
+                            <td>1000.00</td>
+                        </tr>
+                        <tr>
+                            <td class="bg-secondary font-medium text-textMain">注册资本币种</td>
+                            <td>人民币</td>
+                            <td class="bg-secondary font-medium text-textMain">认证类别及认证领域</td>
+                            <td>
+                                <ul class="list-disc list-inside text-textSecondary space-y-1">
+                                    <li>管理体系认证：质量管理体系认证（ISO9001）</li>
+                                    <li>管理体系认证：环境管理体系认证（ISO14001）</li>
+                                    <li>服务认证：物业服务认证</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="bg-secondary font-medium text-textMain">认可号</td>
+                            <td>CNAS C001-Q</td>
+                            <td class="bg-secondary font-medium text-textMain">认可业务范围</td>
+                            <td>质量管理体系认证</td>
+                        </tr>
+                        <tr>
+                            <td class="bg-secondary font-medium text-textMain">CNAS号</td>
+                            <td>CNAS C001</td>
+                            <td class="bg-secondary font-medium text-textMain">认可业务范围网址</td>
+                            <td><a href="https://www.cnas.org.cn" class="text-primary hover:underline">https://www.cnas.org.cn</a></td>
+                        </tr>
+                        <tr>
+                            <td class="bg-secondary font-medium text-textMain">CCC指定机构(编号)</td>
+                            <td>CCCP-R-2020-001</td>
+                            <td class="bg-secondary font-medium text-textMain">CCC指定业务范围</td>
+                            <td>家用电器类</td>
+                        </tr>
+                        <tr>
+                            <td class="bg-secondary font-medium text-textMain">网址</td>
+                            <td><a href="https://www.example.com" class="text-primary hover:underline">https://www.example.com</a></td>
+                            <td class="bg-secondary font-medium text-textMain">联系人</td>
+                            <td>李四</td>
+                        </tr>
+                        <tr>
+                            <td class="bg-secondary font-medium text-textMain">邮编</td>
+                            <td>100080</td>
+                            <td class="bg-secondary font-medium text-textMain">行政区划</td>
+                            <td>北京市海淀区</td>
+                        </tr>
+                        <tr>
+                            <td class="bg-secondary font-medium text-textMain">机构地址</td>
+                            <td>北京市海淀区XX路XX号XX大厦XX层</td>
+                            <td class="bg-secondary font-medium text-textMain">备注</td>
+                            <td class="text-textTertiary">无</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. 年度报告模块 - 腾讯云风格卡片 -->
+        <div class="bg-cardBg rounded-cloud shadow-cloud-card mb-6 overflow-hidden">
+            <div class="bg-primary text-white py-4 px-6 font-medium text-lg">年度报告</div>
+            <div class="p-6">
+                <!-- 筛选栏 - 腾讯云风格表单 -->
+                <div class="mb-6 flex flex-wrap items-center gap-4">
+                    <label class="font-medium text-textMain">年份：</label>
+                    <select class="select-cloud min-w-[120px]">
+                        <option value="all">全部</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                        <option value="2022">2022</option>
+                        <option value="2021">2021</option>
+                        <option value="2020">2020</option>
+                    </select>
+                    <button class="btn-cloud btn-cloud-primary px-5 py-2">查询</button>
+                </div>
+                <!-- 年度报告列表 -->
+                <table class="table-cloud">
+                    <thead>
+                        <tr>
+                            <th>年度</th>
+                            <th>机构名称</th>
+                            <th>机构批准号</th>
+                            <th>年度报告</th>
+                            <th>社会责任报告</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2024</td>
+                            <td>示例认证有限公司</td>
+                            <td>CNCA-R-2020-1234</td>
+                            <td><a href="javascript:;" class="text-primary hover:underline annual-report-btn flex items-center gap-1" data-year="2024">
+                                <i class="fa fa-file-text-o"></i> 查看
+                            </a></td>
+                            <td class="text-textTertiary">无</td>
+                        </tr>
+                        <tr>
+                            <td>2023</td>
+                            <td>示例认证有限公司</td>
+                            <td>CNCA-R-2020-1234</td>
+                            <td><a href="javascript:;" class="text-primary hover:underline annual-report-btn flex items-center gap-1" data-year="2023">
+                                <i class="fa fa-file-text-o"></i> 查看
+                            </a></td>
+                            <td class="text-textTertiary">无</td>
+                        </tr>
+                        <tr>
+                            <td>2022</td>
+                            <td>示例认证有限公司</td>
+                            <td>CNCA-R-2020-1234</td>
+                            <td><a href="javascript:;" class="text-primary hover:underline annual-report-btn flex items-center gap-1" data-year="2022">
+                                <i class="fa fa-file-text-o"></i> 查看
+                            </a></td>
+                            <td class="text-textTertiary">无</td>
+                        </tr>
+                        <tr>
+                            <td>2021</td>
+                            <td>示例认证有限公司</td>
+                            <td>CNCA-R-2020-1234</td>
+                            <td><a href="javascript:;" class="text-primary hover:underline annual-report-btn flex items-center gap-1" data-year="2021">
+                                <i class="fa fa-file-text-o"></i> 查看
+                            </a></td>
+                            <td class="text-textTertiary">无</td>
+                        </tr>
+                        <tr>
+                            <td>2020</td>
+                            <td>示例认证有限公司</td>
+                            <td>CNCA-R-2020-1234</td>
+                            <td><a href="javascript:;" class="text-primary hover:underline annual-report-btn flex items-center gap-1" data-year="2020">
+                                <i class="fa fa-file-text-o"></i> 查看
+                            </a></td>
+                            <td class="text-textTertiary">无</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. 认证规则模块 - 腾讯云风格卡片 -->
+        <div class="bg-cardBg rounded-cloud shadow-cloud-card overflow-hidden">
+            <div class="bg-primary text-white py-4 px-6 font-medium text-lg">认证规则</div>
+            <div class="p-6">
+                <!-- 筛选栏 -->
+                <div class="mb-6 flex flex-wrap items-center gap-4">
+                    <label class="font-medium text-textMain">认证类别：</label>
+                    <select class="select-cloud min-w-[180px]">
+                        <option value="all">全部</option>
+                        <option value="management">管理体系认证</option>
+                        <option value="service">服务认证</option>
+                    </select>
+                    <label class="font-medium text-textMain">认证领域：</label>
+                    <select class="select-cloud min-w-[220px]">
+                        <option value="all">全部</option>
+                        <option value="iso9001">质量管理体系认证（ISO9001）</option>
+                        <option value="iso14001">环境管理体系认证（ISO14001）</option>
+                        <option value="property">物业服务认证</option>
+                    </select>
+                    <button class="btn-cloud btn-cloud-primary px-5 py-2">查询</button>
+                    <button class="btn-cloud btn-cloud-default px-5 py-2">重置</button>
+                </div>
+                <!-- 认证规则列表 -->
+                <table class="table-cloud">
+                    <thead>
+                        <tr>
+                            <th>认证机构</th>
+                            <th>认证类别</th>
+                            <th>认证领域</th>
+                            <th>认证规则编号</th>
+                            <th>认证规则名称</th>
+                            <th>发布/更新时间</th>
+                            <th>上报时间</th>
+                            <th>认证标志</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>示例认证有限公司</td>
+                            <td>管理体系认证</td>
+                            <td>质量管理体系认证（ISO9001）</td>
+                            <td>CNCA-RULE-2020-001</td>
+                            <td>质量管理体系认证规则</td>
+                            <td>2020-01-01</td>
+                            <td>2020-01-02</td>
+                            <td><img src="https://via.placeholder.com/50x30" alt="认证标志" class="inline-block rounded-cloud-sm"></td>
+                            <td><button class="btn-cloud btn-cloud-primary px-4 py-1 rule-detail-btn">
+                                <i class="fa fa-eye mr-1"></i> 查看详情
+                            </button></td>
+                        </tr>
+                        <tr>
+                            <td>示例认证有限公司</td>
+                            <td>管理体系认证</td>
+                            <td>环境管理体系认证（ISO14001）</td>
+                            <td>CNCA-RULE-2020-002</td>
+                            <td>环境管理体系认证规则</td>
+                            <td>2020-01-01</td>
+                            <td>2020-01-02</td>
+                            <td><img src="https://via.placeholder.com/50x30" alt="认证标志" class="inline-block rounded-cloud-sm"></td>
+                            <td><button class="btn-cloud btn-cloud-primary px-4 py-1 rule-detail-btn">
+                                <i class="fa fa-eye mr-1"></i> 查看详情
+                            </button></td>
+                        </tr>
+                        <tr>
+                            <td>示例认证有限公司</td>
+                            <td>服务认证</td>
+                            <td>物业服务认证</td>
+                            <td>CNCA-RULE-2020-003</td>
+                            <td>物业服务认证规则</td>
+                            <td>2020-01-01</td>
+                            <td>2020-01-02</td>
+                            <td><img src="https://via.placeholder.com/50x30" alt="认证标志" class="inline-block rounded-cloud-sm"></td>
+                            <td><button class="btn-cloud btn-cloud-primary px-4 py-1 rule-detail-btn">
+                                <i class="fa fa-eye mr-1"></i> 查看详情
+                            </button></td>
+                        </tr>
+                        <tr>
+                            <td>示例认证有限公司</td>
+                            <td>管理体系认证</td>
+                            <td>质量管理体系认证（ISO9001）</td>
+                            <td>CNCA-RULE-2021-001</td>
+                            <td>质量管理体系认证规则（2021修订版）</td>
+                            <td>2021-01-01</td>
+                            <td>2021-01-02</td>
+                            <td><img src="https://via.placeholder.com/50x30" alt="认证标志" class="inline-block rounded-cloud-sm"></td>
+                            <td><button class="btn-cloud btn-cloud-primary px-4 py-1 rule-detail-btn">
+                                <i class="fa fa-eye mr-1"></i> 查看详情
+                            </button></td>
+                        </tr>
+                        <tr>
+                            <td>示例认证有限公司</td>
+                            <td>管理体系认证</td>
+                            <td>环境管理体系认证（ISO14001）</td>
+                            <td>CNCA-RULE-2021-002</td>
+                            <td>环境管理体系认证规则（2021修订版）</td>
+                            <td>2021-01-01</td>
+                            <td>2021-01-02</td>
+                            <td><img src="https://via.placeholder.com/50x30" alt="认证标志" class="inline-block rounded-cloud-sm"></td>
+                            <td><button class="btn-cloud btn-cloud-primary px-4 py-1 rule-detail-btn">
+                                <i class="fa fa-eye mr-1"></i> 查看详情
+                            </button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 认证规则详情弹窗 - 腾讯云风格 -->
+    <div id="ruleDetailModal" class="fixed inset-0 flex items-center justify-center modal-cloud-mask hidden z-50">
+        <div class="bg-cardBg rounded-cloud shadow-cloud-modal w-full max-w-4xl max-h-[80vh] overflow-auto transform transition-all duration-300 scale-100">
+            <div class="flex justify-between items-center bg-primary text-white py-4 px-6 font-medium text-lg">
+                <div>认证规则依据标准详情</div>
+                <button id="closeRuleModal" class="text-white hover:text-primaryLight transition-colors p-2">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <table class="table-cloud">
+                    <thead>
+                        <tr>
+                            <th>依据标准分类</th>
+                            <th>依据标准</th>
+                            <th>依据标准名称</th>
+                            <th>依据标准编号</th>
+                            <th>依据标准发布单位</th>
+                            <th>依据标准发布/更新时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>国家标准</td>
+                            <td>GB/T 19001</td>
+                            <td>质量管理体系 要求</td>
+                            <td>GB/T 19001-2016</td>
+                            <td>国家市场监督管理总局、国家标准化管理委员会</td>
+                            <td>2016-12-30</td>
+                        </tr>
+                        <tr>
+                            <td>国家标准</td>
+                            <td>GB/T 19000</td>
+                            <td>质量管理体系 基础和术语</td>
+                            <td>GB/T 19000-2016</td>
+                            <td>国家市场监督管理总局、国家标准化管理委员会</td>
+                            <td>2016-12-30</td>
+                        </tr>
+                        <tr>
+                            <td>国家标准</td>
+                            <td>GB/T 24001</td>
+                            <td>环境管理体系 要求及使用指南</td>
+                            <td>GB/T 24001-2016</td>
+                            <td>国家市场监督管理总局、国家标准化管理委员会</td>
+                            <td>2016-12-30</td>
+                        </tr>
+                        <tr>
+                            <td>行业标准</td>
+                            <td>SB/T 10947</td>
+                            <td>物业服务认证规范</td>
+                            <td>SB/T 10947-2012</td>
+                            <td>商务部</td>
+                            <td>2012-12-20</td>
+                        </tr>
+                        <tr>
+                            <td>国际标准</td>
+                            <td>ISO 9001</td>
+                            <td>Quality management systems - Requirements</td>
+                            <td>ISO 9001:2015</td>
+                            <td>国际标准化组织</td>
+                            <td>2015-09-15</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 年度报告详情弹窗 - 腾讯云风格 -->
+    <div id="annualReportModal" class="fixed inset-0 flex items-center justify-center modal-cloud-mask hidden z-50">
+        <div class="bg-cardBg rounded-cloud shadow-cloud-modal w-full max-w-5xl max-h-[85vh] overflow-auto transform transition-all duration-300 scale-100">
+            <div class="flex justify-between items-center bg-primary text-white py-4 px-6 font-medium text-lg">
+                <div id="annualReportTitle">2024年度报告详情</div>
+                <button id="closeAnnualModal" class="text-white hover:text-primaryLight transition-colors p-2">
+                    <i class="fa fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <!-- Tab 栏 - 腾讯云风格 -->
+                <div class="flex border-b border-border mb-6">
+                    <div class="tab-cloud-active px-6 py-3 cursor-pointer" data-tab="basic">基本信息</div>
+                    <div class="px-6 py-3 cursor-pointer text-textSecondary hover:text-primary transition-colors" data-tab="business">认证机构业务情况</div>
+                    <div class="px-6 py-3 cursor-pointer text-textSecondary hover:text-primary transition-colors" data-tab="personnel">认证机构人员及分支机构状况</div>
+                </div>
+                <!-- Tab 内容区 -->
+                <div class="tab-content">
+                    <!-- 基本信息 Tab -->
+                    <div id="basicTab" class="tab-panel block">
+                        <div class="mb-6">
+                            <div class="font-medium text-lg mb-3 text-textMain">机构基本情况</div>
+                            <table class="table-cloud">
+                                <tbody>
+                                    <tr>
+                                        <td class="w-1/4 bg-secondary font-medium text-textMain">机构名称</td>
+                                        <td>示例认证有限公司</td>
+                                        <td class="w-1/4 bg-secondary font-medium text-textMain">机构批准号</td>
+                                        <td>CNCA-R-2020-1234</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-secondary font-medium text-textMain">法定代表人</td>
+                                        <td>张三</td>
+                                        <td class="bg-secondary font-medium text-textMain">统一社会信用代码</td>
+                                        <td>91110108XXXXXXXXXX</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-secondary font-medium text-textMain">注册资本</td>
+                                        <td>1000.00 万元</td>
+                                        <td class="bg-secondary font-medium text-textMain">机构地址</td>
+                                        <td>北京市海淀区XX路XX号XX大厦XX层</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-secondary font-medium text-textMain">联系电话</td>
+                                        <td>010-XXXXXXXX</td>
+                                        <td class="bg-secondary font-medium text-textMain">电子邮箱</td>
+                                        <td>contact@example.com</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bg-secondary font-medium text-textMain">网址</td>
+                                        <td><a href="https://www.example.com" class="text-primary hover:underline">https://www.example.com</a></td>
+                                        <td class="bg-secondary font-medium text-textMain">机构类型</td>
+                                        <td>企业法人</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <div class="font-medium text-lg mb-3 text-textMain">获境外认可机构认可的情况</div>
+                            <table class="table-cloud">
+                                <thead>
+                                    <tr>
+                                        <th>认可机构名称</th>
+                                        <th>认可号</th>
+                                        <th>认可业务范围</th>
+                                        <th>认可有效期至</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>国际认可论坛（IAF）</td>
+                                        <td>IAF/MLA/001</td>
+                                        <td>管理体系认证</td>
+                                        <td>2025-12-31</td>
+                                    </tr>
+                                    <tr>
+                                        <td>太平洋认可合作组织（PAC）</td>
+                                        <td>PAC/MLA/001</td>
+                                        <td>管理体系认证</td>
+                                        <td>2025-12-30</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- 认证机构业务情况 Tab -->
+                    <div id="businessTab" class="tab-panel hidden">
+                        <div class="font-medium text-lg mb-3 text-textMain">认证机构业务统计表</div>
+                        <table class="table-cloud">
+                            <thead>
+                                <tr>
+                                    <th>认证类别</th>
+                                    <th>认证领域</th>
+                                    <th>本年度颁发证书数</th>
+                                    <th>本年度撤销证书数</th>
+                                    <th>本年度暂停证书数</th>
+                                    <th>本年度有效证书数</th>
+                                    <th>期末有效证书总数</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>管理体系认证</td>
+                                    <td>质量管理体系认证（ISO9001）</td>
+                                    <td>500</td>
+                                    <td>20</td>
+                                    <td>10</td>
+                                    <td>470</td>
+                                    <td>2000</td>
+                                </tr>
+                                <tr>
+                                    <td>管理体系认证</td>
+                                    <td>环境管理体系认证（ISO14001）</td>
+                                    <td>300</td>
+                                    <td>10</td>
+                                    <td>5</td>
+                                    <td>285</td>
+                                    <td>1200</td>
+                                </tr>
+                                <tr>
+                                    <td>服务认证</td>
+                                    <td>物业服务认证</td>
+                                    <td>100</td>
+                                    <td>5</td>
+                                    <td>2</td>
+                                    <td>93</td>
+                                    <td>400</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- 认证机构人员及分支机构状况 Tab -->
+                    <div id="personnelTab" class="tab-panel hidden">
+                        <div class="mb-6">
+                            <div class="font-medium text-lg mb-3 text-textMain">认证机构人员统计表</div>
+                            <table class="table-cloud">
+                                <thead>
+                                    <tr>
+                                        <th>人员类别</th>
+                                        <th>人数</th>
+                                        <th>其中：专职人员数</th>
+                                        <th>其中：兼职人员数</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>管理人员</td>
+                                        <td>20</td>
+                                        <td>20</td>
+                                        <td>0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>认证审核人员</td>
+                                        <td>100</td>
+                                        <td>80</td>
+                                        <td>20</td>
+                                    </tr>
+                                    <tr>
+                                        <td>技术专家</td>
+                                        <td>30</td>
+                                        <td>10</td>
+                                        <td>20</td>
+                                    </tr>
+                                    <tr>
+                                        <td>其他人员</td>
+                                        <td>50</td>
+                                        <td>50</td>
+                                        <td>0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mb-6">
+                            <div class="font-medium text-lg mb-3 text-textMain">认证人员明细</div>
+                            <table class="table-cloud">
+                                <thead>
+                                    <tr>
+                                        <th>姓名</th>
+                                        <th>性别</th>
+                                        <th>职称</th>
+                                        <th>认证领域</th>
+                                        <th>资格证书编号</th>
+                                        <th>从业年限</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>王五</td>
+                                        <td>男</td>
+                                        <td>高级审核员</td>
+                                        <td>质量管理体系认证（ISO9001）</td>
+                                        <td>CCAA-123456</td>
+                                        <td>10年</td>
+                                    </tr>
+                                    <tr>
+                                        <td>赵六</td>
+                                        <td>女</td>
+                                        <td>审核员</td>
+                                        <td>环境管理体系认证（ISO14001）</td>
+                                        <td>CCAA-654321</td>
+                                        <td>5年</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <div class="font-medium text-lg mb-3 text-textMain">分支机构信息</div>
+                            <table class="table-cloud">
+                                <thead>
+                                    <tr>
+                                        <th>分支机构名称</th>
+                                        <th>分支机构地址</th>
+                                        <th>负责人</th>
+                                        <th>联系电话</th>
+                                        <th>成立时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>示例认证有限公司上海分公司</td>
+                                        <td>上海市浦东新区XX路XX号</td>
+                                        <td>孙七</td>
+                                        <td>021-XXXXXXXX</td>
+                                        <td>2021-01-01</td>
+                                    </tr>
+                                    <tr>
+                                        <td>示例认证有限公司广州分公司</td>
+                                        <td>广州市天河区XX路XX号</td>
+                                        <td>周八</td>
+                                        <td>020-XXXXXXXX</td>
+                                        <td>2022-01-01</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 认证规则详情弹窗交互
+        const ruleDetailModal = document.getElementById('ruleDetailModal');
+        const ruleDetailBtns = document.querySelectorAll('.rule-detail-btn');
+        const closeRuleModal = document.getElementById('closeRuleModal');
+
+        ruleDetailBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                ruleDetailModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // 禁止背景滚动
+            });
+        });
+
+        closeRuleModal.addEventListener('click', () => {
+            ruleDetailModal.classList.add('hidden');
+            document.body.style.overflow = 'auto'; // 恢复背景滚动
+        });
+
+        // 点击弹窗遮罩层关闭
+        ruleDetailModal.addEventListener('click', (e) => {
+            if (e.target === ruleDetailModal) {
+                ruleDetailModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // 年度报告详情弹窗交互
+        const annualReportModal = document.getElementById('annualReportModal');
+        const annualReportBtns = document.querySelectorAll('.annual-report-btn');
+        const closeAnnualModal = document.getElementById('closeAnnualModal');
+        const annualReportTitle = document.getElementById('annualReportTitle');
+        const tabItems = document.querySelectorAll('[data-tab]');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        annualReportBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const year = btn.getAttribute('data-year');
+                annualReportTitle.textContent = `${year}年度报告详情`;
+                annualReportModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                
+                // 重置Tab为第一个
+                tabItems.forEach(item => {
+                    item.classList.remove('tab-cloud-active');
+                    item.classList.add('text-textSecondary');
+                    item.classList.remove('text-primary');
+                });
+                tabPanels.forEach(panel => panel.classList.add('hidden'));
+                
+                tabItems[0].classList.add('tab-cloud-active');
+                tabItems[0].classList.remove('text-textSecondary');
+                document.getElementById('basicTab').classList.remove('hidden');
+            });
+        });
+
+        closeAnnualModal.addEventListener('click', () => {
+            annualReportModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+
+        // 点击弹窗遮罩层关闭
+        annualReportModal.addEventListener('click', (e) => {
+            if (e.target === annualReportModal) {
+                annualReportModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Tab切换逻辑（腾讯云风格）
+        tabItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // 移除所有Tab激活状态
+                tabItems.forEach(i => {
+                    i.classList.remove('tab-cloud-active');
+                    i.classList.add('text-textSecondary');
+                    i.classList.remove('text-primary');
+                });
+                
+                // 给当前Tab添加激活状态
+                item.classList.add('tab-cloud-active');
+                item.classList.remove('text-textSecondary');
+                
+                // 隐藏所有Tab内容
+                tabPanels.forEach(panel => panel.classList.add('hidden'));
+                
+                // 显示对应Tab内容
+                const tabId = item.getAttribute('data-tab') + 'Tab';
+                document.getElementById(tabId).classList.remove('hidden');
+            });
+        });
+
+        // 按ESC键关闭所有弹窗
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                ruleDetailModal.classList.add('hidden');
+                annualReportModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+    </script>
+</body>
+</html>
