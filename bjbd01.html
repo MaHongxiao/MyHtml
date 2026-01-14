@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建报价单 - 计量业务全功能版</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #f1f5f9; }
+        .main-container { width: 1848px; margin: 0 auto; padding: 20px; }
+        
+        /* 表单控件微调 */
+        .form-input {
+            transition: all 0.2s;
+            border: 1px solid #cbd5e1;
+        }
+        .form-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            outline: none;
+        }
+        
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* 动画 */
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+        .fade-enter, .fade-leave-to { opacity: 0; }
+    </style>
+</head>
+
+<body x-data="quoteApp()" class="text-slate-600 min-w-[1848px]">
+
+    <header class="bg-white border-b border-slate-200 h-16 sticky top-0 z-40 shadow-sm px-6">
+        <div class="main-container py-0 h-full flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button @click="goBack()" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-500 transition">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        新建报价单 
+                        <span class="px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-600 border border-blue-100">草稿</span>
+                    </h1>
+                    <div class="text-xs text-slate-400 font-mono mt-0.5">单号：QT20260112-TMP001</div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <span class="text-xs text-slate-400 mr-2" x-text="'上次自动保存: ' + lastSavedTime"></span>
+                <button @click="saveDraft()" class="px-4 py-2 text-sm border border-slate-300 rounded hover:bg-slate-50 text-slate-600 font-medium transition">
+                    <i class="fa-regular fa-floppy-disk mr-1"></i> 保存草稿
+                </button>
+                <button @click="openModal('export')" class="px-4 py-2 text-sm border border-slate-300 rounded hover:bg-slate-50 text-slate-600 font-medium transition">
+                    <i class="fa-solid fa-file-export mr-1"></i> 导出预览
+                </button>
+                <button @click="validateAndSubmit()" class="px-6 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 shadow-lg shadow-blue-500/30 font-medium transition flex items-center">
+                    <i class="fa-solid fa-paper-plane mr-2"></i> 提交审批
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container flex gap-6 items-start mt-6">
+        
+        <div class="flex-1 space-y-6">
+            
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h2 class="text-sm font-bold text-slate-800 mb-5 border-l-4 border-blue-600 pl-3 flex justify-between">
+                    基本信息
+                    <span class="text-xs font-normal text-slate-400 cursor-pointer hover:text-blue-600"><i class="fa-solid fa-arrows-rotate mr-1"></i>同步CRM数据</span>
+                </h2>
+                <div class="grid grid-cols-4 gap-6">
+                    <div class="relative col-span-1" @click.outside="showCustomerDropdown = false">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">客户名称 <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input type="text" x-model="formData.customerName" @focus="showCustomerDropdown = true" 
+                                   class="form-input w-full rounded pl-3 pr-8 py-2 text-sm font-medium text-slate-700" placeholder="输入关键字检索...">
+                            <i class="fa-solid fa-magnifying-glass absolute right-3 top-2.5 text-slate-400 text-xs"></i>
+                        </div>
+                        <div x-show="showCustomerDropdown" x-transition class="absolute z-10 w-full bg-white border border-slate-200 rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto">
+                            <template x-for="cust in customerList" :key="cust.id">
+                                <div @click="selectCustomer(cust)" class="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm text-slate-600 border-b border-slate-50 last:border-0">
+                                    <div class="font-bold" x-text="cust.name"></div>
+                                    <div class="text-xs text-slate-400" x-text="'信用代码: ' + cust.code"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">联系人 <span class="text-red-500">*</span></label>
+                        <select x-model="formData.contact" class="form-input w-full rounded px-3 py-2 text-sm bg-white">
+                            <option value="">请选择联系人</option>
+                            <template x-for="c in contactList" :key="c">
+                                <option :value="c" x-text="c"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">报价日期</label>
+                        <input type="date" x-model="formData.date" class="form-input w-full rounded px-3 py-2 text-sm text-slate-600 bg-slate-50">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">有效期至</label>
+                        <input type="date" x-model="formData.validDate" class="form-input w-full rounded px-3 py-2 text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">受理来源</label>
+                        <select x-model="formData.source" class="form-input w-full rounded px-3 py-2 text-sm bg-white">
+                            <option>营销人员</option>
+                            <option>窗口受理</option>
+                            <option>网上预约</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">检测方式</label>
+                        <select x-model="formData.method" class="form-input w-full rounded px-3 py-2 text-sm bg-white">
+                            <option>送样检测</option>
+                            <option>现场检测</option>
+                            <option>上门取样</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">特殊要求备注</label>
+                        <input type="text" x-model="formData.remark" class="form-input w-full rounded px-3 py-2 text-sm" placeholder="例如：需加急，需原件返回...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col min-h-[500px]">
+                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-sm font-bold text-slate-800 border-l-4 border-blue-600 pl-3">报价明细</h2>
+                        <span class="text-xs text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-full" x-text="items.length + ' 项'"></span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="openModal('import')" class="px-3 py-1.5 text-xs bg-white border border-slate-300 rounded hover:text-blue-600 hover:border-blue-400 transition">
+                            <i class="fa-solid fa-file-import mr-1"></i> Excel导入
+                        </button>
+                        <button @click="openModal('history')" class="px-3 py-1.5 text-xs bg-white border border-slate-300 rounded hover:text-blue-600 hover:border-blue-400 transition">
+                            <i class="fa-solid fa-clock-rotate-left mr-1"></i> 引用历史
+                        </button>
+                        <button @click="openModal('catalog')" class="px-3 py-1.5 text-xs bg-blue-600 text-white border border-blue-600 rounded hover:bg-blue-700 shadow-sm transition">
+                            <i class="fa-solid fa-plus mr-1"></i> 添加器具
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-x-auto pb-4">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 text-xs text-slate-500 uppercase sticky top-0 z-10">
+                            <tr>
+                                <th class="p-3 w-12 text-center border-b border-slate-200">#</th>
+                                <th class="p-3 w-48 border-b border-slate-200">器具名称</th>
+                                <th class="p-3 w-32 border-b border-slate-200">型号/规格</th>
+                                <th class="p-3 w-32 border-b border-slate-200">出厂编号</th>
+                                <th class="p-3 w-32 border-b border-slate-200">测量范围</th>
+                                <th class="p-3 w-24 border-b border-slate-200">服务类型</th>
+                                <th class="p-3 w-20 border-b border-slate-200">数量</th>
+                                <th class="p-3 w-28 text-right border-b border-slate-200">标准单价</th>
+                                <th class="p-3 w-20 text-center border-b border-slate-200">折扣%</th>
+                                <th class="p-3 w-28 text-right border-b border-slate-200">折后价</th>
+                                <th class="p-3 w-28 text-right border-b border-slate-200">小计</th>
+                                <th class="p-3 w-16 text-center border-b border-slate-200">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <template x-for="(item, index) in items" :key="item.id">
+                                <tr class="group hover:bg-blue-50/30 border-b border-slate-50 last:border-0 transition-colors">
+                                    <td class="p-3 text-center text-slate-400" x-text="index + 1"></td>
+                                    
+                                    <td class="p-3">
+                                        <div class="relative">
+                                            <input type="text" x-model="item.name" class="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded px-2 py-1 transition-colors">
+                                            <i x-show="item.isStandard" class="fa-solid fa-circle-check text-green-500 absolute right-2 top-2 text-[10px]" title="已匹配标准库"></i>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="p-3"><input type="text" x-model="item.model" class="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded px-2 py-1"></td>
+                                    <td class="p-3"><input type="text" x-model="item.sn" class="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded px-2 py-1"></td>
+                                    <td class="p-3"><input type="text" x-model="item.range" class="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded px-2 py-1"></td>
+                                    
+                                    <td class="p-3">
+                                        <select x-model="item.serviceType" class="w-full bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded px-1 py-1 text-xs">
+                                            <option>检定</option>
+                                            <option>校准</option>
+                                            <option>测试</option>
+                                        </select>
+                                    </td>
+                                    
+                                    <td class="p-3">
+                                        <input type="number" x-model="item.qty" @input="recalcItem(item)" class="w-full text-center bg-transparent border border-transparent hover:border-slate-300 focus:border-blue-500 rounded px-2 py-1 font-bold">
+                                    </td>
+                                    
+                                    <td class="p-3 text-right text-slate-500">
+                                        <span x-text="'¥ ' + item.stdPrice"></span>
+                                    </td>
+                                    
+                                    <td class="p-3 relative">
+                                        <input type="number" x-model="item.discount" @input="recalcItem(item)" 
+                                               :class="{'text-red-600 font-bold bg-red-50 border-red-200': item.discount < 70}"
+                                               class="w-full text-center border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 border-slate-200">
+                                        <div x-show="item.discount < 70" class="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] py-1 px-2 rounded shadow-lg whitespace-nowrap z-20 pointer-events-none fade-enter-active">
+                                            低价预警: 需审批
+                                            <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-600 rotate-45"></div>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="p-3 text-right font-medium text-slate-700" x-text="'¥ ' + item.realPrice.toFixed(2)"></td>
+                                    <td class="p-3 text-right font-bold text-blue-600" x-text="'¥ ' + item.subtotal.toFixed(2)"></td>
+                                    
+                                    <td class="p-3 text-center">
+                                        <button @click="removeItem(index)" class="text-slate-300 hover:text-red-500 transition w-6 h-6 rounded flex items-center justify-center mx-auto">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                            
+                            <tr x-show="items.length === 0">
+                                <td colspan="12" class="p-10 text-center text-slate-400 bg-slate-50/50">
+                                    <div class="mb-2"><i class="fa-solid fa-box-open text-3xl"></i></div>
+                                    <p class="text-xs">暂无报价明细，请点击上方按钮添加</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h2 class="text-sm font-bold text-slate-800 mb-4 border-l-4 border-blue-600 pl-3">证书与附件</h2>
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">证书单位名称</label>
+                        <input type="text" x-model="formData.certName" class="form-input w-full rounded px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                         <label class="block text-xs font-bold text-slate-500 mb-1">证书语言</label>
+                         <div class="flex gap-4 mt-2">
+                             <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                 <input type="radio" name="lang" value="cn" x-model="formData.lang" class="text-blue-600"> 中文
+                             </label>
+                             <label class="flex items-center gap-2 text-sm cursor-pointer">
+                                 <input type="radio" name="lang" value="en" x-model="formData.lang" class="text-blue-600"> 英文
+                             </label>
+                         </div>
+                    </div>
+                    <div class="col-span-3">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">证书邮寄地址</label>
+                        <input type="text" x-model="formData.address" class="form-input w-full rounded px-3 py-2 text-sm">
+                    </div>
+                    <div class="col-span-3 pt-2">
+                        <div class="flex gap-6">
+                            <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
+                                <input type="checkbox" x-model="formData.reqCnas" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
+                                <span class="text-slate-700">要求 CNAS 标识</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
+                                <input type="checkbox" x-model="formData.reqCma" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
+                                <span class="text-slate-700">要求 CMA 标识</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-sm cursor-pointer select-none">
+                                <input type="checkbox" x-model="formData.reqRaw" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
+                                <span class="text-slate-700">随附原始记录</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="h-10"></div>
+        </div>
+
+        <div class="w-[420px] shrink-0">
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6 sticky top-24">
+                <h2 class="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-blue-600"></i> 费用结算
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-slate-500">检测基础费</span>
+                        <span class="font-bold text-slate-700" x-text="'¥ ' + totals.base.toFixed(2)"></span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-slate-500">加急费</span>
+                        <div class="w-24 relative">
+                             <span class="absolute left-0 top-1.5 text-slate-400 text-xs">¥</span>
+                             <input type="number" x-model="fees.expedited" @input="recalcTotal()" class="w-full text-right border-b border-slate-300 focus:border-blue-600 outline-none pb-1 text-slate-700 font-medium bg-transparent">
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-slate-500">差旅/交通费</span>
+                        <div class="w-24 relative">
+                             <span class="absolute left-0 top-1.5 text-slate-400 text-xs">¥</span>
+                             <input type="number" x-model="fees.travel" @input="recalcTotal()" class="w-full text-right border-b border-slate-300 focus:border-blue-600 outline-none pb-1 text-slate-700 font-medium bg-transparent">
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-slate-500">其他费用</span>
+                        <div class="w-24 relative">
+                             <span class="absolute left-0 top-1.5 text-slate-400 text-xs">¥</span>
+                             <input type="number" x-model="fees.other" @input="recalcTotal()" class="w-full text-right border-b border-slate-300 focus:border-blue-600 outline-none pb-1 text-slate-700 font-medium bg-transparent">
+                        </div>
+                    </div>
+
+                    <div class="border-t border-dashed border-slate-300 my-4"></div>
+
+                    <div class="flex justify-between items-end">
+                        <span class="text-sm font-bold text-slate-700">总计金额 <span class="text-xs font-normal text-slate-400">(含税)</span></span>
+                        <span class="text-3xl font-bold text-blue-600" x-text="'¥ ' + totals.grand.toFixed(2)"></span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-slate-400 mt-1">
+                        <span>不含税金额</span>
+                        <span x-text="'¥ ' + (totals.grand / 1.06).toFixed(2)"></span>
+                    </div>
+
+                    <div x-show="hasLowPrice" x-transition class="bg-red-50 border border-red-100 rounded-lg p-3 mt-4 flex gap-3 items-start">
+                        <i class="fa-solid fa-triangle-exclamation text-red-500 mt-1 text-sm"></i>
+                        <div class="text-xs text-slate-600">
+                            <p class="font-bold text-red-600 mb-1">价格异常预警</p>
+                            <p>检测到折扣低于 70% 的项目，系统将自动升级审批流程至 <span class="font-bold underline">区域营销总监</span>。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="modals.submit" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" x-cloak>
+        <div class="bg-white rounded-xl shadow-2xl w-[600px] overflow-hidden transform transition-all" @click.outside="modals.submit = false">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800">提交业务审批</h3>
+                <button @click="modals.submit = false" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-8 px-4 relative">
+                    <div class="absolute top-4 left-0 w-full h-0.5 bg-slate-200 -z-10"></div>
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold border-4 border-white">1</div>
+                        <span class="text-xs font-bold text-blue-600">发起提交</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold border-4 border-white" :class="{'bg-orange-500 text-white': hasLowPrice}">2</div>
+                        <span class="text-xs text-slate-500" :class="{'text-orange-600 font-bold': hasLowPrice}" x-text="hasLowPrice ? '总监特批' : '部门审核'"></span>
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold border-4 border-white">3</div>
+                        <span class="text-xs text-slate-500">完成</span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">审批备注</label>
+                    <textarea class="form-input w-full rounded p-3 text-sm h-24" placeholder="请填写本次报价的背景说明..."></textarea>
+                </div>
+                
+                <div class="bg-blue-50 text-blue-700 text-xs p-3 rounded border border-blue-100">
+                    <i class="fa-solid fa-info-circle mr-1"></i> 审批通过后，将自动生成 PDF 报价单并发送给客户。
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+                <button @click="modals.submit = false" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-200 rounded">取消</button>
+                <button @click="confirmSubmit()" class="px-6 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">确认提交</button>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="modals.catalog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" x-cloak>
+        <div class="bg-white rounded-xl shadow-2xl w-[800px] h-[600px] flex flex-col" @click.outside="modals.catalog = false">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800">标准器具库检索</h3>
+                <button @click="modals.catalog = false"><i class="fa-solid fa-times text-slate-400"></i></button>
+            </div>
+            <div class="p-4 border-b border-slate-100 bg-slate-50">
+                <div class="relative">
+                    <input type="text" x-model="catalogSearch" class="form-input w-full pl-9 pr-4 py-2 rounded text-sm" placeholder="输入器具名称、型号搜索...">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-0">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-xs text-slate-500 sticky top-0">
+                        <tr>
+                            <th class="p-4 w-10"></th>
+                            <th class="p-4">器具名称</th>
+                            <th class="p-4">型号规格</th>
+                            <th class="p-4">测量范围</th>
+                            <th class="p-4 text-right">指导价格</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-slate-100">
+                        <template x-for="tool in filteredCatalog" :key="tool.id">
+                            <tr class="hover:bg-blue-50 cursor-pointer" @click="addFromCatalog(tool)">
+                                <td class="p-4 text-center">
+                                    <button class="w-6 h-6 rounded-full border border-blue-600 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition">
+                                        <i class="fa-solid fa-plus text-xs"></i>
+                                    </button>
+                                </td>
+                                <td class="p-4 font-bold text-slate-700" x-text="tool.name"></td>
+                                <td class="p-4 text-slate-500" x-text="tool.model"></td>
+                                <td class="p-4 text-slate-500" x-text="tool.range"></td>
+                                <td class="p-4 text-right font-mono text-slate-700" x-text="'¥' + tool.price"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="modals.import" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" x-cloak>
+        <div class="bg-white rounded-xl shadow-2xl w-[500px]" @click.outside="modals.import = false">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-lg text-slate-800 mb-2">批量导入报价明细</h3>
+                <p class="text-xs text-slate-500 mb-6">支持 .xlsx, .csv 格式，请严格按照模板格式上传</p>
+                
+                <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 hover:bg-slate-50 transition cursor-pointer mb-4">
+                    <p class="text-sm text-slate-600">点击选择文件 或 拖拽至此</p>
+                </div>
+                
+                <div class="flex justify-between items-center text-xs">
+                    <a href="#" class="text-blue-600 hover:underline"><i class="fa-solid fa-download mr-1"></i>下载标准模板</a>
+                    <button @click="simulateImport()" class="px-6 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition">开始解析</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="modals.history" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" x-cloak>
+        <div class="bg-white rounded-xl shadow-2xl w-[700px] h-[500px] flex flex-col" @click.outside="modals.history = false">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800">历史报价单引用</h3>
+                <button @click="modals.history = false"><i class="fa-solid fa-times text-slate-400"></i></button>
+            </div>
+            <div class="p-4 flex gap-2">
+                <input type="text" class="form-input w-full rounded px-3 py-2 text-sm" placeholder="搜索历史单号、客户名称...">
+                <button class="px-4 py-2 bg-slate-100 rounded text-slate-600 text-sm hover:bg-slate-200">查询</button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-4">
+                <div class="space-y-2">
+                    <div class="border border-slate-200 rounded p-3 hover:border-blue-500 hover:bg-blue-50 cursor-pointer group transition" @click="simulateHistoryRef()">
+                        <div class="flex justify-between mb-1">
+                            <span class="font-bold text-sm text-slate-700">QT20251210-008</span>
+                            <span class="text-xs text-slate-400">2025-12-10</span>
+                        </div>
+                        <div class="text-xs text-slate-500 mb-2">客户：大连船舶重工集团 | 金额：¥ 12,500.00</div>
+                        <div class="flex gap-2">
+                             <span class="px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-500">激光测径仪 x2</span>
+                             <span class="px-2 py-0.5 bg-white border border-slate-200 rounded text-[10px] text-slate-500">压力变送器 x5</span>
+                        </div>
+                    </div>
+                     <div class="border border-slate-200 rounded p-3 hover:border-blue-500 hover:bg-blue-50 cursor-pointer group transition" @click="simulateHistoryRef()">
+                        <div class="flex justify-between mb-1">
+                            <span class="font-bold text-sm text-slate-700">QT20251105-022</span>
+                            <span class="text-xs text-slate-400">2025-11-05</span>
+                        </div>
+                        <div class="text-xs text-slate-500 mb-2">客户：恒力石化 | 金额：¥ 8,200.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script>
+    function quoteApp() {
+        return {
+            // --- 数据状态 ---
+            formData: {
+                customerName: '大连机车车辆有限公司',
+                contact: '王建国 (设备部)',
+                date: new Date().toISOString().split('T')[0],
+                validDate: '2026-02-12',
+                source: '营销人员',
+                method: '送样检测',
+                remark: '',
+                certName: '大连机车车辆有限公司',
+                lang: 'cn',
+                address: '辽宁省大连市沙河口区中长街51号',
+                reqCnas: true,
+                reqCma: true,
+                reqRaw: false
+            },
+            items: [
+                { id: 1, name: '激光测径仪', isStandard: true, model: 'LMD-300', sn: 'SN882199', range: '0~300mm', serviceType: '检定', qty: 2, stdPrice: 1200, discount: 100, realPrice: 1200, subtotal: 2400 },
+                { id: 2, name: '数字压力计', isStandard: true, model: 'Y-60', sn: '20231102', range: '0-1.6MPa', serviceType: '校准', qty: 10, stdPrice: 300, discount: 60, realPrice: 180, subtotal: 1800 }
+            ],
+            fees: {
+                expedited: 0,
+                travel: 500,
+                other: 0
+            },
+            
+            // --- 联想数据 ---
+            showCustomerDropdown: false,
+            customerList: [
+                { id: 1, name: '大连机车车辆有限公司', code: '91210200MA0Y....' },
+                { id: 2, name: '大连船舶重工集团', code: '9121020072....' },
+                { id: 3, name: '恒力石化(大连)有限公司', code: '9121020055....' }
+            ],
+            contactList: ['王建国 (设备部)', '李晓明 (采购)', '张伟 (质检)'],
+            
+            // --- 目录搜索 ---
+            catalogSearch: '',
+            catalogData: [
+                { id: 101, name: '游标卡尺', model: '0-150mm', range: '0-150mm', price: 150 },
+                { id: 102, name: '千分尺', model: '0-25mm', range: '0-25mm', price: 180 },
+                { id: 103, name: '压力表', model: 'Y-100', range: '0-10MPa', price: 200 },
+                { id: 104, name: '电子天平', model: 'BSA224S', range: '220g/0.1mg', price: 800 },
+                { id: 105, name: '温湿度计', model: 'Testo 608', range: '-10~60℃', price: 350 },
+                { id: 106, name: '激光测距仪', model: 'D510', range: '0-200m', price: 600 },
+            ],
+
+            // --- UI 状态 ---
+            modals: {
+                submit: false,
+                catalog: false,
+                import: false,
+                history: false,
+                export: false
+            },
+            lastSavedTime: '刚刚',
+            
+            // --- 计算属性 (Getters) ---
+            get totals() {
+                const base = this.items.reduce((sum, item) => sum + item.subtotal, 0);
+                const grand = base + Number(this.fees.expedited) + Number(this.fees.travel) + Number(this.fees.other);
+                return { base, grand };
+            },
+            
+            get hasLowPrice() {
+                return this.items.some(item => item.discount < 70);
+            },
+            
+            get filteredCatalog() {
+                if (!this.catalogSearch) return this.catalogData;
+                return this.catalogData.filter(t => t.name.includes(this.catalogSearch) || t.model.includes(this.catalogSearch));
+            },
+
+            // --- 动作方法 ---
+            
+            recalcItem(item) {
+                // 限制折扣范围 0-100
+                if (item.discount > 100) item.discount = 100;
+                if (item.discount < 0) item.discount = 0;
+                
+                item.realPrice = item.stdPrice * (item.discount / 100);
+                item.subtotal = item.realPrice * item.qty;
+            },
+
+            recalcTotal() {
+                // 触发响应式更新
+                this.fees = { ...this.fees }; 
+            },
+
+            removeItem(index) {
+                Swal.fire({
+                    title: '确认删除?',
+                    text: "删除后将重新计算总价",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: '删除',
+                    cancelButtonText: '取消'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.items.splice(index, 1);
+                        const Toast = Swal.mixin({
+                            toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, timerProgressBar: true
+                        });
+                        Toast.fire({ icon: 'success', title: '已删除' });
+                    }
+                });
+            },
+
+            selectCustomer(cust) {
+                this.formData.customerName = cust.name;
+                this.formData.certName = cust.name;
+                this.showCustomerDropdown = false;
+            },
+
+            openModal(name) {
+                if (name === 'export') {
+                    Swal.fire({
+                        title: '导出预览',
+                        text: '正在生成 PDF 预览文件...',
+                        icon: 'info',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    return;
+                }
+                this.modals[name] = true;
+            },
+
+            addFromCatalog(tool) {
+                this.items.push({
+                    id: Date.now(),
+                    name: tool.name,
+                    isStandard: true,
+                    model: tool.model,
+                    sn: '',
+                    range: tool.range,
+                    serviceType: '检定',
+                    qty: 1,
+                    stdPrice: tool.price,
+                    discount: 100,
+                    realPrice: tool.price,
+                    subtotal: tool.price
+                });
+                const Toast = Swal.mixin({
+                    toast: true, position: 'top-end', showConfirmButton: false, timer: 1500
+                });
+                Toast.fire({ icon: 'success', title: '已添加: ' + tool.name });
+            },
+
+            simulateImport() {
+                this.modals.import = false;
+                Swal.fire({
+                    title: '正在解析...',
+                    timer: 1000,
+                    didOpen: () => Swal.showLoading()
+                }).then(() => {
+                    this.items.push({ id: Date.now(), name: '批量导入-游标卡尺', isStandard: true, model: '0-150', sn: 'IMP001', range: '0-150', serviceType: '校准', qty: 5, stdPrice: 150, discount: 90, realPrice: 135, subtotal: 675 });
+                    Swal.fire('导入成功', '成功解析 1 条数据', 'success');
+                });
+            },
+
+            simulateHistoryRef() {
+                this.modals.history = false;
+                Swal.fire('引用成功', '已复制报价单 QT20251210-008 的明细', 'success');
+                this.items.push({ id: Date.now()+1, name: '压力变送器', isStandard: true, model: '3051', sn: 'REF001', range: '0-10MPa', serviceType: '检定', qty: 5, stdPrice: 800, discount: 80, realPrice: 640, subtotal: 3200 });
+            },
+
+            validateAndSubmit() {
+                if (!this.formData.customerName) {
+                    Swal.fire('提示', '请先填写客户名称', 'warning');
+                    return;
+                }
+                if (this.items.length === 0) {
+                    Swal.fire('提示', '报价明细不能为空', 'warning');
+                    return;
+                }
+                this.openModal('submit');
+            },
+
+            confirmSubmit() {
+                this.modals.submit = false;
+                Swal.fire({
+                    title: '提交成功!',
+                    text: this.hasLowPrice ? '由于存在低价项目，已流转至【区域总监】审批。' : '已流转至【部门经理】审批。',
+                    icon: 'success',
+                    confirmButtonText: '返回工作台',
+                    confirmButtonColor: '#3b82f6'
+                }).then(() => {
+                    // Logic to redirect
+                });
+            },
+
+            saveDraft() {
+                this.lastSavedTime = new Date().toLocaleTimeString();
+                const Toast = Swal.mixin({
+                    toast: true, position: 'top', showConfirmButton: false, timer: 2000
+                });
+                Toast.fire({ icon: 'success', title: '草稿保存成功' });
+            },
+            
+            goBack() {
+                window.history.back();
+            }
+        }
+    }
+</script>
+</html>
