@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪器检测成本核算单 - 双向联动版</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* --- 全局变量 --- */
+        :root {
+            --primary: #1677ff;
+            --primary-light: #e6f4ff;
+            --text-main: #333;
+            --text-sub: #666;
+            --border-color: #000;
+            --border-light: #e8e8e8;
+            --bg-body: #f5f7fa;
+            --bg-card: #ffffff;
+            --bg-header: #f7f7f7;
+            --bg-readonly: #f5f5f5;
+            --danger: #ff4d4f;
+            --success: #52c41a;
+            --warning: #faad14;
+        }
+
+        body {
+            margin: 0; font-family: "SimSun", "Songti SC", serif;
+            background: var(--bg-body); color: var(--text-main);
+            padding: 30px; display: flex; justify-content: center;
+            padding-bottom: 100px;
+        }
+
+        .paper {
+            width: 1100px; background: var(--bg-card); padding: 40px 50px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08); border: 1px solid #d9d9d9;
+        }
+
+        /* --- 头部 --- */
+        .header-section { text-align: center; margin-bottom: 30px; }
+        .sub-title { font-size: 15px; letter-spacing: 2px; margin-bottom: 8px; color: #555; font-family: sans-serif; }
+        .main-title { font-size: 32px; font-weight: 900; margin-bottom: 20px; color: #000; font-family: "SimHei", sans-serif; }
+        .meta-box { display: flex; justify-content: space-between; font-size: 14px; margin-top: 10px; font-family: sans-serif; }
+        .meta-input { border: none; border-bottom: 1px solid #333; width: 160px; text-align: center; font-weight: 500; outline: none; }
+
+        /* --- 表格 --- */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+        
+        .info-table td { border: 1px solid var(--border-color); padding: 10px; font-size: 14px; vertical-align: middle; }
+        .info-label { background: var(--bg-header); font-weight: bold; width: 120px; text-align: right; color: #333; }
+        .input-underline { width: 98%; border: none; border-bottom: 1px solid #ccc; outline: none; font-family: inherit; font-size: 14px; padding: 4px 0; background: transparent; }
+        .input-underline:focus { border-bottom: 1px solid var(--primary); background: #f0f7ff; }
+
+        .cost-table { border: 2px solid var(--border-color); margin-top: 25px; }
+        .cost-table th { border: 1px solid var(--border-color); background: #eee; padding: 12px 5px; font-weight: bold; text-align: center; font-size: 14px; }
+        .cost-table td { border: 1px solid var(--border-color); padding: 6px 10px; font-size: 14px; vertical-align: middle; }
+        
+        /* 单元格输入 */
+        .cell-input {
+            width: 100%; height: 100%; border: 1px solid transparent; text-align: center;
+            outline: none; font-family: inherit; font-size: 14px; background: transparent;
+            border-radius: 4px; padding: 6px 0; transition: 0.2s;
+            width: 100px;padding-right: 10px !important;
+        }
+        .cell-input:hover { background: #fff; border: 1px solid #d9d9d9; }
+        .cell-input:focus { background: #fff; border: 1px solid var(--primary); box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1); }
+        .amount-input { text-align: right; font-family: Arial, sans-serif; }
+        
+        /* 只读样式 */
+        .calc-field { background: var(--bg-readonly); color: #000; font-weight: bold; cursor: default; }
+        
+        /* 可编辑高亮提示 */
+        .editable-field { background-color: #fffbf0; border: 1px dashed #ffd591; color: var(--primary); font-weight: bold; }
+
+        .note { font-size: 12px; color: #888; display: block; margin-top: 4px; line-height: 1.2; }
+        .category-header { background: #f9f9f9; font-weight: bold; color: var(--primary); }
+
+        /* --- 底部固定栏 --- */
+        .fixed-footer {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 80px;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+            border-top: 1px solid #e8e8e8; box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            display: flex; justify-content: center; align-items: center; z-index: 999;
+        }
+        .footer-content { width: 1100px; display: flex; justify-content: space-between; align-items: center; padding: 0 50px; }
+        .dash-group { display: flex; align-items: center; gap: 40px; }
+        .dash-item { display: flex; flex-direction: column; }
+        .dash-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .dash-val { font-size: 24px; font-weight: bold; font-family: 'DIN Alternate', Arial, sans-serif; }
+        
+        .val-blue { color: var(--primary); }
+        .val-red { color: var(--danger); }
+        .val-green { color: var(--success); }
+
+        .btn-submit {
+            background: var(--primary); color: #fff; border: none; padding: 12px 40px;
+            border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: 500;
+            box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3); transition: 0.2s;
+        }
+        .btn-submit:hover { background: #4096ff; transform: translateY(-1px); }
+
+        .sign-box { display: flex; justify-content: space-between; margin-top: 40px; padding: 0 20px; font-family: sans-serif; }
+        .sign-item { font-size: 15px; }
+        .sign-item input { border: none; border-bottom: 1px solid #000; width: 120px; text-align: center; }
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left !important; padding-left: 15px !important; }
+    </style>
+</head>
+<body>
+
+<div class="paper">
+    
+    <div class="header-section">
+        <div class="sub-title">中国中检 / 中检西北计量检测有限公司</div>
+        <div class="main-title">仪器检测成本核算单</div>
+        <div class="meta-box">
+            <span>报价编号：<input type="text" class="meta-input" value="ZB-XA-2025-001"></span>
+            <span>报价时间：<input type="text" class="meta-input" value="2025/01/15"></span>
+        </div>
+    </div>
+
+    <table class="info-table">
+        <tr>
+            <td class="info-label">委托单位<br>(甲方)</td>
+            <td colspan="3"><input class="input-underline" value="某某能源化工有限公司"></td>
+            <td class="info-label">受托单位<br>(乙方)</td>
+            <td colspan="3"><input class="input-underline" value="中检西北计量检测有限公司" readonly></td>
+        </tr>
+        <tr>
+            <td class="info-label">行业类型</td>
+            <td><input class="input-underline" value="化工"></td>
+            <td class="info-label">企业类型</td>
+            <td><input class="input-underline" value="央企"></td>
+            <td class="info-label">联系人(业务)</td>
+            <td><input class="input-underline" value="张三"></td>
+            <td class="info-label">电话</td>
+            <td><input class="input-underline" value="13800000000"></td>
+        </tr>
+        <tr>
+            <td class="info-label">项目地址</td>
+            <td colspan="3"><input class="input-underline" value="陕西省榆林市神木县大柳塔镇"></td>
+            <td class="info-label">发票地址</td>
+            <td colspan="3"><input class="input-underline" placeholder="请输入开票地址"></td>
+        </tr>
+    </table>
+
+    <div style="margin-top:25px; margin-bottom:10px; font-weight:bold; font-size:15px; border-left:4px solid var(--primary); padding-left:10px;">
+        成本预算明细 
+        <span style="font-weight:normal; font-size:12px; color:#999; margin-left:10px;">
+            (注：金额均为不含税，黑色数据可编辑，灰色数据自动计算)
+        </span>
+    </div>
+
+    <table class="cost-table">
+        <thead>
+            <tr>
+                <th width="50">序号</th>
+                <th width="100">成本类型</th>
+                <th colspan="2">明细项目 / 标准</th>
+                <th width="130">金额 (元)</th>
+                <th width="80">核算单位</th>
+                <th width="80">参数</th>
+                <th width="160">确认部门及说明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center">1</td>
+                <td class="text-center"><b>分包费</b></td>
+                <td colspan="2" class="text-left">
+                    按项目报价比例提取
+                    <span class="note">业务确认（不确认情况，取高值）</span>
+                </td>
+                <td><input type="number" class="cell-input amount-input editable-field" id="subFee" oninput="calcSubRate()"></td>
+                <td class="text-center">分包率 (%)</td>
+                <td><input type="number" class="cell-input" id="subRate" value="20" step="0.01" oninput="calcSubFee()"></td>
+                <td class="text-left">业务部<br><span class="note">默认20%，可修改金额反算比例</span></td>
+            </tr>
+
+            <tr>
+                <td rowspan="4" class="text-center">2</td>
+                <td rowspan="4" class="text-center"><b>人工费</b></td>
+                <td width="80" class="text-center category-header">住宿</td>
+                <td class="text-left">A类 (700元/人天)</td>
+                <td><input class="cell-input amount-input calc-field labor-subtotal" readonly></td>
+                <td class="text-center">人天数</td>
+                <td><input type="number" class="cell-input labor-days" data-price="700" value="4" oninput="calcLabor()"></td>
+                <td rowspan="4" class="text-left" style="vertical-align: top; padding-top: 15px;">
+                    技术部
+                    <span class="note" style="margin-top:10px;">
+                        1. A类标准<br>
+                        2. B类标准<br>
+                        3. 含送检实验室人工
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td class="text-center category-header">住宿</td>
+                <td class="text-left">B类 (500元/人天)</td>
+                <td><input class="cell-input amount-input calc-field labor-subtotal" readonly></td>
+                <td class="text-center">人天数</td>
+                <td><input type="number" class="cell-input labor-days" data-price="500" value="3" oninput="calcLabor()"></td>
+            </tr>
+            <tr>
+                <td class="text-center category-header">无住宿</td>
+                <td class="text-left">A类 (500元/人天)</td>
+                <td><input class="cell-input amount-input calc-field labor-subtotal" readonly></td>
+                <td class="text-center">人天数</td>
+                <td><input type="number" class="cell-input labor-days" data-price="500" value="0" oninput="calcLabor()"></td>
+            </tr>
+            <tr>
+                <td class="text-center category-header">无住宿</td>
+                <td class="text-left">B类 (350元/人天)</td>
+                <td><input class="cell-input amount-input calc-field labor-subtotal" readonly></td>
+                <td class="text-center">人天数</td>
+                <td><input type="number" class="cell-input labor-days" data-price="350" value="0" oninput="calcLabor()"></td>
+            </tr>
+
+            <tr>
+                <td class="text-center">3</td>
+                <td class="text-center"><b>车辆费</b></td>
+                <td colspan="2" class="text-left">
+                    自有/租赁车辆
+                    <span class="note">标准：3.5元/公里</span>
+                </td>
+                <td><input class="cell-input amount-input calc-field" id="carFee" readonly></td>
+                <td class="text-center">公里数</td>
+                <td><input type="number" class="cell-input" id="carKm" value="500" oninput="calcCar()"></td>
+                <td class="text-left">综合部</td>
+            </tr>
+
+            <tr>
+                <td class="text-center">4</td>
+                <td class="text-center"><b>差旅费</b></td>
+                <td colspan="2" class="text-left">过路/油费/住宿/餐补 <span class="note" style="display:inline">(实报实销)</span></td>
+                <td><input type="number" class="cell-input amount-input" id="travelFee" value="1200" oninput="calcTotal()"></td>
+                <td class="text-center">/</td>
+                <td class="text-center">/</td>
+                <td class="text-left">综合部/技术部</td>
+            </tr>
+
+            <tr>
+                <td class="text-center">5</td>
+                <td class="text-center"><b>标物费</b></td>
+                <td colspan="2" class="text-left">标准物质采购费用</td>
+                <td><input type="number" class="cell-input amount-input" id="stdMatFee" value="0" oninput="calcTotal()"></td>
+                <td class="text-center">/</td>
+                <td class="text-center">/</td>
+                <td class="text-left">技术部</td>
+            </tr>
+            <tr>
+                <td class="text-center">6</td>
+                <td class="text-center"><b>实施公关费</b></td>
+                <td colspan="2" class="text-left">项目实施过程协调费用</td>
+                <td><input type="number" class="cell-input amount-input" id="implPrFee" value="0" oninput="calcTotal()"></td>
+                <td class="text-center">/</td>
+                <td class="text-center">/</td>
+                <td class="text-left">业务部</td>
+            </tr>
+            <tr>
+                <td class="text-center">7</td>
+                <td class="text-center"><b>业务公关<br>及开发费</b></td>
+                <td colspan="2" class="text-left">市场拓展与维护费用</td>
+                <td><input type="number" class="cell-input amount-input" id="bizPrFee" value="0" oninput="calcTotal()"></td>
+                <td class="text-center">/</td>
+                <td class="text-center">/</td>
+                <td class="text-left">业务部</td>
+            </tr>
+            <tr>
+                <td class="text-center">8</td>
+                <td class="text-center"><b>市场费</b></td>
+                <td colspan="2" class="text-left">招投标渠道/服务费</td>
+                <td><input type="number" class="cell-input amount-input" id="marketFee" value="0" oninput="calcTotal()"></td>
+                <td class="text-center">/</td>
+                <td class="text-center">/</td>
+                <td class="text-left">业务部</td>
+            </tr>
+            <tr>
+                <td class="text-center">9</td>
+                <td class="text-center"><b>业务计提</b></td>
+                <td colspan="2" class="text-left">销售提成/绩效</td>
+                <td><input type="number" class="cell-input amount-input" id="bizCommission" value="0" oninput="calcTotal()"></td>
+                <td class="text-center">/</td>
+                <td class="text-center">/</td>
+                <td class="text-left">人力/财务</td>
+            </tr>
+            <tr>
+                <td class="text-center">10</td>
+                <td class="text-center"><b>招投标费</b></td>
+                <td colspan="2" class="text-left">标书制作、报名费、保证金利息</td>
+                <td><input type="number" class="cell-input amount-input" id="biddingFee" value="500" oninput="calcTotal()"></td>
+                <td class="text-center">/</td>
+                <td class="text-center">/</td>
+                <td class="text-left">投标中心</td>
+            </tr>
+            <tr>
+                <td class="text-center">11</td>
+                <td class="text-center"><b>综合运营<br>管理费</b></td>
+                <td colspan="2" class="text-left">管理分摊/其他杂项</td>
+                <td><input type="number" class="cell-input amount-input" id="adminFee" value="0" oninput="calcTotal()"></td>
+                <td class="text-center">/</td>
+                <td class="text-center">/</td>
+                <td class="text-left">财务部</td>
+            </tr>
+
+            <tr style="background:#fffbe6; height: 50px;">
+                <td colspan="4" style="text-align:right; font-weight:bold; padding-right:20px; font-size:16px;">成本总计：</td>
+                <td><input class="cell-input" id="totalCost" readonly style="color:var(--danger); font-weight:bold; font-size:18px; text-align:right; padding-right:10px;"></td>
+                <td colspan="3"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="sign-box">
+        <div class="sign-item">制表人：<input type="text" value="李四"></div>
+        <div class="sign-item">部门负责人：<input type="text"></div>
+        <div class="sign-item">财务审核：<input type="text"></div>
+        <div class="sign-item">审批：<input type="text"></div>
+    </div>
+
+</div>
+
+<div class="fixed-footer">
+    <div class="footer-content">
+        <div class="dash-group">
+            <div class="dash-item">
+                <span class="dash-label">项目报价 (不含税)</span>
+                <input type="number" id="quoteInput" class="dash-val val-blue" value="50000" 
+                       style="border:none; background:transparent; width:150px; outline:none; border-bottom:1px dashed #ccc;" 
+                       oninput="calcSubFee(); calcTotal();">
+            </div>
+            <i class="ph ph-minus" style="font-size:24px; color:#ccc;"></i>
+            <div class="dash-item">
+                <span class="dash-label">预计总成本</span>
+                <div class="dash-val val-red" id="boardCost">0.00</div>
+            </div>
+            <i class="ph ph-equals" style="font-size:24px; color:#ccc;"></i>
+            <div class="dash-item">
+                <span class="dash-label">预计毛利 (毛利率)</span>
+                <div class="dash-val val-green" id="boardProfit">0.00 (0%)</div>
+            </div>
+        </div>
+        
+        <button class="btn-submit" onclick="alert('表单校验通过，提交成功！')">提交核算</button>
+    </div>
+</div>
+
+<script>
+    // 初始化
+    window.onload = function() {
+        calcSubFee(); // 先算一遍分包费
+        calcLabor();
+        calcCar();
+        // calcTotal 由上面触发
+    };
+
+    // 1. 根据比例算金额 (修改比例时触发)
+    function calcSubFee() {
+        const quote = parseFloat(document.getElementById('quoteInput').value) || 0;
+        const rate = parseFloat(document.getElementById('subRate').value) || 0;
+        
+        // 计算金额
+        const val = quote * (rate / 100);
+        document.getElementById('subFee').value = val.toFixed(2);
+        
+        calcTotal(); // 更新总计
+    }
+
+    // 2. 根据金额算比例 (修改金额时触发)
+    function calcSubRate() {
+        const quote = parseFloat(document.getElementById('quoteInput').value) || 0;
+        const fee = parseFloat(document.getElementById('subFee').value) || 0;
+        
+        if (quote > 0) {
+            // 计算比例
+            const rate = (fee / quote) * 100;
+            document.getElementById('subRate').value = rate.toFixed(2);
+        } else {
+            document.getElementById('subRate').value = 0;
+        }
+        
+        calcTotal(); // 更新总计
+    }
+
+    // 3. 人工费
+    function calcLabor() {
+        const inputs = document.querySelectorAll('.labor-days');
+        const subtotals = document.querySelectorAll('.labor-subtotal');
+        
+        inputs.forEach((input, index) => {
+            const days = parseFloat(input.value) || 0;
+            const price = parseFloat(input.dataset.price) || 0;
+            subtotals[index].value = (days * price).toFixed(2);
+        });
+        calcTotal();
+    }
+
+    // 4. 车辆费
+    function calcCar() {
+        const km = parseFloat(document.getElementById('carKm').value) || 0;
+        document.getElementById('carFee').value = (km * 3.5).toFixed(2);
+        calcTotal();
+    }
+
+    // 5. 总计
+    function calcTotal() {
+        let total = 0;
+
+        // 分包
+        total += parseFloat(document.getElementById('subFee').value) || 0;
+        
+        // 人工
+        document.querySelectorAll('.labor-subtotal').forEach(el => total += parseFloat(el.value) || 0);
+
+        // 车辆 & 差旅
+        total += parseFloat(document.getElementById('carFee').value) || 0;
+        total += parseFloat(document.getElementById('travelFee').value) || 0;
+
+        // 其他字段
+        total += parseFloat(document.getElementById('stdMatFee').value) || 0;
+        total += parseFloat(document.getElementById('implPrFee').value) || 0;
+        total += parseFloat(document.getElementById('bizPrFee').value) || 0;
+        total += parseFloat(document.getElementById('marketFee').value) || 0;
+        total += parseFloat(document.getElementById('bizCommission').value) || 0;
+        total += parseFloat(document.getElementById('biddingFee').value) || 0;
+        total += parseFloat(document.getElementById('adminFee').value) || 0;
+
+        document.getElementById('totalCost').value = total.toFixed(2);
+
+        // 更新看板
+        const quote = parseFloat(document.getElementById('quoteInput').value) || 0;
+        const profit = quote - total;
+        const rate = quote > 0 ? (profit / quote * 100) : 0;
+
+        document.getElementById('boardCost').innerText = total.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+        document.getElementById('boardProfit').innerText = `${profit.toLocaleString('zh-CN', {minimumFractionDigits: 2})} (${rate.toFixed(1)}%)`;
+
+        // 颜色逻辑
+        const profitEl = document.getElementById('boardProfit');
+        if (profit < 0) {
+            profitEl.className = "dash-val val-red";
+        } else if (rate < 15) {
+            profitEl.className = "dash-val";
+            profitEl.style.color = "#faad14";
+        } else {
+            profitEl.className = "dash-val val-green";
+        }
+    }
+</script>
+
+</body>
+</html>
