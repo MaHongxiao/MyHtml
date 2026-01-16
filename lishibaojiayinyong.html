@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史报价引用 - 交互版</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #f1f5f9; }
+        
+        /* 自定义滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* 展开动画 */
+        .collapse-content { transition: max-height 0.3s ease-out; max-height: 0; overflow: hidden; }
+        .collapse-content.open { max-height: 500px; /* 近似值，足够大即可 */ overflow-y: auto; }
+        
+        /* 旋转动画 */
+        .rotate-icon { transition: transform 0.2s; }
+        .rotate-icon.open { transform: rotate(90deg); }
+        .shadow-2xl{width: 1300px;
+    height: 800px;}
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen bg-black/40 backdrop-blur-sm" x-data="historyQuoteSelector()">
+
+    <div class="bg-white rounded-xl shadow-2xl w-[1300px] h-[800px] flex flex-col overflow-hidden animate-fade-in-up border border-slate-200">
+        
+        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white shrink-0">
+            <div>
+                <h3 class="text-lg font-bold text-slate-800">引用历史报价</h3>
+                <p class="text-xs text-slate-500 mt-1">从过往已生效的报价单中选择器具复制到当前单据</p>
+            </div>
+            <button class="text-slate-400 hover:text-red-500 transition text-lg w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+
+        <div class="flex flex-1 overflow-hidden">
+            
+            <div class="w-[65%] flex flex-col border-r border-slate-200 bg-slate-50/30">
+                
+                <div class="p-4 border-b border-slate-200 bg-white flex gap-3">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                        <input type="text" x-model="search" class="w-full pl-8 pr-3 py-2 border border-slate-300 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition" placeholder="搜索报价单号 / 客户名称 / 器具名称...">
+                    </div>
+                    <input type="date" class="border border-slate-300 rounded text-sm px-3 w-40 text-slate-600 focus:border-blue-500 outline-none">
+                    <button class="px-4 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 shadow-sm transition">查询</button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-3">
+                    
+                    <template x-for="quote in filteredQuotes" :key="quote.id">
+                        <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden hover:border-blue-300 transition-colors">
+                            <div class="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between cursor-pointer group" @click="quote.expanded = !quote.expanded">
+                                <div class="flex items-center gap-3">
+                                    <i class="fa-solid fa-chevron-right text-slate-400 text-xs rotate-icon" :class="{'open': quote.expanded}"></i>
+                                    
+                                    <div @click.stop class="flex items-center">
+                                        <input type="checkbox" 
+                                               :checked="isQuoteFullySelected(quote)" 
+                                               :indeterminate="isQuotePartiallySelected(quote)"
+                                               @change="toggleQuote(quote)"
+                                               class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-0 cursor-pointer">
+                                    </div>
+
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-sm text-slate-700 group-hover:text-blue-600" x-text="quote.no"></span>
+                                            <span class="text-[10px] px-1.5 rounded border bg-green-50 text-green-600 border-green-200">已完工</span>
+                                        </div>
+                                        <div class="text-xs text-slate-500 mt-0.5 flex gap-3">
+                                            <span><i class="fa-regular fa-building mr-1"></i><span x-text="quote.customer"></span></span>
+                                            <span><i class="fa-regular fa-calendar mr-1"></i><span x-text="quote.date"></span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-right">
+                                    <div class="text-sm font-bold text-slate-700 font-mono" x-text="'¥' + quote.total"></div>
+                                    <div class="text-xs text-slate-400">共 <span x-text="quote.items.length"></span> 项</div>
+                                </div>
+                            </div>
+
+                            <div class="collapse-content" :class="{'open': quote.expanded}">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-50 text-slate-500 text-xs font-medium border-b border-slate-100">
+                                        <tr>
+                                            <th class="p-2 w-10 text-center"></th>
+                                            <th class="p-2 pl-0">器具名称</th>
+                                            <th class="p-2">型号/规格</th>
+                                            <th class="p-2">分包情况</th>
+                                            <th class="p-2 text-right pr-4">单价</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        <template x-for="item in quote.items" :key="item.id">
+                                            <tr class="hover:bg-blue-50/50 cursor-pointer" @click="toggleItem(item, quote)">
+                                                <td class="p-2 text-center" @click.stop>
+                                                    <input type="checkbox" :checked="isSelected(item.id)" @change="toggleItem(item, quote)" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-0 cursor-pointer">
+                                                </td>
+                                                <td class="p-2 pl-0 font-medium text-slate-700" x-text="item.name"></td>
+                                                <td class="p-2 text-slate-500 text-xs" x-text="item.model"></td>
+                                                <td class="p-2">
+                                                    <span x-show="item.subcontract === 'none'" class="text-xs text-slate-400">自主</span>
+                                                    <span x-show="item.subcontract === 'internal'" class="text-[10px] px-1.5 py-0.5 rounded border bg-blue-50 text-blue-600 border-blue-100">内包</span>
+                                                    <span x-show="item.subcontract === 'external'" class="text-[10px] px-1.5 py-0.5 rounded border bg-orange-50 text-orange-600 border-orange-100" x-text="item.vendor"></span>
+                                                </td>
+                                                <td class="p-2 text-right pr-4 font-mono text-slate-600" x-text="'¥' + item.price"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    <div x-show="filteredQuotes.length === 0" class="text-center py-20 text-slate-400">
+                        <i class="fa-solid fa-folder-open text-4xl mb-2 opacity-30"></i>
+                        <p>没有找到匹配的历史报价单</p>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="w-[35%] flex flex-col bg-white border-l border-slate-200 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10">
+                <div class="px-5 py-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-800">已选明细</span>
+                        <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full" x-text="selectedItems.length"></span>
+                    </div>
+                    <button @click="selectedItems = []" class="text-xs text-slate-500 hover:text-red-500 flex items-center gap-1 transition">
+                        <i class="fa-regular fa-trash-can"></i> 清空
+                    </button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-4">
+                    
+                    <template x-for="groupId in selectedGroups" :key="groupId">
+                        <div class="relative pl-4 border-l-2 border-slate-200">
+                            <div class="text-xs font-bold text-slate-500 mb-2 flex justify-between items-center">
+                                <span x-text="getQuoteById(groupId).no"></span>
+                                <button @click="removeGroup(groupId)" class="text-[10px] text-slate-400 hover:text-red-500 underline">移除整单</button>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <template x-for="item in getSelectedItemsByGroup(groupId)" :key="item.id">
+                                    <div class="bg-white border border-slate-200 rounded p-2 shadow-sm hover:border-blue-400 transition-colors group relative pr-8">
+                                        <div class="font-bold text-sm text-slate-700" x-text="item.name"></div>
+                                        <div class="flex justify-between items-center mt-1">
+                                            <div class="text-xs text-slate-500" x-text="item.model || '无规格'"></div>
+                                            <div class="text-xs font-mono font-medium text-blue-600" x-text="'¥' + item.price"></div>
+                                        </div>
+                                        
+                                        <div class="mt-1" x-show="item.subcontract !== 'none'">
+                                            <span class="text-[10px] text-slate-400 border border-dashed border-slate-300 px-1 rounded" x-text="item.subcontract==='internal'?'内包':'外包'"></span>
+                                        </div>
+
+                                        <button @click="toggleItem(item)" class="absolute top-2 right-2 w-5 h-5 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition">
+                                            <i class="fa-solid fa-times"></i>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="selectedItems.length === 0" class="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
+                        <i class="fa-solid fa-basket-shopping text-4xl mb-3"></i>
+                        <p class="text-sm">请从左侧勾选器具</p>
+                    </div>
+
+                </div>
+
+                <div class="p-4 border-t border-slate-200 bg-slate-50">
+                    <div class="flex justify-between items-end mb-4">
+                        <span class="text-sm text-slate-600">合计金额:</span>
+                        <span class="text-xl font-bold text-red-600 font-mono" x-text="'¥ ' + totalSelectedAmount"></span>
+                    </div>
+                    <div class="flex gap-3">
+                        <button class="flex-1 py-2 border border-slate-300 rounded text-slate-600 hover:bg-white text-sm transition">取消</button>
+                        <button class="flex-1 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20 font-medium transition" :disabled="selectedItems.length===0" :class="{'opacity-50 cursor-not-allowed': selectedItems.length===0}">
+                            确认引用 (<span x-text="selectedItems.length"></span>)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function historyQuoteSelector() {
+            return {
+                search: '',
+                quotes: [
+                    {
+                        id: 101, no: 'QT-20251210-0082', date: '2025-12-10', total: 5200, expanded: true,
+                        items: [
+                            { id: 1, quoteId: 101, name: '激光测径仪', model: 'LMD-300', price: 1200, subcontract: 'none' },
+                            { id: 2, quoteId: 101, name: '全站仪', model: 'TS-Series', price: 800, subcontract: 'internal' },
+                            { id: 3, quoteId: 101, name: '钢卷尺', model: '5m', price: 50, subcontract: 'none' }
+                        ]
+                    },
+                    {
+                        id: 102, no: 'QT-20251105-0019', date: '2025-11-05', total: 3500, expanded: false,
+                        items: [
+                            { id: 4, quoteId: 102, name: '压力变送器', model: 'PT-100', price: 300, subcontract: 'none' },
+                            { id: 5, quoteId: 102, name: '特种气体检测仪', model: 'GasPro', price: 500, subcontract: 'external', vendor: '大连锅检院' },
+                            { id: 6, quoteId: 102, name: '绝缘电阻测试仪', model: 'Megger', price: 200, subcontract: 'none' }
+                        ]
+                    },
+                    {
+                        id: 103, no: 'QT-20251012-0055', date: '2025-10-12', total: 1200, expanded: false,
+                        items: [
+                            { id: 7, quoteId: 103, name: '卡尺', model: '0-150mm', price: 80, subcontract: 'none' },
+                            { id: 8, quoteId: 103, name: '千分尺', model: '0-25mm', price: 120, subcontract: 'none' }
+                        ]
+                    }
+                ],
+                selectedItems: [], // 存储选中的 item 对象
+
+                // 搜索过滤
+                get filteredQuotes() {
+                    if (!this.search) return this.quotes;
+                    const lower = this.search.toLowerCase();
+                    return this.quotes.filter(q => 
+                        q.no.toLowerCase().includes(lower) || 
+                        q.customer.toLowerCase().includes(lower) ||
+                        q.items.some(i => i.name.toLowerCase().includes(lower))
+                    );
+                },
+
+                // 获取已选的分组ID (报价单ID)
+                get selectedGroups() {
+                    return [...new Set(this.selectedItems.map(i => i.quoteId))];
+                },
+
+                // 计算总金额
+                get totalSelectedAmount() {
+                    return this.selectedItems.reduce((sum, i) => sum + i.price, 0);
+                },
+
+                // 辅助：根据ID获取报价单信息
+                getQuoteById(id) {
+                    return this.quotes.find(q => q.id === id);
+                },
+
+                // 辅助：获取某组下的已选器具
+                getSelectedItemsByGroup(groupId) {
+                    return this.selectedItems.filter(i => i.quoteId === groupId);
+                },
+
+                // 判断单个器具是否选中
+                isSelected(itemId) {
+                    return this.selectedItems.some(i => i.id === itemId);
+                },
+
+                // 切换单个器具选中状态
+                toggleItem(item) {
+                    const idx = this.selectedItems.findIndex(i => i.id === item.id);
+                    if (idx > -1) {
+                        this.selectedItems.splice(idx, 1);
+                    } else {
+                        // 为了右侧展示，确保 item 包含 quoteId (实际数据结构中已有)
+                        this.selectedItems.push(item);
+                    }
+                },
+
+                // 判断整单全选状态
+                isQuoteFullySelected(quote) {
+                    return quote.items.every(i => this.isSelected(i.id));
+                },
+
+                // 判断整单半选状态 (用于 indeterminate 样式)
+                isQuotePartiallySelected(quote) {
+                    const selectedCount = quote.items.filter(i => this.isSelected(i.id)).length;
+                    return selectedCount > 0 && selectedCount < quote.items.length;
+                },
+
+                // 切换整单全选/全不选
+                toggleQuote(quote) {
+                    const isAll = this.isQuoteFullySelected(quote);
+                    if (isAll) {
+                        // 全不选：移除该报价单下的所有器具
+                        this.selectedItems = this.selectedItems.filter(i => i.quoteId !== quote.id);
+                    } else {
+                        // 全选：将未选中的添加进去
+                        quote.items.forEach(item => {
+                            if (!this.isSelected(item.id)) {
+                                this.selectedItems.push(item);
+                            }
+                        });
+                    }
+                },
+
+                // 移除整组
+                removeGroup(groupId) {
+                    this.selectedItems = this.selectedItems.filter(i => i.quoteId !== groupId);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
