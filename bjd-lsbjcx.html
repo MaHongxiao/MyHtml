@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单品历史报价查询</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #f1f5f9; }
+        
+        /* 标签样式定义 */
+        .badge { padding: 2px 8px; border-radius: 4px; font-size: 12px; border: 1px solid; white-space: nowrap; }
+        .badge-self { background-color: #f8fafc; color: #64748b; border-color: #e2e8f0; } /* 自主 */
+        .badge-internal { background-color: #eff6ff; color: #3b82f6; border-color: #bfdbfe; } /* 内包 */
+        .badge-external { background-color: #fff7ed; color: #f97316; border-color: #fed7aa; } /* 外包 */
+        .shadow-2xl{width: 900px;height: 621px;}
+        /* 动画 */
+        .modal-enter { animation: modalIn 0.2s ease-out; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen bg-black/40 backdrop-blur-sm" x-data="historyQuoteModal()">
+
+    <div class="bg-white rounded-lg shadow-2xl w-[900px] flex flex-col modal-enter overflow-hidden" @click.outside="close()">
+        
+        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white">
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-blue-600"></i>
+                    历史成交记录
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">
+                    当前查询器具：<span class="font-bold text-slate-700 text-sm">激光测径仪 (LMD-Series)</span>
+                </p>
+            </div>
+            <button @click="close()" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-red-500 transition flex items-center justify-center">
+                <i class="fa-solid fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <div class="px-6 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+            <div class="flex gap-3">
+                <div class="relative w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <input type="text" x-model="filters.keyword" class="w-full pl-9 pr-3 py-1.5 border border-slate-300 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition" placeholder="搜索机构名称 / 客户...">
+                </div>
+                
+                <select x-model="filters.type" class="border border-slate-300 rounded text-sm px-2 py-1.5 outline-none text-slate-600 focus:border-blue-500 bg-white">
+                    <option value="all">全部类型</option>
+                    <option value="self">自主检测</option>
+                    <option value="internal">集团内包</option>
+                    <option value="external">外部分包</option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2 text-sm text-slate-600">
+                <span>排序：</span>
+                <select x-model="filters.sort" class="border-none bg-transparent font-bold text-slate-700 outline-none cursor-pointer hover:text-blue-600">
+                    <option value="date_desc">时间倒序 (默认)</option>
+                    <option value="price_asc">价格从低到高</option>
+                    <option value="price_desc">价格从高到低</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto max-h-[500px]">
+            <table class="w-full text-left text-sm border-collapse">
+                <thead class="bg-white sticky top-0 z-10 shadow-sm">
+                    <tr>
+                        <th class="p-4 border-b border-slate-100 text-slate-500 font-medium w-32">成交时间</th>
+                        <th class="p-4 border-b border-slate-100 text-slate-500 font-medium w-24">类型</th>
+                        <th class="p-4 border-b border-slate-100 text-slate-500 font-medium">执行机构 / 供应商</th>
+                        <th class="p-4 border-b border-slate-100 text-slate-500 font-medium w-40">关联客户</th>
+                        <th class="p-4 border-b border-slate-100 text-slate-500 font-medium text-right w-28">成交单价</th>
+                        <th class="p-4 border-b border-slate-100 text-slate-500 font-medium text-center w-24">操作</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    <template x-for="record in filteredRecords" :key="record.id">
+                        <tr class="hover:bg-blue-50/50 transition-colors group">
+                            <td class="p-4 text-slate-600 font-mono text-xs" x-text="record.date"></td>
+                            
+                            <td class="p-4">
+                                <span class="badge" 
+                                      :class="{
+                                          'badge-self': record.type === 'self',
+                                          'badge-internal': record.type === 'internal',
+                                          'badge-external': record.type === 'external'
+                                      }"
+                                      x-text="getTypeLabel(record.type)">
+                                </span>
+                            </td>
+                            
+                            <td class="p-4">
+                                <div class="font-medium text-slate-700" x-text="record.orgName"></div>
+                                <div x-show="record.type === 'self'" class="text-xs text-slate-400 scale-90 origin-left">本机构实验室</div>
+                            </td>
+
+                            <td class="p-4 text-slate-500 text-xs truncate max-w-[150px]" :title="record.customer" x-text="record.customer"></td>
+                            
+                            <td class="p-4 text-right">
+                                <div class="font-bold text-slate-700 font-mono" x-text="'¥' + record.price"></div>
+                            </td>
+                            
+                            <td class="p-4 text-center">
+                                <button @click="selectPrice(record)" class="px-3 py-1 bg-white border border-blue-200 text-blue-600 text-xs rounded hover:bg-blue-600 hover:text-white transition shadow-sm">
+                                    引用
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+
+                    <tr x-show="filteredRecords.length === 0">
+                        <td colspan="6" class="py-12 text-center text-slate-400">
+                            <i class="fa-solid fa-filter-circle-xmark text-3xl mb-2 opacity-30"></i>
+                            <p>未找到符合条件的记录</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 text-xs text-slate-500 flex justify-between items-center">
+            <span><i class="fa-solid fa-circle-info mr-1 text-blue-400"></i> 点击“引用”将自动回填价格和机构信息至当前报价单。</span>
+            <span>共 <span x-text="filteredRecords.length"></span> 条记录</span>
+        </div>
+    </div>
+
+    <script>
+        function historyQuoteModal() {
+            return {
+                // 模拟数据源
+                records: [
+                    { id: 1, date: '2025-12-10', type: 'self', orgName: '中检计量大连公司', price: 350, customer: '大连船舶重工' },
+                    { id: 2, date: '2025-11-05', type: 'external', orgName: '大连锅炉压力容器检验研究院', price: 500, customer: '恒力石化' },
+                    { id: 3, date: '2025-10-20', type: 'internal', orgName: '中检计量(深圳)分公司', price: 1200, customer: '英特尔半导体' },
+                    { id: 4, date: '2025-09-15', type: 'self', orgName: '中检计量大连公司', price: 320, customer: '一汽大众' },
+                    { id: 5, date: '2025-08-01', type: 'external', orgName: '辽宁省计量科学研究院', price: 480, customer: '沈阳鼓风机' },
+                    { id: 6, date: '2025-07-12', type: 'self', orgName: '中检计量大连公司', price: 350, customer: '大连机车' },
+                ],
+                
+                filters: {
+                    keyword: '',
+                    type: 'all',
+                    sort: 'date_desc'
+                },
+
+                // 核心过滤与排序逻辑
+                get filteredRecords() {
+                    let result = this.records;
+
+                    // 1. 类型筛选
+                    if (this.filters.type !== 'all') {
+                        result = result.filter(r => r.type === this.filters.type);
+                    }
+
+                    // 2. 关键词筛选 (机构或客户)
+                    if (this.filters.keyword) {
+                        const kw = this.filters.keyword.toLowerCase();
+                        result = result.filter(r => 
+                            r.orgName.toLowerCase().includes(kw) || 
+                            r.customer.toLowerCase().includes(kw)
+                        );
+                    }
+
+                    // 3. 排序
+                    result = result.sort((a, b) => {
+                        if (this.filters.sort === 'date_desc') {
+                            return new Date(b.date) - new Date(a.date);
+                        } else if (this.filters.sort === 'price_asc') {
+                            return a.price - b.price;
+                        } else if (this.filters.sort === 'price_desc') {
+                            return b.price - a.price;
+                        }
+                        return 0;
+                    });
+
+                    return result;
+                },
+
+                // 辅助函数：类型转中文
+                getTypeLabel(type) {
+                    const map = { 'self': '自主', 'internal': '内包', 'external': '外包' };
+                    return map[type] || type;
+                },
+
+                // 动作：引用价格
+                selectPrice(record) {
+                    // 模拟回调逻辑
+                    alert(`已选择引用：\n价格：¥${record.price}\n机构：${record.orgName}\n类型：${this.getTypeLabel(record.type)}`);
+                    
+                    // 实际开发中应调用父页面方法，例如：
+                    // window.parent.applyQuotePrice(record.price, record.orgName, record.type);
+                    
+                    this.close();
+                },
+
+                // 动作：关闭
+                close() {
+                    // 模拟关闭（实际需配合 x-show 或移除 DOM）
+                    document.body.innerHTML = '<div class="flex h-screen items-center justify-center text-slate-500">弹窗已关闭 (演示结束)</div>';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
