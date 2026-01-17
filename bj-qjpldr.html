@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量导入器具 - 智能校验版</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #f1f5f9; }
+        
+        /* 动画 */
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 进度条动画 */
+        .progress-bar { transition: width 0.3s ease-out; }
+        
+        /* 滚动条美化 */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen bg-black/40 backdrop-blur-sm" x-data="batchImportModal()">
+
+    <div class="bg-white rounded-xl shadow-2xl w-[900px] flex flex-col overflow-hidden fade-in relative" @click.outside="close()">
+        
+        <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+            <div>
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-file-import text-blue-600"></i>
+                    批量导入器具
+                </h3>
+                <p class="text-xs text-slate-500 mt-1 pl-7">支持 Excel (.xlsx, .xls) 格式，单次最多 500 条</p>
+            </div>
+            <button @click="close()" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-red-500 transition flex items-center justify-center">
+                <i class="fa-solid fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <div class="p-8 min-h-[400px] flex flex-col">
+            
+            <div x-show="step === 1" class="flex-1 flex flex-col items-center justify-center space-y-6 fade-in">
+                <div class="w-full max-w-2xl border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 hover:bg-blue-50 hover:border-blue-400 transition-colors cursor-pointer p-10 flex flex-col items-center justify-center group relative"
+                     @dragover.prevent="isDragging = true"
+                     @dragleave.prevent="isDragging = false"
+                     @drop.prevent="handleDrop($event)"
+                     @click="$refs.fileInput.click()">
+                    
+                    <input type="file" x-ref="fileInput" class="hidden" accept=".xlsx, .xls" @change="handleFileSelect($event)">
+                    
+                    <div class="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-blue-500"></i>
+                    </div>
+                    
+                    <h4 class="text-lg font-medium text-slate-700 mb-2">点击或拖拽文件到此处</h4>
+                    <p class="text-sm text-slate-400">支持 Excel 文件，文件大小不超过 5MB</p>
+                    
+                    <div x-show="isDragging" class="absolute inset-0 bg-blue-100/50 border-2 border-blue-500 rounded-xl flex items-center justify-center pointer-events-none" x-cloak>
+                        <span class="text-blue-600 font-bold text-lg">释放文件以上传</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 text-sm text-slate-500">
+                    <span>还没有模板？</span>
+                    <a href="#" class="text-blue-600 hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-download"></i> 下载标准导入模板
+                    </a>
+                </div>
+            </div>
+
+            <div x-show="step === 2" class="flex-1 flex flex-col items-center justify-center space-y-6 fade-in">
+                <div class="w-full max-w-md text-center">
+                    <div class="mb-4 flex justify-between text-sm font-medium text-slate-700">
+                        <span>正在解析文件...</span>
+                        <span x-text="progress + '%'"></span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                        <div class="bg-blue-600 h-2.5 rounded-full progress-bar" :style="`width: ${progress}%`"></div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2" x-text="progress < 100 ? '正在校验数据格式与必填项...' : '解析完成！'"></p>
+                </div>
+            </div>
+
+            <div x-show="step === 3" class="flex-1 flex flex-col h-full fade-in">
+                
+                <div class="flex gap-4 mb-4">
+                    <div class="flex-1 bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-list-check"></i></div>
+                        <div>
+                            <div class="text-xs text-slate-500">解析总数</div>
+                            <div class="text-xl font-bold text-slate-800" x-text="results.length"></div>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-green-50 border border-green-100 rounded-lg p-4 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><i class="fa-solid fa-check"></i></div>
+                        <div>
+                            <div class="text-xs text-slate-500">校验通过</div>
+                            <div class="text-xl font-bold text-green-600" x-text="successCount"></div>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-red-50 border border-red-100 rounded-lg p-4 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div>
+                            <div class="text-xs text-slate-500">校验失败</div>
+                            <div class="text-xl font-bold text-red-600" x-text="errorCount"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex border-b border-slate-200 mb-0">
+                    <button @click="filterType = 'all'" :class="filterType === 'all' ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'" class="px-4 py-2 text-sm border-b-2 transition">
+                        全部数据
+                    </button>
+                    <button @click="filterType = 'error'" :class="filterType === 'error' ? 'border-red-500 text-red-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700'" class="px-4 py-2 text-sm border-b-2 transition flex items-center gap-2">
+                        失败项
+                        <span class="bg-red-100 text-red-600 text-[10px] px-1.5 py-0.5 rounded-full" x-show="errorCount > 0" x-text="errorCount"></span>
+                    </button>
+                </div>
+
+                <div class="flex-1 border border-t-0 border-slate-200 rounded-b-lg overflow-hidden bg-white relative">
+                    <div class="absolute inset-0 overflow-auto custom-scroll">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm text-slate-500 text-xs font-medium">
+                                <tr>
+                                    <th class="p-3 w-16 text-center border-b">行号</th>
+                                    <th class="p-3 border-b w-32">状态</th>
+                                    <th class="p-3 border-b">器具名称</th>
+                                    <th class="p-3 border-b">型号规格</th>
+                                    <th class="p-3 border-b w-24 text-right">单价</th>
+                                    <th class="p-3 border-b min-w-[200px]">校验结果/错误原因</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="item in filteredResults" :key="item.row">
+                                    <tr class="hover:bg-slate-50 transition">
+                                        <td class="p-3 text-center text-slate-400 text-xs" x-text="item.row"></td>
+                                        
+                                        <td class="p-3">
+                                            <span x-show="item.status === 'success'" class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-green-50 text-green-700 border border-green-200 text-xs font-medium">
+                                                <i class="fa-solid fa-circle-check"></i> 正常
+                                            </span>
+                                            <span x-show="item.status === 'error'" class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-red-50 text-red-700 border border-red-200 text-xs font-medium">
+                                                <i class="fa-solid fa-circle-xmark"></i> 失败
+                                            </span>
+                                        </td>
+
+                                        <td class="p-3 font-medium text-slate-700" x-text="item.name || '-'"></td>
+                                        <td class="p-3 text-slate-500" x-text="item.model || '-'"></td>
+                                        <td class="p-3 text-right font-mono text-slate-600" x-text="item.price ? '¥'+item.price : '-'"></td>
+                                        
+                                        <td class="p-3">
+                                            <span x-show="item.status === 'success'" class="text-green-600 text-xs flex items-center gap-1">
+                                                <i class="fa-solid fa-check"></i> 格式正确
+                                            </span>
+                                            <span x-show="item.status === 'error'" class="text-red-600 text-xs font-bold flex items-center gap-1">
+                                                <i class="fa-solid fa-triangle-exclamation"></i> <span x-text="item.message"></span>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <tr x-show="filteredResults.length === 0">
+                                    <td colspan="6" class="p-8 text-center text-slate-400">
+                                        <div class="text-sm">没有符合条件的数据</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="px-8 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+            <div class="text-xs text-slate-500">
+                <span x-show="step === 3 && errorCount > 0" class="text-red-500">
+                    <i class="fa-solid fa-circle-info mr-1"></i> 注意：失败的 <span x-text="errorCount"></span> 条数据将不会被导入
+                </span>
+            </div>
+            <div class="flex gap-3">
+                <button @click="close()" class="px-5 py-2 border border-slate-300 rounded text-slate-600 hover:bg-white transition text-sm">取消</button>
+                
+                <button x-show="step === 3" @click="reset()" class="px-5 py-2 border border-slate-300 rounded text-blue-600 hover:bg-blue-50 transition text-sm">
+                    重新上传
+                </button>
+                
+                <button x-show="step === 3" @click="confirmImport()" :disabled="successCount === 0" 
+                        :class="successCount === 0 ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30'" 
+                        class="px-6 py-2 text-white rounded font-medium transition text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-file-import"></i> 
+                    导入 <span x-text="successCount"></span> 条有效数据
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function batchImportModal() {
+            return {
+                step: 1, // 1:上传, 2:处理, 3:结果
+                progress: 0,
+                isDragging: false,
+                fileName: '',
+                filterType: 'all', // all | error
+                results: [], // 模拟的导入结果数据
+
+                // 统计计算
+                get successCount() { return this.results.filter(i => i.status === 'success').length; },
+                get errorCount() { return this.results.filter(i => i.status === 'error').length; },
+                
+                // 筛选逻辑
+                get filteredResults() {
+                    if (this.filterType === 'all') return this.results;
+                    return this.results.filter(i => i.status === 'error');
+                },
+
+                // 处理文件选择
+                handleFileSelect(event) {
+                    const file = event.target.files[0];
+                    if (file) this.startUpload(file);
+                },
+
+                // 处理拖拽
+                handleDrop(event) {
+                    this.isDragging = false;
+                    const file = event.dataTransfer.files[0];
+                    if (file) this.startUpload(file);
+                },
+
+                // 模拟上传与解析过程
+                startUpload(file) {
+                    this.fileName = file.name;
+                    this.step = 2;
+                    this.progress = 0;
+
+                    // 模拟进度条动画
+                    const interval = setInterval(() => {
+                        this.progress += Math.floor(Math.random() * 15);
+                        if (this.progress >= 100) {
+                            this.progress = 100;
+                            clearInterval(interval);
+                            setTimeout(() => this.generateMockResults(), 600); // 完成后跳转
+                        }
+                    }, 200);
+                },
+
+                // 生成模拟结果数据
+                generateMockResults() {
+                    this.results = [
+                        { row: 1, status: 'success', name: '激光测径仪', model: 'LMD-300', price: 1200, message: '' },
+                        { row: 2, status: 'success', name: '电子天平', model: 'XJ-200', price: 300, message: '' },
+                        { row: 3, status: 'error', name: '', model: 'UT-100', price: 500, message: '器具名称为空' },
+                        { row: 4, status: 'success', name: '游标卡尺', model: '0-150mm', price: 80, message: '' },
+                        { row: 5, status: 'error', name: '数字压力计', model: '', price: null, message: '单价格式错误' },
+                        { row: 6, status: 'success', name: '全站仪', model: 'TS-06', price: 2000, message: '' },
+                        { row: 7, status: 'error', name: '未知设备', model: 'UNKNOWN', price: 100, message: '型号不在标准库中' },
+                    ];
+                    this.step = 3;
+                },
+
+                // 重置流程
+                reset() {
+                    this.step = 1;
+                    this.results = [];
+                    this.fileName = '';
+                    this.filterType = 'all';
+                },
+
+                // 确认导入
+                confirmImport() {
+                    alert(`成功导入 ${this.successCount} 条数据！`);
+                    this.close();
+                },
+
+                // 关闭弹窗
+                close() {
+                    // 实际项目中可能需要清理数据或触发父组件事件
+                    document.body.innerHTML = '<div class="flex h-screen items-center justify-center text-slate-500">弹窗已关闭</div>';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
