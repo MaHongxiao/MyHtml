@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目成本核算单 - 定制版</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', 'Microsoft YaHei', sans-serif; background-color: #f3f4f6; font-size: 16px; color: #1f2937; }
+        
+        /* 表格样式 */
+        .cost-table th { background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; font-size: 15px; }
+        .cost-table td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .cost-table tr:hover { background-color: #f8fafc; }
+        .bg-yellow-50 {
+    background-color: #f7faff!important;
+}
+.text-sm {
+    font-size: 0.92rem!important;
+}
+.border-yellow-300 {
+    border: 1px solid #c0d7fd!important;
+}
+.text-yellow-600 {
+    color: #2563eb!important;
+}
+.mhx{
+            color: #d12929!important;
+        }
+        /* 可编辑输入框 (黄色高亮) */
+        .input-edit {
+            width: 100%; 
+            background-color: #f7faff;
+            border: 1px solid #c0d7fd;
+            border-radius: 6px;
+            padding: 8px 12px; 
+            text-align: right; 
+            outline: none; 
+            transition: all 0.2s; 
+            font-family: 'Monaco', monospace;
+            font-weight: 600;
+            color: #1e3a8a;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .input-edit:focus { 
+            background-color: #fff; 
+            border-color: #2563eb; 
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15); 
+        }
+
+        /* 只读输入框 (灰色/透明) */
+        .input-readonly {
+            width: 100%; 
+            background-color: transparent; 
+            border: 1px dashed transparent;
+            padding: 8px 12px; 
+            text-align: right; 
+            color: #64748b;
+            cursor: default;
+            font-family: 'Monaco', monospace;
+            font-weight: 500;
+        }
+        /* 锁定数据的样式 */
+        .input-locked {
+            background-color: #f3f4f6;
+            color: #9ca3af;
+            border-radius: 6px;
+        }
+        
+        /* 滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        /* 列宽 */
+        .col-id { width: 60px; text-align: center; }
+        .col-type { width: 220px; }
+        .col-std { width: 280px; }
+        .col-param { width: 160px; }
+        .col-amount { width: 200px; }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen bg-black/50 backdrop-blur-sm" x-data="costSheet()">
+
+    <div class="bg-white rounded-xl shadow-2xl w-[1200px] flex flex-col overflow-hidden max-h-[95vh] animate-[fadeInUp_0.3s_ease-out]">
+        
+        <div class="px-8 py-5 border-b border-slate-200 bg-white shrink-0 flex justify-between items-center">
+            <h3 class="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-blue-200 shadow-md">
+                    <i class="fa-solid fa-calculator"></i>
+                </div>
+                项目成本核算单
+            </h3>
+            <button @click="close()" class="text-slate-400 hover:text-red-500 transition w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-xl">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+
+        <div class="px-8 py-4 bg-slate-50 border-b border-slate-200 grid grid-cols-2 gap-8 items-center">
+            <div class="bg-white border border-slate-200 rounded-lg p-4 flex items-center gap-4 shadow-sm relative overflow-hidden group">
+                <div class="absolute right-0 top-0 p-3 opacity-10 text-slate-800 text-6xl pointer-events-none"><i class="fa-solid fa-sack-dollar"></i></div>
+                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <div>
+                    <div class="text-sm text-slate-500 font-medium mb-1">项目报价/结算总金额 (固定)</div>
+                    <div class="text-3xl font-bold text-slate-800 tracking-tight font-mono" x-text="formatMoney(projectAmount)"></div>
+                </div>
+            </div>
+
+            <div class="flex gap-4 text-sm text-slate-600">
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-yellow-50 border border-yellow-300 rounded"></div>
+                    <span>可修改区域</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-gray-100 border border-gray-200 rounded"></div>
+                    <span>系统自动计算/锁定</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto custom-scroll p-0">
+            <table class="cost-table w-full border-collapse">
+                <thead class="sticky top-0 z-10 shadow-sm">
+                    <tr>
+                        <th class="col-id">序号</th>
+                        <th class="col-type text-left">成本类型</th>
+                        <th class="col-std text-left">核算单位 / 标准</th>
+                        <th class="col-param text-center">参数 / 比例 (%)</th>
+                        <th class="col-amount text-right">金额 (¥)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td class="col-id font-bold text-slate-300">1</td>
+                        <td class="font-bold text-slate-700">分包费</td>
+                        <td class="text-slate-500 text-sm">固定值 (不可改)</td>
+                        <td>
+                            <div class="relative">
+                                <input type="text" :value="items.subcontract.rate + '%'" readonly class="input-readonly input-locked text-center" disabled>
+                            </div>
+                        </td>
+                        <td><input type="text" :value="formatNum(items.subcontract.amount)" readonly class="input-readonly input-locked font-bold" disabled></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-id font-bold text-slate-300 align-top pt-4">2</td>
+                        <td class="font-bold text-slate-700 align-top pt-4">人工费</td>
+                        <td colspan="3" class="p-0">
+                            <table class="w-full">
+                                <tr class="border-b border-slate-50">
+                                    <td class="col-std pl-2 text-sm text-slate-600"><span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-xs mr-2 font-bold">住宿</span>A类 (700元/人天)</td>
+                                    <td class="col-param p-2"><input type="number" x-model.number="items.labor.stayA_days" class="input-edit text-center" placeholder="天数"></td>
+                                    <td class="col-amount p-2"><input type="text" :value="formatNum(items.labor.stayA_days * 700)" readonly class="input-readonly"></td>
+                                </tr>
+                                <tr class="border-b border-slate-50">
+                                    <td class="col-std pl-2 text-sm text-slate-600"><span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-xs mr-2 font-bold">住宿</span>B类 (500元/人天)</td>
+                                    <td class="col-param p-2"><input type="number" x-model.number="items.labor.stayB_days" class="input-edit text-center" placeholder="天数"></td>
+                                    <td class="col-amount p-2"><input type="text" :value="formatNum(items.labor.stayB_days * 500)" readonly class="input-readonly"></td>
+                                </tr>
+                                <tr class="border-b border-slate-50">
+                                    <td class="col-std pl-2 text-sm text-slate-600"><span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-xs mr-2 font-bold">无住</span>A类 (500元/人天)</td>
+                                    <td class="col-param p-2"><input type="number" x-model.number="items.labor.noStayA_days" class="input-edit text-center" placeholder="天数"></td>
+                                    <td class="col-amount p-2"><input type="text" :value="formatNum(items.labor.noStayA_days * 500)" readonly class="input-readonly"></td>
+                                </tr>
+                                <tr>
+                                    <td class="col-std pl-2 text-sm text-slate-600"><span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-xs mr-2 font-bold">无住</span>B类 (350元/人天)</td>
+                                    <td class="col-param p-2"><input type="number" x-model.number="items.labor.noStayB_days" class="input-edit text-center" placeholder="天数"></td>
+                                    <td class="col-amount p-2"><input type="text" :value="formatNum(items.labor.noStayB_days * 350)" readonly class="input-readonly"></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-id font-bold text-slate-300 align-top pt-4">3</td>
+                        <td class="font-bold text-slate-700 align-top pt-4">车辆费</td>
+                        <td colspan="3" class="p-0">
+                            <table class="w-full">
+                                <tr class="border-b border-slate-50">
+                                    <td class="col-std pl-2 text-sm text-slate-600">自有车辆 (150元/天)</td>
+                                    <td class="col-param p-2"><input type="number" x-model.number="items.vehicle.own_days" class="input-edit text-center" placeholder="天数"></td>
+                                    <td class="col-amount p-2"><input type="text" :value="formatNum(items.vehicle.own_days * 150)" readonly class="input-readonly"></td>
+                                </tr>
+                                <tr class="border-b border-slate-50">
+                                    <td class="col-std pl-2 text-sm text-slate-600">租车费 (实报实销)</td>
+                                    <td class="col-param text-center text-slate-300">-</td>
+                                    <td class="col-amount p-2"><input type="number" x-model.number="items.vehicle.rental_amount" class="input-edit" placeholder="0"></td>
+                                </tr>
+                                <tr>
+                                    <td class="col-std pl-2 text-sm text-slate-600">路桥油费 (3.0元/公里)</td>
+                                    <td class="col-param p-2"><input type="number" x-model.number="items.vehicle.fuel_km" class="input-edit text-center" placeholder="公里"></td>
+                                    <td class="col-amount p-2"><input type="text" :value="formatNum(items.vehicle.fuel_km * 3)" readonly class="input-readonly"></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-id font-bold text-slate-300">4</td>
+                        <td class="font-bold text-slate-700">差旅费</td>
+                        <td class="text-slate-400 text-sm">实报实销</td>
+                        <td class="text-center text-slate-300">-</td>
+                        <td><input type="number" x-model.number="items.travel.amount" class="input-edit" placeholder="0"></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-id font-bold text-slate-300">5</td>
+                        <td class="font-bold text-slate-700">标物费</td>
+                        <td class="text-slate-400 text-sm">实报实销</td>
+                        <td class="text-center text-slate-300">-</td>
+                        <td><input type="number" x-model.number="items.material.amount" class="input-edit" placeholder="0"></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-id font-bold text-slate-300">6</td>
+                        <td class="font-bold text-slate-700">实施公关费</td>
+                        <td class="text-slate-400 text-sm">-</td>
+                        <td class="text-center text-slate-300">-</td>
+                        <td><input type="number" x-model.number="items.impl_pr.amount" class="input-edit" placeholder="0"></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-id font-bold text-slate-300">7</td>
+                        <td class="font-bold text-slate-700">业务公关及开发费</td>
+                        <td class="text-slate-400 text-sm">-</td>
+                        <td class="text-center text-slate-300">-</td>
+                        <td><input type="number" x-model.number="items.biz_pr.amount" class="input-edit" placeholder="0"></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-id font-bold text-slate-300">8</td>
+                        <td class="font-bold text-slate-700">市场费</td>
+                        <td class="text-slate-500 text-sm">输入比例自动算</td>
+                        <td class="p-2">
+                            <div class="relative">
+                                <input type="number" x-model.number="items.market.rate" @input="calcAmount('market')" class="input-edit text-center" placeholder="0.0">
+                                <span class="absolute right-2 top-2 text-sm text-yellow-600 pointer-events-none">%</span>
+                            </div>
+                        </td>
+                        <td class="p-2"><input type="text" :value="formatNum(items.market.amount)" readonly class="input-readonly" disabled></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-id font-bold text-slate-300">9</td>
+                        <td class="font-bold text-slate-700">招投标费</td>
+                        <td class="text-slate-400 text-sm">实报实销</td>
+                        <td class="text-center text-slate-300">-</td>
+                        <td><input type="number" x-model.number="items.bidding.amount" class="input-edit" placeholder="0"></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-id font-bold text-slate-300">10</td>
+                        <td class="font-bold text-slate-700">业务计提费用</td>
+                        <td class="text-slate-500 text-sm">输入比例自动算</td>
+                        <td class="p-2">
+                            <div class="relative">
+                                <input type="number" x-model.number="items.biz_accrual.rate" @input="calcAmount('biz_accrual')" class="input-edit text-center" placeholder="0.0">
+                                <span class="absolute right-2 top-2 text-sm text-yellow-600 pointer-events-none">%</span>
+                            </div>
+                        </td>
+                        <td class="p-2"><input type="text" :value="formatNum(items.biz_accrual.amount)" readonly class="input-readonly" disabled></td>
+                    </tr>
+
+                    <tr>
+                        <td class="col-id font-bold text-slate-300">11</td>
+                        <td class="font-bold text-slate-700">综合运营管理费</td>
+                        <td class="text-slate-500 text-sm">固定费率 22%</td>
+                        <td class="p-2">
+                            <div class="relative">
+                                <input type="text" value="22" readonly class="input-readonly input-locked text-center" disabled>
+                                <span class="absolute right-3 top-2 text-sm text-gray-400 pointer-events-none">%</span>
+                            </div>
+                        </td>
+                        <td class="p-2"><input type="text" :value="formatNum(items.mgmt_fee.amount)" readonly class="input-readonly input-locked font-bold text-slate-600" disabled></td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bg-white border-t border-slate-200 p-6 shrink-0 z-20 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+            <div class="flex justify-between items-end mb-4">
+                <div class="space-y-1">
+                    <div class="text-xs text-slate-500">核算总成本</div>
+                    <div class="text-2xl font-bold text-slate-800 font-mono" x-text="formatMoney(totalCost)"></div>
+                </div>
+                <div class="space-y-1 text-right">
+                    <div class="text-xs text-slate-500">预估毛利</div>
+                    <div class="mhx text-2xl font-bold font-mono" :class="grossProfit >= 0 ? 'text-green-600' : 'text-red-600'" x-text="formatMoney(grossProfit)"></div>
+                </div>
+                <div class="space-y-1 text-right">
+                    <div class="text-xs text-slate-500">毛利率</div>
+                    <div class="text-3xl font-bold font-mono" :class="grossMargin >= 30 ? 'text-blue-600' : 'text-red-500'" x-text="grossMargin + '%'"></div>
+                </div>
+            </div>
+
+            <div x-show="grossMargin < 30" x-transition class="bg-red-50 border border-red-100 rounded-lg p-3 mb-4 flex items-center gap-3 text-red-700 animate-pulse">
+                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                <div class="flex-1">
+                    <span class="font-bold text-base">风控预警：</span>
+                    <span class="text-sm">当前毛利率低于 30%，系统将自动发起特批流程。</span>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button @click="close()" class="px-6 py-2 border border-slate-300 rounded text-slate-600 hover:bg-slate-50 transition text-sm font-medium">取消</button>
+                <button @click="submit()" class="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-lg shadow-blue-500/30 transition flex items-center gap-2 text-sm font-bold">
+                    <i class="fa-solid fa-check"></i> 提交核算
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function costSheet() {
+            return {
+                projectAmount: 50000, // 此时模拟为固定值，实际可由Props传入
+                
+                items: {
+                    // 1. 分包 (固定)
+                    subcontract: { rate: 20, amount: 10000 },
+                    // 2. 人工
+                    labor: { stayA_days: 4, stayB_days: 3, noStayA_days: 0, noStayB_days: 0 },
+                    // 3. 车辆
+                    vehicle: { own_days: 0, rental_amount: 0, fuel_km: 0 },
+                    // 4-7. 纯金额
+                    travel: { amount: 0 },
+                    material: { amount: 0 },
+                    impl_pr: { amount: 0 },
+                    biz_pr: { amount: 0 },
+                    // 8. 市场 (只能改Rate)
+                    market: { rate: 0, amount: 0 },
+                    // 9. 招投标 (改Amount)
+                    bidding: { amount: 0 },
+                    // 10. 业务计提 (只能改Rate)
+                    biz_accrual: { rate: 0, amount: 0 },
+                    // 11. 综合管理 (全固定)
+                    mgmt_fee: { rate: 22, amount: 0 }
+                },
+
+                init() {
+                    this.recalcAll(); // 初始化计算一次自动项
+                },
+
+                // 统计人工
+                get laborTotal() {
+                    const l = this.items.labor;
+                    return (l.stayA_days * 700) + (l.stayB_days * 500) + (l.noStayA_days * 500) + (l.noStayB_days * 350);
+                },
+                // 统计车辆
+                get vehicleTotal() {
+                    const v = this.items.vehicle;
+                    return (v.own_days * 150) + Number(v.rental_amount) + (v.fuel_km * 3);
+                },
+                // 统计总成本
+                get totalCost() {
+                    const i = this.items;
+                    // 分包金额 + 人工 + 车辆 + 其他
+                    return Number(i.subcontract.amount) + 
+                           this.laborTotal + 
+                           this.vehicleTotal + 
+                           Number(i.travel.amount) + 
+                           Number(i.material.amount) + 
+                           Number(i.impl_pr.amount) + 
+                           Number(i.biz_pr.amount) + 
+                           Number(i.market.amount) + 
+                           Number(i.bidding.amount) + 
+                           Number(i.biz_accrual.amount) + 
+                           Number(i.mgmt_fee.amount);
+                },
+                get grossProfit() { return this.projectAmount - this.totalCost; },
+                get grossMargin() {
+                    if (this.projectAmount === 0) return 0;
+                    return ((this.grossProfit / this.projectAmount) * 100).toFixed(2);
+                },
+
+                // 核心逻辑: Rate -> Amount (用于 市场费、业务计提)
+                calcAmount(key) {
+                    const item = this.items[key];
+                    item.amount = Math.floor(this.projectAmount * (item.rate / 100));
+                },
+
+                // 当项目总额变化(虽然只读，但保留逻辑健壮性)时触发
+                recalcAll() {
+                    // 1. 市场费
+                    this.calcAmount('market');
+                    // 2. 业务计提
+                    this.calcAmount('biz_accrual');
+                    // 3. 综合管理费 (固定22%)
+                    this.items.mgmt_fee.amount = Math.floor(this.projectAmount * 0.22);
+                },
+
+                formatMoney(val) {
+                    return '¥ ' + Number(val).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                },
+                formatNum(val) {
+                    return Number(val).toLocaleString('en-US');
+                },
+
+                submit() {
+                    let msg = `核算提交成功！\n总成本: ${this.formatMoney(this.totalCost)}\n毛利率: ${this.grossMargin}%`;
+                    if(this.grossMargin < 30) msg += "\n(已触发特批流程)";
+                    alert(msg);
+                    this.close();
+                },
+                close() {
+                    document.body.innerHTML = '<div class="flex h-screen items-center justify-center text-slate-500">弹窗已关闭</div>';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
