@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新建缴费单返款</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        /* 强制最小字体 12px */
+        body { font-family: 'Inter', 'Microsoft YaHei', sans-serif; background-color: #f1f5f9; font-size: 14px; color: #334155; }
+        
+        /* 拟态输入框 (表格内) */
+        .smart-input {
+            width: 100%; border: 1px solid transparent; background: transparent; padding: 6px 4px;
+            font-family: 'Monaco', monospace; text-align: center; outline: none; transition: all 0.2s; border-radius: 4px;
+            font-weight: 600; font-size: 13px;
+        }
+        .smart-input:hover { background-color: #f8fafc; border-color: #e2e8f0; }
+        .smart-input:focus { background-color: #fff; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.1); }
+        .smart-input.amount { color: #dc2626; } /* 金额红字 */
+        .smart-input.percent { color: #2563eb; } /* 比例蓝字 */
+
+        /* 滚动条美化 */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f8fafc; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        /* 动画 */
+        .fade-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen bg-black/40 backdrop-blur-sm" x-data="refundApp()">
+
+    <div class="bg-white rounded-xl shadow-2xl w-[1280px] flex flex-col overflow-hidden fade-in relative max-h-[90vh]">
+        
+        <div class="px-8 py-5 border-b border-slate-200 bg-white shrink-0">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800">新建缴费单返款申请</h3>
+                    <div class="mt-2 flex items-center gap-4 text-sm text-slate-600">
+                        <div class="bg-blue-50 text-blue-700 px-3 py-1 rounded border border-blue-100 font-medium">
+                            <i class="fa-regular fa-building mr-1"></i>
+                            缴费单位：<span x-text="customerName"></span>
+                        </div>
+                        <span class="text-slate-400">|</span>
+                        <span>共选中 <span class="font-bold text-slate-800" x-text="items.length"></span> 张缴费单</span>
+                    </div>
+                </div>
+                <button @click="close()" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-red-500 transition flex items-center justify-center">
+                    <i class="fa-solid fa-times text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="p-8 space-y-6 overflow-y-auto custom-scroll">
+            
+            <div class="grid grid-cols-1 gap-6">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">
+                        <span class="text-red-500 mr-1">*</span>返款原因
+                    </label>
+                    <textarea x-model="formData.reason" class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none h-20 resize-none transition placeholder-slate-400" placeholder="请详细描述返款原因及特殊说明..."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-3">业务开发提成性质</label>
+                    <div class="flex gap-8 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <label class="flex items-center cursor-pointer group">
+                            <input type="radio" name="bizType" value="bid" x-model="formData.bizType" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                            <span class="ml-2 text-sm text-slate-600 group-hover:text-blue-600 transition">招投标</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer group">
+                            <input type="radio" name="bizType" value="dept" x-model="formData.bizType" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                            <span class="ml-2 text-sm text-slate-600 group-hover:text-blue-600 transition">部门开发</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer group">
+                            <input type="radio" name="bizType" value="personal" x-model="formData.bizType" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                            <span class="ml-2 text-sm text-slate-600 group-hover:text-blue-600 transition">个人开发</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer group">
+                            <input type="radio" name="bizType" value="other" x-model="formData.bizType" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                            <span class="ml-2 text-sm text-slate-600 group-hover:text-blue-600 transition">其它</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <div class="flex justify-between items-end mb-3">
+                    <div class="flex items-center gap-2 border-l-4 border-blue-600 pl-3 h-6">
+                        <h4 class="font-bold text-slate-800 text-sm">明细计算</h4>
+                    </div>
+                    
+                    <div class="flex gap-3 items-center bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+                        <div class="flex items-center gap-2 px-2 border-r border-slate-300">
+                            <span class="text-xs font-bold text-slate-600">批量设置比例:</span>
+                            <div class="relative">
+                                <input type="number" x-model.number="globalRate" @keyup.enter="applyGlobalRate()" class="w-20 border border-slate-300 rounded px-2 py-1 text-sm text-center outline-none focus:border-blue-500 bg-white" placeholder="0">
+                                <span class="absolute right-6 top-1.5 text-xs text-slate-400 pointer-events-none">%</span>
+                            </div>
+                            <button @click="applyGlobalRate()" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition shadow-sm">一键应用</button>
+                        </div>
+
+                        <div class="flex items-center gap-2 px-2">
+                            <span class="text-xs font-bold text-slate-600">取整方式:</span>
+                            <select x-model="precision" @change="recalcAll()" class="border border-slate-300 rounded px-2 py-1 text-xs outline-none cursor-pointer bg-white w-32 focus:border-blue-500">
+                                <option value="0">元 (向下取整)</option>
+                                <option value="1">角 (保留1位)</option>
+                                <option value="2">分 (保留2位)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm ring-1 ring-black/5">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-500 font-medium text-xs uppercase tracking-wider">
+                            <tr>
+                                <th class="py-3 px-4 w-12 text-center border-b border-slate-200">#</th>
+                                <th class="py-3 px-4 border-b border-slate-200 w-32">缴费单编号</th>
+                                <th class="py-3 px-4 border-b border-slate-200 text-right w-28">缴费金额</th>
+                                
+                                <th class="py-3 px-4 border-b border-slate-200 text-right text-slate-400 font-normal w-24">检测费</th>
+                                <th class="py-3 px-4 border-b border-slate-200 text-right text-slate-400 font-normal w-24">交通费</th>
+                                <th class="py-3 px-4 border-b border-slate-200 text-right text-slate-400 font-normal w-24">加急费</th>
+                                <th class="py-3 px-4 border-b border-slate-200 text-right text-slate-400 font-normal w-24">其他费</th>
+                                
+                                <th class="py-3 px-2 text-center w-32 bg-blue-50/50 text-blue-700 border-b border-blue-100 border-l">
+                                    返款比例(%)
+                                </th>
+                                <th class="py-3 px-2 text-center w-36 bg-red-50/50 text-red-700 border-b border-red-100 border-l border-r">
+                                    返款金额 <span class="text-[10px] font-normal opacity-60" x-text="'('+getPrecisionLabel()+')'"></span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="(item, index) in items" :key="item.id">
+                                <tr class="hover:bg-slate-50 transition group">
+                                    <td class="py-3 px-4 text-center text-slate-400" x-text="index + 1"></td>
+                                    <td class="py-3 px-4 font-mono text-slate-600 font-medium" x-text="item.code"></td>
+                                    <td class="py-3 px-4 text-right font-mono font-medium text-slate-700" x-text="formatMoney(item.totalAmount)"></td>
+                                    
+                                    <td class="py-3 px-4 text-right text-slate-400 text-xs" x-text="item.testFee"></td>
+                                    <td class="py-3 px-4 text-right text-slate-400 text-xs" x-text="item.transportFee"></td>
+                                    <td class="py-3 px-4 text-right text-slate-400 text-xs" x-text="item.expeditedFee"></td>
+                                    <td class="py-3 px-4 text-right text-slate-400 text-xs" x-text="item.otherFee"></td>
+                                    
+                                    <td class="p-1 border-l border-slate-100 bg-blue-50/10 group-hover:bg-white transition relative">
+                                        <div class="relative h-full flex items-center px-1">
+                                            <input type="number" x-model.number="item.rate" @input="calcFromRate(item)" 
+                                                   class="smart-input percent" placeholder="0.00" min="0" max="100" step="0.01">
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="p-1 border-l border-r border-slate-100 bg-red-50/10 group-hover:bg-white transition relative">
+                                        <div class="relative h-full flex items-center px-1">
+                                            <span class="text-xs text-red-300 absolute left-3">¥</span>
+                                            <input type="number" x-model.number="item.refundAmount" @input="calcFromAmount(item)" 
+                                                   class="smart-input amount pl-5" placeholder="0.00">
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                        <tfoot class="bg-slate-50 font-bold text-slate-700">
+                            <tr>
+                                <td colspan="8" class="py-3 px-4 text-right text-sm border-t border-slate-200">
+                                    <div class="flex items-center justify-end gap-6">
+                                        <span class="text-slate-500 font-normal">缴费总额: <span class="font-mono font-bold text-slate-700" x-text="formatMoney(totalPay)"></span></span>
+                                        <span>返款合计:</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4 text-center text-lg text-red-600 font-mono border-t border-slate-200 border-l border-r bg-white shadow-inner" x-text="totalRefund"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="px-8 py-4 bg-white border-t border-slate-200 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-2 text-xs text-orange-500 bg-orange-50 px-3 py-1.5 rounded border border-orange-100">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>注意：修改金额会自动按所选精度向下取整（如选"元"，12.8元将变为12元）。</span>
+            </div>
+            <div class="flex gap-3">
+                <button @click="close()" class="px-6 py-2 border border-slate-300 rounded text-slate-600 hover:bg-slate-50 transition text-sm font-medium">取消</button>
+                <button @click="submit()" class="px-6 py-2 bg-blue-600 text-white rounded shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition text-sm font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> 提交申请
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function refundApp() {
+            return {
+                customerName: '昆明松骋汽修设备有限公司',
+                formData: {
+                    reason: '',
+                    bizType: 'bid'
+                },
+                precision: 0, // 默认0 (元)
+                globalRate: '', // 统一比例
+                
+                // 模拟数据 (同一客户)
+                items: [
+                    { 
+                        id: 1, code: 'J260116012', totalAmount: 3440, 
+                        testFee: 3000, transportFee: 440, expeditedFee: 0, otherFee: 0,
+                        rate: 0, refundAmount: 0 
+                    },
+                    { 
+                        id: 2, code: 'J260116015', totalAmount: 12500, 
+                        testFee: 10000, transportFee: 2000, expeditedFee: 500, otherFee: 0,
+                        rate: 0, refundAmount: 0 
+                    },
+                    { 
+                        id: 3, code: 'J260116018', totalAmount: 880, 
+                        testFee: 800, transportFee: 80, expeditedFee: 0, otherFee: 0,
+                        rate: 0, refundAmount: 0 
+                    },
+                    { 
+                        id: 4, code: 'J260116022', totalAmount: 5000, 
+                        testFee: 5000, transportFee: 0, expeditedFee: 0, otherFee: 0,
+                        rate: 0, refundAmount: 0 
+                    }
+                ],
+
+                // 计算属性
+                get totalPay() {
+                    return this.items.reduce((acc, item) => acc + item.totalAmount, 0);
+                },
+                get totalRefund() {
+                    const sum = this.items.reduce((acc, item) => acc + (Number(item.refundAmount) || 0), 0);
+                    return '¥ ' + sum.toFixed(this.precision);
+                },
+
+                // 辅助函数
+                getPrecisionLabel() {
+                    const map = { 0: '元', 1: '角', 2: '分' };
+                    return map[this.precision];
+                },
+                formatMoney(val) {
+                    return val.toLocaleString('en-US', { minimumFractionDigits: 2 });
+                },
+
+                // --- 业务逻辑 ---
+
+                // 1. 应用全局比例
+                applyGlobalRate() {
+                    const rate = Number(this.globalRate);
+                    if (rate < 0 || rate > 100) {
+                        alert('请输入 0-100 之间的有效比例');
+                        return;
+                    }
+                    // 遍历更新所有行
+                    this.items.forEach(item => {
+                        item.rate = rate;
+                        this.calcFromRate(item);
+                    });
+                },
+
+                // 2. 双向计算：输入比例 -> 算金额
+                calcFromRate(item) {
+                    let r = Number(item.rate);
+                    if (r < 0) r = 0; if (r > 100) r = 100;
+                    item.rate = r;
+                    
+                    // 原始金额
+                    let rawAmount = item.totalAmount * (r / 100);
+                    
+                    // 精度处理 (向下取整 logic: floor(val * 10^n) / 10^n)
+                    const factor = Math.pow(10, this.precision);
+                    item.refundAmount = Math.floor(rawAmount * factor) / factor;
+                },
+
+                // 3. 双向计算：输入金额 -> 反算比例
+                calcFromAmount(item) {
+                    let amt = Number(item.refundAmount);
+                    if (amt < 0) amt = 0;
+                    if (amt > item.totalAmount) amt = item.totalAmount; // 封顶
+                    
+                    // 强制金额符合当前精度 (去掉多余小数位)
+                    const factor = Math.pow(10, this.precision);
+                    item.refundAmount = Math.floor(amt * factor) / factor;
+                    
+                    // 反算比例
+                    if (item.totalAmount > 0) {
+                        item.rate = Number(((item.refundAmount / item.totalAmount) * 100).toFixed(2));
+                    } else {
+                        item.rate = 0;
+                    }
+                },
+
+                // 4. 切换精度时重算
+                recalcAll() {
+                    this.items.forEach(item => {
+                        // 保持比例优先，重算金额以符合新精度
+                        this.calcFromRate(item);
+                    });
+                },
+
+                submit() {
+                    if (!this.formData.reason) {
+                        alert('请填写返款原因');
+                        return;
+                    }
+                    if (Number(this.totalRefund.replace('¥ ', '')) <= 0) {
+                        alert('返款总额不能为 0');
+                        return;
+                    }
+                    alert('提交成功！\n\n涉及缴费单：' + this.items.length + ' 张\n返款总额：' + this.totalRefund);
+                    this.close();
+                },
+
+                close() {
+                    document.body.innerHTML = '<div class="flex h-screen items-center justify-center text-slate-500 bg-slate-50">弹窗已关闭</div>';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
