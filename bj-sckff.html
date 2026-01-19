@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>市场开发费设置 (直接展示)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root { --td-brand-color: #0052D9; --td-text-primary: #1d1d1f; }
+        [x-cloak] { display: none !important; }
+        body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background-color: #e5e5e5; }
+
+        /* 弹窗动画 */
+        .modal-enter { animation: modalIn 0.3s cubic-bezier(0.38, 0, 0.24, 1) forwards; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* 拟态输入框 */
+        .smart-input {
+            width: 100%; background: transparent; border: none; outline: none;
+            font-family: 'Monaco', monospace; font-weight: 600; text-align: center;
+            transition: all 0.2s;
+        }
+        .input-group {
+            background: #f3f3f3; border: 1px solid #dcdcdc; border-radius: 6px;
+            padding: 8px 12px; transition: all 0.2s; display: flex; align-items: center;
+        }
+        .input-group:focus-within {
+            background: #fff; border-color: var(--td-brand-color); box-shadow: 0 0 0 2px rgba(0, 82, 217, 0.1);
+        }
+        .input-group:hover:not(:focus-within) { border-color: #999; }
+
+        /* 快捷标签 */
+        .quick-tag {
+            font-size: 11px; padding: 2px 8px; border-radius: 12px; cursor: pointer;
+            background: #f3f4f7; color: #666; border: 1px solid transparent; transition: all 0.2s;
+        }
+        .quick-tag:hover { color: var(--td-brand-color); background: #e6f4ff; border-color: #cdbaff; }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen" x-data="marketFeeLogic()">
+
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        
+        <div class="bg-white rounded-lg shadow-2xl w-[420px] modal-enter overflow-hidden relative">
+            
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-indigo-50 text-indigo-600 rounded flex items-center justify-center">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-gray-800">市场开发费设置</h3>
+                </div>
+                <button @click="closeDemo()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="p-6 space-y-6">
+                
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 flex justify-between items-center select-none" title="该数值来自报价单总额，自动获取不可修改">
+                    <div class="flex items-center gap-2 text-slate-600 text-sm">
+                        <i class="fa-solid fa-calculator opacity-50"></i>
+                        <span class="font-medium">报价总额 (基数)</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-baseline gap-1 opacity-70">
+                            <span class="text-xs text-slate-500 font-bold">¥</span>
+                            <span class="text-lg font-bold text-slate-700 font-mono tracking-wide" x-text="basePrice"></span>
+                        </div>
+                        <i class="fa-solid fa-lock text-xs text-slate-300"></i>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 relative">
+                    
+                    <div class="flex-1 group">
+                        <label class="block text-xs text-gray-500 mb-1.5 pl-1">计提比例 (%)</label>
+                        <div class="input-group relative">
+                            <input type="number" x-model.number="ratio" @input="calcFromRatio()" 
+                                   class="smart-input text-lg text-indigo-600" placeholder="0.0" step="0.1">
+                            <span class="text-xs text-gray-400 absolute right-3 pointer-events-none">%</span>
+                        </div>
+                        <div class="flex gap-2 mt-2 justify-center">
+                            <span class="quick-tag" @click="setRatio(3)">3%</span>
+                            <span class="quick-tag" @click="setRatio(5)">5%</span>
+                            <span class="quick-tag" @click="setRatio(8)">8%</span>
+                            <span class="quick-tag" @click="setRatio(10)">10%</span>
+                        </div>
+                    </div>
+
+                    <div class="text-gray-300 pt-6">
+                        <i class="fa-solid fa-right-left text-sm"></i>
+                    </div>
+
+                    <div class="flex-1 group">
+                        <label class="block text-xs text-gray-500 mb-1.5 pl-1">支出金额 (¥)</label>
+                        <div class="input-group relative">
+                            <span class="text-xs text-gray-400 absolute left-3 pointer-events-none">¥</span>
+                            <input type="number" x-model.number="amount" @input="calcFromAmount()" 
+                                   class="smart-input text-lg text-indigo-600" placeholder="0">
+                        </div>
+                        <div class="flex gap-2 mt-2 justify-center">
+                            <span class="quick-tag" @click="roundAmount()" title="去除小数位">取整</span>
+                            <span class="quick-tag" @click="clear()" title="重置为0">清空</span>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                <button @click="closeDemo()" class="px-4 py-1.5 bg-white border border-gray-300 text-gray-600 rounded text-sm hover:border-blue-500 hover:text-blue-500 transition">取消</button>
+                <button @click="confirm()" class="px-4 py-1.5 bg-blue-600 text-white rounded shadow text-sm hover:bg-blue-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-check"></i> 确认设置
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function marketFeeLogic() {
+            return {
+                basePrice: 50000, // 默认报价基数 (固定)
+                ratio: 5,         // 默认比例
+                amount: 2500,     // 默认金额
+
+                init() {
+                    this.calcFromRatio(); // 初始化计算
+                },
+
+                // 场景1：修改比例 -> 算金额
+                calcFromRatio() {
+                    let val = this.basePrice * (Number(this.ratio) / 100);
+                    this.amount = Number(val.toFixed(2));
+                },
+
+                // 场景2：修改金额 -> 反算比例
+                calcFromAmount() {
+                    if (this.basePrice === 0) {
+                        this.ratio = 0;
+                        return;
+                    }
+                    let val = (Number(this.amount) / this.basePrice) * 100;
+                    this.ratio = Number(val.toFixed(2));
+                },
+
+                setRatio(r) {
+                    this.ratio = r;
+                    this.calcFromRatio();
+                },
+
+                roundAmount() {
+                    this.amount = Math.floor(this.amount);
+                    this.calcFromAmount(); 
+                },
+
+                clear() {
+                    this.ratio = 0;
+                    this.amount = 0;
+                },
+
+                confirm() {
+                    alert(`设置成功！\n基数：¥${this.basePrice}\n比例：${this.ratio}%\n开发费：¥${this.amount}`);
+                },
+
+                closeDemo() {
+                    if(confirm("关闭后需刷新页面才能重新显示。确认关闭？")) {
+                        document.querySelector('.fixed').remove(); // 仅演示用，移除弹窗
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
