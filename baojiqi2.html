@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简易智能报价栏 (无折扣版)</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #f1f5f9; padding-bottom: 120px; }
+        
+        /* 拟态输入框风格 */
+        .smart-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px dashed #94a3b8;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s;
+            outline: none;
+        }
+        .smart-input:focus {
+            border-bottom: 2px solid #3b82f6;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+        }
+        
+        /* 运算符号 */
+        .math-symbol { color: #cbd5e1; font-weight: 300; font-size: 24px; user-select: none; margin: 0 4px; }
+        
+        /* 右侧信息标签 */
+        .badge-info {
+            background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b;
+            font-size: 11px; padding: 4px 10px; border-radius: 4px;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen">
+
+    <div x-data="simplifiedPricing()" x-cloak 
+         class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] h-24 px-8 flex items-center justify-between">
+        
+        <div class="flex flex-col w-48">
+            <span class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">器具原价汇总</span>
+            <div class="flex items-center gap-2">
+                <span class="text-2xl font-bold text-slate-700 font-mono">¥<span x-text="basePrice"></span></span>
+                <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded">共 12 项</span>
+            </div>
+        </div>
+
+        <div class="flex-1 mx-8 flex items-center justify-center h-full">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl px-16 py-3 flex items-center gap-10 relative shadow-inner transition-colors duration-300"
+                 :class="serviceFee < 0 ? 'bg-red-50/50 border-red-100' : 'bg-slate-50 border-slate-200'">
+                
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-3 py-0.5 text-[10px] text-slate-400 border border-slate-200 rounded-full shadow-sm whitespace-nowrap">
+                    计算公式：器具原价 + 服务费 = 最终报价
+                </div>
+
+                <div class="flex flex-col items-center opacity-60">
+                    <label class="text-[10px] text-slate-400 mb-1">器具原价</label>
+                    <span class="text-xl font-bold text-slate-600 border-b border-transparent font-mono">¥<span x-text="basePrice"></span></span>
+                </div>
+
+                <span class="math-symbol">+</span>
+
+                <div class="flex flex-col items-center relative group">
+                    <label class="text-[10px] text-slate-500 mb-1 font-medium" :class="serviceFee < 0 ? 'text-red-500' : 'text-slate-500'">服务/附加费</label>
+                    <div class="relative">
+                        <span class="absolute left-0 bottom-1 text-slate-400 font-light">¥</span>
+                        <input type="number" x-model.number="serviceFee" @input="calcForward()" 
+                               class="smart-input w-32 text-lg pl-4" 
+                               :class="serviceFee < 0 ? 'text-red-500 font-bold' : 'text-slate-700'"
+                               placeholder="0">
+                    </div>
+                    <div class="absolute -bottom-5 text-[10px] text-red-500 whitespace-nowrap" x-show="serviceFee < 0">
+                        <i class="fa-solid fa-arrow-trend-down mr-1"></i>低于原价
+                    </div>
+                </div>
+
+                <span class="math-symbol">=</span>
+
+                <div class="flex flex-col items-center relative">
+                    <label class="text-[10px] text-blue-600 mb-1 font-bold flex items-center gap-1">
+                        最终报价
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-0 bottom-1 text-blue-400 font-bold text-lg">¥</span>
+                        <input type="number" x-model.number="finalTotal" @input="calcReverse()" 
+                               class="smart-input w-40 text-2xl text-blue-600 font-bold pl-6 border-blue-200 focus:border-blue-500 bg-blue-50/30 focus:bg-white" 
+                               placeholder="0.00">
+                    </div>
+                    
+                    <div class="absolute -bottom-6 w-48 text-center text-[10px] text-slate-400 transition-opacity duration-300" 
+                         :class="isReverseCalculating ? 'opacity-100' : 'opacity-0'">
+                        <i class="fa-solid fa-rotate mr-1 animate-spin"></i>
+                        正在反算服务费...
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="flex flex-col items-end w-56 pl-6 border-l border-slate-200 h-16 justify-center gap-1">
+            <div class="badge-info w-full">
+                <span class="text-[10px] block mb-0.5">服务费率</span>
+                <span class="font-mono font-bold text-slate-700" x-text="serviceRate + '%'"></span>
+            </div>
+            <div class="text-[10px] text-slate-400 truncate w-full text-right" :title="digitUppercase(finalTotal)">
+                <span x-text="digitUppercase(finalTotal)"></span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function simplifiedPricing() {
+            return {
+                basePrice: 2400,      // 器具总原价 (固定基数)
+                serviceFee: 600,      // 服务费 (默认值)
+                finalTotal: 3000,     // 最终总价
+                
+                isReverseCalculating: false,
+
+                init() {
+                    // 初始化时进行一次正向计算，确保数据一致
+                    this.calcForward();
+                },
+
+                // 计算服务费率 (服务费 / 原价)
+                get serviceRate() {
+                    if (this.basePrice === 0) return 0;
+                    return ((this.serviceFee / this.basePrice) * 100).toFixed(1);
+                },
+
+                /**
+                 * 正向计算：
+                 * 修改 [服务费] -> 计算 [最终报价]
+                 * 公式：最终报价 = 原价 + 服务费
+                 */
+                calcForward() {
+                    const base = Number(this.basePrice) || 0;
+                    const fee = Number(this.serviceFee) || 0;
+                    
+                    // 保留2位小数
+                    this.finalTotal = (base + fee).toFixed(2);
+                    
+                    this.isReverseCalculating = false;
+                },
+
+                /**
+                 * 反向计算：
+                 * 修改 [最终报价] -> 反算 [服务费]
+                 * 公式：服务费 = 最终报价 - 原价
+                 */
+                calcReverse() {
+                    this.isReverseCalculating = true;
+                    
+                    const final = Number(this.finalTotal) || 0;
+                    const base = Number(this.basePrice) || 0;
+                    
+                    // 反算服务费
+                    this.serviceFee = (final - base).toFixed(2);
+                    
+                    // 模拟计算延迟动画效果 (可选)
+                    setTimeout(() => this.isReverseCalculating = false, 300);
+                },
+
+                // 金额转中文大写 (辅助功能)
+                digitUppercase(n) {
+                    if(n === '' || n === null || n === undefined) return '零元整';
+                    if (!/^(0|[1-9]\d*)(\.\d+)?$/.test(n)) return "数据无效";
+                    let unit = "千百拾亿千百拾万千百拾元角分", str = "";
+                    n = Number(n); // 确保是数字
+                    if(n < 0) return "负数金额"; // 简单处理负数
+                    
+                    n += "00";
+                    let p = n.indexOf('.');
+                    if (p >= 0) n = n.substring(0, p) + n.substr(p + 1, 2);
+                    unit = unit.substr(unit.length - n.length);
+                    for (let i = 0; i < n.length; i++) str += '零壹贰叁肆伍陆柒捌玖'.charAt(n.charAt(i)) + unit.charAt(i);
+                    return str.replace(/零(千|百|拾|角)/g, "零").replace(/(零)+/g, "零").replace(/零(万|亿|元)/g, "$1").replace(/(亿)万|壹(拾)/g, "$1$2").replace(/^元零?|零分/g, "").replace(/元$/g, "元整");
+                }
+            }
+        }
+    </script>
+</body>
+</html>
