@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>市场开发费设置 (直接展示)</title>
+    <title>市场开发费设置 (含供应商)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,7 +17,7 @@
         .modal-enter { animation: modalIn 0.3s cubic-bezier(0.38, 0, 0.24, 1) forwards; }
         @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-        /* 拟态输入框 */
+        /* 拟态输入框与容器通用样式 */
         .smart-input {
             width: 100%; background: transparent; border: none; outline: none;
             font-family: 'Monaco', monospace; font-weight: 600; text-align: center;
@@ -57,7 +57,7 @@
                 <button @click="closeDemo()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <div class="p-6 space-y-6">
+            <div class="p-6 space-y-5">
                 
                 <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 flex justify-between items-center select-none" title="该数值来自报价单总额，自动获取不可修改">
                     <div class="flex items-center gap-2 text-slate-600 text-sm">
@@ -73,7 +73,21 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3 relative">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1.5 pl-1">接收供应商</label>
+                    <div class="input-group relative bg-f3f3f3">
+                        <select x-model="supplier" class="w-full bg-transparent border-none outline-none text-sm font-medium text-gray-700 appearance-none cursor-pointer z-10">
+                            <option value="" disabled class="text-gray-400">请选择接收费用的供应商...</option>
+                            <option value="1">上海渠道服务有限公司</option>
+                            <option value="2">北京业务拓展部</option>
+                            <option value="3">深圳分公司市场部</option>
+                            <option value="4">外部代理 - 张三</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-3 text-xs text-gray-400 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 relative pt-1">
                     
                     <div class="flex-1 group">
                         <label class="block text-xs text-gray-500 mb-1.5 pl-1">计提比例 (%)</label>
@@ -108,6 +122,9 @@
                     </div>
                 </div>
 
+                <!-- <div class="text-xs text-gray-400 bg-gray-50 p-2 rounded text-center border border-gray-100" x-show="amount > 0">
+                    当前设置：按报价总额的 <span class="text-indigo-600 font-bold" x-text="ratio + '%'"></span> 计提费用
+                </div> -->
 
             </div>
 
@@ -123,21 +140,20 @@
     <script>
         function marketFeeLogic() {
             return {
-                basePrice: 50000, // 默认报价基数 (固定)
+                basePrice: 50000, // 默认报价基数
                 ratio: 5,         // 默认比例
                 amount: 2500,     // 默认金额
+                supplier: '',     // 新增：供应商字段
 
                 init() {
-                    this.calcFromRatio(); // 初始化计算
+                    this.calcFromRatio(); 
                 },
 
-                // 场景1：修改比例 -> 算金额
                 calcFromRatio() {
                     let val = this.basePrice * (Number(this.ratio) / 100);
                     this.amount = Number(val.toFixed(2));
                 },
 
-                // 场景2：修改金额 -> 反算比例
                 calcFromAmount() {
                     if (this.basePrice === 0) {
                         this.ratio = 0;
@@ -163,12 +179,13 @@
                 },
 
                 confirm() {
-                    alert(`设置成功！\n基数：¥${this.basePrice}\n比例：${this.ratio}%\n开发费：¥${this.amount}`);
+                    const supText = this.supplier ? document.querySelector(`option[value="${this.supplier}"]`).text : '未选择';
+                    alert(`设置成功！\n供应商：${supText}\n基数：¥${this.basePrice}\n比例：${this.ratio}%\n开发费：¥${this.amount}`);
                 },
 
                 closeDemo() {
                     if(confirm("关闭后需刷新页面才能重新显示。确认关闭？")) {
-                        document.querySelector('.fixed').remove(); // 仅演示用，移除弹窗
+                        document.querySelector('.fixed').remove(); 
                     }
                 }
             }
