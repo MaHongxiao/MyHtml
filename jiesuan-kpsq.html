@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>申请开票 (最终优化版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        
+        .tab-active { color: #2563eb; border-bottom: 2px solid #2563eb; background-color: #eff6ff; font-weight: 600; }
+        .tab-inactive { color: #64748b; border-bottom: 2px solid transparent; }
+        .tab-inactive:hover { background-color: #f8fafc; color: #334155; }
+
+        /* 优化datalist在部分浏览器的显示 */
+        input::-webkit-calendar-picker-indicator {
+            opacity: 0.5;
+            cursor: pointer;
+        }
+        input::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 h-screen flex flex-col font-sans" x-data="invoiceApp()">
+
+    <header class="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center shadow-sm z-30 flex-shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-indigo-600 text-white rounded flex items-center justify-center font-bold">
+                <i class="fa-solid fa-file-invoice"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-gray-800">申请开票</h1>
+                <div class="text-xs text-gray-500 h-4">
+                    <span x-show="lockedCustomer" x-transition>
+                        当前锁定客户：<span class="font-bold text-indigo-600" x-text="lockedCustomer.name"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button class="text-gray-500 hover:text-gray-700 text-sm"><i class="fa-regular fa-circle-question mr-1"></i>帮助</button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <aside class="w-[420px] bg-white border-r border-gray-200 flex flex-col z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+            
+            <div class="flex border-b border-gray-200 text-sm">
+                <button class="flex-1 py-3 text-center transition-colors flex items-center justify-center gap-2"
+                        :class="activeTab === 'order' ? 'tab-active' : 'tab-inactive'"
+                        @click="activeTab = 'order'">
+                    <i class="fa-solid fa-clipboard-list"></i> 按委托单选
+                </button>
+                <button class="flex-1 py-3 text-center transition-colors flex items-center justify-center gap-2"
+                        :class="activeTab === 'settlement' ? 'tab-active' : 'tab-inactive'"
+                        @click="activeTab = 'settlement'">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> 按结算单选
+                </button>
+            </div>
+
+            <div class="p-3 bg-gray-50 border-b border-gray-100 space-y-2">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                    <input type="text" x-model="searchQuery" placeholder="搜索单号、样品名称、规格..." 
+                           class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded text-sm focus:border-indigo-500 outline-none bg-white transition shadow-sm focus:shadow">
+                </div>
+                <div class="flex items-center justify-between text-xs text-gray-500 px-1">
+                    <span x-text="activeTab === 'order' ? '已自动隐藏未完工委托单' : '需选择关联委托单已完工的样品'"></span>
+                    <span class="bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded" x-show="selectedIds.length > 0">已选 <span x-text="selectedIds.length"></span> 项</span>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scroll p-2 space-y-2">
+                
+                <div x-show="activeTab === 'order'" class="space-y-2">
+                    <template x-for="order in visibleOrders" :key="order.id">
+                        <div class="border rounded bg-white overflow-hidden transition-all hover:border-indigo-200"
+                             :class="isLocked(order.customerId) ? 'opacity-50 grayscale border-dashed cursor-not-allowed' : 'border-gray-200'">
+                            
+                            <div class="px-3 py-2.5 bg-gray-50 border-b border-gray-100 flex justify-between items-start cursor-pointer group"
+                                 @click="!isLocked(order.customerId) && toggleExpand(order)">
+                                <div class="flex flex-col overflow-hidden gap-1">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-file-lines text-gray-400 text-xs"></i>
+                                        <span class="text-sm font-bold text-gray-700 group-hover:text-indigo-700 transition-colors" x-text="order.no"></span>
+                                        <span class="text-[10px] bg-gray-100 text-gray-500 px-1 rounded border" x-text="order.samples.length + '样'"></span>
+                                    </div>
+                                    <span class="text-[10px] text-gray-500 truncate" x-text="order.customerName"></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">已完工</span>
+                                    <i class="fa-solid text-gray-400 text-xs transition-transform duration-200" 
+                                       :class="order.expanded ? 'rotate-180' : ''"></i>
+                                </div>
+                            </div>
+
+                            <div x-show="order.expanded" x-collapse class="border-t border-gray-100">
+                                <template x-for="sample in order.samples" :key="sample.id">
+                                    <div class="flex items-start px-3 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-50 last:border-0 transition-colors relative"
+                                         @click="!isLocked(order.customerId) && toggleSample(sample)">
+                                        
+                                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 transition-transform duration-200"
+                                             :class="isSelected(sample.id) ? 'scale-y-100' : 'scale-y-0'"></div>
+
+                                        <div class="mr-3 pt-1">
+                                            <div class="w-4 h-4 border rounded flex items-center justify-center transition-colors"
+                                                 :class="isSelected(sample.id) ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300 bg-white'">
+                                                <i class="fa-solid fa-check text-white text-[10px]" x-show="isSelected(sample.id)"></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex justify-between items-start">
+                                                <span class="text-xs font-medium text-gray-700 truncate" x-text="sample.name"></span>
+                                                <span class="text-xs font-bold text-gray-600">¥<span x-text="sample.amount"></span></span>
+                                            </div>
+                                            <div class="text-[10px] text-gray-500 truncate mt-0.5" title="规格/厂商">
+                                                <span x-text="sample.spec"></span>
+                                                <span class="mx-1 text-gray-300">|</span>
+                                                <span x-text="sample.manufacturer"></span>
+                                            </div>
+                                            <div class="flex items-center gap-2 mt-1">
+                                                <span class="text-[10px] text-gray-400 bg-gray-100 px-1 rounded" x-text="sample.sampleNo"></span>
+                                                <span x-show="sample.settlementNo" class="text-[10px] bg-orange-50 text-orange-600 px-1 rounded border border-orange-100" title="已关联结算单">
+                                                    含结算单
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                    <div x-show="visibleOrders.length === 0" class="p-8 text-center text-gray-400 text-xs">
+                        <i class="fa-regular fa-folder-open text-2xl mb-2 opacity-50"></i>
+                        <p>没有找到符合条件的【已完工】委托单</p>
+                    </div>
+                </div>
+
+                <div x-show="activeTab === 'settlement'" class="space-y-2">
+                    <template x-for="settlement in visibleSettlements" :key="settlement.id">
+                        <div class="border rounded bg-white overflow-hidden transition-all hover:border-indigo-200"
+                             :class="isLocked(settlement.customerId) ? 'opacity-50 grayscale border-dashed cursor-not-allowed' : 'border-gray-200'">
+                            
+                            <div class="px-3 py-2.5 bg-gray-50 border-b border-gray-100 flex justify-between items-start cursor-pointer group"
+                                 @click="!isLocked(settlement.customerId) && toggleExpand(settlement)">
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] bg-orange-100 text-orange-600 px-1 py-0.5 rounded">结</span>
+                                        <span class="text-sm font-bold text-gray-700 group-hover:text-indigo-700 transition-colors" x-text="settlement.no"></span>
+                                    </div>
+                                    <span class="text-[10px] text-gray-500 truncate" x-text="settlement.customerName"></span>
+                                </div>
+                                <i class="fa-solid text-gray-400 text-xs transition-transform duration-200" 
+                                   :class="settlement.expanded ? 'rotate-180' : ''"></i>
+                            </div>
+
+                            <div x-show="settlement.expanded" x-collapse class="border-t border-gray-100">
+                                <template x-for="sample in settlement.samples" :key="sample.id">
+                                    <div class="flex items-start px-3 py-2 border-b border-gray-50 last:border-0 relative transition-colors"
+                                         :class="{
+                                             'hover:bg-indigo-50 cursor-pointer': sample.orderStatus === '已完工' && !isLocked(settlement.customerId),
+                                             'bg-gray-50 opacity-60 cursor-not-allowed': sample.orderStatus !== '已完工' || isLocked(settlement.customerId),
+                                             'bg-indigo-50': isSelected(sample.id)
+                                         }"
+                                         @click="sample.orderStatus === '已完工' && !isLocked(settlement.customerId) && toggleSample(sample)">
+                                        
+                                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 transition-transform duration-200"
+                                             :class="isSelected(sample.id) ? 'scale-y-100' : 'scale-y-0'"></div>
+
+                                        <div class="mr-3 pt-1">
+                                            <div class="w-4 h-4 border rounded flex items-center justify-center transition-colors"
+                                                 :class="{
+                                                     'bg-indigo-600 border-indigo-600': isSelected(sample.id),
+                                                     'border-gray-300 bg-white': !isSelected(sample.id) && sample.orderStatus === '已完工',
+                                                     'bg-gray-200 border-gray-200': sample.orderStatus !== '已完工'
+                                                 }">
+                                                <i class="fa-solid fa-check text-white text-[10px]" x-show="isSelected(sample.id)"></i>
+                                                <i class="fa-solid fa-ban text-gray-400 text-[10px]" x-show="sample.orderStatus !== '已完工'"></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex justify-between items-start">
+                                                <span class="text-xs font-medium text-gray-700 truncate" x-text="sample.name"></span>
+                                                <span x-show="sample.orderStatus !== '已完工'" class="text-[10px] text-orange-500 border border-orange-200 bg-orange-50 px-1 rounded">委托单未完工</span>
+                                            </div>
+                                            
+                                            <div class="text-[10px] text-gray-500 truncate mt-0.5">
+                                                <span x-text="sample.spec"></span>
+                                                <span class="mx-1 text-gray-300">|</span>
+                                                <span x-text="sample.manufacturer"></span>
+                                            </div>
+
+                                            <div class="flex justify-between items-center mt-1">
+                                                <span class="text-[10px] text-gray-400">源: <span x-text="sample.orderNo"></span></span>
+                                                <span class="text-xs font-bold text-gray-600">¥<span x-text="sample.amount"></span></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                    <div x-show="visibleSettlements.length === 0" class="p-8 text-center text-gray-400 text-xs">
+                        <i class="fa-solid fa-file-invoice-dollar text-2xl mb-2 opacity-50"></i>
+                        <p>未找到匹配的结算单</p>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col bg-gray-50 min-w-0">
+            
+            <div class="flex-1 overflow-auto p-6 space-y-6 custom-scroll">
+                
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
+                    <h3 class="text-sm font-bold text-gray-800 border-l-4 border-indigo-600 pl-2 mb-4">开票主体信息</h3>
+                    <div class="grid grid-cols-2 gap-8">
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1.5 flex justify-between">
+                                <span>开票实体 (我方)</span>
+                                <span class="text-[10px] text-gray-400">可选择或输入新名称</span>
+                            </label>
+                            <div class="relative">
+                                <input list="entities" x-model="form.entity" 
+                                       class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 outline-none transition" 
+                                       placeholder="点击选择或直接输入...">
+                                <datalist id="entities">
+                                    <option value="中检计量（西南）有限公司"></option>
+                                    <option value="中检计量（贵州）分公司"></option>
+                                    <option value="中检计量（云南）办事处"></option>
+                                </datalist>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1.5 flex justify-between">
+                                <span>发票抬头 (客户)</span>
+                                <span class="text-[10px] text-gray-400">可点选下方快捷标签</span>
+                            </label>
+                            
+                            <div class="relative">
+                                <input type="text" x-model="form.header"
+                                       class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 outline-none transition"
+                                       placeholder="输入或点击下方选择抬头...">
+                                <div class="absolute right-2 top-2.5 text-gray-400 text-xs" x-show="form.header">
+                                    <i class="fa-solid fa-pen"></i>
+                                </div>
+                            </div>
+
+                            <div class="mt-2 flex flex-wrap gap-2" x-show="customerHeaders.length > 0">
+                                <template x-for="h in customerHeaders" :key="h">
+                                    <button class="px-2.5 py-1 border rounded-md text-xs transition-colors text-left truncate max-w-full flex items-center gap-1 group"
+                                            :class="form.header === h ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'"
+                                            @click="form.header = h">
+                                        <i class="fa-regular fa-building text-[10px]" :class="form.header === h ? 'text-indigo-500' : 'text-gray-400'"></i>
+                                        <span x-text="h"></span>
+                                    </button>
+                                </template>
+                            </div>
+                            <div x-show="customerHeaders.length === 0 && lockedCustomer" class="mt-2 text-xs text-orange-500">
+                                * 该客户暂无预存抬头，请直接输入
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col min-h-[400px]">
+                    <div class="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-sm font-bold text-gray-800 border-l-4 border-indigo-600 pl-2">开票样品明细</h3>
+                            <span class="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full" x-show="selectedSamples.length > 0" x-text="selectedSamples.length"></span>
+                        </div>
+                        <button class="text-xs text-red-500 hover:text-red-700" @click="clearAll" x-show="selectedSamples.length > 0">清空全部</button>
+                    </div>
+                    
+                    <div class="flex-1 overflow-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-50 text-gray-500 font-medium sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th class="px-5 py-3 w-16 text-center">序号</th>
+                                    <th class="px-5 py-3 w-48">样品名称 / 编号</th>
+                                    <th class="px-5 py-3 w-48">规格 / 厂商</th> 
+                                    <th class="px-5 py-3 w-40">关联单据</th>
+                                    <th class="px-5 py-3 text-right w-32">金额</th>
+                                    <th class="px-5 py-3 text-center w-16">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <template x-for="(item, index) in selectedSamples" :key="item.id">
+                                    <tr class="hover:bg-gray-50 transition-colors group">
+                                        <td class="px-5 py-3 text-gray-400 text-center" x-text="index + 1"></td>
+                                        
+                                        <td class="px-5 py-3">
+                                            <div class="font-medium text-gray-800" x-text="item.name"></div>
+                                            <div class="text-xs text-gray-400" x-text="item.sampleNo"></div>
+                                        </td>
+                                        
+                                        <td class="px-5 py-3">
+                                            <div class="text-xs text-gray-600 truncate w-40" :title="item.spec">
+                                                <span class="text-gray-400">规:</span> <span x-text="item.spec"></span>
+                                            </div>
+                                            <div class="text-xs text-gray-600 truncate w-40 mt-0.5" :title="item.manufacturer">
+                                                <span class="text-gray-400">厂:</span> <span x-text="item.manufacturer"></span>
+                                            </div>
+                                        </td>
+
+                                        <td class="px-5 py-3 text-xs">
+                                            <div class="flex flex-col gap-1">
+                                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 font-mono w-fit">
+                                                    <i class="fa-solid fa-file-lines text-[10px]"></i>
+                                                    <span x-text="item.orderNo"></span>
+                                                </span>
+                                                <template x-if="item.settlementNo">
+                                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-orange-50 text-orange-700 border border-orange-100 font-mono w-fit">
+                                                        <i class="fa-solid fa-file-invoice-dollar text-[10px]"></i>
+                                                        <span x-text="item.settlementNo"></span>
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </td>
+                                        
+                                        <td class="px-5 py-3 text-right font-bold text-gray-700 font-mono">¥<span x-text="item.amount"></span></td>
+                                        
+                                        <td class="px-5 py-3 text-center">
+                                            <button class="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1" @click="toggleSample(item)">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                
+                                <tr x-show="selectedSamples.length === 0">
+                                    <td colspan="6" class="p-12 text-center text-gray-400">
+                                        <div class="mb-3"><i class="fa-solid fa-inbox text-4xl text-gray-200"></i></div>
+                                        <p class="text-sm">请从左侧选择关联委托单已完工的样品</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-5">
+                    <label class="block text-xs font-medium text-gray-500 mb-1.5">开票备注</label>
+                    <textarea x-model="form.remark" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:border-indigo-500 outline-none h-20 resize-none transition" placeholder="填写特殊的开票要求..."></textarea>
+                </div>
+
+            </div>
+
+            <div class="bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-between shadow-lg z-30">
+                <div class="flex flex-col">
+                    <span class="text-xs text-gray-500">开票总金额</span>
+                    <div class="text-3xl font-bold text-indigo-600 font-mono tracking-tight">
+                        ¥ <span x-text="totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button class="px-8 py-2.5 bg-indigo-600 text-white rounded text-sm font-medium hover:bg-indigo-700 shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            :disabled="selectedSamples.length === 0"
+                            @click="submit">
+                        <i class="fa-solid fa-paper-plane"></i> 提交申请
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div x-show="toast.show" x-transition 
+         class="fixed top-6 left-1/2 -translate-x-1/2 bg-gray-800/90 backdrop-blur text-white px-4 py-2.5 rounded-lg shadow-xl text-sm z-50 flex items-center gap-3">
+        <i class="fa-solid fa-circle-exclamation text-yellow-400"></i>
+        <span x-text="toast.msg"></span>
+    </div>
+
+    <script>
+        function invoiceApp() {
+            return {
+                activeTab: 'order',
+                searchQuery: '',
+                
+                // --- 1. 数据源 (大幅扩充) ---
+                allSamples: {
+                    // C001 Huawei
+                    's1': { id: 's1', name: '手机主板-A', sampleNo: 'S231001-01', spec: 'HMP-8800', manufacturer: '自研', amount: 500,  orderId: 'o1', settlementId: 'st1', orderStatus: '已完工' },
+                    's2': { id: 's2', name: '电池模组',   sampleNo: 'S231001-02', spec: '4500mAh', manufacturer: '宁德时代', amount: 800,  orderId: 'o1', settlementId: 'st1', orderStatus: '已完工' },
+                    's3': { id: 's3', name: '屏幕组件',   sampleNo: 'S231002-01', spec: 'OLED-6.7', manufacturer: '京东方', amount: 1200, orderId: 'o2', settlementId: 'st1', orderStatus: '进行中' },
+                    's5': { id: 's5', name: '智能手表主板', sampleNo: 'S231001-03', spec: 'GT-Pro', manufacturer: '华勤', amount: 350, orderId: 'o1', settlementId: null, orderStatus: '已完工' },
+                    's10': { id: 's10', name: '路由器天线', sampleNo: 'S231001-04', spec: 'WiFi 7', manufacturer: '信维通信', amount: 120, orderId: 'o1', settlementId: null, orderStatus: '已完工' },
+
+                    // C002 Xiaomi
+                    's4': { id: 's4', name: '音箱外壳',   sampleNo: 'S231005-01', spec: 'ABS+PC', manufacturer: '富士康', amount: 300,  orderId: 'o3', settlementId: null,  orderStatus: '已完工' },
+                    's6': { id: 's6', name: 'VR眼镜镜片', sampleNo: 'S231005-02', spec: 'Pancake', manufacturer: '歌尔', amount: 650, orderId: 'o3', settlementId: null, orderStatus: '已完工' },
+                    's8': { id: 's8', name: '扫地机器人电机', sampleNo: 'S231005-03', spec: 'BLDC', manufacturer: '石头科技', amount: 450, orderId: 'o3', settlementId: 'st2', orderStatus: '已完工' },
+
+                    // C003 BYD (新客户)
+                    's7': { id: 's7', name: '车载中控屏', sampleNo: 'S231020-01', spec: '15.6 inch', manufacturer: '比亚迪电子', amount: 2000, orderId: 'o4', settlementId: null, orderStatus: '已完工' },
+                    's88':{ id: 's88', name: '激光雷达', sampleNo: 'S231020-02', spec: '96线', manufacturer: '速腾聚创', amount: 3500, orderId: 'o4', settlementId: null, orderStatus: '已完工' },
+                    's9': { id: 's9', name: '动力电池包', sampleNo: 'S231021-01', spec: 'Blade Battery', manufacturer: '弗迪电池', amount: 15000, orderId: 'o5', settlementId: null, orderStatus: '进行中' }
+                },
+
+                rawOrders: [
+                    // Huawei
+                    { id: 'o1', no: 'WT20231001', customerId: 'c1', customerName: '华为技术有限公司', status: '已完工', expanded: true, sampleIds: ['s1', 's2', 's5', 's10'] },
+                    { id: 'o2', no: 'WT20231002', customerId: 'c1', customerName: '华为技术有限公司', status: '进行中', expanded: false, sampleIds: ['s3'] },
+                    // Xiaomi
+                    { id: 'o3', no: 'WT20231005', customerId: 'c2', customerName: '小米科技',       status: '已完工', expanded: false, sampleIds: ['s4', 's6', 's8'] },
+                    // BYD (新)
+                    { id: 'o4', no: 'WT20231020', customerId: 'c3', customerName: '比亚迪汽车工业有限公司', status: '已完工', expanded: false, sampleIds: ['s7', 's88'] },
+                    { id: 'o5', no: 'WT20231021', customerId: 'c3', customerName: '比亚迪汽车工业有限公司', status: '进行中', expanded: false, sampleIds: ['s9'] }
+                ],
+
+                rawSettlements: [
+                    { id: 'st1', no: 'JS20231101', customerId: 'c1', customerName: '华为技术有限公司', expanded: true, sampleIds: ['s1', 's2', 's3'] },
+                    { id: 'st2', no: 'JS20231105', customerId: 'c2', customerName: '小米科技', expanded: false, sampleIds: ['s8'] }
+                ],
+
+                customers: {
+                    'c1': { name: '华为技术有限公司', headers: ['华为技术有限公司', '华为终端有限公司'] },
+                    'c2': { name: '小米科技', headers: ['小米通讯技术有限公司', '北京小米电子产品有限公司'] },
+                    'c3': { name: '比亚迪汽车工业有限公司', headers: ['比亚迪汽车工业有限公司', '比亚迪汽车销售有限公司'] }
+                },
+
+                // 状态
+                selectedIds: [], 
+                form: { entity: '中检计量（西南）有限公司', header: '', remark: '' },
+                toast: { show: false, msg: '' },
+
+                // --- Getters ---
+
+                get visibleOrders() {
+                    return this.rawOrders
+                        .filter(o => o.status === '已完工') 
+                        .filter(o => o.no.includes(this.searchQuery) || o.customerName.includes(this.searchQuery) || o.sampleIds.some(sid => this.allSamples[sid].name.includes(this.searchQuery)))
+                        .map(o => ({
+                            ...o,
+                            samples: o.sampleIds.map(sid => this.enrichSample(sid)).filter(s => s.name.includes(this.searchQuery) || s.sampleNo.includes(this.searchQuery))
+                        }));
+                },
+
+                get visibleSettlements() {
+                    return this.rawSettlements
+                        .filter(s => s.no.includes(this.searchQuery) || s.customerName.includes(this.searchQuery))
+                        .map(s => ({
+                            ...s,
+                            samples: s.sampleIds.map(sid => this.enrichSample(sid))
+                        }));
+                },
+
+                get selectedSamples() {
+                    return this.selectedIds.map(sid => this.enrichSample(sid));
+                },
+
+                get lockedCustomer() {
+                    if (this.selectedIds.length === 0) return null;
+                    const firstSid = this.selectedIds[0];
+                    const sample = this.allSamples[firstSid];
+                    const order = this.rawOrders.find(o => o.id === sample.orderId);
+                    if(order) return { id: order.customerId, ...this.customers[order.customerId] };
+                    return null;
+                },
+
+                get customerHeaders() {
+                    return this.lockedCustomer ? this.lockedCustomer.headers : [];
+                },
+
+                get totalAmount() {
+                    return this.selectedSamples.reduce((sum, s) => sum + s.amount, 0);
+                },
+
+                // --- Helpers ---
+
+                enrichSample(sid) {
+                    const base = this.allSamples[sid];
+                    const order = this.rawOrders.find(o => o.id === base.orderId);
+                    const settlement = this.rawSettlements.find(s => s.id === base.settlementId);
+                    
+                    return {
+                        ...base,
+                        orderNo: order ? order.no : '-',
+                        orderStatus: base.orderStatus, 
+                        settlementNo: settlement ? settlement.no : null,
+                        customerName: order ? order.customerName : ''
+                    };
+                },
+
+                isLocked(customerId) {
+                    return this.lockedCustomer && this.lockedCustomer.id !== customerId;
+                },
+
+                isSelected(sid) {
+                    return this.selectedIds.includes(sid);
+                },
+
+                // --- Actions ---
+
+                toggleExpand(item) {
+                    item.expanded = !item.expanded;
+                },
+
+                toggleSample(sample) {
+                    const order = this.rawOrders.find(o => o.id === sample.orderId);
+                    const custId = order.customerId;
+
+                    if (this.isLocked(custId)) {
+                        this.showToast(`已锁定客户 [${this.lockedCustomer.name}]，不可选择其他客户的样品`);
+                        return;
+                    }
+
+                    if (this.isSelected(sample.id)) {
+                        this.selectedIds = this.selectedIds.filter(id => id !== sample.id);
+                        if (this.selectedIds.length === 0) {
+                            this.form.header = ''; 
+                        }
+                    } else {
+                        this.selectedIds.push(sample.id);
+                        if (!this.form.header && this.customers[custId].headers.length > 0) {
+                            this.form.header = this.customers[custId].headers[0];
+                        }
+                    }
+                },
+
+                clearAll() {
+                    if(confirm('确定清空已选列表吗？')) {
+                        this.selectedIds = [];
+                        this.form.header = '';
+                    }
+                },
+
+                showToast(text) {
+                    this.toast.msg = text;
+                    this.toast.show = true;
+                    setTimeout(() => this.toast.show = false, 3000);
+                },
+
+                reset() {
+                    if(confirm('确定重置所有内容吗？')) {
+                        this.selectedIds = [];
+                        this.form = { entity: '中检计量（西南）有限公司', header: '', remark: '' };
+                    }
+                },
+
+                submit() {
+                    if(!this.form.entity) return alert('请填写开票实体');
+                    if(!this.form.header) return alert('请填写发票抬头');
+
+                    console.log('提交数据', {
+                        items: this.selectedSamples,
+                        info: this.form,
+                        amount: this.totalAmount
+                    });
+                    alert('提交成功！开票金额：' + this.totalAmount);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
