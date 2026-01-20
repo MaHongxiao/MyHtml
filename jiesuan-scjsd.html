@@ -18,6 +18,20 @@
         /* 表格列宽控制 */
         .col-min-w { min-width: 100px; }
         .col-fixed { width: 120px; flex-shrink: 0; }
+
+        /* 半选状态样式模拟 */
+        .checkbox-indeterminate {
+            background-color: #2563eb;
+            border-color: #2563eb;
+        }
+        .checkbox-indeterminate::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 8px; height: 2px;
+            background-color: white;
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 h-screen flex flex-col font-sans" x-data="settlementApp()">
@@ -38,42 +52,71 @@
     <main class="flex-1 flex overflow-hidden">
         
         <aside class="w-96 bg-white border-r border-gray-200 flex flex-col z-10">
-            <div class="p-4 border-b border-gray-100">
+            <div class="p-4 border-b border-gray-100 space-y-3">
                 <div class="relative">
                     <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400"></i>
                     <input type="text" x-model="searchQuery" placeholder="搜索委托单、样品名称、规格..." 
-                           class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none">
+                           class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
                 </div>
-                <div class="mt-2 flex justify-between items-center text-xs text-gray-500">
-                    <span>仅显示未结算样品</span>
-                    <span class="bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded border border-orange-200">分包</span>
+                
+                <div class="flex justify-between items-center text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <div class="relative flex items-center">
+                            <input type="checkbox" class="peer appearance-none w-4 h-4 border border-gray-300 rounded checked:bg-blue-600 checked:border-blue-600 focus:ring-1 focus:ring-blue-200 transition"
+                                   :checked="globalSelectState === 'checked'"
+                                   @click="toggleAllFiltered()">
+                            <i class="fa-solid fa-check text-white text-[10px] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none hidden peer-checked:block"
+                               x-show="globalSelectState === 'checked'"></i>
+                            <div class="w-2 h-0.5 bg-blue-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                                 x-show="globalSelectState === 'indeterminate'"></div>
+                        </div>
+                        <span>全选当前结果</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <span>共 <span x-text="filteredOrders.length"></span> 单</span>
+                    </div>
                 </div>
             </div>
 
             <div class="flex-1 overflow-y-auto custom-scroll p-2 space-y-2">
                 <template x-for="order in filteredOrders" :key="order.id">
-                    <div class="border border-gray-200 rounded overflow-hidden">
-                        <div class="bg-gray-50 px-3 py-2 flex justify-between items-center cursor-pointer hover:bg-gray-100"
-                             @click="order.expanded = !order.expanded">
-                            <div class="flex items-center gap-2 overflow-hidden">
-                                <i class="fa-solid text-gray-400 text-xs transition-transform" 
-                                   :class="order.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-                                <div class="flex flex-col truncate">
-                                    <span class="text-sm font-bold text-gray-700" x-text="order.orderNo"></span>
-                                    <span class="text-[10px] text-gray-500 truncate" x-text="order.customerName"></span>
+                    <div class="border border-gray-200 rounded overflow-hidden transition-shadow hover:shadow-sm" 
+                         :class="isCustomerLocked(order.customerId) ? 'opacity-60 bg-gray-50' : 'bg-white'">
+                        
+                        <div class="bg-gray-50 px-3 py-2 flex items-center gap-3 border-b border-gray-100">
+                            <div class="relative flex items-center" @click.stop="toggleOrder(order)">
+                                <div class="w-4 h-4 border rounded cursor-pointer flex items-center justify-center transition-colors bg-white"
+                                     :class="{
+                                         'bg-blue-600 border-blue-600': getOrderState(order) === 'checked',
+                                         'border-gray-300': getOrderState(order) === 'unchecked',
+                                         'checkbox-indeterminate': getOrderState(order) === 'indeterminate',
+                                         'cursor-not-allowed opacity-50': isCustomerLocked(order.customerId)
+                                     }">
+                                    <i class="fa-solid fa-check text-white text-[10px]" x-show="getOrderState(order) === 'checked'"></i>
                                 </div>
+                            </div>
+
+                            <div class="flex-1 flex justify-between items-center cursor-pointer" @click="order.expanded = !order.expanded">
+                                <div class="flex items-center gap-2 overflow-hidden">
+                                    <div class="flex flex-col truncate">
+                                        <span class="text-sm font-bold text-gray-700" x-text="order.orderNo"></span>
+                                        <span class="text-[10px] text-gray-500 truncate" x-text="order.customerName"></span>
+                                    </div>
+                                </div>
+                                <i class="fa-solid text-gray-400 text-xs transition-transform duration-200" 
+                                   :class="order.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
                             </div>
                         </div>
 
                         <div x-show="order.expanded" x-collapse>
                             <template x-for="sample in order.samples" :key="sample.id">
-                                <div class="flex items-start px-3 py-2 border-t border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors"
-                                     :class="{'bg-blue-50': isSelected(sample), 'opacity-50 cursor-not-allowed': isCustomerLocked(order.customerId)}"
+                                <div class="flex items-start px-3 py-2 border-t border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors group"
+                                     :class="{'bg-blue-50': isSelected(sample), 'cursor-not-allowed': isCustomerLocked(order.customerId)}"
                                      @click="toggleSample(order, sample)">
                                     
                                     <div class="mr-3 mt-1 relative flex items-center">
                                         <div class="w-4 h-4 border rounded flex items-center justify-center transition-colors"
-                                             :class="isSelected(sample) ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white'">
+                                             :class="isSelected(sample) ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white group-hover:border-blue-400'">
                                             <i class="fa-solid fa-check text-white text-[10px]" x-show="isSelected(sample)"></i>
                                         </div>
                                     </div>
@@ -94,8 +137,9 @@
                     </div>
                 </template>
                 
-                <div x-show="filteredOrders.length === 0" class="p-4 text-center text-gray-400 text-sm">
-                    未找到匹配的委托单
+                <div x-show="filteredOrders.length === 0" class="p-4 text-center text-gray-400 text-sm flex flex-col items-center">
+                    <i class="fa-solid fa-inbox text-2xl mb-2 text-gray-300"></i>
+                    <span>未找到匹配的委托单</span>
                 </div>
             </div>
         </aside>
@@ -122,7 +166,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         <template x-for="(item, index) in selectedList" :key="item.id">
-                            <tr class="hover:bg-gray-50 group">
+                            <tr class="hover:bg-gray-50 group transition-colors">
                                 <td class="p-3 text-center text-gray-400" x-text="index + 1"></td>
                                 
                                 <td class="p-3">
@@ -161,7 +205,7 @@
                                 </td>
 
                                 <td class="p-3 text-center">
-                                    <button @click="removeSample(item.id)" class="text-gray-400 hover:text-red-500 transition-colors p-1">
+                                    <button @click="removeSample(item.id)" class="text-gray-400 hover:text-red-500 transition-colors p-1" title="移除">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>
                                 </td>
@@ -254,13 +298,13 @@
     <script>
         function settlementApp() {
             return {
-                // --- 数据源 (扩展更多模拟数据) ---
+                // --- 数据源 (扩展) ---
                 rawOrders: [
                     {
                         id: 101, orderNo: 'WT20231025001', customerId: 'CUST001', customerName: '华为技术有限公司', expanded: true,
                         samples: [
                             { id: 1, name: '手机主板-A型', sampleNo: 'S231001-01', spec: 'HMP-8800 Pro', manufacturer: '自研', isSub: false, mainFee: 500, expediteFee: 100, transportFee: 50, repairFee: 0, materialFee: 0, otherFee: 0 },
-                            { id: 2, name: '电池模组-Ex', sampleNo: 'S231001-02', spec: 'BAT-4500mAh', manufacturer: '宁德时代', isSub: true, mainFee: 1200, expediteFee: 0, transportFee: 100, repairFee: 0, materialFee: 0, otherFee: 0 }, // 分包
+                            { id: 2, name: '电池模组-Ex', sampleNo: 'S231001-02', spec: 'BAT-4500mAh', manufacturer: '宁德时代', isSub: true, mainFee: 1200, expediteFee: 0, transportFee: 100, repairFee: 0, materialFee: 0, otherFee: 0 },
                             { id: 3, name: '屏幕组件', sampleNo: 'S231001-03', spec: 'OLED-6.7', manufacturer: '京东方', isSub: false, mainFee: 300, expediteFee: 0, transportFee: 0, repairFee: 0, materialFee: 50, otherFee: 0 }
                         ]
                     },
@@ -295,12 +339,12 @@
 
                 // --- 状态变量 ---
                 searchQuery: '',
-                selectedList: [], // 已选样品数组
-                discountRate: 100, // 默认不打折 (100%)
+                selectedList: [],
+                discountRate: 100,
                 finalAmount: 0,
                 toast: { visible: false, message: '' },
 
-                // --- 计算属性 (使用 getter) ---
+                // --- 计算属性 ---
                 get filteredOrders() {
                     if (!this.searchQuery) return this.rawOrders;
                     const lowerQ = this.searchQuery.toLowerCase();
@@ -315,142 +359,172 @@
                     );
                 },
 
-                get lockedCustomerId() {
-                    return this.selectedList.length > 0 ? this.selectedList[0].customerId : null;
-                },
+                get lockedCustomerId() { return this.selectedList.length > 0 ? this.selectedList[0].customerId : null; },
+                get lockedCustomerName() { return this.selectedList.length > 0 ? this.selectedList[0].customerName : null; },
 
-                get lockedCustomerName() {
-                    return this.selectedList.length > 0 ? this.selectedList[0].customerName : null;
-                },
+                // 全局全选状态
+                get globalSelectState() {
+                    if (this.filteredOrders.length === 0) return 'unchecked';
+                    
+                    let totalValidSamples = 0;
+                    let selectedCount = 0;
+                    const targetCustomer = this.lockedCustomerId || (this.filteredOrders.length > 0 ? this.filteredOrders[0].customerId : null);
 
-                get totals() {
-                    let subTotal = 0; // 分包费 (不打折)
-                    let testingTotal = 0; // 检测费 (打折)
-                    let miscTotal = 0; // 其他杂费 (不打折)
-
-                    this.selectedList.forEach(item => {
-                        // 杂费总和
-                        const misc = (item.expediteFee || 0) + (item.transportFee || 0) + 
-                                     (item.repairFee || 0) + (item.materialFee || 0) + (item.otherFee || 0);
-                        miscTotal += misc;
-
-                        if (item.isSub) {
-                            subTotal += (item.mainFee || 0);
-                        } else {
-                            testingTotal += (item.mainFee || 0);
+                    this.filteredOrders.forEach(order => {
+                        // 如果未锁定，只统计第一个客户的单子；如果已锁定，只统计锁定客户的单子
+                        if (order.customerId === targetCustomer) {
+                            totalValidSamples += order.samples.length;
+                            order.samples.forEach(s => {
+                                if (this.isSelected(s)) selectedCount++;
+                            });
                         }
                     });
 
-                    const grandTotal = subTotal + testingTotal + miscTotal;
-                    
-                    return { subTotal, testingTotal, miscTotal, grandTotal };
+                    if (totalValidSamples === 0) return 'unchecked';
+                    if (selectedCount === 0) return 'unchecked';
+                    if (selectedCount === totalValidSamples) return 'checked';
+                    return 'indeterminate';
                 },
 
-                // --- 初始化与监听 ---
-                init() {
-                    this.updateByRate(); // 初始化计算
+                get totals() {
+                    let subTotal = 0, testingTotal = 0, miscTotal = 0;
+                    this.selectedList.forEach(item => {
+                        miscTotal += (item.expediteFee || 0) + (item.transportFee || 0) + (item.repairFee || 0) + (item.materialFee || 0) + (item.otherFee || 0);
+                        if (item.isSub) subTotal += (item.mainFee || 0);
+                        else testingTotal += (item.mainFee || 0);
+                    });
+                    return { subTotal, testingTotal, miscTotal, grandTotal: subTotal + testingTotal + miscTotal };
                 },
 
-                // --- 业务逻辑 ---
+                init() { this.updateByRate(); },
 
-                // 检查是否锁定客户
+                // --- 逻辑 ---
                 isCustomerLocked(customerId) {
                     return this.lockedCustomerId && this.lockedCustomerId !== customerId;
                 },
 
-                // 选中/取消样品
+                // 1. 全局全选逻辑
+                toggleAllFiltered() {
+                    const currentState = this.globalSelectState;
+                    const targetCustomer = this.lockedCustomerId || (this.filteredOrders.length > 0 ? this.filteredOrders[0].customerId : null);
+                    
+                    // 如果列表里有多个客户，给个提示
+                    const hasMultipleCustomers = new Set(this.filteredOrders.map(o => o.customerId)).size > 1;
+                    
+                    if (currentState === 'checked') {
+                        // 取消全选（只取消当前视图内符合条件的）
+                        this.filteredOrders.forEach(order => {
+                            if (order.customerId === targetCustomer) {
+                                order.samples.forEach(s => {
+                                    const idx = this.selectedList.findIndex(sel => sel.id === s.id);
+                                    if (idx > -1) this.selectedList.splice(idx, 1);
+                                });
+                            }
+                        });
+                    } else {
+                        // 全选
+                        if (!this.lockedCustomerId && hasMultipleCustomers) {
+                            this.showToast(`已为您选中首个客户 (${this.filteredOrders[0].customerName}) 的所有样品`);
+                        }
+                        
+                        this.filteredOrders.forEach(order => {
+                            if (order.customerId === targetCustomer) {
+                                order.samples.forEach(s => {
+                                    if (!this.isSelected(s)) {
+                                        this.selectedList.push({ ...s, orderNo: order.orderNo, customerId: order.customerId, customerName: order.customerName });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    this.updateByRate();
+                },
+
+                // 2. 委托单级全选逻辑
+                toggleOrder(order) {
+                    if (this.isCustomerLocked(order.customerId)) {
+                        this.showToast(`无法选择：已锁定客户 ${this.lockedCustomerName}`);
+                        return;
+                    }
+                    
+                    const state = this.getOrderState(order);
+                    if (state === 'checked') {
+                        // 取消全选
+                        order.samples.forEach(s => {
+                            const idx = this.selectedList.findIndex(sel => sel.id === s.id);
+                            if (idx > -1) this.selectedList.splice(idx, 1);
+                        });
+                    } else {
+                        // 全选
+                        order.samples.forEach(s => {
+                            if (!this.isSelected(s)) {
+                                this.selectedList.push({ ...s, orderNo: order.orderNo, customerId: order.customerId, customerName: order.customerName });
+                            }
+                        });
+                    }
+                    this.updateByRate();
+                },
+
+                // 获取委托单选中状态
+                getOrderState(order) {
+                    let count = 0;
+                    order.samples.forEach(s => { if (this.isSelected(s)) count++; });
+                    if (count === 0) return 'unchecked';
+                    if (count === order.samples.length) return 'checked';
+                    return 'indeterminate';
+                },
+
                 toggleSample(order, sample) {
                     if (this.isCustomerLocked(order.customerId)) {
                         this.showToast(`只能选择同一客户 (${this.lockedCustomerName}) 下的样品`);
                         return;
                     }
-
-                    const existingIndex = this.selectedList.findIndex(s => s.id === sample.id);
-                    if (existingIndex > -1) {
-                        this.selectedList.splice(existingIndex, 1);
-                    } else {
-                        // 构造选中对象，注入客户信息和单号
-                        this.selectedList.push({
-                            ...sample,
-                            orderNo: order.orderNo,
-                            customerId: order.customerId,
-                            customerName: order.customerName
-                        });
-                    }
-                    // 重新计算价格
+                    const idx = this.selectedList.findIndex(s => s.id === sample.id);
+                    if (idx > -1) this.selectedList.splice(idx, 1);
+                    else this.selectedList.push({ ...sample, orderNo: order.orderNo, customerId: order.customerId, customerName: order.customerName });
                     this.updateByRate();
                 },
 
-                // 判断是否已选
-                isSelected(sample) {
-                    return this.selectedList.some(s => s.id === sample.id);
-                },
+                isSelected(sample) { return this.selectedList.some(s => s.id === sample.id); },
+                removeSample(id) { this.selectedList = this.selectedList.filter(s => s.id !== id); this.updateByRate(); },
 
-                // 移除样品
-                removeSample(id) {
-                    this.selectedList = this.selectedList.filter(s => s.id !== id);
-                    this.updateByRate();
-                },
-
-                // 计算单行费用总计 (原价)
                 calculateRowTotal(item) {
                     return (item.mainFee || 0) + (item.expediteFee || 0) + (item.transportFee || 0) + 
                            (item.repairFee || 0) + (item.materialFee || 0) + (item.otherFee || 0);
                 },
 
-                // 计算单行折后小计
                 calculateRowDiscounted(item) {
                     const rowTotal = this.calculateRowTotal(item);
-                    if (item.isSub) {
-                        // 分包不打折
-                        return rowTotal;
-                    } else {
-                        // 非分包：检测费打折 + 杂费不打折
-                        const discountedMain = (item.mainFee || 0) * (this.discountRate / 100);
-                        const misc = rowTotal - (item.mainFee || 0);
-                        return discountedMain + misc;
-                    }
+                    if (item.isSub) return rowTotal;
+                    const discountedMain = (item.mainFee || 0) * (this.discountRate / 100);
+                    const misc = rowTotal - (item.mainFee || 0);
+                    return discountedMain + misc;
                 },
 
-                // --- 价格双向联动核心逻辑 ---
-
-                // 场景1：修改折扣率 -> 算总价
                 updateByRate() {
                     const t = this.totals;
-                    // 公式：最终价 = 固定费用(分包+杂费) + (可折费用 * 折扣率)
                     const fixedPart = t.subTotal + t.miscTotal;
                     const flexiblePart = t.testingTotal * (this.discountRate / 100);
                     this.finalAmount = Number((fixedPart + flexiblePart).toFixed(2));
                 },
 
-                // 场景2：修改总价 -> 反推折扣率
                 updateByAmount() {
                     const t = this.totals;
                     if (t.testingTotal === 0) {
-                        // 如果没有可打折的费用，重置为100%或保持原状，避免除以0
                         if (this.finalAmount !== t.grandTotal) {
-                            this.showToast("当前没有可打折的检测费，无法调整总金额");
+                            this.showToast("当前没有可打折的检测费");
                             this.finalAmount = t.grandTotal;
                         }
                         return;
                     }
-
-                    // 公式：折扣率 = (最终价 - 固定费用) / 可折费用 * 100
                     const fixedPart = t.subTotal + t.miscTotal;
                     let rate = ((this.finalAmount - fixedPart) / t.testingTotal) * 100;
-                    
-                    // 边界处理
-                    if (rate < 0) rate = 0; 
-                    // if (rate > 100) rate = 100; // 可选：是否允许溢价
-
+                    if (rate < 0) rate = 0;
                     this.discountRate = Number(rate.toFixed(2));
                 },
 
-                // --- 工具函数 ---
-                formatMoney(value) {
-                    return '¥ ' + Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                },
-
+                formatMoney(value) { return '¥ ' + Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+                
                 showToast(msg) {
                     this.toast.message = msg;
                     this.toast.visible = true;
@@ -466,20 +540,6 @@
                 },
 
                 submit() {
-                    const payload = {
-                        customerId: this.lockedCustomerId,
-                        discountRate: this.discountRate,
-                        finalTotal: this.finalAmount,
-                        items: this.selectedList.map(item => ({
-                            sampleId: item.id,
-                            orderNo: item.orderNo,
-                            spec: item.spec, // 提交时包含规格
-                            manufacturer: item.manufacturer, // 提交时包含制造商
-                            originalTotal: this.calculateRowTotal(item),
-                            finalTotal: this.calculateRowDiscounted(item)
-                        }))
-                    };
-                    console.log('提交数据:', payload);
                     alert('结算单生成成功！\n总金额：' + this.formatMoney(this.finalAmount));
                 }
             }
