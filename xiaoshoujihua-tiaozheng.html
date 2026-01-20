@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>销售计划调整 - 变更管理</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', "PingFang SC", system-ui, sans-serif; background-color: #f2f3f5; font-size: 14px; color: #1d1d1f; }
+        
+        /* 保持原有样式体系 */
+        .t-card { background: #fff; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e7e7e7; }
+        
+        .t-input {
+            width: 100%; border: 1px solid #dcdcdc; border-radius: 3px; padding: 6px 12px;
+            font-size: 14px; transition: all 0.2s; outline: none; background-color: #fff; height: 32px;
+        }
+        .t-input:hover:not(:disabled) { border-color: #0052D9; }
+        .t-input:focus:not(:disabled) { border-color: #0052D9; box-shadow: 0 0 0 2px rgba(0, 82, 217, 0.1); }
+        
+        /* 变更专用输入框样式 */
+        .t-input-changed { border-color: #e3a935; background-color: #fffcf0; color: #b77c0b; font-weight: bold; }
+        .t-input-changed:focus { border-color: #d69818; box-shadow: 0 0 0 2px rgba(214, 152, 24, 0.1); }
+
+        .t-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0 20px; border-radius: 3px; cursor: pointer; transition: all 0.2s; font-size: 14px; height: 36px; font-weight: 500; }
+        .t-btn-primary { background: #0052D9; color: #fff; border: 1px solid #0052D9; }
+        .t-btn-primary:hover { background: #003CAB; border-color: #003CAB; }
+        .t-btn-warning { background: #e37318; color: #fff; border: 1px solid #e37318; }
+        .t-btn-warning:hover { background: #d06610; border-color: #d06610; }
+        .t-btn-default { background: #fff; border: 1px solid #dcdcdc; color: #333; }
+        
+        /* 表格样式调整 */
+        .plan-table th { background-color: #f3f5f8; font-weight: 600; color: #444; padding: 10px 12px; border-bottom: 1px solid #e7e7e7; text-align: left; white-space: nowrap; }
+        .plan-table td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        .plan-table tr:hover { background-color: #f8faff; }
+        
+        /* 变更提示条 */
+        .alert-bar { background-color: #fffbe6; border: 1px solid #ffe58f; color: #d48806; padding: 12px 20px; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        
+        /* 底部栏 */
+        .footer-highlight { background: #fff; border-top: 1px solid #e7e7e7; box-shadow: 0 -8px 30px rgba(0,0,0,0.08); }
+        .progress-track { background: #f0f0f0; border-radius: 4px; height: 12px; overflow: hidden; }
+        .progress-bar { height: 100%; transition: width 0.3s ease; border-radius: 4px; }
+    </style>
+</head>
+
+<body class="pb-32" x-data="adjustApp()">
+
+    <header class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-30 shadow-sm flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-orange-600 text-white rounded flex items-center justify-center font-bold text-lg">
+                <i class="fa-solid fa-code-compare"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-lg font-bold text-gray-900">计划变更调整</h1>
+                    <span class="bg-orange-50 text-orange-700 border border-orange-200 text-xs px-2 py-0.5 rounded">需调整</span>
+                </div>
+                <div class="text-xs text-gray-500 mt-0.5">
+                    <span>当前单位：<strong>华东区域分公司</strong></span>
+                    <span class="mx-2">|</span>
+                    <span>原计划单号：PL-2025-HD-001</span>
+                </div>
+            </div>
+        </div>
+        <button class="text-gray-500 hover:text-gray-800 text-sm" @click="confirmCancel()">
+            <i class="fa-solid fa-xmark mr-1"></i>取消调整
+        </button>
+    </header>
+
+    <main class="max-w-[1400px] mx-auto p-6 space-y-6">
+
+        <div class="alert-bar shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-sm">上级目标已变更</div>
+                    <div class="text-xs opacity-90">总部于今日调整了下发基准值，请根据新目标重新调整分配方案。</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <div class="text-xs text-gray-500">变更幅度</div>
+                    <div class="font-bold font-mono" :class="newTotal >= oldTotal ? 'text-red-600' : 'text-green-600'">
+                        <span x-text="newTotal >= oldTotal ? '+' : ''"></span><span x-text="changeRate"></span>%
+                    </div>
+                </div>
+                <button class="t-btn t-btn-warning h-9 text-xs shadow-sm" @click="autoAdjust()">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>按比例一键调整
+                </button>
+            </div>
+        </div>
+
+        <div class="t-card p-6">
+            <div class="flex items-center justify-around text-center py-2">
+                <div class="opacity-60">
+                    <div class="text-xs text-gray-500 mb-1">原定总目标 (已失效)</div>
+                    <div class="text-3xl font-bold text-gray-400 font-mono line-through decoration-2 decoration-gray-300" x-text="formatMoney(oldTotal)"></div>
+                </div>
+                
+                <div class="text-orange-300 text-2xl"><i class="fa-solid fa-arrow-right-long"></i></div>
+                
+                <div>
+                    <div class="text-xs text-orange-600 font-bold mb-1">新下达目标 (New)</div>
+                    <div class="text-4xl font-bold text-orange-600 font-mono" x-text="formatMoney(newTotal)"></div>
+                </div>
+
+                <div class="text-gray-300 text-2xl"><i class="fa-solid fa-equals"></i></div>
+
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">调整后汇总</div>
+                    <div class="text-4xl font-bold font-mono" :class="isBalanced ? 'text-green-600' : 'text-blue-600'" x-text="formatMoney(currentAllocated)"></div>
+                    <div class="text-xs font-bold mt-1" :class="diffAmount === 0 ? 'text-green-500' : 'text-red-500'">
+                        <span x-show="diffAmount === 0"><i class="fa-solid fa-check mr-1"></i>已平衡</span>
+                        <span x-show="diffAmount !== 0">差额: <span x-text="formatMoney(diffAmount)"></span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="t-card p-0 flex flex-col min-h-[500px]">
+            
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h3 class="text-sm font-bold text-gray-800 border-l-4 border-orange-500 pl-3">下级机构目标调整明细</h3>
+                
+                <div class="flex gap-2">
+                    <button class="t-btn t-btn-default text-xs h-8" @click="resetToOld()">
+                        <i class="fa-solid fa-rotate-left mr-1.5 text-gray-400"></i>重置为原值
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-auto">
+                <table class="w-full plan-table text-sm">
+                    <thead>
+                        <tr>
+                            <th class="w-16 text-center">序号</th>
+                            <th class="w-48">下级机构</th>
+                            <th class="w-32 text-right text-gray-400">原计划值</th>
+                            <th class="w-32 text-right text-gray-400">原占比</th>
+                            <th class="w-10 text-center text-gray-300"><i class="fa-solid fa-caret-right"></i></th>
+                            <th class="w-48 text-right bg-orange-50 text-orange-800 border-l border-orange-100">拟调整目标</th>
+                            <th class="w-32 text-right">调整差额</th>
+                            <th class="w-32 text-right">调整后占比</th>
+                            <th>备注</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-700">
+                        <template x-for="(comp, index) in companies" :key="comp.id">
+                            <tr :class="comp.newTarget !== comp.oldTarget ? 'bg-orange-50/30' : ''">
+                                <td class="text-center text-gray-400" x-text="index + 1"></td>
+                                <td class="font-bold text-gray-800" x-text="comp.name"></td>
+                                
+                                <td class="text-right font-mono text-gray-400 decoration-gray-300" x-text="formatMoney(comp.oldTarget)"></td>
+                                <td class="text-right font-mono text-gray-400 text-xs" x-text="getShare(comp.oldTarget, oldTotal) + '%'"></td>
+
+                                <td class="text-center text-gray-300"><i class="fa-solid fa-arrow-right"></i></td>
+
+                                <td class="text-right p-0 relative border-l border-orange-100">
+                                    <input type="number" x-model.number="comp.newTarget" 
+                                           class="w-full h-full text-right outline-none px-4 py-3 font-bold font-mono transition"
+                                           :class="comp.newTarget !== comp.oldTarget ? 't-input-changed' : 'bg-transparent text-gray-600 focus:bg-white'"
+                                           placeholder="0">
+                                </td>
+                                
+                                <td class="text-right font-mono font-bold text-xs">
+                                    <span x-show="comp.newTarget - comp.oldTarget > 0" class="text-red-500">
+                                        +<span x-text="formatMoney(comp.newTarget - comp.oldTarget)"></span>
+                                    </span>
+                                    <span x-show="comp.newTarget - comp.oldTarget < 0" class="text-green-600">
+                                        <span x-text="formatMoney(comp.newTarget - comp.oldTarget)"></span>
+                                    </span>
+                                    <span x-show="comp.newTarget === comp.oldTarget" class="text-gray-300">-</span>
+                                </td>
+
+                                <td class="text-right text-xs text-gray-500 font-mono" x-text="getShare(comp.newTarget, newTotal) + '%'"></td>
+                                <td>
+                                    <input type="text" x-model="comp.remark" class="w-full text-xs border-b border-transparent focus:border-gray-300 outline-none bg-transparent text-gray-500" placeholder="调整原因...">
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <div class="fixed bottom-0 left-0 right-0 footer-highlight z-40 h-20 flex items-center justify-center">
+        <div class="max-w-[1400px] w-full px-6 flex justify-between items-center">
+            
+            <div class="flex items-center gap-8 flex-1 mr-12">
+                <div class="flex-1 max-w-lg">
+                    <div class="flex justify-between items-end mb-2">
+                        <div class="text-sm font-medium text-gray-600">
+                            已分配: <span class="font-bold text-gray-900 font-mono text-lg" x-text="formatMoney(currentAllocated)"></span>
+                        </div>
+                        <div class="text-sm font-bold flex items-center gap-2" :class="balanceStatus.color">
+                            <i class="fa-solid text-lg" :class="balanceStatus.icon"></i>
+                            <span x-text="balanceStatus.text"></span>
+                        </div>
+                    </div>
+                    <div class="progress-track w-full">
+                        <div class="progress-bar" 
+                             :class="balanceStatus.barColor"
+                             :style="`width: ${Math.min((currentAllocated / (newTotal || 1)) * 100, 100)}%`"></div>
+                    </div>
+                </div>
+
+                <div class="h-10 border-l border-gray-300 pl-6 flex flex-col justify-center min-w-[120px]">
+                    <div x-show="diffAmount > 0" class="text-blue-600 text-xs">还需分配</div>
+                    <div x-show="diffAmount < 0" class="text-red-500 text-xs">超出目标</div>
+                    <div x-show="diffAmount !== 0" class="font-bold font-mono text-xl" 
+                         :class="diffAmount > 0 ? 'text-blue-700' : 'text-red-600'"
+                         x-text="formatMoney(Math.abs(diffAmount))">
+                    </div>
+                    <div x-show="diffAmount === 0" class="text-green-600 font-bold text-lg">完美匹配</div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <div class="flex gap-3 pl-6 border-l border-gray-200">
+                    <button class="t-btn t-btn-default w-32 h-10 text-base" @click="saveDraft()">暂存调整</button>
+                    <button class="t-btn t-btn-primary w-40 h-10 text-base shadow-lg shadow-blue-200/50" 
+                            @click="submitAdjustment()" 
+                            :disabled="!isBalanced" 
+                            :class="{'opacity-50 cursor-not-allowed': !isBalanced}">
+                        <i class="fa-regular fa-paper-plane mr-2"></i> 确认变更
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function adjustApp() {
+            return {
+                // 模拟场景：上级目标从 1000万 调整为 1200万
+                oldTotal: 1000, 
+                newTotal: 1200, 
+                
+                // 数据源 (包含原计划值和新计划值)
+                companies: [
+                    { id: 1, name: '华东区域分公司', oldTarget: 350, newTarget: 350, remark: '' },
+                    { id: 2, name: '杭州分公司', oldTarget: 220, newTarget: 220, remark: '' },
+                    { id: 3, name: '南京分公司', oldTarget: 180, newTarget: 180, remark: '' },
+                    { id: 4, name: '苏州办事处', oldTarget: 150, newTarget: 150, remark: '' },
+                    { id: 5, name: '宁波办事处', oldTarget: 80, newTarget: 80, remark: '' },
+                    { id: 6, name: '无锡办事处', oldTarget: 20, newTarget: 20, remark: '' },
+                ],
+
+                // 计算当前已分配的新值总和
+                get currentAllocated() {
+                    return this.companies.reduce((sum, c) => sum + (Number(c.newTarget) || 0), 0);
+                },
+
+                get diffAmount() {
+                    return this.newTotal - this.currentAllocated;
+                },
+
+                get changeRate() {
+                    if (this.oldTotal === 0) return 0;
+                    return ((this.newTotal - this.oldTotal) / this.oldTotal * 100).toFixed(1);
+                },
+
+                get isBalanced() {
+                    return this.diffAmount === 0;
+                },
+
+                get balanceStatus() {
+                    const diff = this.diffAmount;
+                    if (diff === 0) return { text: '调整平衡', color: 'text-green-600', icon: 'fa-circle-check', barColor: 'bg-green-500' };
+                    if (diff > 0) return { text: '仍需分配', color: 'text-blue-600', icon: 'fa-circle-half-stroke', barColor: 'bg-blue-600' };
+                    return { text: '分配超额', color: 'text-red-500', icon: 'fa-circle-xmark', barColor: 'bg-red-500' };
+                },
+
+                // 核心功能：按比例自动调整
+                autoAdjust() {
+                    if (this.oldTotal === 0) return;
+                    
+                    const ratio = this.newTotal / this.oldTotal;
+                    let runningSum = 0;
+                    const count = this.companies.length;
+
+                    this.companies.forEach((c, index) => {
+                        // 如果是最后一行，用减法兜底，确保总数绝对匹配
+                        if (index === count - 1) {
+                            c.newTarget = this.newTotal - runningSum;
+                        } else {
+                            // 其他行按比例计算并取整
+                            const adjusted = Math.round(c.oldTarget * ratio);
+                            c.newTarget = adjusted;
+                            runningSum += adjusted;
+                        }
+                    });
+                    
+                    // 简单的视觉反馈
+                    // alert('已根据新旧目标比例自动计算完成，差额已自动平摊。');
+                },
+
+                // 重置功能
+                resetToOld() {
+                    if(confirm('确定要放弃当前调整，恢复为原计划值吗？')) {
+                        this.companies.forEach(c => c.newTarget = c.oldTarget);
+                    }
+                },
+
+                getShare(val, base) {
+                    if (base === 0) return 0;
+                    return ((val / base) * 100).toFixed(1);
+                },
+
+                formatMoney(num) {
+                    return Number(num).toLocaleString('en-US');
+                },
+
+                saveDraft() {
+                    alert('调整草稿已保存！');
+                },
+
+                confirmCancel() {
+                    if(confirm('确定要取消调整吗？未保存的内容将丢失。')) {
+                        history.back();
+                    }
+                },
+
+                submitAdjustment() {
+                    if (!this.isBalanced) return;
+                    alert(`变更提交成功！\n\n新年度目标：${this.newTotal}万元\n各下级单位指标已更新。`);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
