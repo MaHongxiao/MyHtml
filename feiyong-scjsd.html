@@ -3,28 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>生成结算单 - 大字清晰版</title>
+    <title>生成结算单 - 样品外包逻辑版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         [x-cloak] { display: none !important; }
-        /* 基础字号提升 */
+        /* 基础字号保持大字版设置 (15px) */
         body { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 15px; }
         
-        /* 现代滚动条 */
+        /* 滚动条 */
         .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* 树形连接线优化 - 位置微调适配大字 */
+        /* 树形连接线 */
         .tree-line-v {
             position: absolute; left: 26px; top: 44px; bottom: 0; width: 1px; background-color: #e2e8f0; z-index: 0;
         }
         
-        /* 表格列宽加大 */
+        /* 表格列宽 */
         .col-money { width: 110px; text-align: right; font-family: 'Menlo', 'Monaco', monospace; font-size: 14px; }
         
         /* 交互动效 */
@@ -36,16 +36,16 @@
 </head>
 <body class="bg-slate-100 text-slate-800 h-screen flex flex-col font-sans overflow-hidden" x-data="settlementApp()">
 
-    <header class="bg-white border-b border-slate-200 h-20 px-8 flex justify-between items-center shadow-sm z-40 relative">
+    <header class="bg-white border-b border-slate-200 h-20 px-8 flex justify-between items-center shadow-sm z-40 relative flex-shrink-0">
         <div class="flex items-center gap-5">
             <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
                 <i class="fa-solid fa-file-invoice-dollar text-2xl"></i>
             </div>
             <div>
-                <h1 class="text-xl font-bold text-slate-800 tracking-tight">费用结算中心</h1>
+                <h1 class="text-xl font-bold text-slate-800 tracking-tight">创建结算单</h1>
                 <div class="text-sm font-medium flex items-center gap-3 mt-1">
                     <span class="text-slate-400">当前模式:</span>
-                    <span class="px-3 py-1 rounded-full text-sm border font-bold"
+                    <span class="px-3 py-1 rounded-full text-sm border font-bold transition-colors"
                           :class="mode === 'multi' ? 'bg-green-50 text-green-700 border-green-200' : (mode === 'single' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-500 border-slate-200')">
                         <i class="fa-solid fa-circle text-[8px] mr-1.5 relative -top-0.5"></i>
                         <span x-text="modeText"></span>
@@ -103,7 +103,9 @@
                         </div>
 
                         <div x-show="order.expanded" x-collapse class="relative bg-slate-50/50 border-t border-slate-100">
-                            <div class="tree-line-v"></div> <template x-for="reg in order.regs" :key="reg.id">
+                            <div class="tree-line-v"></div>
+                            
+                            <template x-for="reg in order.regs" :key="reg.id">
                                 <div class="relative pl-10 pr-3 py-3 z-10">
                                     <div class="flex items-center gap-3 mb-3 cursor-pointer group/reg" @click="reg.expanded = !reg.expanded">
                                         <div class="relative z-20 pointer-events-auto" @click.stop>
@@ -131,7 +133,10 @@
                                                 
                                                 <div class="flex-1 min-w-0">
                                                     <div class="flex justify-between items-start mb-1">
-                                                        <span class="text-sm text-slate-800 truncate font-semibold" x-text="sample.name"></span>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="text-sm text-slate-800 truncate font-semibold" x-text="sample.name"></span>
+                                                            <span x-show="sample.isSub" class="text-[10px] bg-orange-100 text-orange-700 px-1.5 rounded border border-orange-200 font-bold">外包</span>
+                                                        </div>
                                                         <span x-show="sample.isSettled" class="text-sm bg-green-100 text-green-700 px-2 rounded-full border border-green-200">已结</span>
                                                         <span x-show="!sample.isSettled" class="text-sm font-mono text-slate-600 font-bold">¥<span x-text="sample.total"></span></span>
                                                     </div>
@@ -155,7 +160,7 @@
                     <i class="fa-solid fa-file-invoice text-5xl text-slate-200"></i>
                 </div>
                 <h3 class="text-xl font-medium text-slate-600">暂无待结算项目</h3>
-                <p class="text-base mt-2 max-w-xs text-center text-slate-400">请从左侧勾选样品，支持跨单合并或单单拆分。</p>
+                <p class="text-base mt-2 max-w-xs text-center text-slate-400">请从左侧勾选样品，系统将自动锁定同一客户。</p>
             </div>
 
             <div x-show="selectedItems.length > 0" class="flex-1 flex flex-col h-full z-10" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
@@ -163,8 +168,8 @@
                 <div class="px-8 py-6 bg-transparent">
                     <h2 class="text-2xl font-bold text-slate-800">结算费用清单</h2>
                     <div class="text-base text-slate-500 mt-2 flex gap-4">
-                        <span class="flex items-center gap-2 bg-white px-4 py-1.5 rounded-full border border-slate-200 shadow-sm"><i class="fa-solid fa-layer-group text-blue-500"></i> 已选样品: <b class="text-slate-800" x-text="selectedItems.length"></b></span>
-                        <span class="flex items-center gap-2 bg-white px-4 py-1.5 rounded-full border border-slate-200 shadow-sm"><i class="fa-solid fa-file-lines text-blue-500"></i> 委托单: <b class="text-slate-800" x-text="selectedOrderCount"></b></span>
+                        <span class="flex items-center gap-2 bg-white px-4 py-1.5 rounded-full border border-slate-200 shadow-sm"><i class="fa-solid fa-user-tag text-blue-500"></i> 客户: <b class="text-slate-800" x-text="currentCustomer"></b></span>
+                        <span class="flex items-center gap-2 bg-white px-4 py-1.5 rounded-full border border-slate-200 shadow-sm"><i class="fa-solid fa-cubes text-blue-500"></i> 样品数: <b class="text-slate-800" x-text="selectedItems.length"></b></span>
                     </div>
                 </div>
 
@@ -189,12 +194,12 @@
                             <table class="w-full text-left text-sm">
                                 <thead class="bg-white text-slate-400 border-b border-slate-100">
                                     <tr>
-                                        <th class="px-6 py-4 font-medium w-64">样品信息</th>
+                                        <th class="px-6 py-4 font-medium w-72">样品信息</th>
                                         <th class="px-4 py-4 font-medium text-right text-indigo-600">检测费</th>
+                                        <th class="px-4 py-4 font-medium text-right text-slate-500">加急费</th>
                                         <th class="px-4 py-4 font-medium text-right text-slate-500">其他杂费</th>
-                                        <th class="px-4 py-4 font-medium text-right text-orange-600">分包费</th>
-                                        <th class="px-4 py-4 font-medium text-center text-slate-500">行折扣</th>
-                                        <th class="px-4 py-4 font-medium text-right text-slate-800">折后小计</th>
+                                        <th class="px-4 py-4 font-medium text-center text-slate-500">折扣适用</th>
+                                        <th class="px-4 py-4 font-medium text-right text-slate-800">总计</th>
                                         <th class="px-4 py-4 w-12"></th>
                                     </tr>
                                 </thead>
@@ -203,19 +208,25 @@
                                         <tr class="group/row row-item hover:bg-slate-50 transition-colors">
                                             <td class="px-6 py-4">
                                                 <div>
-                                                    <div class="font-bold text-slate-700 text-base truncate w-56" :title="item.name" x-text="item.name"></div>
-                                                    <div class="text-xs text-slate-400 font-mono mt-1" x-text="item.no"></div>
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        <div class="font-bold text-slate-700 text-base truncate w-48" :title="item.name" x-text="item.name"></div>
+                                                        <span class="text-xs px-2 py-0.5 rounded font-bold border"
+                                                              :class="item.isSub ? 'bg-orange-50 text-orange-600 border-orange-200' : ''"
+                                                              x-text="item.isSub ? '外包' : ''">
+                                                        </span>
+                                                    </div>
+                                                    <div class="text-xs text-slate-400 font-mono" x-text="item.no"></div>
                                                 </div>
                                             </td>
                                             
-                                            <td class="px-4 py-4 col-money text-indigo-600 bg-blue-50/30 font-bold" x-text="formatNum(item.testFee)"></td>
+                                            <td class="px-4 py-4 col-money text-indigo-600 font-medium" x-text="formatNum(item.testFee)"></td>
                                             
+                                            <td class="px-4 py-4 col-money text-slate-500" x-text="formatNum(item.expeditedFee)"></td>
+
                                             <td class="px-4 py-4 text-right">
                                                 <div class="group/fee relative inline-block cursor-help">
                                                     <span class="text-slate-500 font-mono text-sm border-b border-dashed border-slate-300 pb-0.5" x-text="formatNum(getMiscTotal(item))"></span>
-                                                    
                                                     <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-slate-800 text-white text-xs rounded-lg p-3 shadow-lg hidden group-hover/fee:block z-50">
-                                                        <div class="flex justify-between py-0.5"><span>加急:</span><span x-text="item.expeditedFee"></span></div>
                                                         <div class="flex justify-between py-0.5"><span>交通:</span><span x-text="item.transportFee"></span></div>
                                                         <div class="flex justify-between py-0.5"><span>修理:</span><span x-text="item.repairFee"></span></div>
                                                         <div class="flex justify-between py-0.5"><span>材料:</span><span x-text="item.materialFee"></span></div>
@@ -224,15 +235,14 @@
                                                 </div>
                                             </td>
 
-                                            <td class="px-4 py-4 col-money text-orange-600 bg-orange-50/30 font-medium" x-text="formatNum(item.subFee)"></td>
-                                            
                                             <td class="px-4 py-4 text-center">
-                                                <span class="px-2 py-1 rounded text-xs font-medium" 
-                                                      :class="item.canDiscount ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-slate-100 text-slate-400'"
-                                                      x-text="item.canDiscount ? item.discount + '%' : '-'"></span>
+                                                <span class="px-2 py-1 rounded text-xs font-bold" 
+                                                      :class="!item.isSub ? 'text-green-600 bg-green-50' : 'text-slate-400 bg-slate-100'">
+                                                    <i class="fa-solid" :class="!item.isSub ? 'fa-check' : 'fa-minus'"></i>
+                                                </span>
                                             </td>
 
-                                            <td class="px-4 py-4 col-money font-bold text-slate-800 bg-slate-50/50 text-base" x-text="formatNum(item.itemTotal)"></td>
+                                            <td class="px-4 py-4 col-money font-bold text-slate-800 bg-slate-50/50 text-base" x-text="formatNum(item.total)"></td>
                                             
                                             <td class="px-4 py-4 text-center">
                                                 <button class="text-slate-300 hover:text-red-500 delete-btn p-2 rounded hover:bg-red-50 transition" @click="removeItem(item.id)">
@@ -251,22 +261,18 @@
                     
                     <div class="px-8 py-4 bg-slate-50 border-b border-slate-100 flex gap-4 overflow-x-auto whitespace-nowrap custom-scroll">
                         <div class="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-sm text-slate-500 shadow-sm flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                            检测费: <b class="text-slate-700 font-mono text-base">¥<span x-text="totals.test"></span></b>
-                        </div>
-                        <div class="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-sm text-slate-500 shadow-sm flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
-                            杂费合计: <b class="text-slate-700 font-mono text-base">¥<span x-text="totals.othersTotal"></span></b>
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                            非外包小计 (可折): <b class="text-slate-700 font-mono text-base">¥<span x-text="totals.selfTestTotal"></span></b>
                         </div>
                         <div class="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-sm text-slate-500 shadow-sm flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                            分包费: <b class="text-slate-700 font-mono text-base">¥<span x-text="totals.sub"></span></b>
+                           外包小计 (不折): <b class="text-slate-700 font-mono text-base">¥<span x-text="totals.subTotal"></span></b>
                         </div>
                     </div>
 
                     <div class="px-8 py-6 flex justify-between items-center">
                         <div class="flex flex-col">
-                            <label class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">整单折扣 </label>
+                            <label class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">整单折扣</label>
                             <div class="flex items-center gap-4">
                                 <div class="relative group">
                                     <input type="number" x-model.number="globalDiscount" @input="calculateFinal" min="0" max="100" 
@@ -274,15 +280,15 @@
                                     <span class="absolute right-4 top-3 text-slate-400 text-sm pointer-events-none group-focus-within:text-indigo-500">%</span>
                                 </div>
                                 <div class="flex flex-col text-xs text-slate-400 leading-tight">
-                                    <span>* 仅作用于可打折部分</span>
-                                    <span>* 分包费不参与折扣</span>
+                                    <span>* 仅非外包样品参与折扣</span>
+                                    <span>* 外包样品按原价计算</span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="flex items-center gap-10">
                             <div class="text-right">
-                                <div class="text-sm text-slate-500 font-medium mb-1">最终应收总额</div>
+                                <div class="text-xs text-slate-500 font-medium mb-1">最终应收总额</div>
                                 <div class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 font-mono tracking-tight leading-none filter drop-shadow-sm">
                                     <span class="text-2xl text-indigo-600 align-top mr-1 font-sans font-bold">¥</span><span x-text="finalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
                                 </div>
@@ -316,14 +322,14 @@
                 currentOrderId: null,
                 currentCustomer: null, 
                 
-                // 模拟数据
+                // 模拟数据：isSub 标识是否外包
                 orders: [
                     {
                         id: 101, no: 'WT20231001', customerName: '华为技术有限公司', expanded: true, hasSettledHistory: false, 
                         regs: [
                             { id: 201, no: 'S231001', samples: [
-                                { id: 301, no: 'S231001-01', name: '手机主板-A', testFee: 400, expeditedFee: 50, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, subFee: 50, total: 500, discount: 100, itemTotal: 500, canDiscount: true, isSettled: false },
-                                { id: 302, no: 'S231001-02', name: '高性能电池模组', testFee: 600, expeditedFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, subFee: 200, total: 800, discount: 90, itemTotal: 740, canDiscount: true, isSettled: false } 
+                                { id: 301, no: 'S231001-01', name: '手机主板-A', isSub: false, testFee: 400, expeditedFee: 50, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, total: 450, isSettled: false },
+                                { id: 302, no: 'S231001-02', name: '高性能电池模组', isSub: true, testFee: 600, expeditedFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, total: 600, isSettled: false } 
                             ]}
                         ]
                     },
@@ -331,7 +337,7 @@
                         id: 102, no: 'WT20231005', customerName: '小米科技', expanded: false, hasSettledHistory: false,
                         regs: [
                             { id: 203, no: 'S231005', samples: [
-                                { id: 304, no: 'S231005-01', name: '智能音箱外壳', testFee: 250, expeditedFee: 0, transportFee: 50, repairFee: 0, materialFee: 0, otherFee: 0, subFee: 0, total: 300, discount: 100, itemTotal: 300, canDiscount: true, isSettled: false }
+                                { id: 304, no: 'S231005-01', name: '智能音箱外壳', isSub: false, testFee: 250, expeditedFee: 0, transportFee: 50, repairFee: 0, materialFee: 0, otherFee: 0, total: 300, isSettled: false }
                             ]}
                         ]
                     },
@@ -339,8 +345,24 @@
                         id: 103, no: 'WT20231008', customerName: '比亚迪汽车', expanded: false, hasSettledHistory: true, 
                         regs: [
                             { id: 204, no: 'S231008', samples: [
-                                { id: 306, no: 'S231008-01', name: '中控屏总成', testFee: 1800, expeditedFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, subFee: 200, total: 2000, discount: 100, itemTotal: 2000, canDiscount: true, isSettled: true },
-                                { id: 307, no: 'S231008-02', name: '毫米波雷达', testFee: 3000, expeditedFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, subFee: 500, total: 3500, discount: 100, itemTotal: 3500, canDiscount: true, isSettled: false }
+                                { id: 306, no: 'S231008-01', name: '中控屏总成', isSub: true, testFee: 1800, expeditedFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, total: 1800, isSettled: true },
+                                { id: 307, no: 'S231008-02', name: '毫米波雷达', isSub: false, testFee: 3000, expeditedFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, total: 3000, isSettled: false }
+                            ]}
+                        ]
+                    },
+                    {
+                        id: 104, no: 'WT20231009', customerName: '华为技术有限公司', expanded: false, hasSettledHistory: false,
+                        regs: [
+                            { id: 205, no: 'S231009', samples: [
+                                { id: 308, no: 'S231009-01', name: '5G基站模块', isSub: false, testFee: 5000, expeditedFee: 500, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, total: 5500, isSettled: false }
+                            ]}
+                        ]
+                    },
+                    {
+                        id: 105, no: 'WT20231010', customerName: '宁德时代', expanded: false, hasSettledHistory: false,
+                        regs: [
+                            { id: 206, no: 'S231010', samples: [
+                                { id: 309, no: 'S231010-01', name: '储能电芯', isSub: true, testFee: 2000, expeditedFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, total: 2000, isSettled: false }
                             ]}
                         ]
                     }
@@ -388,25 +410,22 @@
 
                 get selectedOrderCount() { return new Set(this.selectedItems.map(i => i.orderId)).size; },
 
+                // 统计逻辑调整：区分自检总额和分包总额
                 get totals() {
-                    const t = this.selectedItems.reduce((acc, item) => {
-                        acc.test += item.testFee || 0;
-                        acc.expedited += item.expeditedFee || 0;
-                        acc.transport += item.transportFee || 0;
-                        acc.repair += item.repairFee || 0;
-                        acc.material += item.materialFee || 0;
-                        acc.other += item.otherFee || 0;
-                        acc.sub += item.subFee || 0;
-                        return acc;
-                    }, { test: 0, expedited: 0, transport: 0, repair: 0, material: 0, other: 0, sub: 0 });
-                    
-                    const othersTotal = t.expedited + t.transport + t.repair + t.material + t.other;
+                    let selfTestTotal = 0;
+                    let subTotal = 0;
+
+                    this.selectedItems.forEach(item => {
+                        if (item.isSub) {
+                            subTotal += item.total;
+                        } else {
+                            selfTestTotal += item.total;
+                        }
+                    });
 
                     return {
-                        test: this.formatNum(t.test),
-                        expedited: this.formatNum(t.expedited),
-                        othersTotal: this.formatNum(othersTotal),
-                        sub: this.formatNum(t.sub)
+                        selfTestTotal: this.formatNum(selfTestTotal),
+                        subTotal: this.formatNum(subTotal)
                     };
                 },
 
@@ -423,16 +442,16 @@
 
                 calculateFinal() {
                     let total = 0;
-                    const globalRate = this.globalDiscount / 100;
+                    const rate = this.globalDiscount / 100;
 
                     this.selectedItems.forEach(item => {
-                        const currentItemTotal = item.itemTotal || 0;
-                        const subFee = item.subFee || 0;
-                        
-                        const discountablePart = currentItemTotal - subFee;
-                        const finalItemTotal = (discountablePart * globalRate) + subFee;
-                        
-                        total += finalItemTotal;
+                        if (item.isSub) {
+                            // 分包：不打折，原价累加
+                            total += item.total;
+                        } else {
+                            // 自检：参与折扣
+                            total += item.total * rate;
+                        }
                     });
                     
                     this.finalAmount = total;
@@ -472,6 +491,7 @@
                     alert('结算单生成成功！\n总金额：¥' + this.finalAmount.toFixed(2));
                 },
 
+                // --- 逻辑判断 ---
                 isOrderDisabled(order) {
                     if (this.mode === 'single' && this.currentOrderId !== order.id) return true;
                     if (this.mode === 'multi' && order.hasSettledHistory) return true;
