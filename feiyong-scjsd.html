@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生成结算单 - 大字清晰版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        /* 基础字号提升 */
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 15px; }
+        
+        /* 现代滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* 树形连接线优化 - 位置微调适配大字 */
+        .tree-line-v {
+            position: absolute; left: 26px; top: 44px; bottom: 0; width: 1px; background-color: #e2e8f0; z-index: 0;
+        }
+        
+        /* 表格列宽加大 */
+        .col-money { width: 110px; text-align: right; font-family: 'Menlo', 'Monaco', monospace; font-size: 14px; }
+        
+        /* 交互动效 */
+        .hover-card { transition: all 0.2s ease; }
+        .hover-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1); }
+        .delete-btn { opacity: 0; transition: opacity 0.2s; }
+        .row-item:hover .delete-btn { opacity: 1; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 h-screen flex flex-col font-sans overflow-hidden" x-data="settlementApp()">
+
+    <header class="bg-white border-b border-slate-200 h-20 px-8 flex justify-between items-center shadow-sm z-40 relative">
+        <div class="flex items-center gap-5">
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+                <i class="fa-solid fa-file-invoice-dollar text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-800 tracking-tight">费用结算中心</h1>
+                <div class="text-sm font-medium flex items-center gap-3 mt-1">
+                    <span class="text-slate-400">当前模式:</span>
+                    <span class="px-3 py-1 rounded-full text-sm border font-bold"
+                          :class="mode === 'multi' ? 'bg-green-50 text-green-700 border-green-200' : (mode === 'single' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-500 border-slate-200')">
+                        <i class="fa-solid fa-circle text-[8px] mr-1.5 relative -top-0.5"></i>
+                        <span x-text="modeText"></span>
+                    </span>
+
+                    <span x-show="currentCustomer" x-transition class="px-3 py-1 rounded-full text-sm border bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1.5 font-bold">
+                        <i class="fa-solid fa-user-lock text-xs"></i>
+                        锁定客户: <b x-text="currentCustomer"></b>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div>
+            <button class="text-slate-600 hover:text-slate-900 text-base font-medium transition-colors flex items-center gap-2 px-4 py-2 rounded-md hover:bg-slate-50 border border-transparent hover:border-slate-200" @click="reset">
+                <i class="fa-solid fa-arrows-rotate"></i> 重置所有选择
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <aside class="w-[480px] bg-white border-r border-slate-200 flex flex-col z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+            <div class="p-5 border-b border-slate-100">
+                <div class="relative group">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400 group-focus-within:text-blue-500 transition-colors text-lg"></i>
+                    <input type="text" x-model="searchQuery" placeholder="输入委托单号 / 客户 / 样品..." 
+                           class="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scroll p-4 bg-white space-y-4">
+                <template x-for="order in filteredOrders" :key="order.id">
+                    <div class="rounded-xl border border-slate-200 overflow-hidden transition-all duration-200 group"
+                         :class="{'opacity-50 grayscale pointer-events-none bg-slate-50': isOrderDisabled(order), 'ring-2 ring-blue-500 shadow-md': isOrderSelected(order), 'hover:border-blue-300': !isOrderDisabled(order)}">
+                        
+                        <div class="p-4 flex items-start gap-3 cursor-pointer bg-white relative"
+                             @click="toggleOrder(order)">
+                            <div class="pt-1.5 pointer-events-auto" @click.stop> 
+                                <input type="checkbox" 
+                                       :checked="isOrderSelected(order)" 
+                                       :disabled="isOrderDisabled(order) || order.hasSettledHistory"
+                                       @change="toggleOrderCheckbox(order)"
+                                       class="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer disabled:bg-slate-100">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between items-center mb-1.5">
+                                    <span class="font-bold text-base text-slate-800" x-text="order.no"></span>
+                                    <span x-show="order.hasSettledHistory" class="text-sm px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded font-medium">含历史结算</span>
+                                </div>
+                                <div class="flex justify-between items-center text-sm text-slate-500">
+                                    <span class="truncate max-w-[220px]"><i class="fa-regular fa-building mr-1.5"></i><span x-text="order.customerName"></span></span>
+                                    <i class="fa-solid text-slate-400 transition-transform duration-200 text-sm" :class="order.expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div x-show="order.expanded" x-collapse class="relative bg-slate-50/50 border-t border-slate-100">
+                            <div class="tree-line-v"></div> <template x-for="reg in order.regs" :key="reg.id">
+                                <div class="relative pl-10 pr-3 py-3 z-10">
+                                    <div class="flex items-center gap-3 mb-3 cursor-pointer group/reg" @click="reg.expanded = !reg.expanded">
+                                        <div class="relative z-20 pointer-events-auto" @click.stop>
+                                            <input type="checkbox" 
+                                                   :checked="isRegSelected(reg)"
+                                                   :disabled="isItemDisabled(order)"
+                                                   @change="toggleRegCheckbox(reg, order)"
+                                                   class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 disabled:cursor-not-allowed">
+                                        </div>
+                                        <i class="fa-regular fa-folder-open text-amber-400 text-base"></i>
+                                        <span class="text-sm font-bold text-slate-700 hover:text-blue-600 transition-colors" x-text="reg.no"></span>
+                                        <i class="fa-solid text-xs text-slate-400 ml-auto transition-transform" :class="reg.expanded ? 'rotate-90' : ''"></i>
+                                    </div>
+
+                                    <div x-show="reg.expanded" class="pl-7 space-y-2">
+                                        <template x-for="sample in reg.samples" :key="sample.id">
+                                            <div class="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors relative"
+                                                 :class="{'bg-blue-50 ring-1 ring-blue-100': isSelected(sample.id), 'hover:bg-slate-100': !isSelected(sample.id) && !sample.isSettled, 'opacity-50 cursor-not-allowed': sample.isSettled || isItemDisabled(order)}"
+                                                 @click="!sample.isSettled && !isItemDisabled(order) && toggleSample(sample, order)">
+                                                
+                                                <input type="checkbox" 
+                                                       :checked="isSelected(sample.id)" 
+                                                       :disabled="sample.isSettled || isItemDisabled(order)"
+                                                       class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-0 pointer-events-none">
+                                                
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex justify-between items-start mb-1">
+                                                        <span class="text-sm text-slate-800 truncate font-semibold" x-text="sample.name"></span>
+                                                        <span x-show="sample.isSettled" class="text-sm bg-green-100 text-green-700 px-2 rounded-full border border-green-200">已结</span>
+                                                        <span x-show="!sample.isSettled" class="text-sm font-mono text-slate-600 font-bold">¥<span x-text="sample.total"></span></span>
+                                                    </div>
+                                                    <div class="text-xs text-slate-500 font-mono" x-text="sample.no"></div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col bg-slate-50 min-w-0 relative">
+            
+            <div x-show="selectedItems.length === 0" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 z-0">
+                <div class="w-32 h-32 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-slate-100">
+                    <i class="fa-solid fa-file-invoice text-5xl text-slate-200"></i>
+                </div>
+                <h3 class="text-xl font-medium text-slate-600">暂无待结算项目</h3>
+                <p class="text-base mt-2 max-w-xs text-center text-slate-400">请从左侧勾选样品，支持跨单合并或单单拆分。</p>
+            </div>
+
+            <div x-show="selectedItems.length > 0" class="flex-1 flex flex-col h-full z-10" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                
+                <div class="px-8 py-6 bg-transparent">
+                    <h2 class="text-2xl font-bold text-slate-800">结算费用清单</h2>
+                    <div class="text-base text-slate-500 mt-2 flex gap-4">
+                        <span class="flex items-center gap-2 bg-white px-4 py-1.5 rounded-full border border-slate-200 shadow-sm"><i class="fa-solid fa-layer-group text-blue-500"></i> 已选样品: <b class="text-slate-800" x-text="selectedItems.length"></b></span>
+                        <span class="flex items-center gap-2 bg-white px-4 py-1.5 rounded-full border border-slate-200 shadow-sm"><i class="fa-solid fa-file-lines text-blue-500"></i> 委托单: <b class="text-slate-800" x-text="selectedOrderCount"></b></span>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto custom-scroll px-8 pb-4 space-y-6">
+                    
+                    <template x-for="group in groupedSelection" :key="group.orderNo">
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover-card">
+                            
+                            <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                                <div class="flex items-center gap-4">
+                                    <div class="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded text-sm font-bold font-mono" x-text="group.orderNo"></div>
+                                    <div class="text-sm text-slate-500 font-medium">
+                                        <i class="fa-regular fa-folder-open text-amber-400 mr-1.5"></i>
+                                        <span x-text="group.items[0].regNo"></span> 等 <span x-text="getRegCount(group.items)"></span> 个登记号
+                                    </div>
+                                </div>
+                                <div class="text-sm font-medium text-slate-500">
+                                    共 <b class="text-slate-700" x-text="group.items.length"></b> 个样品
+                                </div>
+                            </div>
+
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-white text-slate-400 border-b border-slate-100">
+                                    <tr>
+                                        <th class="px-6 py-4 font-medium w-64">样品信息</th>
+                                        <th class="px-4 py-4 font-medium text-right text-indigo-600">检测费</th>
+                                        <th class="px-4 py-4 font-medium text-right text-slate-500">其他杂费</th>
+                                        <th class="px-4 py-4 font-medium text-right text-orange-600">分包费</th>
+                                        <th class="px-4 py-4 font-medium text-center text-slate-500">行折扣</th>
+                                        <th class="px-4 py-4 font-medium text-right text-slate-800">折后小计</th>
+                                        <th class="px-4 py-4 w-12"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-50">
+                                    <template x-for="item in group.items" :key="item.id">
+                                        <tr class="group/row row-item hover:bg-slate-50 transition-colors">
+                                            <td class="px-6 py-4">
+                                                <div>
+                                                    <div class="font-bold text-slate-700 text-base truncate w-56" :title="item.name" x-text="item.name"></div>
+                                                    <div class="text-xs text-slate-400 font-mono mt-1" x-text="item.no"></div>
+                                                </div>
+                                            </td>
+                                            
+                                            <td class="px-4 py-4 col-money text-indigo-600 bg-blue-50/30 font-bold" x-text="formatNum(item.testFee)"></td>
+                                            
+                                            <td class="px-4 py-4 text-right">
+                                                <div class="group/fee relative inline-block cursor-help">
+                                                    <span class="text-slate-500 font-mono text-sm border-b border-dashed border-slate-300 pb-0.5" x-text="formatNum(getMiscTotal(item))"></span>
+                                                    
+                                                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-slate-800 text-white text-xs rounded-lg p-3 shadow-lg hidden group-hover/fee:block z-50">
+                                                        <div class="flex justify-between py-0.5"><span>加急:</span><span x-text="item.expeditedFee"></span></div>
+                                                        <div class="flex justify-between py-0.5"><span>交通:</span><span x-text="item.transportFee"></span></div>
+                                                        <div class="flex justify-between py-0.5"><span>修理:</span><span x-text="item.repairFee"></span></div>
+                                                        <div class="flex justify-between py-0.5"><span>材料:</span><span x-text="item.materialFee"></span></div>
+                                                        <div class="flex justify-between py-0.5"><span>其他:</span><span x-text="item.otherFee"></span></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            <td class="px-4 py-4 col-money text-orange-600 bg-orange-50/30 font-medium" x-text="formatNum(item.subFee)"></td>
+                                            
+                                            <td class="px-4 py-4 text-center">
+                                                <span class="px-2 py-1 rounded text-xs font-medium" 
+                                                      :class="item.canDiscount ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-slate-100 text-slate-400'"
+                                                      x-text="item.canDiscount ? item.discount + '%' : '-'"></span>
+                                            </td>
+
+                                            <td class="px-4 py-4 col-money font-bold text-slate-800 bg-slate-50/50 text-base" x-text="formatNum(item.itemTotal)"></td>
+                                            
+                                            <td class="px-4 py-4 text-center">
+                                                <button class="text-slate-300 hover:text-red-500 delete-btn p-2 rounded hover:bg-red-50 transition" @click="removeItem(item.id)">
+                                                    <i class="fa-solid fa-trash-can text-base"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="bg-white border-t border-slate-200 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] z-30">
+                    
+                    <div class="px-8 py-4 bg-slate-50 border-b border-slate-100 flex gap-4 overflow-x-auto whitespace-nowrap custom-scroll">
+                        <div class="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-sm text-slate-500 shadow-sm flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                            检测费: <b class="text-slate-700 font-mono text-base">¥<span x-text="totals.test"></span></b>
+                        </div>
+                        <div class="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-sm text-slate-500 shadow-sm flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                            杂费合计: <b class="text-slate-700 font-mono text-base">¥<span x-text="totals.othersTotal"></span></b>
+                        </div>
+                        <div class="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-sm text-slate-500 shadow-sm flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                            分包费: <b class="text-slate-700 font-mono text-base">¥<span x-text="totals.sub"></span></b>
+                        </div>
+                    </div>
+
+                    <div class="px-8 py-6 flex justify-between items-center">
+                        <div class="flex flex-col">
+                            <label class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">整单折扣 </label>
+                            <div class="flex items-center gap-4">
+                                <div class="relative group">
+                                    <input type="number" x-model.number="globalDiscount" @input="calculateFinal" min="0" max="100" 
+                                           class="w-28 border border-slate-300 rounded-xl px-3 py-2.5 text-center font-bold text-indigo-600 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition shadow-sm bg-white text-lg">
+                                    <span class="absolute right-4 top-3 text-slate-400 text-sm pointer-events-none group-focus-within:text-indigo-500">%</span>
+                                </div>
+                                <div class="flex flex-col text-xs text-slate-400 leading-tight">
+                                    <span>* 仅作用于可打折部分</span>
+                                    <span>* 分包费不参与折扣</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-10">
+                            <div class="text-right">
+                                <div class="text-sm text-slate-500 font-medium mb-1">最终应收总额</div>
+                                <div class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 font-mono tracking-tight leading-none filter drop-shadow-sm">
+                                    <span class="text-2xl text-indigo-600 align-top mr-1 font-sans font-bold">¥</span><span x-text="finalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+                                </div>
+                            </div>
+                            <div class="h-16 w-px bg-slate-200"></div>
+                            <div class="flex gap-4">
+                                <button class="px-6 py-3.5 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-50 text-base font-bold transition hover:border-slate-400" @click="reset">取消</button>
+                                <button class="px-10 py-3.5 bg-indigo-600 text-white rounded-xl text-base font-bold hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition transform active:scale-95 flex items-center gap-2" @click="submit">
+                                    <i class="fa-solid fa-paper-plane"></i> 生成结算单
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div x-show="toast.visible" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
+         class="fixed bottom-10 right-10 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl text-base z-50 flex items-center gap-4 border border-slate-700">
+        <i class="fa-solid fa-circle-exclamation text-amber-400 text-xl" x-show="toast.type==='error'"></i>
+        <i class="fa-solid fa-circle-check text-green-400 text-xl" x-show="toast.type==='success'"></i>
+        <span x-text="toast.message"></span>
+    </div>
+
+    <script>
+        function settlementApp() {
+            return {
+                searchQuery: '',
+                mode: 'none', 
+                currentOrderId: null,
+                currentCustomer: null, 
+                
+                // 模拟数据
+                orders: [
+                    {
+                        id: 101, no: 'WT20231001', customerName: '华为技术有限公司', expanded: true, hasSettledHistory: false, 
+                        regs: [
+                            { id: 201, no: 'S231001', samples: [
+                                { id: 301, no: 'S231001-01', name: '手机主板-A', testFee: 400, expeditedFee: 50, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, subFee: 50, total: 500, discount: 100, itemTotal: 500, canDiscount: true, isSettled: false },
+                                { id: 302, no: 'S231001-02', name: '高性能电池模组', testFee: 600, expeditedFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, subFee: 200, total: 800, discount: 90, itemTotal: 740, canDiscount: true, isSettled: false } 
+                            ]}
+                        ]
+                    },
+                    {
+                        id: 102, no: 'WT20231005', customerName: '小米科技', expanded: false, hasSettledHistory: false,
+                        regs: [
+                            { id: 203, no: 'S231005', samples: [
+                                { id: 304, no: 'S231005-01', name: '智能音箱外壳', testFee: 250, expeditedFee: 0, transportFee: 50, repairFee: 0, materialFee: 0, otherFee: 0, subFee: 0, total: 300, discount: 100, itemTotal: 300, canDiscount: true, isSettled: false }
+                            ]}
+                        ]
+                    },
+                    {
+                        id: 103, no: 'WT20231008', customerName: '比亚迪汽车', expanded: false, hasSettledHistory: true, 
+                        regs: [
+                            { id: 204, no: 'S231008', samples: [
+                                { id: 306, no: 'S231008-01', name: '中控屏总成', testFee: 1800, expeditedFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, subFee: 200, total: 2000, discount: 100, itemTotal: 2000, canDiscount: true, isSettled: true },
+                                { id: 307, no: 'S231008-02', name: '毫米波雷达', testFee: 3000, expeditedFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0, subFee: 500, total: 3500, discount: 100, itemTotal: 3500, canDiscount: true, isSettled: false }
+                            ]}
+                        ]
+                    }
+                ],
+
+                selectedIds: [],
+                globalDiscount: 100,
+                finalAmount: 0,
+                toast: { visible: false, message: '', type: 'info' },
+
+                get filteredOrders() {
+                    if (!this.searchQuery) return this.orders;
+                    const q = this.searchQuery.toLowerCase();
+                    return this.orders.filter(o => 
+                        o.no.toLowerCase().includes(q) || 
+                        o.customerName.includes(q) ||
+                        o.regs.some(r => r.no.toLowerCase().includes(q) || r.samples.some(s => s.name.includes(q) || s.no.includes(q)))
+                    );
+                },
+
+                get selectedItems() {
+                    const items = [];
+                    this.orders.forEach(o => {
+                        o.regs.forEach(r => {
+                            r.samples.forEach(s => {
+                                if (this.selectedIds.includes(s.id)) {
+                                    items.push({ ...s, orderNo: o.no, orderId: o.id, regNo: r.no });
+                                }
+                            });
+                        });
+                    });
+                    return items;
+                },
+
+                get groupedSelection() {
+                    const groups = {};
+                    this.selectedItems.forEach(item => {
+                        if (!groups[item.orderId]) {
+                            groups[item.orderId] = { orderNo: item.orderNo, items: [] };
+                        }
+                        groups[item.orderId].items.push(item);
+                    });
+                    return Object.values(groups);
+                },
+
+                get selectedOrderCount() { return new Set(this.selectedItems.map(i => i.orderId)).size; },
+
+                get totals() {
+                    const t = this.selectedItems.reduce((acc, item) => {
+                        acc.test += item.testFee || 0;
+                        acc.expedited += item.expeditedFee || 0;
+                        acc.transport += item.transportFee || 0;
+                        acc.repair += item.repairFee || 0;
+                        acc.material += item.materialFee || 0;
+                        acc.other += item.otherFee || 0;
+                        acc.sub += item.subFee || 0;
+                        return acc;
+                    }, { test: 0, expedited: 0, transport: 0, repair: 0, material: 0, other: 0, sub: 0 });
+                    
+                    const othersTotal = t.expedited + t.transport + t.repair + t.material + t.other;
+
+                    return {
+                        test: this.formatNum(t.test),
+                        expedited: this.formatNum(t.expedited),
+                        othersTotal: this.formatNum(othersTotal),
+                        sub: this.formatNum(t.sub)
+                    };
+                },
+
+                get modeText() {
+                    if (this.mode === 'none') return '未开始';
+                    if (this.mode === 'multi') return '多单合并';
+                    if (this.mode === 'single') return '单单拆分';
+                    return '';
+                },
+
+                init() {
+                    this.$watch('selectedIds', () => { this.calculateFinal(); });
+                },
+
+                calculateFinal() {
+                    let total = 0;
+                    const globalRate = this.globalDiscount / 100;
+
+                    this.selectedItems.forEach(item => {
+                        const currentItemTotal = item.itemTotal || 0;
+                        const subFee = item.subFee || 0;
+                        
+                        const discountablePart = currentItemTotal - subFee;
+                        const finalItemTotal = (discountablePart * globalRate) + subFee;
+                        
+                        total += finalItemTotal;
+                    });
+                    
+                    this.finalAmount = total;
+                },
+
+                formatNum(value) { 
+                    if (value === undefined || value === null) return '0.00';
+                    return Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); 
+                },
+                
+                getMiscTotal(item) {
+                    return (item.expeditedFee||0) + (item.transportFee||0) + (item.repairFee||0) + (item.materialFee||0) + (item.otherFee||0);
+                },
+
+                getRegCount(items) {
+                    return new Set(items.map(i => i.regNo)).size;
+                },
+                
+                showToast(msg, type='error') {
+                    this.toast.message = msg;
+                    this.toast.type = type;
+                    this.toast.visible = true;
+                    setTimeout(() => { this.toast.visible = false; }, 3000);
+                },
+
+                reset() {
+                    if(this.selectedIds.length > 0 && !confirm('确定要清空已选列表吗？')) return;
+                    this.selectedIds = [];
+                    this.mode = 'none';
+                    this.currentOrderId = null;
+                    this.currentCustomer = null; 
+                    this.globalDiscount = 100;
+                    this.calculateFinal();
+                },
+
+                submit() {
+                    alert('结算单生成成功！\n总金额：¥' + this.finalAmount.toFixed(2));
+                },
+
+                isOrderDisabled(order) {
+                    if (this.mode === 'single' && this.currentOrderId !== order.id) return true;
+                    if (this.mode === 'multi' && order.hasSettledHistory) return true;
+                    if (this.currentCustomer && order.customerName !== this.currentCustomer) return true;
+                    return false;
+                },
+                isItemDisabled(parentOrder) { return this.isOrderDisabled(parentOrder); },
+                
+                checkAndSetMode(targetOrder, isFullSelect) {
+                    if (this.currentCustomer && targetOrder.customerName !== this.currentCustomer) {
+                        this.showToast(`当前已锁定客户【${this.currentCustomer}】，不可选择【${targetOrder.customerName}】的订单`);
+                        return false;
+                    }
+
+                    if (this.selectedIds.length === 0) {
+                        this.currentCustomer = targetOrder.customerName;
+                        if (targetOrder.hasSettledHistory) {
+                            this.mode = 'single'; this.currentOrderId = targetOrder.id;
+                        } else if (isFullSelect) {
+                            this.mode = 'multi'; this.currentOrderId = null;
+                        } else {
+                            this.mode = 'single'; this.currentOrderId = targetOrder.id;
+                        }
+                        return true;
+                    }
+
+                    if (this.mode === 'single') {
+                        if (targetOrder.id !== this.currentOrderId) { this.showToast("拆单模式下，不可选择其他委托单"); return false; }
+                        return true;
+                    }
+                    if (this.mode === 'multi') {
+                        if (targetOrder.hasSettledHistory) { this.showToast("多单合并模式下，不可选择有拆单记录的委托单"); return false; }
+                        if (!isFullSelect) {
+                            if (this.selectedOrderCount > 1) { this.showToast("多单合并模式下，必须整单选择，不可拆分"); return false; }
+                            else { this.mode = 'single'; this.currentOrderId = targetOrder.id; return true; }
+                        }
+                        return true;
+                    }
+                    return true;
+                },
+
+                toggleOrder(order) { order.expanded = !order.expanded; },
+
+                toggleOrderCheckbox(order) {
+                    if (!this.checkAndSetMode(order, true)) return;
+                    const allSampleIds = order.regs.flatMap(r => r.samples).filter(s => !s.isSettled).map(s => s.id);
+                    const isAllSelected = allSampleIds.every(id => this.selectedIds.includes(id));
+                    if (isAllSelected) {
+                        this.selectedIds = this.selectedIds.filter(id => !allSampleIds.includes(id));
+                        this.checkResetMode();
+                    } else {
+                        const newIds = allSampleIds.filter(id => !this.selectedIds.includes(id));
+                        this.selectedIds = [...this.selectedIds, ...newIds];
+                    }
+                },
+
+                toggleRegCheckbox(reg, order) {
+                    if (!this.checkAndSetMode(order, false)) return;
+                    const regSampleIds = reg.samples.filter(s => !s.isSettled).map(s => s.id);
+                    const isAllSelected = regSampleIds.every(id => this.selectedIds.includes(id));
+                    if (isAllSelected) {
+                        this.selectedIds = this.selectedIds.filter(id => !regSampleIds.includes(id));
+                        this.checkResetMode();
+                    } else {
+                        const newIds = regSampleIds.filter(id => !this.selectedIds.includes(id));
+                        this.selectedIds = [...this.selectedIds, ...newIds];
+                    }
+                },
+
+                toggleSample(sample, order) {
+                    if (!this.checkAndSetMode(order, false)) return;
+                    if (this.selectedIds.includes(sample.id)) {
+                        this.selectedIds = this.selectedIds.filter(id => id !== sample.id);
+                        this.checkResetMode();
+                    } else {
+                        this.selectedIds.push(sample.id);
+                    }
+                },
+
+                removeItem(id) {
+                    this.selectedIds = this.selectedIds.filter(i => i !== id);
+                    this.checkResetMode();
+                },
+
+                checkResetMode() {
+                    if (this.selectedIds.length === 0) {
+                        this.mode = 'none'; 
+                        this.currentOrderId = null;
+                        this.currentCustomer = null; 
+                        this.globalDiscount = 100;
+                        this.calculateFinal();
+                    }
+                },
+
+                isOrderSelected(order) {
+                    const validSamples = order.regs.flatMap(r => r.samples).filter(s => !s.isSettled);
+                    if (validSamples.length === 0) return false; 
+                    return validSamples.every(s => this.selectedIds.includes(s.id));
+                },
+                isRegSelected(reg) {
+                    const validSamples = reg.samples.filter(s => !s.isSettled);
+                    if (validSamples.length === 0) return false;
+                    return validSamples.every(s => this.selectedIds.includes(s.id));
+                },
+                isSelected(id) { return this.selectedIds.includes(id); }
+            }
+        }
+    </script>
+</body>
+</html>
