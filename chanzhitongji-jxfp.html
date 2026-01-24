@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全费用绩效分配 - 自动均分版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #334155; }
+        
+        /* 字体规范：最小 13px */
+        .text-min { font-size: 13px; line-height: 1.5; }
+        .text-body { font-size: 14px; line-height: 1.6; }
+        
+        /* 数字字体：大于 14px，加粗等宽 */
+        .font-num { font-family: 'Menlo', 'Monaco', monospace; font-weight: 700; font-size: 15px; }
+        .font-num-lg { font-size: 18px; }
+        
+        /* 滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+
+        /* 输入框聚焦样式 */
+        .input-active:focus-within { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); }
+        
+        /* 表格粘性列阴影 */
+        .shadow-r { box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.05); }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-body" x-data="allocationApp()">
+
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex justify-between items-center shadow-sm z-30 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-200">
+                <i class="fa-solid fa-layer-group text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">多维绩效分配</h1>
+                <div class="text-min text-slate-500 mt-0.5">单号: AP-20260315-001</div>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button class="px-5 py-2 border border-slate-300 rounded-lg text-slate-600 font-bold hover:bg-slate-50 text-min transition">保存草稿</button>
+            <button @click="submitAllocation" class="px-6 py-2 bg-indigo-600 text-white rounded-lg text-min font-bold shadow-md hover:bg-indigo-700 transition flex items-center gap-2">
+                <i class="fa-solid fa-check"></i> 提交分配结果
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <aside class="w-[300px] bg-white border-r border-slate-200 flex flex-col z-20 flex-shrink-0">
+            <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                    <input type="text" x-model="searchQuery" placeholder="搜索样品..." class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-min focus:border-indigo-500 outline-none transition shadow-sm">
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scroll p-3 space-y-3">
+                <template x-for="group in filteredGroups" :key="group.regNo">
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                        <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition" @click="group.expanded = !group.expanded">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" :checked="isGroupSelected(group)" @click.stop="toggleGroup(group)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                                <span class="text-sm font-bold text-slate-700 truncate w-32" x-text="group.regNo"></span>
+                            </div>
+                            <i class="fa-solid fa-angle-down text-slate-400 text-xs transition-transform" :class="group.expanded ? '' : '-rotate-90'"></i>
+                        </div>
+                        
+                        <div x-show="group.expanded" class="divide-y divide-slate-50">
+                            <template x-for="item in group.items" :key="item.id">
+                                <div class="px-4 py-3 flex items-start gap-3 hover:bg-indigo-50/30 cursor-pointer transition-colors" 
+                                     :class="selectedIds.includes(item.id) ? 'bg-indigo-50/40' : ''"
+                                     @click="toggleItem(item.id)">
+                                    <input type="checkbox" :value="item.id" x-model="selectedIds" class="mt-1 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 pointer-events-none">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-start mb-1">
+                                            <span class="text-sm font-bold text-slate-700 truncate w-28" x-text="item.name"></span>
+                                            <span class="font-num text-slate-500 text-min">¥<span x-text="item.totalFee"></span></span>
+                                        </div>
+                                        <div class="text-min text-slate-400 font-mono" x-text="item.no"></div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col min-w-0 bg-slate-50">
+            
+            <div class="h-[35%] flex flex-col border-b border-slate-200 bg-white">
+                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-sack-dollar text-emerald-500"></i> 待分总池
+                        <span class="bg-emerald-100 text-emerald-700 px-3 py-0.5 rounded-full text-min font-bold" x-text="selectedItems.length + '项'"></span>
+                    </h2>
+                    
+                    <div class="flex gap-4 text-min overflow-x-auto custom-scroll pb-1">
+                        <template x-for="type in feeTypes" :key="type.key">
+                            <div class="flex flex-col items-end px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm min-w-[110px]" :class="grandTotals[type.key] > 0 ? 'opacity-100' : 'opacity-50 grayscale'">
+                                <span class="text-slate-400 text-min uppercase font-bold" x-text="type.label"></span>
+                                <span class="font-num font-bold text-slate-700">¥ <span x-text="grandTotals[type.key].toFixed(2)"></span></span>
+                            </div>
+                        </template>
+                        <div class="flex flex-col items-end px-4 py-2 bg-indigo-50 border border-indigo-200 rounded-lg shadow-sm min-w-[110px]">
+                            <span class="text-indigo-500 text-min uppercase font-bold">总合计</span>
+                            <span class="font-num font-bold text-indigo-700">¥ <span x-text="grandTotals.total.toFixed(2)"></span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto custom-scroll p-6 space-y-4">
+                    <div x-show="selectedIds.length === 0" class="h-full flex flex-col items-center justify-center text-slate-400">
+                        <i class="fa-solid fa-basket-shopping text-3xl mb-2 opacity-30"></i>
+                        <p class="text-body">请先从左侧选择样品</p>
+                    </div>
+
+                    <template x-for="group in groupedSelectedSamples" :key="group.regNo">
+                        <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                            <div class="px-5 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                                <div class="font-bold text-slate-700 text-body" x-text="group.regNo"></div>
+                                <div class="text-min text-slate-500">组内合计: <span class="font-num font-bold text-slate-800">¥<span x-text="group.sums.total.toFixed(2)"></span></span></div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-min whitespace-nowrap">
+                                    <thead class="text-slate-500 bg-white border-b border-slate-50">
+                                        <tr>
+                                            <th class="px-5 py-3 font-bold w-56 sticky left-0 bg-white shadow-r">样品</th>
+                                            <template x-for="type in feeTypes" :key="type.key">
+                                                <th class="px-5 py-3 font-bold text-right" x-text="type.label"></th>
+                                            </template>
+                                            <th class="px-5 py-3 font-bold text-right text-indigo-600">小计</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        <template x-for="item in group.items" :key="item.id">
+                                            <tr>
+                                                <td class="px-5 py-3 sticky left-0 bg-white shadow-r">
+                                                    <div class="text-slate-700 font-bold text-body" x-text="item.name"></div>
+                                                    <div class="text-slate-400 font-mono text-min mt-0.5" x-text="item.no"></div>
+                                                </td>
+                                                <template x-for="type in feeTypes" :key="type.key">
+                                                    <td class="px-5 py-3 text-right font-num text-slate-600" 
+                                                        :class="item.fees[type.key] > 0 ? '' : 'text-slate-300'"
+                                                        x-text="item.fees[type.key]"></td>
+                                                </template>
+                                                <td class="px-5 py-3 text-right font-num font-bold text-indigo-600" x-text="item.totalFee"></td>
+                                            </tr>
+                                        </template>
+                                        <tr class="bg-slate-50/50 font-bold text-slate-500">
+                                            <td class="px-5 py-3 text-right sticky left-0 bg-slate-50/50 shadow-r">本组小计</td>
+                                            <template x-for="type in feeTypes" :key="type.key">
+                                                <td class="px-5 py-3 text-right font-num" x-text="group.sums[type.key].toFixed(2)"></td>
+                                            </template>
+                                            <td class="px-5 py-3 text-right font-num text-indigo-600" x-text="group.sums.total.toFixed(2)"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col bg-slate-50 relative overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white shadow-sm z-10">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-users-gear text-indigo-500"></i> 分配矩阵
+                    </h2>
+                    <div class="flex gap-3">
+                        <button @click="distributeAllFeesEvenly" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-min font-bold hover:bg-slate-200 transition" title="将所有费用重新平均分配给当前列表中的所有人">
+                            <i class="fa-solid fa-bolt mr-1.5 text-indigo-500"></i>一键重置均分
+                        </button>
+                        <button @click="modalOpen = true" class="px-5 py-2 bg-white border border-indigo-200 text-indigo-600 rounded-lg text-min font-bold hover:bg-indigo-50 transition shadow-sm flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i> 添加人员
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-auto custom-scroll bg-slate-50 p-6 pb-32"> 
+                    
+                    <div x-show="allocatedPersonnel.length === 0" class="h-full flex flex-col items-center justify-center text-slate-400">
+                        <i class="fa-solid fa-clipboard-user text-4xl mb-2 opacity-50"></i>
+                        <p class="text-body">请添加人员开始分配</p>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden" x-show="allocatedPersonnel.length > 0">
+                        <table class="w-full text-left text-min">
+                            <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="px-5 py-4 w-72 sticky left-0 bg-slate-100 z-10 shadow-r">
+                                        人员信息 (姓名/部门)
+                                    </th>
+                                    <template x-for="type in feeTypes" :key="type.key">
+                                        <th class="px-3 py-4 min-w-[130px]">
+                                            <div class="flex justify-between items-center">
+                                                <span x-text="type.label"></span>
+                                            </div>
+                                        </th>
+                                    </template>
+                                    <th class="px-5 py-4 w-40 text-right">个人合计</th>
+                                    <th class="px-3 py-4 w-16 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <template x-for="(person, pIdx) in allocatedPersonnel" :key="person.id">
+                                    <tr class="hover:bg-slate-50 transition group">
+                                        <td class="px-5 py-4 sticky left-0 bg-white group-hover:bg-slate-50 z-10 border-r border-transparent group-hover:border-slate-200 shadow-r align-middle">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-600 border border-slate-200 flex-shrink-0">
+                                                    <span x-text="person.name.charAt(0)"></span>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="font-bold text-slate-800 text-body break-words leading-tight" x-text="person.name"></div>
+                                                    <div class="text-min text-slate-500 mt-1 break-words leading-tight" x-text="person.dept"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        
+                                        <template x-for="type in feeTypes" :key="type.key">
+                                            <td class="px-3 py-3 align-middle">
+                                                <div class="relative input-active rounded-md transition-all" :class="grandTotals[type.key] <= 0 ? 'opacity-50 pointer-events-none bg-slate-50' : ''">
+                                                    <input type="number" 
+                                                           x-model.number="person.allocations[type.key]" 
+                                                           class="w-full border border-slate-300 rounded-md py-2 pl-3 pr-2 text-right font-num text-slate-700 focus:outline-none bg-transparent"
+                                                           placeholder="0">
+                                                </div>
+                                            </td>
+                                        </template>
+
+                                        <td class="px-5 py-3 text-right font-num font-bold text-indigo-600 text-body align-middle" x-text="getPersonTotal(person).toFixed(2)"></td>
+                                        
+                                        <td class="px-3 py-3 text-center align-middle">
+                                            <button @click="removePerson(pIdx)" class="w-8 h-8 rounded-full hover:bg-rose-50 text-slate-300 hover:text-rose-500 transition flex items-center justify-center" title="移除该人员">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-8 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-body font-bold text-slate-600">各分项余额校验 (Balance Check):</span>
+                        <div class="text-min font-medium">
+                            <span class="mr-5"><i class="fa-solid fa-circle text-emerald-500 text-[10px] mr-1"></i> 平衡 (¥0)</span>
+                            <span class="mr-5"><i class="fa-solid fa-circle text-orange-400 text-[10px] mr-1"></i> 剩余 (>0)</span>
+                            <span><i class="fa-solid fa-circle text-rose-500 text-[10px] mr-1"></i> 超额 (<0)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-5 overflow-x-auto custom-scroll pb-2">
+                        <template x-for="type in feeTypes" :key="type.key">
+                            <div class="flex-shrink-0 flex flex-col w-36 bg-slate-50 rounded-lg border px-4 py-3 transition-colors"
+                                 :class="getBalanceColorClass(type.key)">
+                                <div class="flex justify-between items-center text-min font-bold uppercase mb-1" 
+                                     :class="getBalanceTextColor(type.key)">
+                                    <span x-text="type.label"></span>
+                                    <i class="fa-solid" :class="getBalanceIcon(type.key)"></i>
+                                </div>
+                                <div class="text-right font-num font-bold text-base" 
+                                     :class="getBalanceTextColor(type.key)">
+                                     ¥ <span x-text="Math.abs(balances[type.key]).toFixed(2)"></span>
+                                </div>
+                                <div class="w-full bg-black/5 h-1.5 mt-2 rounded-full overflow-hidden">
+                                    <div class="h-full bg-current transition-all duration-300" :style="`width: ${grandTotals[type.key] > 0 ? Math.min((getAllocatedTotal(type.key) / grandTotals[type.key]) * 100, 100) : 0}%`"></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div x-show="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm" x-cloak>
+        <div class="bg-white w-[600px] h-[600px] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-scale-up">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-lg">选择分配人员</h3>
+                <button @click="modalOpen = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="flex-1 flex overflow-hidden">
+                <div class="w-40 border-r border-slate-100 bg-slate-50 p-4 overflow-y-auto">
+                    <div class="text-min font-bold text-slate-400 mb-3 uppercase">部门筛选</div>
+                    <ul class="space-y-1">
+                        <template x-for="dept in departments" :key="dept">
+                            <li @click="selectedDept = dept" 
+                                class="px-3 py-2.5 rounded-lg text-min cursor-pointer transition font-medium"
+                                :class="selectedDept === dept ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-indigo-100' : 'text-slate-600 hover:bg-slate-100'">
+                                <span x-text="dept"></span>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+
+                <div class="flex-1 p-5 overflow-y-auto custom-scroll">
+                    <div class="relative mb-4">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" placeholder="搜索姓名..." class="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg text-min outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                    <div class="space-y-1">
+                        <template x-for="person in filteredStaff" :key="person.id">
+                            <label class="flex items-center p-3 rounded-lg hover:bg-slate-50 cursor-pointer group transition">
+                                <input type="checkbox" :value="person" x-model="tempSelectedStaff" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                                <div class="ml-3">
+                                    <div class="text-body font-bold text-slate-700" x-text="person.name"></div>
+                                    <div class="text-min text-slate-400 mt-0.5" x-text="person.dept"></div>
+                                </div>
+                            </label>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 border-t border-slate-100 flex justify-between items-center bg-slate-50">
+                <span class="text-min text-slate-500">已选 <b class="text-indigo-600 font-num" x-text="tempSelectedStaff.length"></b> 人</span>
+                <div class="flex gap-3">
+                    <button @click="modalOpen = false" class="px-5 py-2 border border-slate-300 rounded-lg text-min font-bold text-slate-600 hover:bg-white transition">取消</button>
+                    <button @click="confirmStaffSelection" class="px-6 py-2 bg-indigo-600 text-white rounded-lg text-min font-bold hover:bg-indigo-700 transition shadow-sm">确定添加 & 均分</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function allocationApp() {
+            return {
+                searchQuery: '',
+                selectedIds: [],
+                modalOpen: false,
+                
+                // 配置
+                feeTypes: [
+                    { key: 'test', label: '检测费' },
+                    { key: 'expedited', label: '加急费' },
+                    { key: 'transport', label: '交通费' },
+                    { key: 'repair', label: '修理费' },
+                    { key: 'material', label: '材料费' },
+                    { key: 'other', label: '其他费' }
+                ],
+
+                // 模拟数据
+                samples: [
+                    { id: 1, regNo: 'DJ2026031501', no: 'S01', name: '高精度万用表', fees: { test: 1000, expedited: 200, transport: 50, repair: 0, material: 0, other: 0 } },
+                    { id: 2, regNo: 'DJ2026031501', no: 'S02', name: '数字示波器', fees: { test: 2000, expedited: 0, transport: 100, repair: 500, material: 0, other: 0 } },
+                    { id: 3, regNo: 'DJ2026031502', no: 'S01', name: '绝缘电阻测试仪', fees: { test: 800, expedited: 0, transport: 0, repair: 0, material: 50, other: 20 } },
+                ],
+
+                // 人员相关
+                departments: ['全部', '电磁所', '长度所', '热工所'],
+                selectedDept: '全部',
+                staffList: [
+                    { id: 101, name: '张三', dept: '电磁计量研究所' },
+                    { id: 102, name: '李四', dept: '电磁计量研究所 / 综合办公室' }, // 模拟长部门名
+                    { id: 103, name: '王五', dept: '长度精密测量室' },
+                    { id: 104, name: '赵六', dept: '热工与环境检测中心' },
+                    { id: 105, name: '孙七', dept: '无线电业务部' },
+                ],
+                tempSelectedStaff: [],
+                
+                // 【预置人员数据】 - 默认加载3人
+                allocatedPersonnel: [], 
+
+                init() {
+                    // 初始化总计
+                    this.samples.forEach(s => {
+                        s.totalFee = Object.values(s.fees).reduce((a, b) => a + b, 0);
+                    });
+                    
+                    // 默认选中所有样品以便演示
+                    this.selectedIds = this.samples.map(s => s.id);
+
+                    // 默认添加3个预置人员
+                    this.initDefaultPersonnel();
+                },
+
+                initDefaultPersonnel() {
+                    const defaultIds = [101, 102, 103]; // 张三, 李四, 王五
+                    defaultIds.forEach(id => {
+                        const person = this.staffList.find(p => p.id === id);
+                        if(person) {
+                            // 初始化结构
+                            const allocations = {};
+                            this.feeTypes.forEach(t => allocations[t.key] = 0);
+                            this.allocatedPersonnel.push({ ...person, allocations });
+                        }
+                    });
+                    // 初始化后自动执行一次均分
+                    this.distributeAllFeesEvenly();
+                },
+
+                // --- 左侧列表逻辑 (保持不变) ---
+                get filteredGroups() {
+                    const groups = {};
+                    const query = this.searchQuery.toLowerCase();
+                    this.samples.forEach(item => {
+                        if(item.name.toLowerCase().includes(query) || item.regNo.toLowerCase().includes(query)) {
+                            if(!groups[item.regNo]) groups[item.regNo] = { regNo: item.regNo, items: [], expanded: true };
+                            groups[item.regNo].items.push(item);
+                        }
+                    });
+                    return Object.values(groups);
+                },
+                isGroupSelected(group) { return group.items.every(item => this.selectedIds.includes(item.id)); },
+                toggleGroup(group) {
+                    const allIds = group.items.map(i => i.id);
+                    if(this.isGroupSelected(group)) { this.selectedIds = this.selectedIds.filter(id => !allIds.includes(id)); }
+                    else { this.selectedIds = [...new Set([...this.selectedIds, ...allIds])]; }
+                },
+                toggleItem(id) {
+                    if(this.selectedIds.includes(id)) { this.selectedIds = this.selectedIds.filter(i => i !== id); }
+                    else { this.selectedIds.push(id); }
+                },
+
+                // --- 核心数据计算 ---
+                get selectedItems() { return this.samples.filter(s => this.selectedIds.includes(s.id)); },
+
+                get groupedSelectedSamples() {
+                    const groups = {};
+                    this.selectedItems.forEach(item => {
+                        if(!groups[item.regNo]) {
+                            groups[item.regNo] = { 
+                                regNo: item.regNo, items: [], 
+                                sums: { test:0, expedited:0, transport:0, repair:0, material:0, other:0, total:0 } 
+                            };
+                        }
+                        groups[item.regNo].items.push(item);
+                        this.feeTypes.forEach(t => groups[item.regNo].sums[t.key] += item.fees[t.key]);
+                        groups[item.regNo].sums.total += item.totalFee;
+                    });
+                    return Object.values(groups);
+                },
+
+                get grandTotals() {
+                    const totals = { test:0, expedited:0, transport:0, repair:0, material:0, other:0, total:0 };
+                    this.selectedItems.forEach(item => {
+                        this.feeTypes.forEach(t => totals[t.key] += item.fees[t.key]);
+                        totals.total += item.totalFee;
+                    });
+                    return totals;
+                },
+
+                getAllocatedTotal(typeKey) {
+                    return this.allocatedPersonnel.reduce((sum, p) => sum + (parseFloat(p.allocations[typeKey]) || 0), 0);
+                },
+
+                get balances() {
+                    const bal = {};
+                    this.feeTypes.forEach(t => {
+                        bal[t.key] = this.grandTotals[t.key] - this.getAllocatedTotal(t.key);
+                    });
+                    return bal;
+                },
+
+                getPersonTotal(person) {
+                    return Object.values(person.allocations).reduce((a, b) => a + (parseFloat(b) || 0), 0);
+                },
+
+                // --- 样式逻辑 ---
+                getBalanceColorClass(key) {
+                    const bal = this.balances[key];
+                    if (Math.abs(bal) < 0.01) return 'border-emerald-200 bg-emerald-50'; 
+                    if (bal < 0) return 'border-rose-200 bg-rose-50'; 
+                    return 'border-orange-200 bg-orange-50'; 
+                },
+                getBalanceTextColor(key) {
+                    const bal = this.balances[key];
+                    if (Math.abs(bal) < 0.01) return 'text-emerald-600';
+                    if (bal < 0) return 'text-rose-500';
+                    return 'text-orange-500';
+                },
+                getBalanceIcon(key) {
+                    const bal = this.balances[key];
+                    if (Math.abs(bal) < 0.01) return 'fa-check';
+                    if (bal < 0) return 'fa-exclamation-triangle';
+                    return 'fa-hourglass-half';
+                },
+
+                // --- 核心分配逻辑 ---
+                
+                // 均分某一列
+                distributeColumn(key) {
+                    if (this.allocatedPersonnel.length === 0) return;
+                    const total = this.grandTotals[key];
+                    
+                    // 如果该项费用总额为0，则清空大家该项的分配
+                    if (total <= 0) {
+                        this.allocatedPersonnel.forEach(p => p.allocations[key] = 0);
+                        return;
+                    }
+
+                    const count = this.allocatedPersonnel.length;
+                    // 向下保留2位，确保不超
+                    const avg = Math.floor((total / count) * 100) / 100;
+                    let currentAllocated = 0;
+
+                    this.allocatedPersonnel.forEach((p, idx) => {
+                        if (idx === count - 1) {
+                            // 最后一个人兜底补齐（解决除不尽问题）
+                            p.allocations[key] = parseFloat((total - currentAllocated).toFixed(2));
+                        } else {
+                            p.allocations[key] = avg;
+                            currentAllocated += avg;
+                        }
+                    });
+                },
+
+                // 均分所有列 (全自动分配)
+                distributeAllFeesEvenly() {
+                    this.feeTypes.forEach(t => this.distributeColumn(t.key));
+                },
+
+                // --- 人员选择 ---
+                get filteredStaff() {
+                    if(this.selectedDept === '全部') return this.staffList;
+                    return this.staffList.filter(s => s.dept === this.selectedDept);
+                },
+                
+                confirmStaffSelection() {
+                    // 1. 将新选中的人加入列表
+                    this.tempSelectedStaff.forEach(p => {
+                        if(!this.allocatedPersonnel.find(ap => ap.id === p.id)) {
+                            const allocations = {};
+                            this.feeTypes.forEach(t => allocations[t.key] = 0);
+                            this.allocatedPersonnel.push({ ...p, allocations });
+                        }
+                    });
+                    
+                    // 2. 【核心修改】添加人后，自动触发全员重新均分
+                    this.distributeAllFeesEvenly();
+
+                    this.modalOpen = false;
+                    this.tempSelectedStaff = [];
+                },
+                
+                // 单行删除
+                removePerson(index) { 
+                    if(confirm("确定要移除该人员吗？删除后其分配金额将释放回资金池。")) {
+                        this.allocatedPersonnel.splice(index, 1); 
+                        // 删除后不强制自动均分，以免打乱用户手动调整的数据
+                        // 但用户可以点击顶部的“一键重置均分”来重新分配
+                    }
+                },
+
+                submitAllocation() {
+                    const hasError = Object.values(this.balances).some(b => Math.abs(b) > 0.01);
+                    if (hasError) {
+                        alert("部分费用项未平衡（剩余或超额），请调整分配金额！");
+                        return;
+                    }
+                    if (this.allocatedPersonnel.length === 0) {
+                        alert("请选择分配人员！");
+                        return;
+                    }
+                    alert("分配方案提交成功！");
+                }
+            }
+        }
+    </script>
+</body>
+</html>
