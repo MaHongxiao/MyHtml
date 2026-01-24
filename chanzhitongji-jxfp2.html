@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绩效分配 - 终极修复版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f3f4f6; color: #1f2937; }
+        
+        /* 字体规范 */
+        .text-min { font-size: 13px; line-height: 1.5; }
+        .text-body { font-size: 14px; line-height: 1.6; }
+        .text-num { font-family: 'Menlo', 'Monaco', monospace; font-size: 15px; font-weight: 700; }
+        .text-num-lg { font-family: 'Menlo', 'Monaco', monospace; font-size: 20px; font-weight: 800; }
+        .text-num-xl { font-family: 'Menlo', 'Monaco', monospace; font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+        
+        /* 滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+
+        /* 树形连接线 */
+        .tree-line { position: absolute; left: 11px; top: 24px; bottom: 0; width: 1px; background-color: #e5e7eb; }
+        .tree-item { position: relative; }
+        .tree-item:last-child > .tree-line { display: none; }
+        
+        /* 选中高亮 */
+        .node-selected { background-color: #eff6ff; border-right: 3px solid #3b82f6; }
+        
+        /* 输入框聚焦 */
+        .input-active:focus-within { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
+
+        /* 折叠动画 */
+        .collapse-content { transition: max-height 0.3s ease-out; overflow: hidden; max-height: 0; }
+        .collapse-open { max-height: 800px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-body" x-data="allocationApp()">
+
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex justify-between items-center shadow-sm z-30 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-200">
+                <i class="fa-solid fa-calculator text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">绩效产值分配中心</h1>
+                <div class="text-min text-slate-500 mt-0.5">全层级可选 · 严格合同约束</div>
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <div class="flex items-center px-4 py-1.5 bg-slate-100 rounded-lg text-min text-slate-500 border border-slate-200">
+                <span class="mr-2">当前操作人:</span>
+                <span class="font-bold text-slate-700">系统管理员</span>
+            </div>
+            <button @click="submitAllocation" 
+                    :disabled="allocatedPersonnel.length === 0"
+                    :class="allocatedPersonnel.length === 0 ? 'bg-slate-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 shadow-md'"
+                    class="px-6 py-2 text-white rounded-lg text-min font-bold transition flex items-center gap-2">
+                <i class="fa-solid fa-check-circle"></i> 确认提交
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        
+        <aside class="w-[420px] bg-white border-r border-slate-200 flex flex-col z-20 flex-shrink-0">
+            <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                <div class="flex gap-2 mb-3">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="text" x-model="searchQuery" placeholder="搜索合同 / 客户 / 委托单..." class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-min focus:border-indigo-500 outline-none transition shadow-sm">
+                    </div>
+                    <button @click="clearSampleSelection" x-show="hasSelection" class="px-3 py-2 bg-rose-50 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-100 transition text-min whitespace-nowrap" title="清空所有选择">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+                <div class="text-min px-3 py-2 rounded-lg border flex justify-between items-center transition-colors"
+                     :class="lockedContext ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-400'">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid" :class="lockedContext ? 'fa-lock' : 'fa-lock-open'"></i>
+                        <span x-text="lockedContext ? ('当前锁定: ' + lockedContext.clientName) : '未锁定合同/客户'"></span>
+                    </span>
+                    <span x-show="lockedContext" class="text-xs bg-white px-1.5 rounded border border-indigo-100" x-text="lockedContext.code"></span>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scroll p-4 space-y-1">
+                <template x-for="contract in filteredTree" :key="contract.id">
+                    <div class="tree-item pb-2">
+                        <div class="flex items-start gap-2 py-2 hover:bg-slate-50 rounded-lg -ml-2 px-2 transition-colors group select-none cursor-pointer"
+                             :class="contract.checked ? 'bg-indigo-50/50' : ''">
+                            <button @click.stop="contract.expanded = !contract.expanded" class="mt-0.5 w-5 h-5 flex items-center justify-center text-slate-400 hover:text-indigo-500 transition-transform" :class="contract.expanded ? 'rotate-90' : ''">
+                                <i class="fa-solid fa-caret-right"></i>
+                            </button>
+                            <input type="checkbox" :checked="contract.checked" @change="toggleNode(contract, contract)" class="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                            <div class="flex-1 min-w-0" @click="contract.expanded = !contract.expanded">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-regular fa-file-lines text-slate-400 text-xs"></i>
+                                        <span class="font-bold text-slate-700 text-sm truncate w-36" x-text="contract.code"></span>
+                                    </div>
+                                    <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 rounded border border-slate-200" x-text="contract.clientName"></span>
+                                </div>
+                                <div class="text-min text-slate-500 truncate mt-0.5 ml-5" x-text="contract.name"></div>
+                            </div>
+                        </div>
+
+                        <div x-show="contract.expanded" class="pl-5 border-l border-slate-200 ml-2.5 space-y-1 mt-1">
+                            <template x-for="quote in contract.children" :key="quote.id">
+                                <div class="tree-item">
+                                    <div class="flex items-start gap-2 py-1.5 hover:bg-slate-50 rounded-lg px-2 transition-colors select-none cursor-pointer"
+                                         :class="quote.checked ? 'bg-indigo-50/50' : ''">
+                                        <button @click.stop="quote.expanded = !quote.expanded" class="mt-0.5 w-4 h-4 flex items-center justify-center text-slate-400 hover:text-indigo-500 transition-transform" :class="quote.expanded ? 'rotate-90' : ''">
+                                            <i class="fa-solid fa-caret-right"></i>
+                                        </button>
+                                        <input type="checkbox" :checked="quote.checked" @change="toggleNode(quote, contract)" class="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                                        <div class="flex-1 min-w-0" @click="quote.expanded = !quote.expanded">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fa-solid fa-tag text-slate-300 text-[10px]"></i>
+                                                <span class="font-bold text-slate-600 text-min truncate" x-text="quote.code"></span>
+                                            </div>
+                                            <div class="text-[11px] text-slate-400 truncate ml-4" x-text="quote.name"></div>
+                                        </div>
+                                    </div>
+
+                                    <div x-show="quote.expanded" class="pl-5 border-l border-slate-200 ml-2.5 space-y-2 mt-1 pb-2">
+                                        <template x-for="order in quote.children" :key="order.id">
+                                            <div class="tree-item">
+                                                <div class="flex items-start gap-2 py-2 px-2 rounded-lg transition-all border border-transparent select-none cursor-pointer" 
+                                                     :class="order.checked ? 'node-selected' : 'hover:bg-slate-50'"
+                                                     @click.stop="toggleNode(order, contract)">
+                                                    
+                                                    <input type="checkbox" :checked="order.checked" class="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 pointer-events-none">
+                                                    
+                                                    <div class="flex-1 min-w-0">
+                                                        <div class="flex justify-between items-start">
+                                                            <div class="font-bold text-slate-700 text-sm truncate" x-text="order.code"></div>
+                                                            <span class="text-num text-indigo-600">¥<span x-text="order.totalAmount"></span></span>
+                                                        </div>
+                                                        <div class="flex items-center gap-2 mt-1">
+                                                            <span class="text-[10px] px-1.5 rounded border flex items-center gap-1"
+                                                                  :class="order.checked ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-500 border-slate-200'">
+                                                                <i class="fa-solid fa-user-check text-[10px]"></i>
+                                                                <span x-text="order.defaultVerifierName"></span>
+                                                            </span>
+                                                            <span class="text-[11px] text-slate-400" x-text="order.sampleCount + ' 样品'"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+                
+                <div x-show="filteredTree.length === 0" class="py-12 text-center text-slate-400">
+                    <i class="fa-solid fa-folder-open text-2xl mb-2 opacity-50"></i>
+                    <p class="text-min">无匹配数据</p>
+                </div>
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col min-w-0 bg-slate-50">
+            
+            <div class="bg-white border-b border-slate-200 px-8 py-5 shadow-sm z-10 flex-shrink-0">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-sack-dollar text-emerald-500"></i> 待分配绩效池
+                        </h2>
+                        <div class="flex gap-4 mt-1 text-min text-slate-500">
+                            <span>委托单: <b class="text-indigo-600" x-text="selectedOrderCount"></b></span>
+                            <span class="text-slate-300">|</span>
+                            <span>样品数: <b class="text-indigo-600" x-text="selectedSampleCount"></b></span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-min text-slate-400 font-bold uppercase tracking-wider">绩效包总额</div>
+                        <div class="text-num-xl text-indigo-600">¥ <span x-text="grandTotals.total.toFixed(2)"></span></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-6 gap-4 mt-4">
+                    <template x-for="type in feeTypes" :key="type.key">
+                        <div class="bg-slate-50 rounded-lg border border-slate-200 p-2 text-center transition-all hover:bg-white hover:shadow-md hover:border-indigo-200" 
+                             :class="grandTotals[type.key] > 0 ? 'opacity-100' : 'opacity-50 grayscale'">
+                            <div class="text-[11px] text-slate-500 font-bold mb-0.5" x-text="type.label"></div>
+                            <div class="text-num text-slate-700">¥<span x-text="grandTotals[type.key].toFixed(2)"></span></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-auto custom-scroll p-8 bg-slate-50 pb-32">
+                
+                <div class="mb-6" x-show="selectedOrders.length > 0">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-bold text-slate-600 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check"></i> 已选单据明细
+                        </h3>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <template x-for="order in selectedOrders" :key="order.id">
+                            <div class="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                                <div class="px-4 py-3 flex justify-between items-center cursor-pointer bg-white hover:bg-slate-50 transition select-none" @click="order.detailsExpanded = !order.detailsExpanded">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fa-solid fa-chevron-right text-xs text-slate-300 transition-transform" :class="order.detailsExpanded ? 'rotate-90' : ''"></i>
+                                        <div>
+                                            <span class="font-bold text-slate-700 text-sm" x-text="order.code"></span>
+                                            <span class="text-xs text-slate-400 ml-2">默认检定员: <span class="text-slate-600 font-medium" x-text="order.defaultVerifierName"></span></span>
+                                        </div>
+                                    </div>
+                                    <div class="text-num text-indigo-600">¥<span x-text="order.totalAmount"></span></div>
+                                </div>
+                                
+                                <div class="border-t border-slate-100 bg-slate-50/50" :class="order.detailsExpanded ? 'collapse-open' : 'collapse-content'">
+                                    <div class="p-3">
+                                        <table class="w-full text-left text-min">
+                                            <thead class="text-slate-400 border-b border-slate-200/60">
+                                                <tr>
+                                                    <th class="pb-2 pl-2">样品名称 / 编号</th>
+                                                    <template x-for="t in feeTypes" :key="t.key">
+                                                        <th class="pb-2 text-right" x-text="t.label"></th>
+                                                    </template>
+                                                    <th class="pb-2 text-right">小计</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100/50">
+                                                <template x-for="sample in order.children" :key="sample.id">
+                                                    <tr>
+                                                        <td class="py-2 pl-2">
+                                                            <div class="font-bold text-slate-700" x-text="sample.name"></div>
+                                                            <div class="text-[11px] text-slate-400 font-mono" x-text="sample.no"></div>
+                                                        </td>
+                                                        <template x-for="t in feeTypes" :key="t.key">
+                                                            <td class="py-2 text-right font-num text-slate-500" x-text="sample.fees[t.key]"></td>
+                                                        </template>
+                                                        <td class="py-2 text-right font-num font-bold text-slate-700" x-text="sample.total"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-3 sticky top-0 bg-slate-50 z-10 py-2">
+                        <h3 class="text-sm font-bold text-slate-600 flex items-center gap-2">
+                            <i class="fa-solid fa-users-gear text-indigo-500"></i> 人员分配矩阵
+                        </h3>
+                        <div class="flex gap-2">
+                            <button @click="clearPersonnel" x-show="allocatedPersonnel.length > 0" class="px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-lg text-min font-bold hover:bg-rose-100 transition shadow-sm">
+                                <i class="fa-solid fa-trash mr-1"></i> 清空人员
+                            </button>
+                            <button @click="restoreDefaults" class="px-3 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-min font-bold hover:bg-emerald-100 transition shadow-sm" title="仅恢复当前委托单的默认检定员">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> 恢复默认检定员
+                            </button>
+                            <button @click="distributeAllFeesEvenly" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg text-min font-bold hover:bg-indigo-100 transition shadow-sm">
+                                <i class="fa-solid fa-bolt mr-1"></i> 一键平均分配
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div x-show="allocatedPersonnel.length === 0" class="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-300 rounded-xl bg-white/50">
+                            <div class="text-center text-slate-400">
+                                <i class="fa-solid fa-user-plus text-4xl mb-2 opacity-50"></i>
+                                <p class="text-min">暂无分配人员</p>
+                                <p class="text-[11px] mt-1 text-slate-400">勾选左侧委托单会自动带入默认检定员</p>
+                            </div>
+                            <button @click="openModal" class="mt-4 px-5 py-2 bg-white border border-indigo-200 text-indigo-600 rounded-lg text-min font-bold hover:bg-indigo-50 shadow-sm transition">
+                                <i class="fa-solid fa-plus mr-1"></i> 手动添加人员
+                            </button>
+                        </div>
+
+                        <template x-for="(person, index) in allocatedPersonnel" :key="person.id">
+                            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:border-indigo-300 transition-all group">
+                                <div class="flex justify-between items-start mb-4 border-b border-slate-100 pb-3">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-base font-bold text-slate-600 border border-slate-200 flex-shrink-0">
+                                            <span x-text="person.name.charAt(0)"></span>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-slate-800 text-base" x-text="person.name"></div>
+                                            <div class="text-min text-slate-500 mt-0.5" x-text="person.dept"></div>
+                                        </div>
+                                        <span class="text-[10px] px-2 py-0.5 rounded font-bold border ml-2"
+                                              :class="person.isDefault ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100'"
+                                              x-text="person.isDefault ? '默认' : '手动'"></span>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <div class="text-right">
+                                            <div class="text-min text-slate-400">个人合计</div>
+                                            <div class="text-num text-indigo-600 text-lg">¥ <span x-text="getPersonTotal(person).toFixed(2)"></span></div>
+                                        </div>
+                                        <button @click="removePerson(index)" class="w-8 h-8 rounded-full hover:bg-rose-50 text-slate-300 hover:text-rose-500 transition flex items-center justify-center ml-2">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-6 gap-4">
+                                    <template x-for="type in feeTypes" :key="type.key">
+                                        <div :class="grandTotals[type.key] <= 0 ? 'opacity-40 pointer-events-none' : ''">
+                                            <label class="block text-[11px] text-slate-400 mb-1.5" x-text="type.label"></label>
+                                            <div class="relative input-active rounded-md">
+                                                <span class="absolute left-2.5 top-2 text-slate-400 text-min">¥</span>
+                                                <input type="number" x-model.number="person.allocations[type.key]" class="w-full border border-slate-200 rounded-md py-1.5 pl-6 pr-2 text-right text-num text-slate-700 focus:outline-none bg-slate-50 focus:bg-white transition-colors" placeholder="0">
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <button @click="openModal" x-show="allocatedPersonnel.length > 0" class="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 font-bold hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i> 添加更多人员
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-8 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20" x-show="allocatedPersonnel.length > 0">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-body font-bold text-slate-600">资金平衡校验</span>
+                    <div class="flex gap-6 text-min font-bold">
+                        <span class="text-emerald-600 flex items-center gap-1.5"><i class="fa-solid fa-circle-check"></i> 已分配: ¥<span x-text="totalAllocated.toFixed(2)"></span></span>
+                        <span :class="Math.abs(remainingAmount) < 0.01 ? 'text-slate-300' : 'text-rose-500'" class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-exclamation" x-show="Math.abs(remainingAmount) >= 0.01"></i>
+                            差额: ¥<span x-text="remainingAmount.toFixed(2)"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden flex">
+                    <div class="bg-emerald-500 h-full transition-all duration-300" :style="`width: ${grandTotals.total > 0 ? Math.min((totalAllocated / grandTotals.total) * 100, 100) : 0}%`"></div>
+                    <div x-show="totalAllocated > grandTotals.total" class="bg-rose-500 h-full flex-1 animate-pulse"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div x-show="modalConfirm.open" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm" x-cloak>
+        <div class="bg-white w-[400px] rounded-xl shadow-2xl p-6 text-center animate-scale-in">
+            <div class="w-14 h-14 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-exclamation"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">检测到人员冲突</h3>
+            <p class="text-min text-slate-500 mb-6 leading-relaxed">
+                您勾选的委托单包含不同的默认检定员。<br>
+                继续操作将<b>清除当前分配列表</b>，并进入批量覆盖模式，由您手动指定分配方案。
+            </p>
+            <div class="flex justify-center gap-3">
+                <button @click="cancelSelectionChange" class="px-5 py-2 border border-slate-300 rounded-lg text-min font-bold text-slate-600 hover:bg-slate-50">取消选择</button>
+                <button @click="confirmConflictOverride" class="px-5 py-2 bg-orange-500 text-white rounded-lg text-min font-bold hover:bg-orange-600 shadow-md">确认并清除</button>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm" x-cloak>
+        <div class="bg-white w-[700px] h-[600px] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-scale-up">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-lg">选择分配人员</h3>
+                <button @click="modalOpen = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="flex-1 flex overflow-hidden">
+                <div class="w-48 border-r border-slate-100 bg-slate-50 p-4 overflow-y-auto">
+                    <div class="text-min font-bold text-slate-400 mb-3 uppercase tracking-wider">部门架构</div>
+                    <ul class="space-y-1">
+                        <template x-for="dept in departments" :key="dept">
+                            <li @click="selectedDept = dept" 
+                                class="px-3 py-2.5 rounded-lg text-min cursor-pointer transition font-medium truncate"
+                                :class="selectedDept === dept ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-indigo-100' : 'text-slate-600 hover:bg-slate-100'">
+                                <span x-text="dept"></span>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+
+                <div class="flex-1 p-5 overflow-y-auto custom-scroll">
+                    <div class="relative mb-4">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" x-model="staffSearch" placeholder="搜索姓名或工号..." class="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg text-min outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <template x-for="person in filteredStaffList" :key="person.id">
+                            <label class="flex items-center p-3 rounded-lg hover:bg-slate-50 cursor-pointer group transition select-none border border-transparent hover:border-slate-200">
+                                <input type="checkbox" :value="person.id" x-model="tempSelectedIds" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer">
+                                <div class="ml-3 flex-1 min-w-0">
+                                    <div class="text-body font-bold text-slate-700 truncate" x-text="person.name"></div>
+                                    <div class="text-min text-slate-400 mt-0.5 truncate" x-text="person.dept"></div>
+                                </div>
+                                <div x-show="allocatedPersonnel.some(p => p.id === person.id)" class="text-xs text-emerald-500 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                                    <i class="fa-solid fa-check mr-1"></i>已在列表
+                                </div>
+                            </label>
+                        </template>
+                        <div x-show="filteredStaffList.length === 0" class="text-center py-8 text-slate-400 text-min">未找到匹配人员</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+                <div class="text-min text-slate-500">
+                    已选中 <b class="text-indigo-600 font-num text-base" x-text="tempSelectedIds.length"></b> 人
+                </div>
+                <div class="flex gap-3">
+                    <button @click="modalOpen = false" class="px-5 py-2 border border-slate-300 rounded-lg text-min font-bold text-slate-600 hover:bg-white transition">取消</button>
+                    <button @click="confirmStaffSelection" class="px-6 py-2 bg-indigo-600 text-white rounded-lg text-min font-bold hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-check-double"></i> 确定添加 & 均分
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function allocationApp() {
+            return {
+                searchQuery: '',
+                staffSearch: '',
+                lockedContext: null, // { id, clientName, code } - 锁定的合同
+                modalOpen: false,
+                modalConfirm: { open: false, pendingOrder: null },
+                conflictDetected: false,
+                
+                feeTypes: [
+                    { key: 'test', label: '检测费' },
+                    { key: 'expedited', label: '加急费' },
+                    { key: 'transport', label: '交通费' },
+                    { key: 'repair', label: '修理费' },
+                    { key: 'material', label: '材料费' },
+                    { key: 'other', label: '其他费' }
+                ],
+
+                // 数据结构 (模拟)
+                treeData: [
+                    {
+                        id: 'C1', code: 'HT2026-A', clientName: '华为技术有限公司', name: '2026年度设备校准框架协议', expanded: true, checked: false,
+                        children: [
+                            {
+                                id: 'Q1', code: 'BJ2026-A1', name: '深圳研发中心Q1报价', expanded: true, checked: false,
+                                children: [
+                                    { 
+                                        id: 'WT1', code: 'WT2026031501', totalAmount: 3200, defaultVerifierId: 101, defaultVerifierName: '张三', checked: false,
+                                        children: [
+                                            { id: 'S1', name: '高精度万用表', no: 'S2601-01', total: 1000, fees: {test:800, expedited:200, transport:0, repair:0, material:0, other:0} },
+                                            { id: 'S2', name: '示波器', no: 'S2601-02', total: 2200, fees: {test:2000, expedited:0, transport:200, repair:0, material:0, other:0} }
+                                        ]
+                                    },
+                                    { 
+                                        id: 'WT2', code: 'WT2026031502', totalAmount: 1500, defaultVerifierId: 102, defaultVerifierName: '李四', checked: false,
+                                        children: [
+                                            { id: 'S3', name: '信号发生器', no: 'S2601-03', total: 1500, fees: {test:1500, expedited:0, transport:0, repair:0, material:0, other:0} }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                id: 'Q2', code: 'BJ2026-A2', name: '东莞生产基地增补', expanded: false, checked: false,
+                                children: [
+                                    { 
+                                        id: 'WT2-1', code: 'WT2026031508', totalAmount: 4000, defaultVerifierId: 101, defaultVerifierName: '张三', checked: false,
+                                        children: []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: 'C2', code: 'HT2026-B', clientName: '比亚迪汽车工业', name: '电池实验室检测专项', expanded: true, checked: false,
+                        children: [
+                            {
+                                id: 'Q3', code: 'BJ2026-B1', name: '新能源电池测试', expanded: true, checked: false,
+                                children: [
+                                    { 
+                                        id: 'WT3', code: 'WT2026031605', totalAmount: 5000, defaultVerifierId: 103, defaultVerifierName: '王五', checked: false,
+                                        children: [
+                                            { id: 'S4', name: '电池充放电测试仪', no: 'S2602-01', total: 5000, fees: {test:4000, expedited:0, transport:0, repair:1000, material:0, other:0} }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+
+                // 人员库
+                departments: ['全部', '计量检测中心', '电磁兼容室', '长度精密测量室', '化学分析室', '业务拓展部'],
+                selectedDept: '全部',
+                staffList: [
+                    { id: 101, name: '张三', dept: '计量检测中心' },
+                    { id: 102, name: '李四', dept: '电磁兼容室' },
+                    { id: 103, name: '王五', dept: '长度精密测量室' },
+                    { id: 104, name: '赵六', dept: '化学分析室' },
+                    { id: 105, name: '孙七', dept: '计量检测中心' },
+                    { id: 106, name: '周八', dept: '业务拓展部' },
+                    { id: 107, name: '吴九', dept: '计量检测中心 / 热工组' },
+                    { id: 108, name: '郑十', dept: '计量检测中心 / 力学组' },
+                ],
+                
+                tempSelectedIds: [], // 弹窗中选中的人员ID列表
+                allocatedPersonnel: [], // 最终分配列表
+
+                // --- 树形逻辑 ---
+                get filteredTree() {
+                    if (!this.searchQuery) return this.treeData;
+                    const q = this.searchQuery.toLowerCase();
+                    // 简单递归过滤，这里简化为只过滤顶层展示
+                    return this.treeData.filter(c => 
+                        c.code.toLowerCase().includes(q) || c.clientName.toLowerCase().includes(q)
+                    );
+                },
+
+                // 通用节点切换逻辑
+                toggleNode(node, rootContract) {
+                    const willCheck = !node.checked;
+                    
+                    // 1. 检查跨合同冲突 (仅当尝试选中时)
+                    if (willCheck && this.lockedContext && this.lockedContext.id !== rootContract.id) {
+                        alert(`操作受限：禁止跨合同选择！\n当前已锁定：${this.lockedContext.clientName} (${this.lockedContext.code})\n请先清空已选样品，再选择其他合同。`);
+                        // 强制恢复 UI 状态 (因为 x-model 可能已经变了)
+                        this.$nextTick(() => { node.checked = false; }); 
+                        return;
+                    }
+
+                    // 2. 更新节点及子节点状态
+                    node.checked = willCheck;
+                    this.updateChildren(node, willCheck);
+                    
+                    // 3. 锁定/解锁上下文
+                    const hasSelection = this.checkIfHasSelection();
+                    if (hasSelection) {
+                        this.lockedContext = rootContract;
+                    } else {
+                        this.lockedContext = null;
+                        this.allocatedPersonnel = []; // 清空全部选择后，人员也清空
+                    }
+
+                    // 4. 自动添加默认人员
+                    if (willCheck) {
+                        this.autoAddDefaultPersonnel();
+                    }
+                    
+                    // 5. 触发均分
+                    this.distributeAllFeesEvenly();
+                },
+
+                updateChildren(node, status) {
+                    if (node.children) {
+                        node.children.forEach(child => {
+                            child.checked = status;
+                            this.updateChildren(child, status);
+                        });
+                    }
+                },
+
+                checkIfHasSelection() {
+                    let has = false;
+                    this.treeData.forEach(c => {
+                        if (c.checked) has = true;
+                        c.children?.forEach(q => {
+                            if (q.checked) has = true;
+                            q.children?.forEach(o => { if (o.checked) has = true; });
+                        });
+                    });
+                    return has;
+                },
+
+                get hasSelection() {
+                    return this.selectedOrderIds.length > 0;
+                },
+
+                // --- 自动添加默认人员 ---
+                autoAddDefaultPersonnel() {
+                    const currentOrders = this.selectedOrders;
+                    let addedCount = 0;
+                    
+                    currentOrders.forEach(order => {
+                        // 仅当该单据被选中且其默认人在库中时
+                        if (order.defaultVerifierId) {
+                            const person = this.staffList.find(p => p.id === order.defaultVerifierId);
+                            if (person && !this.allocatedPersonnel.find(p => p.id === person.id)) {
+                                this.allocatedPersonnel.push({
+                                    ...person,
+                                    allocations: this.initAllocations(),
+                                    isDefault: true
+                                });
+                                addedCount++;
+                            }
+                        }
+                    });
+                },
+
+                // --- 核心数据 ---
+                get selectedOrders() {
+                    const list = [];
+                    this.treeData.forEach(c => c.children.forEach(q => q.children.forEach(o => {
+                        if (o.checked) {
+                            if(typeof o.detailsExpanded === 'undefined') o.detailsExpanded = false;
+                            list.push(o);
+                        }
+                    })));
+                    return list;
+                },
+                
+                get selectedOrderIds() { return this.selectedOrders.map(o => o.id); },
+                get selectedSampleCount() { return this.selectedOrders.reduce((sum, o) => sum + (o.children?.length || 0), 0); },
+                get selectedOrderCount() { return this.selectedOrders.length; },
+
+                get grandTotals() {
+                    const sums = { test:0, expedited:0, transport:0, repair:0, material:0, other:0, total:0 };
+                    this.selectedOrders.forEach(o => {
+                        // 如果有children则累加children费用，否则使用order总额模拟拆分
+                        if (o.children && o.children.length > 0) {
+                            o.children.forEach(s => {
+                                this.feeTypes.forEach(t => sums[t.key] += s.fees[t.key]);
+                                sums.total += s.total;
+                            });
+                        } else {
+                            // 简单的兜底逻辑
+                            sums.total += o.totalAmount;
+                            sums.test += o.totalAmount; 
+                        }
+                    });
+                    return sums;
+                },
+
+                // --- 分配逻辑 ---
+                initAllocations() {
+                    const a = {};
+                    this.feeTypes.forEach(t => a[t.key] = 0);
+                    return a;
+                },
+
+                distributeAllFeesEvenly() {
+                    if (this.allocatedPersonnel.length === 0) return;
+                    
+                    this.feeTypes.forEach(type => {
+                        const total = this.grandTotals[type.key];
+                        if (total <= 0) {
+                            this.allocatedPersonnel.forEach(p => p.allocations[type.key] = 0);
+                            return;
+                        }
+                        
+                        const count = this.allocatedPersonnel.length;
+                        const avg = Math.floor((total / count) * 100) / 100;
+                        let currentAllocated = 0;
+
+                        this.allocatedPersonnel.forEach((p, idx) => {
+                            if (idx === count - 1) {
+                                p.allocations[type.key] = parseFloat((total - currentAllocated).toFixed(2));
+                            } else {
+                                p.allocations[type.key] = avg;
+                                currentAllocated += avg;
+                            }
+                        });
+                    });
+                },
+
+                getPersonTotal(p) {
+                    return Object.values(p.allocations).reduce((a, b) => a + (parseFloat(b)||0), 0);
+                },
+                
+                get totalAllocated() {
+                    return this.allocatedPersonnel.reduce((sum, p) => sum + this.getPersonTotal(p), 0);
+                },
+                
+                get remainingAmount() {
+                    return this.grandTotals.total - this.totalAllocated;
+                },
+
+                // --- 快捷操作 ---
+                
+                // 【核心修改】恢复默认检定员
+                restoreDefaults() {
+                    if (this.selectedOrders.length === 0) return;
+                    
+                    // 清空当前列表
+                    this.allocatedPersonnel = [];
+                    
+                    // 重新执行自动添加逻辑
+                    this.autoAddDefaultPersonnel();
+                    
+                    // 重新均分
+                    this.distributeAllFeesEvenly();
+                },
+
+                clearSampleSelection() {
+                    // 递归取消勾选
+                    const uncheckAll = (nodes) => {
+                        nodes.forEach(n => {
+                            n.checked = false;
+                            if (n.children) uncheckAll(n.children);
+                        });
+                    };
+                    uncheckAll(this.treeData);
+                    this.lockedContext = null;
+                    this.allocatedPersonnel = [];
+                },
+
+                clearPersonnel() {
+                    if(confirm('确定清空所有分配人员吗？')) {
+                        this.allocatedPersonnel = [];
+                    }
+                },
+
+                // --- 人员弹窗 ---
+                openModal() {
+                    this.modalOpen = true;
+                    // 初始化临时选中ID：将已存在的人员ID放入数组，实现回显
+                    this.tempSelectedIds = this.allocatedPersonnel.map(p => p.id);
+                },
+                
+                get filteredStaffList() {
+                    let list = this.staffList;
+                    if (this.selectedDept !== '全部') list = list.filter(s => s.dept.includes(this.selectedDept) || (this.selectedDept === '计量检测中心' && s.dept.startsWith('计量检测中心')));
+                    if (this.staffSearch) list = list.filter(s => s.name.includes(this.staffSearch));
+                    return list;
+                },
+
+                confirmStaffSelection() {
+                    // 根据ID列表重建分配人员列表
+                    // 策略：保留已存在的人员（保留其现有分配额度？还是重置？需求是重新生成）
+                    // 既然是"确定添加"，通常期望保留已有的，加入新的。
+                    // 但这里用了 checkbox list，意味着取消勾选 = 删除人员。
+                    
+                    const newAllocated = [];
+                    
+                    this.tempSelectedIds.forEach(id => {
+                        const existingPerson = this.allocatedPersonnel.find(p => p.id === id);
+                        if (existingPerson) {
+                            newAllocated.push(existingPerson); // 保留原对象（含已填数据）
+                        } else {
+                            const personData = this.staffList.find(s => s.id === id);
+                            if (personData) {
+                                newAllocated.push({
+                                    ...personData,
+                                    allocations: this.initAllocations(),
+                                    isDefault: false
+                                });
+                            }
+                        }
+                    });
+                    
+                    this.allocatedPersonnel = newAllocated;
+                    this.distributeAllFeesEvenly();
+                    this.modalOpen = false;
+                },
+
+                removePerson(index) {
+                    if (confirm("确定移除该人员吗？")) {
+                        this.allocatedPersonnel.splice(index, 1);
+                    }
+                },
+
+                submitAllocation() {
+                    if (Math.abs(this.remainingAmount) > 0.01) {
+                        alert("金额未完全分配！请检查底部差额。");
+                        return;
+                    }
+                    if (this.allocatedPersonnel.length === 0) {
+                        alert("请至少添加一名人员！");
+                        return;
+                    }
+                    alert("提交成功！");
+                }
+            }
+        }
+    </script>
+</body>
+</html>
