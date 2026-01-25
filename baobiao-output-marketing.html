@@ -1,0 +1,583 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中检计量 - 综合运营报表平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #334155; }
+        
+        /* 1. 字号规范升级 (满足 >13px 要求) */
+        .text-min { font-size: 14px; line-height: 1.6; } 
+        .text-body { font-size: 15px; line-height: 1.7; }
+        .text-header { font-size: 15px; font-weight: 700; }
+        
+        /* 2. 数字字体优化 (满足 >14px 要求) */
+        .font-num { font-family: 'Menlo', 'Monaco', monospace; font-weight: 700; font-size: 15px; }
+        .font-num-lg { font-family: 'Menlo', 'Monaco', monospace; font-size: 18px; font-weight: 800; }
+        .font-num-xl { font-family: 'Menlo', 'Monaco', monospace; font-size: 28px; font-weight: 800; }
+        
+        /* 滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+
+        /* 侧边栏激活态 */
+        .nav-item.active {
+            background-color: #e0f2fe; /* blue-100 */
+            color: #0284c7; /* sky-600 */
+            border-right: 4px solid #0284c7;
+            font-weight: 600;
+        }
+
+        /* 状态标签 */
+        .tag { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; white-space: nowrap; border: 1px solid transparent; }
+        .tag-success { background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+        .tag-processing { background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+        .tag-warning { background-color: #fffbeb; color: #b45309; border-color: #fde68a; }
+        .tag-error { background-color: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col z-20 shadow-sm flex-shrink-0">
+        
+        <nav class="flex-1 overflow-y-auto py-6 px-3 space-y-8">
+            <div>
+                <div class="px-4 mb-3 text-xs text-slate-400 font-bold uppercase tracking-wider">资金管理</div>
+                <ul class="space-y-2">
+                    <li>
+                        <button onclick="loadReport('payment')" id="nav-payment" class="nav-item w-full text-left px-4 py-3.5 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-3 text-slate-600 text-body">
+                            <i class="fa-solid fa-money-bill-transfer w-5 text-center"></i> 到款流水监控
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadReport('matching')" id="nav-matching" class="nav-item w-full text-left px-4 py-3.5 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-3 text-slate-600 text-body">
+                            <i class="fa-solid fa-link w-5 text-center"></i> 到款认领匹配
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <div class="px-4 mb-3 text-xs text-slate-400 font-bold uppercase tracking-wider">票据与成本</div>
+                <ul class="space-y-2">
+                    <li>
+                        <button onclick="loadReport('invoice')" id="nav-invoice" class="nav-item w-full text-left px-4 py-3.5 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-3 text-slate-600 text-body">
+                            <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i> 开票业务流水
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadReport('cost')" id="nav-cost" class="nav-item w-full text-left px-4 py-3.5 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-3 text-slate-600 text-body">
+                            <i class="fa-solid fa-chart-pie w-5 text-center"></i> 项目成本明细
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <div class="px-4 mb-3 text-xs text-slate-400 font-bold uppercase tracking-wider">产值分析</div>
+                <ul class="space-y-2">
+                    <li>
+                        <button onclick="loadReport('output-delivery')" id="nav-output-delivery" class="nav-item w-full text-left px-4 py-3.5 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-3 text-slate-600 text-body">
+                            <i class="fa-solid fa-truck-fast w-5 text-center"></i> 产值统计-交付
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadReport('output-marketing')" id="nav-output-marketing" class="nav-item w-full text-left px-4 py-3.5 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-3 text-slate-600 text-body">
+                            <i class="fa-solid fa-briefcase w-5 text-center"></i> 产值统计-营销
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        
+        <div class="p-6 border-t border-slate-200 bg-slate-50/50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg border border-indigo-200">
+                    A
+                </div>
+                <div>
+                    <div class="font-bold text-slate-700 text-sm">Admin</div>
+                    <div class="text-xs text-slate-400">财务主管</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+        <header class="bg-white h-20 border-b border-slate-200 flex items-center justify-between px-8 shadow-sm sticky top-0 z-10 flex-shrink-0">
+            <div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs mb-1">
+                    <span>报表中心</span>
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                    <span>资金管理</span>
+                </div>
+                <h2 id="page-title" class="text-xl font-bold text-slate-800">到款流水监控</h2>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="text-right">
+                    <div class="text-xs text-slate-400">数据更新时间</div>
+                    <div class="text-sm font-mono text-slate-600 font-bold">2026-03-15 14:30</div>
+                </div>
+                <div class="w-px h-8 bg-slate-200"></div>
+                <button class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition"><i class="fa-regular fa-bell text-lg"></i></button>
+                <button class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition"><i class="fa-solid fa-gear text-lg"></i></button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-auto p-8 space-y-6 custom-scroll">
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6" id="kpi-container">
+                </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-5">
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2 text-body">
+                        <i class="fa-solid fa-filter text-indigo-500"></i> 筛选查询
+                    </h3>
+                    <div class="space-x-3">
+                        <button class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-600 px-5 py-2.5 rounded-lg text-min transition font-medium">
+                            <i class="fa-solid fa-rotate-left mr-1.5"></i> 重置
+                        </button>
+                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg text-min transition shadow-md font-medium active:scale-95 transform">
+                            <i class="fa-solid fa-magnifying-glass mr-1.5"></i> 查询
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="filter-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hidden" id="chart-section">
+                <div class="h-80 w-full">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+                    <div class="text-min text-slate-600">
+                        共查询到 <span class="font-bold text-indigo-600 text-lg mx-1" id="row-count">0</span> 条记录
+                    </div>
+                    <div class="flex gap-3">
+                        <button class="px-4 py-2 bg-white border border-slate-300 text-slate-600 text-min rounded-lg hover:text-indigo-600 hover:border-indigo-300 transition font-medium shadow-sm">
+                            <i class="fa-solid fa-file-export mr-1"></i> 导出 Excel
+                        </button>
+                        <button class="px-4 py-2 bg-white border border-slate-300 text-slate-600 text-min rounded-lg hover:text-indigo-600 hover:border-indigo-300 transition font-medium shadow-sm">
+                            <i class="fa-solid fa-print mr-1"></i> 打印
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scroll">
+                    <table class="w-full text-left whitespace-nowrap">
+                        <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 sticky top-0 z-10 text-header">
+                            <tr id="table-head">
+                                </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-body" id="table-body">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3 bg-slate-50/50">
+                    <span class="text-min text-slate-500 mr-4">每页显示 20 条</span>
+                    <button class="w-9 h-9 flex items-center justify-center border border-slate-300 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-50 text-min transition"><i class="fa-solid fa-angle-left"></i></button>
+                    <button class="w-9 h-9 flex items-center justify-center border border-indigo-500 bg-indigo-50 text-indigo-600 rounded-lg font-bold text-min shadow-sm">1</button>
+                    <button class="w-9 h-9 flex items-center justify-center border border-slate-300 bg-white hover:bg-slate-50 rounded-lg text-slate-600 text-min transition">2</button>
+                    <button class="w-9 h-9 flex items-center justify-center border border-slate-300 bg-white hover:bg-slate-50 rounded-lg text-slate-600 text-min transition">3</button>
+                    <span class="text-slate-400 text-min px-1">...</span>
+                    <button class="w-9 h-9 flex items-center justify-center border border-slate-300 rounded-lg bg-white hover:bg-slate-50 text-min transition"><i class="fa-solid fa-angle-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- 模拟数据生成器 (中检计量产品线) ---
+        const departments = ['长度室', '热工室', '电磁室', '力学室', '理化室', '无线电室', '业务部'];
+        const banks = ['中国银行', '工商银行', '招商银行', '建设银行'];
+        const payers = ['华为技术有限公司', '比亚迪汽车工业', '上海特斯拉超级工厂', '宁德时代', '中芯国际', '迈瑞医疗', '大疆创新'];
+        const services = ['三坐标测量机校准', '恒温恒湿箱检测', '示波器校准', '拉力试验机检定', '气相色谱仪校准', '频谱分析仪检定'];
+        const costTypes = ['标准器折旧', '差旅费', '外包服务费', '耗材采购', 'CNAS评审费'];
+        const branches = ['北京分公司', '上海分公司', '广州分公司', '深圳分公司', '成都分公司'];
+        const marketers = ['张三', '李四', '王五', '赵六', '孙七'];
+
+        function randomPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+        function randomDate(start, end) {
+            return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).toISOString().split('T')[0];
+        }
+        function formatMoney(amount) {
+            return '¥ ' + amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+
+        // --- 报表配置定义 ---
+        const reports = {
+            'payment': {
+                id: 'nav-payment',
+                title: '到款流水监控',
+                chartType: 'line',
+                kpis: [
+                    { label: '本月累计到款', value: '¥ 12,450,000', icon: 'fa-arrow-trend-up', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                    { label: '待认领金额', value: '¥ 380,000', icon: 'fa-circle-exclamation', color: 'text-orange-500', bg: 'bg-orange-50' },
+                    { label: '本周新增流水', value: '45 笔', icon: 'fa-plus', color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: '认领率', value: '96.5%', icon: 'fa-check-circle', color: 'text-indigo-600', bg: 'bg-indigo-50' }
+                ],
+                filters: [
+                    { label: '到款日期范围', type: 'date-range' },
+                    { label: '付款方', type: 'text', placeholder: '请输入客户名称' },
+                    { label: '收款部门', type: 'select', options: departments },
+                    { label: '流水状态', type: 'select', options: ['正常', '锁定', '退款', '待认领'] }
+                ],
+                // 操作列已移除
+                headers: ['流水状态', '自编流水号', '银行流水号', '付款方', '收款部门', '收款日期', '收款金额', '手续费', '收款银行', '摘要', '已匹配金额', '剩余匹配金额', '释放金额'],
+                generateData: (count) => Array.from({ length: count }, (_, i) => {
+                    const amt = Math.floor(Math.random() * 50000) + 1000;
+                    const matched = Math.random() > 0.3 ? amt : 0;
+                    const status = matched === amt ? '正常' : (matched === 0 ? '待认领' : '锁定');
+                    return [
+                        status,
+                        `CCIC-P-${20230000 + i}`,
+                        `BK${Date.now().toString().slice(-8)}${i}`,
+                        randomPick(payers),
+                        randomPick(departments),
+                        randomDate(new Date(2023, 0, 1), new Date()),
+                        formatMoney(amt),
+                        formatMoney(0),
+                        randomPick(banks),
+                        randomPick(services) + '服务费',
+                        formatMoney(matched),
+                        formatMoney(amt - matched),
+                        formatMoney(0)
+                    ];
+                })
+            },
+            'matching': {
+                id: 'nav-matching',
+                title: '到款认领匹配明细',
+                chartType: 'bar',
+                kpis: [
+                    { label: '累计匹配金额', value: '¥ 8,450,000', icon: 'fa-link', color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: '今日匹配笔数', value: '12 笔', icon: 'fa-clock', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                    { label: '平均认领时效', value: '1.5 天', icon: 'fa-hourglass-half', color: 'text-orange-500', bg: 'bg-orange-50' },
+                    { label: '异常匹配', value: '0 笔', icon: 'fa-ban', color: 'text-rose-500', bg: 'bg-rose-50' }
+                ],
+                filters: [
+                    { label: '匹配日期', type: 'date' },
+                    { label: '客户名称', type: 'text' },
+                    { label: '匹配委托单号', type: 'text' },
+                    { label: '匹配人', type: 'text' }
+                ],
+                headers: ['银行流水号', '客户名称', '匹配金额', '匹配人', '匹配委托单号', '匹配服务项号', '匹配服务项名称'],
+                generateData: (count) => Array.from({ length: count }, (_, i) => ([
+                    `BK${Date.now().toString().slice(-8)}${i}`,
+                    randomPick(payers),
+                    formatMoney(Math.floor(Math.random() * 20000) + 500),
+                    randomPick(marketers),
+                    `ORD-2023-${1000+i}`,
+                    `SVC-${100+i}`,
+                    randomPick(services)
+                ]))
+            },
+            'invoice': {
+                id: 'nav-invoice',
+                title: '开票业务流水',
+                chartType: 'doughnut',
+                kpis: [
+                    { label: '本月开票总额', value: '¥ 15,200,000', icon: 'fa-file-invoice-dollar', color: 'text-purple-600', bg: 'bg-purple-50' },
+                    { label: '开票数量', value: '342 张', icon: 'fa-copy', color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: '作废发票', value: '2 张', icon: 'fa-trash', color: 'text-rose-500', bg: 'bg-rose-50' },
+                    { label: '待开票申请', value: '15 单', icon: 'fa-list', color: 'text-orange-500', bg: 'bg-orange-50' }
+                ],
+                filters: [
+                    { label: '开票日期', type: 'date-range' },
+                    { label: '发票类型', type: 'select', options: ['增值税专票', '增值税普票', '电子发票'] },
+                    { label: '开票状态', type: 'select', options: ['已开票', '开票中', '作废', '红冲'] },
+                    { label: '客户名称', type: 'text' }
+                ],
+                headers: ['开票状态', '申请编号', '客户名称', '发票类型', '发票抬头', '发票编号', '开票日期', '开票金额', '税额', '申请人'],
+                generateData: (count) => Array.from({ length: count }, (_, i) => {
+                    const amt = Math.floor(Math.random() * 100000);
+                    const status = randomPick(['已开票', '已开票', '开票中', '作废']);
+                    return [
+                        status,
+                        `INV-REQ-${2023000 + i}`,
+                        randomPick(payers),
+                        Math.random() > 0.8 ? '增值税普票' : '增值税专票',
+                        randomPick(payers),
+                        status === '已开票' ? `03100${Math.floor(Math.random()*10000)}` : '-',
+                        status === '已开票' ? randomDate(new Date(2023, 0, 1), new Date()) : '-',
+                        formatMoney(amt),
+                        formatMoney(amt * 0.06),
+                        randomPick(marketers)
+                    ];
+                })
+            },
+            'cost': {
+                id: 'nav-cost',
+                title: '项目成本明细',
+                chartType: 'bar',
+                kpis: [
+                    { label: '本月总成本', value: '¥ 3,450,000', icon: 'fa-chart-pie', color: 'text-rose-600', bg: 'bg-rose-50' },
+                    { label: '外包费用占比', value: '25%', icon: 'fa-handshake', color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: '待支付成本', value: '¥ 120,000', icon: 'fa-clock', color: 'text-orange-500', bg: 'bg-orange-50' },
+                    { label: '已核销笔数', value: '158 笔', icon: 'fa-check', color: 'text-green-600', bg: 'bg-green-50' }
+                ],
+                filters: [
+                    { label: '发生日期', type: 'date-range' },
+                    { label: '成本类型', type: 'select', options: costTypes },
+                    { label: '委托单号', type: 'text' },
+                    { label: '成本状态', type: 'select', options: ['已核销', '待支付', '审批中'] }
+                ],
+                headers: ['成本状态', '委托单号', '服务项号', '成本编号', '成本名称', '成本类型', '供应商', '成本金额', '税率', '已外付金额', '发生日期'],
+                generateData: (count) => Array.from({ length: count }, (_, i) => {
+                    const amt = Math.floor(Math.random() * 5000);
+                    return [
+                        randomPick(['已核销', '已核销', '待支付']),
+                        `ORD-2023-${1000+i}`,
+                        `SVC-${100+i}`,
+                        `COST-${202300+i}`,
+                        '项目必要支出',
+                        randomPick(costTypes),
+                        '外部供应商A',
+                        formatMoney(amt),
+                        '6%',
+                        formatMoney(amt),
+                        randomDate(new Date(2023, 0, 1), new Date())
+                    ];
+                })
+            },
+            'output-delivery': {
+                id: 'nav-output-delivery',
+                title: '产值统计-交付',
+                chartType: 'line',
+                kpis: [
+                    { label: '本月交付产值', value: '¥ 8,920,000', icon: 'fa-truck-fast', color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: '完成委托单', value: '420 单', icon: 'fa-list-check', color: 'text-green-600', bg: 'bg-green-50' },
+                    { label: '平均交付周期', value: '5.2 天', icon: 'fa-calendar-check', color: 'text-orange-500', bg: 'bg-orange-50' },
+                    { label: '人均产值', value: '¥ 85,000', icon: 'fa-user-group', color: 'text-purple-600', bg: 'bg-purple-50' }
+                ],
+                filters: [
+                    { label: '统计日期', type: 'date-range' },
+                    { label: '分支机构', type: 'select', options: branches },
+                    { label: '交付人员', type: 'text' }
+                ],
+                headers: ['统计日期', '交付人员', '分支机构', '发生额', '样品登记号', '委托单号', '结算单号'],
+                generateData: (count) => Array.from({ length: count }, (_, i) => ([
+                    randomDate(new Date(2023, 0, 1), new Date()),
+                    randomPick(marketers),
+                    randomPick(branches),
+                    formatMoney(Math.floor(Math.random() * 30000)),
+                    `REG-${2023000+i}`,
+                    `ORD-2023-${1000+i}`,
+                    `SET-${2023000+i}`
+                ]))
+            },
+            'output-marketing': {
+                id: 'nav-output-marketing',
+                title: '产值统计-营销',
+                chartType: 'bar',
+                kpis: [
+                    { label: '本月营销产值', value: '¥ 10,150,000', icon: 'fa-briefcase', color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: '新签合同数', value: '56 份', icon: 'fa-file-signature', color: 'text-green-600', bg: 'bg-green-50' },
+                    { label: '回款率', value: '88.2%', icon: 'fa-percent', color: 'text-orange-500', bg: 'bg-orange-50' },
+                    { label: 'TOP1 销售', value: '张三', icon: 'fa-trophy', color: 'text-yellow-500', bg: 'bg-yellow-50' }
+                ],
+                filters: [
+                    { label: '委托日期', type: 'date-range' },
+                    { label: '分支机构', type: 'select', options: branches },
+                    { label: '营销人员', type: 'text' }
+                ],
+                headers: ['委托日期', '委托单号', '报价单号', '合同号', '委托金额', '结算金额', '到款金额', '开票金额', '营销人员', '分支机构'],
+                generateData: (count) => Array.from({ length: count }, (_, i) => {
+                    const amt = Math.floor(Math.random() * 50000);
+                    return [
+                        randomDate(new Date(2023, 0, 1), new Date()),
+                        `ORD-2023-${1000+i}`,
+                        `QUO-2023-${200+i}`,
+                        `CON-2023-${50+i}`,
+                        formatMoney(amt),
+                        formatMoney(amt * 0.9),
+                        formatMoney(amt * 0.8),
+                        formatMoney(amt),
+                        randomPick(marketers),
+                        randomPick(branches)
+                    ];
+                })
+            }
+        };
+
+        let currentChart = null;
+
+        // --- 核心逻辑 ---
+
+        function loadReport(reportKey) {
+            const config = reports[reportKey];
+            
+            // 1. 更新标题
+            document.getElementById('page-title').textContent = config.title;
+            
+            // 2. 更新导航激活状态
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            // 尝试通过 ID 查找，如果没有 ID (初始化时) 则不报错
+            const navEl = document.getElementById(config.id);
+            if (navEl) navEl.classList.add('active');
+
+            // 3. 渲染KPI
+            renderKPIs(config.kpis);
+
+            // 4. 渲染筛选区
+            renderFilters(config.filters);
+
+            // 5. 生成并渲染数据
+            const data = config.generateData(20); 
+            document.getElementById('row-count').textContent = data.length;
+            renderTable(config.headers, data);
+
+            // 6. 渲染图表
+            renderChart(config.chartType, config.title);
+        }
+
+        function renderKPIs(kpis) {
+            const container = document.getElementById('kpi-container');
+            container.innerHTML = '';
+            if (!kpis) return;
+            
+            kpis.forEach(kpi => {
+                const div = document.createElement('div');
+                div.className = 'bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow group';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="text-xs text-slate-500 font-bold uppercase tracking-wider">${kpi.label}</div>
+                        <div class="w-10 h-10 rounded-full ${kpi.bg} flex items-center justify-center text-base ${kpi.color} group-hover:scale-110 transition-transform">
+                            <i class="fa-solid ${kpi.icon}"></i>
+                        </div>
+                    </div>
+                    <div class="text-3xl font-bold text-slate-800 tracking-tight font-num-xl">${kpi.value}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderFilters(filters) {
+            const container = document.getElementById('filter-container');
+            container.innerHTML = '';
+            filters.forEach(f => {
+                let inputHtml = '';
+                if (f.type === 'text') {
+                    inputHtml = `<input type="text" placeholder="${f.placeholder || ''}" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-min focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition shadow-sm text-body">`;
+                } else if (f.type === 'select') {
+                    const opts = f.options.map(o => `<option>${o}</option>`).join('');
+                    inputHtml = `<select class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-min focus:border-indigo-500 outline-none bg-white cursor-pointer shadow-sm text-body"><option value="">全部</option>${opts}</select>`;
+                } else if (f.type === 'date-range') {
+                    inputHtml = `
+                        <div class="flex items-center gap-2">
+                            <input type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-min outline-none shadow-sm focus:border-indigo-500 text-body">
+                            <span class="text-slate-400">-</span>
+                            <input type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-min outline-none shadow-sm focus:border-indigo-500 text-body">
+                        </div>`;
+                }
+                
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = `
+                    <label class="block text-xs font-bold text-slate-600 mb-2 ml-1">${f.label}</label>
+                    ${inputHtml}
+                `;
+                container.appendChild(wrapper);
+            });
+        }
+
+        function renderTable(headers, data) {
+            const thead = document.getElementById('table-head');
+            const tbody = document.getElementById('table-body');
+            
+            // Header
+            thead.innerHTML = `<tr>${headers.map(h => `<th scope="col" class="px-6 py-5 font-bold text-slate-600 border-b border-slate-200 bg-slate-50 text-header">${h}</th>`).join('')}</tr>`;
+
+            // Body
+            tbody.innerHTML = data.map(row => `
+                <tr class="hover:bg-indigo-50/50 transition-colors border-b border-slate-100 group">
+                    ${row.map(cell => {
+                        // 特殊渲染逻辑
+                        if (cell === '正常' || cell === '已开票' || cell === '已核销') return `<td class="px-6 py-6"><span class="tag tag-success">${cell}</span></td>`;
+                        if (cell === '待认领' || cell === '开票中' || cell === '待支付') return `<td class="px-6 py-6"><span class="tag tag-processing">${cell}</span></td>`;
+                        if (cell === '锁定' || cell === '审批中') return `<td class="px-6 py-6"><span class="tag tag-warning">${cell}</span></td>`;
+                        if (cell === '退款' || cell === '作废') return `<td class="px-6 py-6"><span class="tag tag-error">${cell}</span></td>`;
+                        
+                        // 识别金额
+                        if (typeof cell === 'string' && cell.startsWith('¥')) return `<td class="px-6 py-6 text-slate-700 font-num">${cell}</td>`;
+                        
+                        return `<td class="px-6 py-6 text-slate-600 text-body">${cell}</td>`;
+                    }).join('')}
+                </tr>
+            `).join('');
+        }
+
+        function renderChart(type, title) {
+            const ctx = document.getElementById('mainChart');
+            const chartSection = document.getElementById('chart-section');
+            
+            chartSection.classList.remove('hidden');
+            
+            if (currentChart) currentChart.destroy();
+
+            const labels = ['1月', '2月', '3月', '4月', '5月', '6月'];
+            const dataVals = [12, 19, 3, 5, 2, 3].map(x => x * 10000 + Math.random()*5000);
+
+            currentChart = new Chart(ctx, {
+                type: type === 'doughnut' ? 'doughnut' : 'bar', 
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '金额趋势 (CNY)',
+                        data: dataVals,
+                        backgroundColor: [
+                            'rgba(79, 70, 229, 0.6)',   // indigo
+                            'rgba(16, 185, 129, 0.6)',  // emerald
+                            'rgba(245, 158, 11, 0.6)',  // amber
+                            'rgba(139, 92, 246, 0.6)',  // violet
+                            'rgba(239, 68, 68, 0.6)',   // red
+                            'rgba(59, 130, 246, 0.6)'   // blue
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 2,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: type === 'doughnut' ? 'right' : 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+                        title: { display: false, text: title }
+                    },
+                    scales: type === 'doughnut' ? {} : {
+                        y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#e2e8f0' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // 初始化加载：默认展示“到款流水监控”
+        document.addEventListener('DOMContentLoaded', () => {
+            loadReport('output-marketing');
+        });
+        //报表名称	对应 Key 值 (ID)	归类
+        //到款流水监控	payment	资金管理
+        //到款认领匹配明细	matching	资金管理
+        //开票业务流水	invoice	票据与成本
+        //项目成本明细	cost	票据与成本
+        //产值统计-交付	output-delivery	产值分析
+        //产值统计-营销	output-marketing	产值分析
+    </script>
+</body>
+</html>
