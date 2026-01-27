@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绩效分配详情 - 全费用明细版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        
+        /* === 页面背景 (模拟遮罩) === */
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            /* background-color: rgba(15, 23, 42, 0.75);  */
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            backdrop-filter: blur(4px);
+        }
+        .border-slate-600\/50{
+    border: none !important;}
+        
+        /* === 字体规范 === */
+        .text-13 { font-size: 13px !important; line-height: 1.5; }
+        .text-12 { font-size: 12px !important; }
+        
+        /* 数字字体：大于13px，等宽 */
+        .font-num { font-family: 'Menlo', 'Monaco', 'Consolas', monospace; font-weight: 600; letter-spacing: -0.02em; font-size: 14px; }
+        .font-num-lg { font-size: 15px; }
+        .font-num-xl { font-size: 18px; }
+
+        /* 滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+
+        /* 表格样式 */
+        .num-cell { text-align: right; font-family: 'Menlo', monospace; }
+        .border-dashed-r { border-right: 1px dashed #e2e8f0; }
+        
+        /* 弹窗固定尺寸 */
+        .modal-box { width: 1100px; height: 820px; display: flex; flex-direction: column; }
+        
+        /* 入场动画 */
+        .zoom-in { animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body x-data="allocationDetail()">
+
+    <div class="modal-box bg-white rounded-xl shadow-2xl overflow-hidden zoom-in border border-slate-600/50">
+        
+        <div class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 bg-slate-50/50">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-chart-pie text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-[16px] text-slate-800">绩效分配详情</h1>
+                    <div class="flex items-center gap-3 text-12 text-slate-500 mt-0.5">
+                        <span class="font-num bg-slate-100 px-1.5 rounded text-slate-600">NO. AP20240125-009</span>
+                        <span><i class="fa-regular fa-user mr-1"></i>操作人：张三</span>
+                        <span><i class="fa-regular fa-clock mr-1"></i>2024-01-25 14:30</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="text-right">
+                    <p class="text-12 text-slate-400 uppercase font-bold tracking-wider">分配总产值</p>
+                    <p class="font-num-xl font-bold text-indigo-600">¥ <span x-text="formatMoney(totals.grandTotal)"></span></p>
+                </div>
+                <div class="h-8 w-px bg-slate-200"></div>
+                <button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-hidden flex flex-col bg-slate-50/50 p-6 gap-6">
+            
+            <div class="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden">
+                <div class="px-4 py-2.5 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
+                    <h3 class="font-bold text-slate-700 text-13 flex items-center gap-2">
+                        <span class="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+                        产值来源 (样品明细)
+                        <span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-12 font-num border border-indigo-100" x-text="samples.length + ' 项'"></span>
+                    </h3>
+                </div>
+                
+                <div class="flex-1 overflow-auto custom-scroll">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 text-slate-500 text-12 sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th class="px-4 py-2 font-medium w-64 border-dashed-r">样品信息 (登记号/名称)</th>
+                                <th class="px-2 py-2 num-cell bg-indigo-50/30 text-indigo-600 w-24">检测费</th>
+                                <th class="px-2 py-2 num-cell w-20">加急费</th>
+                                <th class="px-2 py-2 num-cell w-20">交通费</th>
+                                <th class="px-2 py-2 num-cell w-20">修理费</th>
+                                <th class="px-2 py-2 num-cell w-20">材料费</th>
+                                <th class="px-2 py-2 num-cell w-20 border-dashed-r">其它费</th>
+                                <th class="px-4 py-2 num-cell font-bold text-slate-700 bg-slate-50 w-28">样品小计</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-13 divide-y divide-slate-100">
+                            <template x-for="s in samples" :key="s.id">
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="px-4 py-2 border-dashed-r">
+                                        <div class="font-bold text-slate-700 truncate w-56" x-text="s.name"></div>
+                                        <div class="text-12 text-slate-400 font-num mt-0.5" x-text="s.code"></div>
+                                    </td>
+                                    <td class="px-2 py-2 num-cell font-num bg-indigo-50/10 text-indigo-600" x-text="formatMoney(s.testFee)"></td>
+                                    <td class="px-2 py-2 num-cell font-num text-slate-500" x-text="formatMoney(s.expediteFee)"></td>
+                                    <td class="px-2 py-2 num-cell font-num text-slate-500" x-text="formatMoney(s.transportFee)"></td>
+                                    <td class="px-2 py-2 num-cell font-num text-slate-500" x-text="formatMoney(s.repairFee)"></td>
+                                    <td class="px-2 py-2 num-cell font-num text-slate-500" x-text="formatMoney(s.materialFee)"></td>
+                                    <td class="px-2 py-2 num-cell font-num text-slate-500 border-dashed-r" x-text="formatMoney(s.otherFee)"></td>
+                                    <td class="px-4 py-2 num-cell font-num font-bold text-slate-700 bg-slate-50" x-text="formatMoney(getRowTotal(s))"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                        <tfoot class="bg-slate-50 font-bold border-t border-slate-200 text-12 sticky bottom-0 z-10 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
+                            <tr>
+                                <td class="px-4 py-2 text-right text-slate-500 border-dashed-r">样品总计：</td>
+                                <td class="px-2 py-2 num-cell text-indigo-600 font-num" x-text="formatMoney(totals.sampleTest)"></td>
+                                <td class="px-2 py-2 num-cell text-slate-600 font-num" x-text="formatMoney(totals.sampleExpedite)"></td>
+                                <td class="px-2 py-2 num-cell text-slate-600 font-num" x-text="formatMoney(totals.sampleTransport)"></td>
+                                <td class="px-2 py-2 num-cell text-slate-600 font-num" x-text="formatMoney(totals.sampleRepair)"></td>
+                                <td class="px-2 py-2 num-cell text-slate-600 font-num" x-text="formatMoney(totals.sampleMaterial)"></td>
+                                <td class="px-2 py-2 num-cell text-slate-600 font-num border-dashed-r" x-text="formatMoney(totals.sampleOther)"></td>
+                                <td class="px-4 py-2 num-cell text-slate-800 font-num-lg bg-slate-100" x-text="formatMoney(totals.grandTotal)"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <div class="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden">
+                <div class="px-4 py-2.5 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
+                    <h3 class="font-bold text-slate-700 text-13 flex items-center gap-2">
+                        <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span>
+                        分配去向 (人员明细)
+                        <span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-12 font-num border border-emerald-100" x-text="staff.length + ' 人'"></span>
+                    </h3>
+                </div>
+                
+                <div class="flex-1 overflow-auto custom-scroll">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 text-slate-500 text-12 sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th class="px-4 py-2 font-medium w-64 border-dashed-r">人员信息 (姓名/角色)</th>
+                                <th class="px-2 py-2 num-cell bg-emerald-50/30 text-emerald-600 w-24">检测费</th>
+                                <th class="px-2 py-2 num-cell w-20">加急费</th>
+                                <th class="px-2 py-2 num-cell w-20">交通费</th>
+                                <th class="px-2 py-2 num-cell w-20">修理费</th>
+                                <th class="px-2 py-2 num-cell w-20">材料费</th>
+                                <th class="px-2 py-2 num-cell w-20 border-dashed-r">其它费</th>
+                                <th class="px-4 py-2 num-cell font-bold text-slate-700 bg-slate-50 w-28">分配合计</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-13 divide-y divide-slate-100">
+                            <template x-for="p in staff" :key="p.id">
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="px-4 py-2 border-dashed-r">
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-bold text-slate-700" x-text="p.name"></span>
+                                            <span class="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200" x-text="p.role"></span>
+                                        </div>
+                                    </td>
+                                    <td class="px-2 py-2 num-cell font-num bg-emerald-50/10 text-emerald-600" x-text="formatMoney(p.testFee)"></td>
+                                    <td class="px-2 py-2 num-cell font-num text-slate-500" x-text="formatMoney(p.expediteFee)"></td>
+                                    <td class="px-2 py-2 num-cell font-num text-slate-500" x-text="formatMoney(p.transportFee)"></td>
+                                    <td class="px-2 py-2 num-cell font-num text-slate-500" x-text="formatMoney(p.repairFee)"></td>
+                                    <td class="px-2 py-2 num-cell font-num text-slate-500" x-text="formatMoney(p.materialFee)"></td>
+                                    <td class="px-2 py-2 num-cell font-num text-slate-500 border-dashed-r" x-text="formatMoney(p.otherFee)"></td>
+                                    <td class="px-4 py-2 num-cell font-num font-bold text-emerald-700 bg-emerald-50/20" x-text="formatMoney(getRowTotal(p))"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                        <tfoot class="bg-slate-50 font-bold border-t border-slate-200 text-12 sticky bottom-0 z-10 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
+                            <tr>
+                                <td class="px-4 py-2 text-right text-slate-500 border-dashed-r">分配总计：</td>
+                                <td class="px-2 py-2 num-cell text-emerald-600 font-num" x-text="formatMoney(totals.staffTest)"></td>
+                                <td class="px-2 py-2 num-cell text-slate-600 font-num" x-text="formatMoney(totals.staffExpedite)"></td>
+                                <td class="px-2 py-2 num-cell text-slate-600 font-num" x-text="formatMoney(totals.staffTransport)"></td>
+                                <td class="px-2 py-2 num-cell text-slate-600 font-num" x-text="formatMoney(totals.staffRepair)"></td>
+                                <td class="px-2 py-2 num-cell text-slate-600 font-num" x-text="formatMoney(totals.staffMaterial)"></td>
+                                <td class="px-2 py-2 num-cell text-slate-600 font-num border-dashed-r" x-text="formatMoney(totals.staffOther)"></td>
+                                <td class="px-4 py-2 num-cell text-emerald-700 font-num-lg bg-emerald-50" x-text="formatMoney(totals.grandTotal)"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-6 py-4 bg-white border-t border-slate-200 flex justify-end shrink-0">
+            <button class="px-6 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-13 font-medium transition shadow-sm hover:shadow">
+                关闭窗口
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function allocationDetail() {
+            return {
+                // 模拟样品数据 (源)
+                samples: [
+                    { id: 1, name: '高精度数字示波器 Tektronix', code: 'DJ202401001', testFee: 4000.00, expediteFee: 0.00, transportFee: 200.00, repairFee: 0.00, materialFee: 0.00, otherFee: 0.00 },
+                    { id: 2, name: '手持式频谱分析仪', code: 'DJ202401002', testFee: 3000.00, expediteFee: 500.00, transportFee: 0.00, repairFee: 0.00, materialFee: 0.00, otherFee: 0.00 },
+                    { id: 3, name: '温湿度环境试验箱', code: 'DJ202401003', testFee: 2000.00, expediteFee: 0.00, transportFee: 0.00, repairFee: 500.00, materialFee: 100.00, otherFee: 0.00 },
+                ],
+
+                // 模拟人员数据 (分配去向 - 保证总额与样品一致)
+                // 总计: 检测9000, 加急500, 交通200, 修理500, 材料100, 其它0 = 10300
+                staff: [
+                    { id: 1, name: '张三', role: '主检', testFee: 5000.00, expediteFee: 250.00, transportFee: 200.00, repairFee: 300.00, materialFee: 0.00, otherFee: 0.00 },
+                    { id: 2, name: '李四', role: '辅检', testFee: 3000.00, expediteFee: 250.00, transportFee: 0.00, repairFee: 200.00, materialFee: 100.00, otherFee: 0.00 },
+                    { id: 3, name: '王五', role: '核验', testFee: 1000.00, expediteFee: 0.00, transportFee: 0.00, repairFee: 0.00, materialFee: 0.00, otherFee: 0.00 },
+                ],
+
+                // 计算相关
+                getRowTotal(item) {
+                    return item.testFee + item.expediteFee + item.transportFee + item.repairFee + item.materialFee + item.otherFee;
+                },
+
+                get totals() {
+                    const sStats = this.calculateStats(this.samples);
+                    const pStats = this.calculateStats(this.staff);
+                    
+                    return {
+                        // 样品总计
+                        sampleTest: sStats.test, sampleExpedite: sStats.expedite, sampleTransport: sStats.transport,
+                        sampleRepair: sStats.repair, sampleMaterial: sStats.material, sampleOther: sStats.other,
+                        
+                        // 人员总计 (理论上应与样品总计一致)
+                        staffTest: pStats.test, staffExpedite: pStats.expedite, staffTransport: pStats.transport,
+                        staffRepair: pStats.repair, staffMaterial: pStats.material, staffOther: pStats.other,
+                        
+                        grandTotal: sStats.total // 总分配额
+                    };
+                },
+
+                calculateStats(list) {
+                    let stats = { test:0, expedite:0, transport:0, repair:0, material:0, other:0, total:0 };
+                    list.forEach(item => {
+                        stats.test += item.testFee;
+                        stats.expedite += item.expediteFee;
+                        stats.transport += item.transportFee;
+                        stats.repair += item.repairFee;
+                        stats.material += item.materialFee;
+                        stats.other += item.otherFee;
+                        stats.total += this.getRowTotal(item);
+                    });
+                    return stats;
+                },
+
+                formatMoney(val) {
+                    return Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+            }
+        }
+    </script>
+</body>
+</html>
