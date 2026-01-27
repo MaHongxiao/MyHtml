@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导出报价单 - 紧凑预览版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            background-color: #e2e8f0; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        /* 字体规范 */
+        .text-13 { font-size: 13px !important; line-height: 1.5; }
+        .text-12 { font-size: 12px !important; }
+        
+        /* 模拟印章样式 (整体缩小适配紧凑布局) */
+        .seal-preview-box {
+            width: 100px; height: 100px; /* 缩小容器 */
+            display: flex; align-items: center; justify-content: center;
+            background: #fff;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .seal-mock {
+            width: 80px; height: 80px; /* 缩小印章 */
+            border: 2px solid #ef4444; /* 边框稍微细一点 */
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            color: #ef4444;
+            font-weight: bold;
+            font-size: 10px; /* 字号缩小 */
+            text-align: center;
+            user-select: none;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* 圆形章 */
+        .seal-circle { border-radius: 50%; }
+        .seal-circle .seal-inner {
+            width: 54px; height: 54px; border: 1px solid #ef4444; border-radius: 50%; position: absolute; opacity: 0.3;
+        }
+        .seal-circle .seal-star { font-size: 20px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%); }
+        
+        /* 椭圆章 */
+        .seal-oval { width: 90px; height: 60px; border-radius: 50%; }
+        .seal-oval .seal-inner { width: 68px; height: 42px; border: 1px solid #ef4444; border-radius: 50%; position: absolute; opacity: 0.3; }
+        
+        /* 方形章 */
+        .seal-rect { width: 80px; height: 34px; border-radius: 3px; border: 2px solid #ef4444; }
+
+        /* 输入框聚焦 */
+        .input-focus:focus { border-color: #6366f1; ring: 2px; ring-color: #e0e7ff; }
+    </style>
+</head>
+<body x-data="exportModal()">
+
+    <div class="bg-white w-[600px] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200">
+        
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center text-white shadow-sm">
+                    <i class="fa-solid fa-stamp"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-800 text-[15px]">导出报价单</h3>
+                    <p class="text-12 text-slate-400">请确认印章及补充信息</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 space-y-5"> <div>
+                <label class="block text-13 font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-mono">1</span>
+                    选择印章
+                </label>
+                
+                <div class="flex gap-5 items-center">
+                    <div class="flex-1 space-y-1.5">
+                        <div class="relative">
+                            <select x-model="form.sealId" 
+                                    class="w-full pl-3 pr-10 py-2.5 border border-slate-300 rounded-lg text-13 appearance-none bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition cursor-pointer shadow-sm hover:border-slate-400">
+                                <option value="">不加电子章</option>
+                                <optgroup label="常用印章">
+                                    <template x-for="seal in sealList" :key="seal.id">
+                                        <option :value="seal.id" x-text="seal.name + ' (' + seal.orgName + ')'"></option>
+                                    </template>
+                                </optgroup>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-500">
+                                <i class="fa-solid fa-chevron-down text-xs"></i>
+                            </div>
+                        </div>
+                        <p class="text-12 text-slate-400">
+                            <span x-show="form.sealId"><i class="fa-solid fa-check-circle text-emerald-500 mr-1"></i>已选：<span class="text-slate-600" x-text="currentSeal?.name"></span></span>
+                            <span x-show="!form.sealId"><i class="fa-solid fa-circle-info text-slate-400 mr-1"></i>未选择印章，文件将无盖章。</span>
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-1.5 flex-shrink-0">
+                        <!-- <span class="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Preview</span> -->
+                        <div class="seal-preview-box bg-slate-50">
+                            <template x-if="currentSeal">
+                                <div>
+                                    <template x-if="currentSeal.shape === 'circle'">
+                                        <div class="seal-mock seal-circle">
+                                            <div class="seal-inner"></div>
+                                            <div class="seal-star">★</div>
+                                            <div class="absolute text-[9px] transform scale-90 leading-tight w-full px-1">
+                                                <div class="truncate" x-text="currentSeal.orgName"></div>
+                                                <div class="mt-0.5" x-text="currentSeal.name"></div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template x-if="currentSeal.shape === 'oval'">
+                                        <div class="seal-mock seal-oval">
+                                            <div class="seal-inner"></div>
+                                            <div class="absolute text-[9px] transform scale-90 leading-tight w-full text-center">
+                                                <div x-text="currentSeal.name"></div>
+                                                <div class="text-[6px] text-red-300 mt-0.5">110105...</div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template x-if="currentSeal.shape === 'rect'">
+                                        <div class="seal-mock seal-rect">
+                                            <div class="text-[9px] tracking-widest writing-vertical-lr h-full py-1" x-text="currentSeal.name"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <template x-if="!currentSeal">
+                                <div class="text-slate-300 flex flex-col items-center">
+                                    <i class="fa-solid fa-ban text-2xl mb-1"></i>
+                                    <span class="text-[10px]">无章</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="h-px bg-slate-100"></div>
+
+            <div>
+                <label class="block text-13 font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-mono">2</span>
+                    补充信息
+                </label>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-12 text-slate-500 mb-1">业务人员 <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <i class="fa-regular fa-user absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                            <input type="text" x-model="form.userName" class="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-13 input-focus outline-none transition" placeholder="姓名">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-12 text-slate-500 mb-1">联系电话 <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <i class="fa-solid fa-phone absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                            <input type="text" x-model="form.userPhone" class="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-13 input-focus outline-none transition font-mono" placeholder="电话">
+                        </div>
+                    </div>
+                    <!-- <div class="col-span-2">
+                        <label class="block text-12 text-slate-500 mb-1">电子邮箱</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-envelope absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                            <input type="text" x-model="form.userEmail" class="w-full pl-8 pr-3 py-2 border border-slate-300 rounded-lg text-13 input-focus outline-none transition font-mono" placeholder="邮箱">
+                        </div>
+                    </div> -->
+                </div>
+            </div>
+
+        </div>
+
+        <div class="px-6 py-4 bg-gray-50 border-t border-slate-200 flex justify-between items-center mt-auto">
+            <div class="text-12 text-slate-500 flex items-center gap-1.5">
+                <!-- <i class="fa-solid fa-shield-halved text-emerald-500"></i> 数字签名保护 -->
+            </div>
+            <div class="flex gap-3">
+                <button class="px-5 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-13 font-medium transition shadow-sm">
+                    取消
+                </button>
+                <button @click="submit" 
+                        class="px-8 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-md transition transform active:scale-95 text-13 font-medium flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                        :disabled="isSubmitting">
+                    <i class="fa-solid fa-spinner fa-spin" x-show="isSubmitting"></i>
+                    <i class="fa-solid fa-file-export" x-show="!isSubmitting"></i>
+                    <span x-text="isSubmitting ? '生成中...' : '确认导出'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function exportModal() {
+            return {
+                isSubmitting: false,
+                
+                // 模拟印章数据源
+                sealList: [
+                    { id: 'seal_01', name: '报价专用章', orgName: '中检集团计量测试', shape: 'circle' },
+                    { id: 'seal_02', name: '合同专用章', orgName: '中检集团计量测试', shape: 'oval' },
+                    { id: 'seal_03', name: '公章', orgName: '中检集团计量测试', shape: 'circle' },
+                    { id: 'seal_04', name: '财务专用章', orgName: '中检集团财务部', shape: 'circle' },
+                    { id: 'seal_05', name: '技术审核章', orgName: '质量技术部', shape: 'rect' },
+                    { id: 'seal_06', name: 'CNAS专用章', orgName: '实验室认可', shape: 'rect' },
+                    { id: 'seal_07', name: '电子签名章', orgName: '张三(授权)', shape: 'rect' },
+                    { id: 'seal_08', name: '华南分公司公章', orgName: '华南分公司', shape: 'circle' },
+                    { id: 'seal_09', name: '华东分公司公章', orgName: '华东分公司', shape: 'circle' },
+                ],
+
+                // 表单数据
+                form: {
+                    sealId: 'seal_01', // 默认选中
+                    userName: '张三',
+                    userPhone: '13800138000',
+                    userEmail: 'zhangsan@testing.com'
+                },
+
+                // 获取当前选中的印章对象
+                get currentSeal() {
+                    if (!this.form.sealId) return null;
+                    return this.sealList.find(x => x.id === this.form.sealId);
+                },
+
+                submit() {
+                    if (!this.form.userName || !this.form.userPhone) {
+                        alert("请完善业务人员姓名和联系电话");
+                        return;
+                    }
+
+                    this.isSubmitting = true;
+                    
+                    setTimeout(() => {
+                        this.isSubmitting = false;
+                        const sealName = this.currentSeal ? this.currentSeal.name : '无印章';
+                        console.log('Export Config:', JSON.parse(JSON.stringify(this.form)));
+                        alert(`导出成功！\n印章类型：${sealName}`);
+                    }, 1500);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
