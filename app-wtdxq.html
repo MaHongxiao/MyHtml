@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>计量综合业务管理平台 - 移动端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 模拟飞书/钉钉的基础设置 */
+        body {
+            background-color: #F5F6F7;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #1F2329;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 80px; /* 为底部导航留空 */
+        }
+
+        /* 隐藏滚动条但保留功能 */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 卡片通用样式 */
+        .card {
+            background: #FFFFFF;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        /* 状态标签颜色 */
+        .tag {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .tag-orange { background: #FFF7E6; color: #FA8C16; border: 1px solid rgba(250, 140, 22, 0.2); }
+        .tag-blue { background: #E6F7FF; color: #1890FF; border: 1px solid rgba(24, 144, 255, 0.2); }
+        .tag-gray { background: #F5F6F7; color: #8F959E; }
+        .tag-purple { background: #F9F0FF; color: #722ED1; border: 1px solid rgba(114, 46, 209, 0.2); }
+
+        /* 进度环模拟 */
+        .circle-progress {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: conic-gradient(#3370FF 40%, #EDEEF0 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .circle-progress::before {
+            content: "";
+            width: 32px;
+            height: 32px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+        }
+        .circle-text {
+            position: relative;
+            font-size: 10px;
+            font-weight: bold;
+            color: #1F2329;
+        }
+        
+        /* 底部固定栏 */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            padding: 10px 16px;
+            box-shadow: 0 -1px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-white sticky top-0 z-50 px-4 py-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-chevron-left text-gray-600 text-lg"></i>
+            <h1 class="text-lg font-bold text-gray-800">业务单详情</h1>
+        </div>
+        <div class="flex gap-4 text-gray-600">
+            <i class="fas fa-search"></i>
+            <i class="fas fa-ellipsis-h"></i>
+        </div>
+    </div>
+
+    <div class="p-3">
+        <div class="card relative overflow-hidden">
+            <div class="absolute top-0 right-0 bg-orange-100 text-orange-600 px-3 py-1 rounded-bl-lg text-xs font-bold">
+                待确认
+            </div>
+
+            <div class="mb-2">
+                <span class="text-gray-500 text-xs block mb-1">委托单号</span>
+                <div class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    WT20260126001
+                    <i class="far fa-copy text-gray-400 text-xs"></i>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2 text-sm mt-3 border-t border-gray-100 pt-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-500">客户名称</span>
+                    <span class="text-gray-900 font-medium text-right truncate w-48">华为技术有限公司</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">销售人员</span>
+                    <span class="text-gray-900 font-medium">张三 (销售一部)</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">合同编号</span>
+                    <span class="text-gray-900 font-medium text-blue-600">CT20260115-001</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-2 mb-3">
+            <div class="card flex-1 flex flex-col justify-center mb-0 bg-blue-50 border border-blue-100">
+                <span class="text-xs text-gray-500 mb-1">委托单金额</span>
+                <span class="text-xl font-bold text-blue-600">¥ 10,000.00</span>
+                <div class="mt-2 w-full bg-blue-200 h-1.5 rounded-full overflow-hidden">
+                    <div class="bg-blue-500 h-full w-[40%]"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-gray-500 mt-1">
+                    <span>已配: ¥4k</span>
+                    <span>待配: ¥2.4k</span>
+                </div>
+            </div>
+            
+            <div class="card flex-1 mb-0 flex justify-between items-center px-2">
+                <div class="flex flex-col items-center gap-1">
+                    <div class="circle-progress" style="background: conic-gradient(#FA8C16 40%, #f0f0f0 0);">
+                        <div class="circle-text">2/5</div>
+                    </div>
+                    <span class="text-[10px] text-gray-500">样品费</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <div class="circle-progress" style="background: conic-gradient(#3370FF 60%, #f0f0f0 0);">
+                        <div class="circle-text">3/5</div>
+                    </div>
+                    <span class="text-[10px] text-gray-500">出证</span>
+                </div>
+                <div class="flex flex-col items-center gap-1">
+                    <div class="circle-progress" style="background: conic-gradient(#52C41A 40%, #f0f0f0 0);">
+                        <div class="circle-text">2/5</div>
+                    </div>
+                    <span class="text-[10px] text-gray-500">出库</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sticky top-[52px] z-40 bg-[#F5F6F7] pb-2">
+            <div class="flex overflow-x-auto hide-scrollbar gap-6 px-1 mb-3 border-b border-gray-200 bg-white pt-2">
+                <div class="pb-2 border-b-2 border-blue-600 text-blue-600 font-bold whitespace-nowrap text-sm px-2">
+                    样品信息 (23)
+                </div>
+                <div class="pb-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap text-sm px-2">
+                    基本信息
+                </div>
+                <div class="pb-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap text-sm px-2">
+                    服务项 (2)
+                </div>
+                <div class="pb-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap text-sm px-2">
+                    成本项 (2)
+                </div>
+                <div class="pb-2 border-b-2 border-transparent text-gray-500 whitespace-nowrap text-sm px-2">
+                    到款明细
+                </div>
+            </div>
+
+            <div class="flex overflow-x-auto hide-scrollbar gap-2 px-1">
+                <button class="px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs font-medium whitespace-nowrap shadow-sm">全部</button>
+                <button class="px-4 py-1.5 bg-white text-gray-600 rounded-full text-xs font-medium whitespace-nowrap border border-gray-200">确认费用 <span class="bg-red-500 text-white text-[8px] px-1 rounded-full ml-1">2</span></button>
+                <button class="px-4 py-1.5 bg-white text-gray-600 rounded-full text-xs font-medium whitespace-nowrap border border-gray-200">未结算</button>
+                <button class="px-4 py-1.5 bg-white text-gray-600 rounded-full text-xs font-medium whitespace-nowrap border border-gray-200">已结算</button>
+            </div>
+        </div>
+
+        <div class="space-y-3 pb-4">
+            
+            <div class="card border-l-4 border-orange-400 pl-3">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-base">激光测径仪</h3>
+                        <p class="text-xs text-gray-400 font-mono mt-0.5">WT20260113001</p>
+                    </div>
+                    <span class="tag tag-orange">待确认</span>
+                </div>
+                <div class="grid grid-cols-2 gap-y-2 text-xs text-gray-500 mb-3 bg-gray-50 p-2 rounded">
+                    <div><span class="text-gray-400">数量:</span> 1 台</div>
+                    <div><span class="text-gray-400">检测部门:</span> 辐射与环境...</div>
+                    <div class="col-span-2"><span class="text-gray-400">测量范围:</span> (0-30) mm</div>
+                    <div class="col-span-2"><span class="text-gray-400">类型:</span> 非标准器具</div>
+                </div>
+                <div class="flex justify-between items-center border-t border-gray-100 pt-2 mt-2">
+                    <div class="flex gap-2">
+                        <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">未出证</span>
+                        <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">待开票</span>
+                    </div>
+                    <div class="flex gap-3">
+                        <button class="text-blue-600 text-xs font-medium">费用录入</button>
+                        <button class="text-gray-400 text-xs">详情 ></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-l-4 border-orange-400 pl-3">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-base">医用电子体温计</h3>
+                        <p class="text-xs text-gray-400 font-mono mt-0.5">WT20260113002</p>
+                    </div>
+                    <span class="tag tag-orange">待确认</span>
+                </div>
+                <div class="grid grid-cols-2 gap-y-2 text-xs text-gray-500 mb-3 bg-gray-50 p-2 rounded">
+                    <div><span class="text-gray-400">数量:</span> 3 套</div>
+                    <div><span class="text-gray-400">检测部门:</span> 辐射与环境...</div>
+                    <div class="col-span-2"><span class="text-gray-400">测量范围:</span> (32-42) ℃</div>
+                </div>
+                <div class="flex justify-between items-center border-t border-gray-100 pt-2 mt-2">
+                    <div class="flex gap-2">
+                        <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">未出证</span>
+                        <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">待开票</span>
+                    </div>
+                    <div class="flex gap-3">
+                        <button class="text-blue-600 text-xs font-medium">费用录入</button>
+                        <button class="text-gray-400 text-xs">详情 ></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-l-4 border-orange-400 pl-3">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-gray-900 text-base">全站仪</h3>
+                            <span class="bg-orange-100 text-orange-600 text-[10px] px-1 rounded border border-orange-200">分包</span>
+                        </div>
+                        <p class="text-xs text-gray-400 font-mono mt-0.5">WT20260113003</p>
+                    </div>
+                    <span class="tag tag-orange">待确认</span>
+                </div>
+                <div class="grid grid-cols-2 gap-y-2 text-xs text-gray-500 mb-3 bg-gray-50 p-2 rounded">
+                    <div><span class="text-gray-400">数量:</span> 2 件</div>
+                    <div class="col-span-2"><span class="text-gray-400">测量范围:</span> 0-5000m</div>
+                </div>
+                <div class="flex justify-between items-center border-t border-gray-100 pt-2 mt-2">
+                    <div class="flex gap-3 ml-auto">
+                        <button class="text-blue-600 text-xs font-medium">费用录入</button>
+                        <button class="text-gray-400 text-xs">详情 ></button>
+                    </div>
+                </div>
+            </div>
+
+             <div class="card border-l-4 border-purple-400 pl-3">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-base">激光测径仪</h3>
+                        <p class="text-xs text-gray-400 font-mono mt-0.5">WT20260113005</p>
+                    </div>
+                    <span class="tag tag-purple">待结算</span>
+                </div>
+                <div class="grid grid-cols-2 gap-y-2 text-xs text-gray-500 mb-3 bg-gray-50 p-2 rounded">
+                    <div><span class="text-gray-400">数量:</span> 5 批</div>
+                    <div><span class="text-gray-400">测量范围:</span> (0-30) mm</div>
+                </div>
+                <div class="flex justify-between items-center border-t border-gray-100 pt-2 mt-2">
+                    <div class="flex gap-2">
+                        <span class="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">已出证</span>
+                        <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">待开票</span>
+                    </div>
+                    <div class="flex gap-3">
+                        <button class="text-blue-600 text-xs font-medium">费用录入</button>
+                        <button class="text-gray-400 text-xs">详情 ></button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="bottom-bar">
+        <div class="flex flex-col items-center justify-center px-2 text-gray-500">
+            <i class="fas fa-bars text-lg mb-0.5"></i>
+            <span class="text-[10px]">更多</span>
+        </div>
+        <div class="flex gap-3 flex-1 ml-3 justify-end">
+            <button class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium shadow-sm">
+                批量绩效
+            </button>
+            <button class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-md">
+                确认完工
+            </button>
+        </div>
+    </div>
+
+    <div class="fixed bottom-24 right-4 bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg z-40 active:scale-95 transition-transform">
+        <i class="fas fa-plus text-lg"></i>
+    </div>
+
+</body>
+</html>
