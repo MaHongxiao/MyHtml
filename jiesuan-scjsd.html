@@ -3,133 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>生成结算单 - 实验室管理系统</title>
+    <title>结算单生成 - 多维筛选版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         [x-cloak] { display: none !important; }
-        /* 自定义滚动条 */
-        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        body { font-family: 'Inter', -apple-system, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; color: #334155; font-size: 13px; }
         
-        /* 表格列宽控制 */
-        .col-min-w { min-width: 100px; }
-        .col-fixed { width: 120px; flex-shrink: 0; }
+        /* === 字体规范严格执行 === */
+        .text-13 { font-size: 13px !important; line-height: 1.5; }
+        .text-12 { font-size: 12px !important; } /* 仅用于极其次要的标签 */
+        
+        /* 数字字体优化：最小14px，加粗，等宽 */
+        .font-num { font-family: 'Menlo', 'Monaco', 'Consolas', monospace; font-weight: 600; font-size: 14px; letter-spacing: -0.02em; }
+        .font-num-lg { font-size: 15px; }
+        .font-num-xl { font-size: 18px; }
+        .font-num-2xl { font-size: 26px; }
 
-        /* 半选状态样式模拟 */
-        .checkbox-indeterminate {
-            background-color: #2563eb;
-            border-color: #2563eb;
-        }
-        .checkbox-indeterminate::after {
-            content: '';
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 8px; height: 2px;
-            background-color: white;
-            transform: translate(-50%, -50%);
-        }
+        /* === 滚动条美化 === */
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+
+        /* === 表格数字对齐 === */
+        .num-cell { text-align: right; font-family: 'Menlo', monospace; font-size: 14px; }
+        
+        /* === 底部阴影 === */
+        .footer-shadow { box-shadow: 0 -4px 10px -2px rgba(0, 0, 0, 0.05); }
+
+        /* === 输入框聚焦效果 === */
+        .input-focus:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1); }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 h-screen flex flex-col font-sans" x-data="settlementApp()">
+<body class="h-screen flex flex-col overflow-hidden" x-data="settlementApp()">
 
-    <header class="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center shadow-sm z-20">
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm">
         <div class="flex items-center gap-3">
-            <div class="w-8 h-8 bg-blue-600 text-white rounded flex items-center justify-center font-bold">
-                <i class="fa-solid fa-file-invoice-dollar"></i>
+            <div class="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center text-white shadow-sm">
+                <i class="fa-solid fa-file-invoice-dollar text-sm"></i>
             </div>
-            <h1 class="text-lg font-bold text-gray-800">生成结算单</h1>
+            <div>
+                <h1 class="font-bold text-base text-slate-800">费用结算单生成</h1>
+            </div>
         </div>
-        <div class="text-sm text-gray-500">
-            <span x-show="lockedCustomerName">当前锁定客户：<span class="font-bold text-blue-600" x-text="lockedCustomerName"></span></span>
-            <span x-show="!lockedCustomerName">请选择样品以开始结算</span>
+        <div class="flex items-center gap-4">
+            <div class="text-13 text-slate-500 bg-slate-50 px-3 py-1 rounded-full border border-slate-200 flex items-center gap-2 transition-all"
+                 :class="{'bg-indigo-50 border-indigo-100': currentContract}">
+                <span class="w-1.5 h-1.5 rounded-full" :class="currentContract ? 'bg-indigo-500 animate-pulse' : 'bg-slate-300'"></span>
+                <span>当前锁定：</span>
+                <span class="font-bold text-indigo-700 font-num" x-text="currentContract ? currentContract.code : '无'"></span>
+            </div>
+            
+            <button @click="resetSelection" x-show="selectedIds.length > 0" class="text-13 text-slate-500 hover:text-rose-600 transition flex items-center gap-1">
+                <i class="fa-solid fa-trash-can"></i> 清空已选
+            </button>
         </div>
     </header>
 
     <main class="flex-1 flex overflow-hidden">
         
-        <aside class="w-96 bg-white border-r border-gray-200 flex flex-col z-10">
-            <div class="p-4 border-b border-gray-100 space-y-3">
-                <div class="relative">
-                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400"></i>
-                    <input type="text" x-model="searchQuery" placeholder="搜索委托单、样品名称、规格..." 
-                           class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+        <aside class="w-[400px] bg-white border-r border-slate-200 flex flex-col shrink-0 overflow-hidden z-10">
+            
+            <div class="p-4 border-b border-slate-200 bg-slate-50/50 shrink-0 space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-slate-700 text-13"><i class="fa-solid fa-filter text-indigo-500 mr-1.5"></i>筛选条件</span>
+                    <button @click="resetFilters" class="text-xs text-slate-400 hover:text-indigo-600 transition">重置条件</button>
                 </div>
                 
-                <div class="flex justify-between items-center text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
-                    <label class="flex items-center gap-2 cursor-pointer select-none">
-                        <div class="relative flex items-center">
-                            <input type="checkbox" class="peer appearance-none w-4 h-4 border border-gray-300 rounded checked:bg-blue-600 checked:border-blue-600 focus:ring-1 focus:ring-blue-200 transition"
-                                   :checked="globalSelectState === 'checked'"
-                                   @click="toggleAllFiltered()">
-                            <i class="fa-solid fa-check text-white text-[10px] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none hidden peer-checked:block"
-                               x-show="globalSelectState === 'checked'"></i>
-                            <div class="w-2 h-0.5 bg-blue-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                                 x-show="globalSelectState === 'indeterminate'"></div>
-                        </div>
-                        <span>全选当前结果</span>
-                    </label>
-                    <div class="flex gap-2">
-                        <span>共 <span x-text="filteredOrders.length"></span> 单</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="col-span-2 relative">
+                        <i class="fa-regular fa-building absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+                        <input type="text" x-model="filters.customer" placeholder="输入客户名称..." 
+                               class="w-full bg-white border border-slate-300 rounded pl-8 pr-2 py-2 text-13 input-focus outline-none transition">
+                    </div>
+                    
+                    <div class="relative">
+                        <input type="text" x-model="filters.contractCode" placeholder="合同号" 
+                               class="w-full bg-white border border-slate-300 rounded px-2 py-2 text-13 input-focus outline-none transition font-num text-xs">
+                    </div>
+                    <div class="relative">
+                        <input type="text" x-model="filters.quoteCode" placeholder="报价单号" 
+                               class="w-full bg-white border border-slate-300 rounded px-2 py-2 text-13 input-focus outline-none transition font-num text-xs">
+                    </div>
+                    <div class="relative">
+                        <input type="text" x-model="filters.orderCode" placeholder="委托单号" 
+                               class="w-full bg-white border border-slate-300 rounded px-2 py-2 text-13 input-focus outline-none transition font-num text-xs">
+                    </div>
+                    <div class="relative">
+                        <input type="text" x-model="filters.regCode" placeholder="登记号(样品)" 
+                               class="w-full bg-white border border-slate-300 rounded px-2 py-2 text-13 input-focus outline-none transition font-num text-xs">
                     </div>
                 </div>
             </div>
-
-            <div class="flex-1 overflow-y-auto custom-scroll p-2 space-y-2">
-                <template x-for="order in filteredOrders" :key="order.id">
-                    <div class="border border-gray-200 rounded overflow-hidden transition-shadow hover:shadow-sm" 
-                         :class="isCustomerLocked(order.customerId) ? 'opacity-60 bg-gray-50' : 'bg-white'">
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-3 space-y-3 bg-slate-50/30">
+                <template x-for="contract in filteredData" :key="contract.id">
+                    <div class="bg-white border border-slate-200 rounded-lg shadow-sm transition-all duration-200 group"
+                         :class="{'opacity-50 grayscale pointer-events-none bg-slate-100': isContractDisabled(contract.id), 'ring-1 ring-indigo-500': currentContract?.id === contract.id}">
                         
-                        <div class="bg-gray-50 px-3 py-2 flex items-center gap-3 border-b border-gray-100">
-                            <div class="relative flex items-center" @click.stop="toggleOrder(order)">
-                                <div class="w-4 h-4 border rounded cursor-pointer flex items-center justify-center transition-colors bg-white"
-                                     :class="{
-                                         'bg-blue-600 border-blue-600': getOrderState(order) === 'checked',
-                                         'border-gray-300': getOrderState(order) === 'unchecked',
-                                         'checkbox-indeterminate': getOrderState(order) === 'indeterminate',
-                                         'cursor-not-allowed opacity-50': isCustomerLocked(order.customerId)
-                                     }">
-                                    <i class="fa-solid fa-check text-white text-[10px]" x-show="getOrderState(order) === 'checked'"></i>
-                                </div>
+                        <div class="px-3 py-3 border-b border-slate-100 flex items-start gap-2 cursor-pointer hover:bg-slate-50"
+                             @click="toggleExpand(contract.id)">
+                            <div class="mt-0.5 text-slate-400">
+                                <i class="fa-solid text-xs transition-transform duration-200" 
+                                   :class="expandedIds.includes(contract.id) ? 'fa-caret-down' : 'fa-caret-right'"></i>
                             </div>
-
-                            <div class="flex-1 flex justify-between items-center cursor-pointer" @click="order.expanded = !order.expanded">
-                                <div class="flex items-center gap-2 overflow-hidden">
-                                    <div class="flex flex-col truncate">
-                                        <span class="text-sm font-bold text-gray-700" x-text="order.orderNo"></span>
-                                        <span class="text-[10px] text-gray-500 truncate" x-text="order.customerName"></span>
-                                    </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-slate-700 text-13 truncate" x-text="contract.name"></span>
+                                    <span class="text-[10px] px-1.5 rounded border border-indigo-100 bg-indigo-50 text-indigo-600">合同</span>
                                 </div>
-                                <i class="fa-solid text-gray-400 text-xs transition-transform duration-200" 
-                                   :class="order.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                                <div class="text-13 text-slate-500 mt-1 truncate flex items-center gap-1">
+                                    <i class="fa-regular fa-building text-xs scale-90"></i>
+                                    <span x-text="contract.customer"></span>
+                                </div>
+                                <div class="text-13 text-slate-400 mt-0.5 font-num" x-text="contract.code"></div>
                             </div>
                         </div>
 
-                        <div x-show="order.expanded" x-collapse>
-                            <template x-for="sample in order.samples" :key="sample.id">
-                                <div class="flex items-start px-3 py-2 border-t border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors group"
-                                     :class="{'bg-blue-50': isSelected(sample), 'cursor-not-allowed': isCustomerLocked(order.customerId)}"
-                                     @click="toggleSample(order, sample)">
-                                    
-                                    <div class="mr-3 mt-1 relative flex items-center">
-                                        <div class="w-4 h-4 border rounded flex items-center justify-center transition-colors"
-                                             :class="isSelected(sample) ? 'bg-blue-600 border-blue-600' : 'border-gray-300 bg-white group-hover:border-blue-400'">
-                                            <i class="fa-solid fa-check text-white text-[10px]" x-show="isSelected(sample)"></i>
+                        <div x-show="expandedIds.includes(contract.id)" x-collapse>
+                            <template x-for="quote in contract.quotes" :key="quote.id">
+                                <div class="border-l-2 border-indigo-100 ml-3 pl-2 py-2">
+                                    <div class="flex items-center gap-2 mb-2 cursor-pointer hover:text-indigo-600 transition" @click="toggleExpand(quote.id)">
+                                        <i class="fa-solid fa-file-invoice text-slate-400 text-xs"></i>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-13 font-bold text-slate-600 truncate" x-text="quote.subject"></div>
+                                            <div class="text-[11px] text-slate-400 font-num" x-text="quote.code"></div>
                                         </div>
+                                        <i class="fa-solid text-[10px] text-slate-300 mr-2" :class="expandedIds.includes(quote.id) ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
                                     </div>
 
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 mb-0.5">
-                                            <span class="text-xs font-medium text-gray-700 truncate" x-text="sample.name"></span>
-                                            <span x-show="sample.isSub" class="text-[10px] bg-orange-100 text-orange-600 px-1 rounded border border-orange-200 whitespace-nowrap scale-90 origin-left">分包</span>
-                                        </div>
-                                        <div class="text-[10px] text-gray-400 flex flex-col gap-0.5">
-                                            <span x-text="sample.sampleNo"></span>
-                                            <span class="text-gray-500 truncate" x-show="sample.spec">规格: <span x-text="sample.spec"></span></span>
-                                        </div>
+                                    <div x-show="expandedIds.includes(quote.id)" x-collapse class="ml-2 space-y-2">
+                                        <template x-for="order in quote.orders" :key="order.id">
+                                            <div class="bg-slate-50 rounded p-2 border border-slate-100">
+                                                <div class="flex items-center gap-2 mb-2 text-slate-500 pb-1 border-b border-slate-200/50">
+                                                    <i class="fa-solid fa-list-ol text-xs"></i>
+                                                    <span class="text-13 font-num font-bold" x-text="order.code"></span>
+                                                </div>
+
+                                                <div class="space-y-1">
+                                                    <template x-for="sample in order.samples" :key="sample.id">
+                                                        <div @click="toggleSample(sample, contract)"
+                                                             class="flex items-center gap-3 px-2 py-1.5 rounded cursor-pointer transition select-none border border-transparent"
+                                                             :class="isSelected(sample.id) ? 'bg-indigo-50 border-indigo-200' : 'hover:bg-white hover:shadow-sm hover:border-slate-200'">
+                                                            
+                                                            <div class="w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors shrink-0"
+                                                                 :class="isSelected(sample.id) ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white'">
+                                                                <i class="fa-solid fa-check text-white text-[10px]" x-show="isSelected(sample.id)"></i>
+                                                            </div>
+                                                            
+                                                            <div class="flex-1 min-w-0">
+                                                                <div class="text-13 font-medium truncate" 
+                                                                     :class="isSelected(sample.id) ? 'text-indigo-700' : 'text-slate-700'" 
+                                                                     x-text="sample.name"></div>
+                                                                <div class="text-13 text-slate-400 font-num mt-0.5" x-text="sample.regCode"></div>
+                                                            </div>
+                                                            
+                                                            <div class="font-num text-slate-400 text-13">¥<span x-text="sample.testFee"></span></div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </template>
@@ -137,410 +173,385 @@
                     </div>
                 </template>
                 
-                <div x-show="filteredOrders.length === 0" class="p-4 text-center text-gray-400 text-sm flex flex-col items-center">
-                    <i class="fa-solid fa-inbox text-2xl mb-2 text-gray-300"></i>
-                    <span>未找到匹配的委托单</span>
+                <div x-show="filteredData.length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass-minus text-2xl mb-2 text-slate-300"></i>
+                    <p class="text-13">未匹配到任何数据</p>
                 </div>
             </div>
         </aside>
 
-        <div class="flex-1 flex flex-col min-w-0 bg-white">
+        <section class="flex-1 flex flex-col min-w-0 bg-slate-50 relative">
             
-            <div class="flex-1 overflow-auto custom-scroll relative">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead class="bg-gray-50 text-gray-500 font-medium sticky top-0 z-10 shadow-sm">
-                        <tr>
-                            <th class="p-3 w-12 text-center">#</th>
-                            <th class="p-3 w-48">样品基本信息</th>
-                            <th class="p-3 w-32">规格/厂商</th>
-                            <th class="p-3 w-32">关联委托单</th>
-                            <th class="p-3 w-24 text-right">主费用</th>
-                            <th class="p-3 w-24 text-right">加急费</th>
-                            <th class="p-3 w-24 text-right">交通费</th>
-                            <th class="p-3 w-24 text-right">修理/材料</th>
-                            <th class="p-3 w-24 text-right">其他费</th>
-                            <th class="p-3 w-28 text-right bg-blue-50/50">费用总计</th>
-                            <th class="p-3 w-28 text-right bg-green-50/50">折后小计</th>
-                            <th class="p-3 w-12 text-center">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <template x-for="(item, index) in selectedList" :key="item.id">
-                            <tr class="hover:bg-gray-50 group transition-colors">
-                                <td class="p-3 text-center text-gray-400" x-text="index + 1"></td>
-                                
-                                <td class="p-3">
-                                    <div class="font-bold text-gray-800" x-text="item.name"></div>
-                                    <div class="text-xs text-gray-400 font-mono" x-text="item.sampleNo"></div>
-                                    <span x-show="item.isSub" class="inline-block mt-1 text-[10px] bg-orange-100 text-orange-600 px-1.5 rounded border border-orange-200">分包样品</span>
-                                </td>
+            <div class="px-6 py-3 bg-white border-b border-slate-200 shrink-0 flex justify-between items-center h-14">
+                <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    费用明细列表
+                    <span class="text-13 font-normal text-white bg-slate-400 px-2 py-0.5 rounded-full font-num" x-show="selectedIds.length > 0" x-text="selectedIds.length"></span>
+                </h2>
+                <div class="text-13 text-slate-400 flex items-center gap-1">
+                    <i class="fa-regular fa-lightbulb text-yellow-500"></i> 折扣仅对检测费生效
+                </div>
+            </div>
 
-                                <td class="p-3 text-xs text-gray-600">
-                                    <div class="truncate" :title="item.spec" x-text="item.spec || '-'"></div>
-                                    <div class="text-gray-400 truncate" :title="item.manufacturer" x-text="item.manufacturer || '-'"></div>
-                                </td>
-
-                                <td class="p-3 text-gray-600" x-text="item.orderNo"></td>
-                                
-                                <td class="p-3 text-right">
-                                    <div class="text-xs text-gray-400 mb-0.5" x-text="item.isSub ? '分包费' : '检测费'"></div>
-                                    <span class="font-medium" x-text="formatMoney(item.mainFee)"></span>
-                                </td>
-
-                                <td class="p-3 text-right" x-text="formatMoney(item.expediteFee)"></td>
-                                <td class="p-3 text-right" x-text="formatMoney(item.transportFee)"></td>
-                                <td class="p-3 text-right">
-                                    <div x-text="formatMoney(item.repairFee)"></div>
-                                    <div class="text-xs text-gray-400" x-text="formatMoney(item.materialFee)"></div>
-                                </td>
-                                <td class="p-3 text-right" x-text="formatMoney(item.otherFee)"></td>
-                                
-                                <td class="p-3 text-right font-bold text-gray-700 bg-blue-50/30" x-text="formatMoney(calculateRowTotal(item))"></td>
-                                
-                                <td class="p-3 text-right font-bold text-green-600 bg-green-50/30">
-                                    <span x-text="formatMoney(calculateRowDiscounted(item))"></span>
-                                    <div x-show="!item.isSub && discountRate < 100" class="text-[10px] text-green-400 scale-90 origin-right">
-                                        (含折)
+            <div class="flex-1 overflow-auto p-5 custom-scroll pb-44"> 
+                <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden min-h-[300px]">
+                    <table class="w-full text-left text-13">
+                        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 whitespace-nowrap">
+                            <tr>
+                                <th class="px-4 py-3 w-12 text-center font-num">#</th>
+                                <th class="px-4 py-3 min-w-[200px]">样品信息 (登记号/名称)</th>
+                                <th class="px-3 py-3 num-cell bg-indigo-50/30 text-indigo-600 border-l border-indigo-50">检测费</th>
+                                <th class="px-3 py-3 num-cell text-slate-400">加急</th>
+                                <th class="px-3 py-3 num-cell text-slate-400">交通</th>
+                                <th class="px-3 py-3 num-cell text-slate-400">修理</th>
+                                <th class="px-3 py-3 num-cell text-slate-400">材料</th>
+                                <th class="px-3 py-3 num-cell text-slate-400">其它</th>
+                                <th class="px-4 py-3 num-cell font-bold text-slate-700 bg-slate-50 border-l border-slate-100">应收合计</th>
+                                <th class="px-4 py-3 num-cell font-bold text-emerald-600 bg-emerald-50/30 border-l border-emerald-100 w-32">实收合计</th>
+                                <th class="px-3 py-3 w-12 text-center"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="(item, index) in selectedRows" :key="item.id">
+                                <tr class="hover:bg-slate-50 group transition">
+                                    <td class="px-4 py-3 text-center text-slate-300 font-num" x-text="index + 1"></td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-slate-700 truncate w-56 text-13" :title="item.name" x-text="item.name"></span>
+                                            <span class="text-13 text-slate-400 font-num" x-text="item.regCode"></span>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="px-3 py-3 num-cell font-medium text-indigo-600 bg-indigo-50/10 border-l border-indigo-50 font-num" x-text="formatMoney(item.testFee)"></td>
+                                    <td class="px-3 py-3 num-cell text-slate-500 font-num" x-text="item.expediteFee || '-'"></td>
+                                    <td class="px-3 py-3 num-cell text-slate-500 font-num" x-text="item.transportFee || '-'"></td>
+                                    <td class="px-3 py-3 num-cell text-slate-500 font-num" x-text="item.repairFee || '-'"></td>
+                                    <td class="px-3 py-3 num-cell text-slate-500 font-num" x-text="item.materialFee || '-'"></td>
+                                    <td class="px-3 py-3 num-cell text-slate-500 font-num" x-text="item.otherFee || '-'"></td>
+                                    
+                                    <td class="px-4 py-3 num-cell font-bold text-slate-600 bg-slate-50 border-l border-slate-100 font-num" x-text="formatMoney(calculateRowReceivable(item))"></td>
+                                    <td class="px-4 py-3 num-cell font-bold text-emerald-600 bg-emerald-50/30 border-l border-emerald-100 font-num" x-text="formatMoney(calculateRowActual(item))"></td>
+                                    
+                                    <td class="px-3 py-3 text-center">
+                                        <button @click="toggleSample(item, currentContract)" class="text-slate-300 hover:text-rose-500 transition w-6 h-6 rounded hover:bg-rose-50 flex items-center justify-center">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                            
+                            <tr x-show="selectedRows.length === 0">
+                                <td colspan="11" class="py-24 text-center text-slate-400 bg-slate-50/30">
+                                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+                                        <i class="fa-solid fa-calculator text-2xl text-slate-300"></i>
                                     </div>
-                                </td>
-
-                                <td class="p-3 text-center">
-                                    <button @click="removeSample(item.id)" class="text-gray-400 hover:text-red-500 transition-colors p-1" title="移除">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
+                                    <p class="text-13 font-medium">请从左侧选择需要结算的样品</p>
                                 </td>
                             </tr>
-                        </template>
+                        </tbody>
                         
-                        <tr x-show="selectedList.length === 0">
-                            <td colspan="12" class="p-10 text-center text-gray-400 bg-gray-50/50">
-                                <div class="mb-2 text-4xl text-gray-300"><i class="fa-solid fa-basket-shopping"></i></div>
-                                <div>左侧选择样品加入结算列表</div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                        <tfoot class="bg-slate-50 font-bold border-t border-slate-200 shadow-inner" x-show="selectedRows.length > 0">
+                            <tr>
+                                <td colspan="2" class="px-4 py-3 text-right text-13 text-slate-500">本页合计：</td>
+                                <td class="px-3 py-3 num-cell font-num text-slate-600 border-l border-slate-200" x-text="formatMoney(totalTestFee)"></td>
+                                <td class="px-3 py-3 num-cell font-num text-slate-500" x-text="formatMoney(totalExpediteFee)"></td>
+                                <td class="px-3 py-3 num-cell font-num text-slate-500" x-text="formatMoney(totalTransportFee)"></td>
+                                <td class="px-3 py-3 num-cell font-num text-slate-500" x-text="formatMoney(totalRepairFee)"></td>
+                                <td class="px-3 py-3 num-cell font-num text-slate-500" x-text="formatMoney(totalMaterialFee)"></td>
+                                <td class="px-3 py-3 num-cell font-num text-slate-500" x-text="formatMoney(totalOtherFee)"></td>
+                                <td class="px-4 py-3 num-cell text-slate-800 font-num-lg border-l border-slate-200" x-text="formatMoney(totalReceivable)"></td>
+                                <td class="px-4 py-3 num-cell text-emerald-600 font-num-lg bg-emerald-50/50 border-l border-emerald-100" x-text="formatMoney(finalTotalAmount)"></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
 
-            <div class="bg-white border-t border-gray-200 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] z-20">
+            <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-200 footer-shadow z-30 transition-transform duration-300"
+                 :class="selectedIds.length === 0 ? 'translate-y-full' : 'translate-y-0'">
                 
-                <div class="px-6 py-4 flex items-start gap-8 bg-gray-50/50">
-                    
-                    <div class="flex-1 grid grid-cols-4 gap-4 text-sm">
-                        <div class="bg-white p-3 rounded border border-gray-200">
-                            <div class="text-gray-500 text-xs mb-1">分包费总计 (不打折)</div>
-                            <div class="font-bold text-gray-700" x-text="formatMoney(totals.subTotal)"></div>
-                        </div>
-                        <div class="bg-white p-3 rounded border border-gray-200">
-                            <div class="text-gray-500 text-xs mb-1">杂费总计 (不打折)</div>
-                            <div class="font-bold text-gray-700" x-text="formatMoney(totals.miscTotal)"></div>
-                        </div>
-                        <div class="bg-blue-50 p-3 rounded border border-blue-100">
-                            <div class="text-blue-500 text-xs mb-1">非分包检测费 (参与打折)</div>
-                            <div class="font-bold text-blue-700" x-text="formatMoney(totals.testingTotal)"></div>
-                        </div>
-                        <div class="bg-gray-100 p-3 rounded border border-gray-200 opacity-75">
-                            <div class="text-gray-500 text-xs mb-1">原价总额</div>
-                            <div class="font-bold text-gray-600 decoration-1" x-text="formatMoney(totals.grandTotal)"></div>
-                        </div>
-                    </div>
-
-                    <div class="w-80 bg-white p-4 rounded border border-blue-200 shadow-sm relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500 rotate-45 transform translate-x-8 -translate-y-8"></div>
-                        <div class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                            <i class="fa-solid fa-percent text-blue-500"></i> 折扣设置
-                        </div>
-                        
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <label class="text-xs text-gray-600">非分包检测费折扣率</label>
-                                <div class="relative w-24">
-                                    <input type="number" x-model.number="discountRate" @input="updateByRate()" min="0" max="100" step="1"
-                                           class="w-full border-b border-blue-300 bg-transparent text-right font-bold text-blue-600 focus:outline-none focus:border-blue-600 pr-4">
-                                    <span class="absolute right-0 top-0 text-gray-400 text-xs">%</span>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center justify-between pt-2 border-t border-gray-100">
-                                <label class="text-sm font-bold text-gray-800">最终折后总金额</label>
-                                <div class="relative w-32">
-                                    <span class="absolute left-0 top-1 text-gray-400 text-xs">¥</span>
-                                    <input type="number" x-model.number="finalAmount" @change="updateByAmount()"
-                                           class="w-full border border-gray-300 rounded px-2 py-1 pl-4 text-right font-bold text-green-600 text-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="px-6 py-2.5 bg-slate-50 border-b border-slate-100 flex gap-8 text-13 text-slate-500 overflow-x-auto whitespace-nowrap">
+                    <span class="flex items-center gap-2">检测费：<b class="font-num text-indigo-600" x-text="formatMoney(totalTestFee)"></b></span>
+                    <span class="w-px h-3 bg-slate-300"></span>
+                    <span>加急：<b class="font-num" x-text="formatMoney(totalExpediteFee)"></b></span>
+                    <span>交通：<b class="font-num" x-text="formatMoney(totalTransportFee)"></b></span>
+                    <span>修理：<b class="font-num" x-text="formatMoney(totalRepairFee)"></b></span>
+                    <span>材料：<b class="font-num" x-text="formatMoney(totalMaterialFee)"></b></span>
+                    <span>其它：<b class="font-num" x-text="formatMoney(totalOtherFee)"></b></span>
+                    <span class="ml-auto text-slate-400">应收总计：<b class="font-num text-slate-600 text-sm" x-text="formatMoney(totalReceivable)"></b></span>
                 </div>
 
-                <div class="px-6 py-3 bg-white border-t border-gray-100 flex justify-end items-center gap-3">
-                    <button class="px-5 py-2 rounded text-gray-600 hover:bg-gray-100 border border-gray-300 transition-colors" @click="reset()">
-                        取消 / 重置
-                    </button>
-                    <button class="px-6 py-2 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-md transition-colors flex items-center gap-2"
-                            :disabled="selectedList.length === 0"
-                            :class="{'opacity-50 cursor-not-allowed': selectedList.length === 0}"
-                            @click="submit()">
-                        <i class="fa-solid fa-check"></i> 确认生成结算单
-                    </button>
+                <div class="px-8 py-5 flex items-center justify-between">
+                    
+                    <div class="flex items-center gap-8">
+                        
+                        <div class="flex flex-col">
+                            <label class="text-13 text-slate-400 font-bold uppercase mb-1">折扣率</label>
+                            <div class="relative flex items-center group">
+                                <input type="number" x-model="globalDiscount" @input="updateFromDiscount" 
+                                       class="font-num-xl font-bold text-indigo-600 border-b-2 border-indigo-200 focus:border-indigo-600 outline-none w-24 text-center bg-transparent transition py-1 group-hover:border-indigo-300"
+                                       min="0" max="100" step="1">
+                                <span class="text-sm font-bold text-indigo-400 ml-1 mb-1">%</span>
+                            </div>
+                            <div class="text-13 text-slate-400 mt-1">* 仅检测费</div>
+                        </div>
+
+                        <div class="text-slate-300 text-xl pb-4"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+
+                        <div class="flex flex-col">
+                            <label class="text-13 text-slate-400 font-bold uppercase mb-1">实收总金额</label>
+                            <div class="relative flex items-center group">
+                                <span class="text-xl font-bold text-emerald-600 mr-2 mb-1">¥</span>
+                                <input type="number" x-model="finalTotalAmount" @input="updateFromTotal"
+                                       class="font-num-2xl font-bold text-emerald-600 border-b-2 border-emerald-200 focus:border-emerald-600 outline-none w-48 text-left bg-transparent transition py-1 group-hover:border-emerald-300"
+                                       step="0.01">
+                            </div>
+                            <div class="text-13 text-slate-400 mt-1">含杂费</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <button class="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-50 transition text-13">取消</button>
+                        <button class="px-8 py-2.5 rounded-lg bg-indigo-600 text-white font-bold shadow-lg hover:bg-indigo-700 hover:shadow-xl transition transform active:scale-95 flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-file-invoice"></i> 生成结算单
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-
+        </section>
     </main>
-
-    <div x-show="toast.visible" x-transition.opacity.duration.500ms
-         class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded shadow-lg z-50 flex items-center gap-3">
-        <i class="fa-solid fa-circle-exclamation"></i>
-        <span x-text="toast.message"></span>
-    </div>
 
     <script>
         function settlementApp() {
             return {
-                // --- 数据源 (扩展) ---
-                rawOrders: [
-                    {
-                        id: 101, orderNo: 'WT20231025001', customerId: 'CUST001', customerName: '华为技术有限公司', expanded: true,
-                        samples: [
-                            { id: 1, name: '手机主板-A型', sampleNo: 'S231001-01', spec: 'HMP-8800 Pro', manufacturer: '自研', isSub: false, mainFee: 500, expediteFee: 100, transportFee: 50, repairFee: 0, materialFee: 0, otherFee: 0 },
-                            { id: 2, name: '电池模组-Ex', sampleNo: 'S231001-02', spec: 'BAT-4500mAh', manufacturer: '宁德时代', isSub: true, mainFee: 1200, expediteFee: 0, transportFee: 100, repairFee: 0, materialFee: 0, otherFee: 0 },
-                            { id: 3, name: '屏幕组件', sampleNo: 'S231001-03', spec: 'OLED-6.7', manufacturer: '京东方', isSub: false, mainFee: 300, expediteFee: 0, transportFee: 0, repairFee: 0, materialFee: 50, otherFee: 0 }
-                        ]
-                    },
-                    {
-                        id: 102, orderNo: 'WT20231026005', customerId: 'CUST001', customerName: '华为技术有限公司', expanded: false,
-                        samples: [
-                            { id: 4, name: '充电器适配器', sampleNo: 'S231005-01', spec: '66W SuperCharge', manufacturer: '赛尔康', isSub: false, mainFee: 200, expediteFee: 50, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0 },
-                            { id: 10, name: '无线耳机盒', sampleNo: 'S231005-02', spec: 'FreeBuds Case', manufacturer: '歌尔', isSub: false, mainFee: 150, expediteFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0 }
-                        ]
-                    },
-                    {
-                        id: 103, orderNo: 'WT20231101008', customerId: 'CUST001', customerName: '华为技术有限公司', expanded: false,
-                        samples: [
-                            { id: 11, name: '5G基站模块', sampleNo: 'S231101-01', spec: 'Massive MIMO AAU', manufacturer: '华为', isSub: false, mainFee: 5000, expediteFee: 500, transportFee: 200, repairFee: 0, materialFee: 0, otherFee: 0 },
-                            { id: 12, name: '光纤连接器', sampleNo: 'S231101-02', spec: 'SC/APC-SM', manufacturer: '长飞', isSub: true, mainFee: 800, expediteFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0 }
-                        ]
-                    },
-                    {
-                        id: 201, orderNo: 'WT20231028009', customerId: 'CUST002', customerName: '小米科技', expanded: false,
-                        samples: [
-                            { id: 5, name: '智能音箱外壳', sampleNo: 'S231009-01', spec: 'Sound Pro (黑色)', manufacturer: '富士康', isSub: false, mainFee: 800, expediteFee: 0, transportFee: 50, repairFee: 0, materialFee: 0, otherFee: 20 }
-                        ]
-                    },
-                    {
-                        id: 202, orderNo: 'WT20231102015', customerId: 'CUST002', customerName: '小米科技', expanded: false,
-                        samples: [
-                            { id: 6, name: '扫地机器人', sampleNo: 'S231102-01', spec: 'Robot Vacuum X10', manufacturer: '石头科技', isSub: false, mainFee: 1500, expediteFee: 0, transportFee: 0, repairFee: 100, materialFee: 50, otherFee: 0 },
-                            { id: 7, name: '空气净化器滤芯', sampleNo: 'S231102-02', spec: 'HEPA-H13', manufacturer: '智米', isSub: false, mainFee: 300, expediteFee: 0, transportFee: 0, repairFee: 0, materialFee: 0, otherFee: 0 }
-                        ]
-                    }
-                ],
-
-                // --- 状态变量 ---
-                searchQuery: '',
-                selectedList: [],
-                discountRate: 100,
-                finalAmount: 0,
-                toast: { visible: false, message: '' },
-
-                // --- 计算属性 ---
-                get filteredOrders() {
-                    if (!this.searchQuery) return this.rawOrders;
-                    const lowerQ = this.searchQuery.toLowerCase();
-                    return this.rawOrders.filter(o => 
-                        o.orderNo.toLowerCase().includes(lowerQ) || 
-                        o.customerName.toLowerCase().includes(lowerQ) ||
-                        o.samples.some(s => 
-                            s.name.toLowerCase().includes(lowerQ) || 
-                            s.sampleNo.toLowerCase().includes(lowerQ) ||
-                            (s.spec && s.spec.toLowerCase().includes(lowerQ))
-                        )
-                    );
+                filters: {
+                    customer: '',
+                    contractCode: '',
+                    quoteCode: '',
+                    orderCode: '',
+                    regCode: ''
                 },
-
-                get lockedCustomerId() { return this.selectedList.length > 0 ? this.selectedList[0].customerId : null; },
-                get lockedCustomerName() { return this.selectedList.length > 0 ? this.selectedList[0].customerName : null; },
-
-                // 全局全选状态
-                get globalSelectState() {
-                    if (this.filteredOrders.length === 0) return 'unchecked';
-                    
-                    let totalValidSamples = 0;
-                    let selectedCount = 0;
-                    const targetCustomer = this.lockedCustomerId || (this.filteredOrders.length > 0 ? this.filteredOrders[0].customerId : null);
-
-                    this.filteredOrders.forEach(order => {
-                        // 如果未锁定，只统计第一个客户的单子；如果已锁定，只统计锁定客户的单子
-                        if (order.customerId === targetCustomer) {
-                            totalValidSamples += order.samples.length;
-                            order.samples.forEach(s => {
-                                if (this.isSelected(s)) selectedCount++;
-                            });
-                        }
-                    });
-
-                    if (totalValidSamples === 0) return 'unchecked';
-                    if (selectedCount === 0) return 'unchecked';
-                    if (selectedCount === totalValidSamples) return 'checked';
-                    return 'indeterminate';
-                },
-
-                get totals() {
-                    let subTotal = 0, testingTotal = 0, miscTotal = 0;
-                    this.selectedList.forEach(item => {
-                        miscTotal += (item.expediteFee || 0) + (item.transportFee || 0) + (item.repairFee || 0) + (item.materialFee || 0) + (item.otherFee || 0);
-                        if (item.isSub) subTotal += (item.mainFee || 0);
-                        else testingTotal += (item.mainFee || 0);
-                    });
-                    return { subTotal, testingTotal, miscTotal, grandTotal: subTotal + testingTotal + miscTotal };
-                },
-
-                init() { this.updateByRate(); },
-
-                // --- 逻辑 ---
-                isCustomerLocked(customerId) {
-                    return this.lockedCustomerId && this.lockedCustomerId !== customerId;
-                },
-
-                // 1. 全局全选逻辑
-                toggleAllFiltered() {
-                    const currentState = this.globalSelectState;
-                    const targetCustomer = this.lockedCustomerId || (this.filteredOrders.length > 0 ? this.filteredOrders[0].customerId : null);
-                    
-                    // 如果列表里有多个客户，给个提示
-                    const hasMultipleCustomers = new Set(this.filteredOrders.map(o => o.customerId)).size > 1;
-                    
-                    if (currentState === 'checked') {
-                        // 取消全选（只取消当前视图内符合条件的）
-                        this.filteredOrders.forEach(order => {
-                            if (order.customerId === targetCustomer) {
-                                order.samples.forEach(s => {
-                                    const idx = this.selectedList.findIndex(sel => sel.id === s.id);
-                                    if (idx > -1) this.selectedList.splice(idx, 1);
-                                });
-                            }
-                        });
-                    } else {
-                        // 全选
-                        if (!this.lockedCustomerId && hasMultipleCustomers) {
-                            this.showToast(`已为您选中首个客户 (${this.filteredOrders[0].customerName}) 的所有样品`);
-                        }
-                        
-                        this.filteredOrders.forEach(order => {
-                            if (order.customerId === targetCustomer) {
-                                order.samples.forEach(s => {
-                                    if (!this.isSelected(s)) {
-                                        this.selectedList.push({ ...s, orderNo: order.orderNo, customerId: order.customerId, customerName: order.customerName });
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    this.updateByRate();
-                },
-
-                // 2. 委托单级全选逻辑
-                toggleOrder(order) {
-                    if (this.isCustomerLocked(order.customerId)) {
-                        this.showToast(`无法选择：已锁定客户 ${this.lockedCustomerName}`);
-                        return;
-                    }
-                    
-                    const state = this.getOrderState(order);
-                    if (state === 'checked') {
-                        // 取消全选
-                        order.samples.forEach(s => {
-                            const idx = this.selectedList.findIndex(sel => sel.id === s.id);
-                            if (idx > -1) this.selectedList.splice(idx, 1);
-                        });
-                    } else {
-                        // 全选
-                        order.samples.forEach(s => {
-                            if (!this.isSelected(s)) {
-                                this.selectedList.push({ ...s, orderNo: order.orderNo, customerId: order.customerId, customerName: order.customerName });
-                            }
-                        });
-                    }
-                    this.updateByRate();
-                },
-
-                // 获取委托单选中状态
-                getOrderState(order) {
-                    let count = 0;
-                    order.samples.forEach(s => { if (this.isSelected(s)) count++; });
-                    if (count === 0) return 'unchecked';
-                    if (count === order.samples.length) return 'checked';
-                    return 'indeterminate';
-                },
-
-                toggleSample(order, sample) {
-                    if (this.isCustomerLocked(order.customerId)) {
-                        this.showToast(`只能选择同一客户 (${this.lockedCustomerName}) 下的样品`);
-                        return;
-                    }
-                    const idx = this.selectedList.findIndex(s => s.id === sample.id);
-                    if (idx > -1) this.selectedList.splice(idx, 1);
-                    else this.selectedList.push({ ...sample, orderNo: order.orderNo, customerId: order.customerId, customerName: order.customerName });
-                    this.updateByRate();
-                },
-
-                isSelected(sample) { return this.selectedList.some(s => s.id === sample.id); },
-                removeSample(id) { this.selectedList = this.selectedList.filter(s => s.id !== id); this.updateByRate(); },
-
-                calculateRowTotal(item) {
-                    return (item.mainFee || 0) + (item.expediteFee || 0) + (item.transportFee || 0) + 
-                           (item.repairFee || 0) + (item.materialFee || 0) + (item.otherFee || 0);
-                },
-
-                calculateRowDiscounted(item) {
-                    const rowTotal = this.calculateRowTotal(item);
-                    if (item.isSub) return rowTotal;
-                    const discountedMain = (item.mainFee || 0) * (this.discountRate / 100);
-                    const misc = rowTotal - (item.mainFee || 0);
-                    return discountedMain + misc;
-                },
-
-                updateByRate() {
-                    const t = this.totals;
-                    const fixedPart = t.subTotal + t.miscTotal;
-                    const flexiblePart = t.testingTotal * (this.discountRate / 100);
-                    this.finalAmount = Number((fixedPart + flexiblePart).toFixed(2));
-                },
-
-                updateByAmount() {
-                    const t = this.totals;
-                    if (t.testingTotal === 0) {
-                        if (this.finalAmount !== t.grandTotal) {
-                            this.showToast("当前没有可打折的检测费");
-                            this.finalAmount = t.grandTotal;
-                        }
-                        return;
-                    }
-                    const fixedPart = t.subTotal + t.miscTotal;
-                    let rate = ((this.finalAmount - fixedPart) / t.testingTotal) * 100;
-                    if (rate < 0) rate = 0;
-                    this.discountRate = Number(rate.toFixed(2));
-                },
-
-                formatMoney(value) { return '¥ ' + Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
                 
-                showToast(msg) {
-                    this.toast.message = msg;
-                    this.toast.visible = true;
-                    setTimeout(() => { this.toast.visible = false; }, 3000);
+                contracts: [],
+                expandedIds: [],
+                selectedIds: [],
+                currentContract: null,
+                
+                globalDiscount: 100,
+                finalTotalAmount: 0,
+
+                init() {
+                    this.generateMockData();
                 },
 
-                reset() {
-                    if(confirm('确定要清空已选列表吗？')) {
-                        this.selectedList = [];
-                        this.discountRate = 100;
-                        this.updateByRate();
+                // 生成4级数据：合同 -> 报价 -> 委托 -> 样品
+                generateMockData() {
+                    const customers = ['华为技术有限公司', '比亚迪汽车工业', '大疆创新科技', '迈瑞生物医疗', '中兴通讯'];
+                    const quoteSubjects = ['', '', ''];
+                    
+                    this.contracts = Array.from({ length: 5 }, (_, i) => {
+                        const contractId = `C${2023000 + i}`;
+                        const cust = customers[i % customers.length];
+                        
+                        return {
+                            id: contractId,
+                            code: `HT-${contractId}`,
+                            name: `${cust} - 2024年度服务合同`,
+                            customer: cust,
+                            quotes: Array.from({ length: Math.floor(Math.random() * 2) + 1 }, (_, q) => {
+                                const quoteId = `Q${contractId}-${q+1}`;
+                                return {
+                                    id: quoteId,
+                                    code: `QUO-${quoteId}`,
+                                    subject: quoteSubjects[q % quoteSubjects.length],
+                                    orders: Array.from({ length: Math.floor(Math.random() * 2) + 1 }, (_, o) => {
+                                        const orderId = `WT-${quoteId}-${o+1}`;
+                                        return {
+                                            id: orderId,
+                                            code: orderId,
+                                            samples: Array.from({ length: Math.floor(Math.random() * 4) + 1 }, (_, k) => ({
+                                                id: `${orderId}-S${k+1}`,
+                                                regCode: `DJ${20230000 + (i*1000) + (q*100) + (o*10) + k}`,
+                                                name: ['数字示波器', '频谱分析仪', '高低温试验箱', '信号发生器', '万用表'][Math.floor(Math.random()*5)],
+                                                testFee: [1000, 2500, 800, 1500, 500][Math.floor(Math.random()*5)],
+                                                expediteFee: Math.random() > 0.8 ? 500 : 0,
+                                                transportFee: Math.random() > 0.7 ? 100 : 0,
+                                                repairFee: 0, 
+                                                materialFee: Math.random() > 0.9 ? 50 : 0,
+                                                otherFee: 0
+                                            }))
+                                        }
+                                    })
+                                }
+                            })
+                        };
+                    });
+                    
+                    // 默认展开
+                    if(this.contracts.length > 0) {
+                        this.expandedIds.push(this.contracts[0].id);
+                        if(this.contracts[0].quotes.length > 0) {
+                            this.expandedIds.push(this.contracts[0].quotes[0].id);
+                        }
                     }
                 },
 
-                submit() {
-                    alert('结算单生成成功！\n总金额：' + this.formatMoney(this.finalAmount));
+                // 多维组合筛选逻辑
+                get filteredData() {
+                    let result = this.contracts;
+                    const f = this.filters;
+
+                    // 1. 客户筛选
+                    if (f.customer) {
+                        result = result.filter(c => c.customer.includes(f.customer));
+                    }
+                    // 2. 合同号筛选
+                    if (f.contractCode) {
+                        result = result.filter(c => c.code.toLowerCase().includes(f.contractCode.toLowerCase()));
+                    }
+
+                    // 3. 深层递归筛选 (报价单/委托单/登记号)
+                    // 只要子级有匹配，父级就保留。
+                    return result.map(contract => {
+                        const c = { ...contract };
+                        
+                        // 筛选报价单
+                        c.quotes = c.quotes.map(quote => {
+                            const q = { ...quote };
+                            
+                            // 筛选委托单
+                            q.orders = q.orders.map(order => {
+                                const o = { ...order };
+                                
+                                // 筛选样品 (登记号)
+                                if (f.regCode) {
+                                    o.samples = o.samples.filter(s => s.regCode.toLowerCase().includes(f.regCode.toLowerCase()));
+                                }
+                                
+                                return o;
+                            }).filter(o => {
+                                // 委托单号匹配 && 还有样品
+                                const matchOrder = !f.orderCode || o.code.toLowerCase().includes(f.orderCode.toLowerCase());
+                                return o.samples.length > 0 && matchOrder;
+                            });
+                            
+                            return q;
+                        }).filter(q => {
+                            // 报价单号匹配 && 还有委托单
+                            const matchQuote = !f.quoteCode || q.code.toLowerCase().includes(f.quoteCode.toLowerCase());
+                            return q.orders.length > 0 && matchQuote;
+                        });
+                        
+                        return c;
+                    }).filter(c => c.quotes.length > 0);
+                },
+
+                resetFilters() {
+                    this.filters = { customer: '', contractCode: '', quoteCode: '', orderCode: '', regCode: '' };
+                },
+
+                isContractDisabled(contractId) {
+                    return this.currentContract && this.currentContract.id !== contractId;
+                },
+
+                toggleExpand(id) {
+                    if (this.expandedIds.includes(id)) {
+                        this.expandedIds = this.expandedIds.filter(x => x !== id);
+                    } else {
+                        this.expandedIds.push(id);
+                    }
+                },
+
+                toggleSample(sample, contract) {
+                    if (this.currentContract && this.currentContract.id !== contract.id) {
+                        alert("锁定状态下无法跨合同选择！请先清空已选。");
+                        return;
+                    }
+
+                    const index = this.selectedIds.indexOf(sample.id);
+                    if (index > -1) {
+                        this.selectedIds.splice(index, 1);
+                        if (this.selectedIds.length === 0) {
+                            this.currentContract = null;
+                            this.globalDiscount = 100;
+                            this.finalTotalAmount = 0;
+                        } else {
+                            this.recalcTotalByDiscount();
+                        }
+                    } else {
+                        if (this.selectedIds.length === 0) this.currentContract = contract;
+                        this.selectedIds.push(sample.id);
+                        this.recalcTotalByDiscount();
+                    }
+                },
+
+                isSelected(id) { return this.selectedIds.includes(id); },
+
+                // 扁平化获取选中行 (遍历4层)
+                get selectedRows() {
+                    const rows = [];
+                    if (!this.currentContract) return rows;
+                    this.currentContract.quotes.forEach(q => {
+                        q.orders.forEach(o => {
+                            o.samples.forEach(s => {
+                                if (this.selectedIds.includes(s.id)) rows.push(s);
+                            });
+                        });
+                    });
+                    return rows;
+                },
+
+                // ====== 费用计算 ======
+                get totalTestFee() { return this.selectedRows.reduce((sum, i) => sum + i.testFee, 0); },
+                get totalExpediteFee() { return this.selectedRows.reduce((sum, i) => sum + i.expediteFee, 0); },
+                get totalTransportFee() { return this.selectedRows.reduce((sum, i) => sum + i.transportFee, 0); },
+                get totalRepairFee() { return this.selectedRows.reduce((sum, i) => sum + i.repairFee, 0); },
+                get totalMaterialFee() { return this.selectedRows.reduce((sum, i) => sum + i.materialFee, 0); },
+                get totalOtherFee() { return this.selectedRows.reduce((sum, i) => sum + i.otherFee, 0); },
+                
+                get totalMiscFee() { 
+                    return this.totalExpediteFee + this.totalTransportFee + this.totalRepairFee + this.totalMaterialFee + this.totalOtherFee; 
+                },
+                get totalReceivable() { return this.totalTestFee + this.totalMiscFee; },
+
+                formatMoney(val) {
+                    return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+
+                calculateRowReceivable(item) {
+                    return item.testFee + item.expediteFee + item.transportFee + item.repairFee + item.materialFee + item.otherFee;
+                },
+                calculateRowActual(item) {
+                    return (item.testFee * (this.globalDiscount / 100)) + 
+                           (item.expediteFee + item.transportFee + item.repairFee + item.materialFee + item.otherFee);
+                },
+
+                // ====== 双向反算 ======
+                updateFromDiscount() {
+                    if (this.globalDiscount > 100) this.globalDiscount = 100;
+                    this.recalcTotalByDiscount();
+                },
+                recalcTotalByDiscount() {
+                    const discountRate = Number(this.globalDiscount) / 100;
+                    const val = (this.totalTestFee * discountRate) + this.totalMiscFee;
+                    this.finalTotalAmount = val.toFixed(2);
+                },
+                updateFromTotal() {
+                    const total = Number(this.finalTotalAmount);
+                    if (this.totalTestFee === 0) {
+                        this.globalDiscount = 100;
+                        return;
+                    }
+                    let calcDiscount = ((total - this.totalMiscFee) / this.totalTestFee) * 100;
+                    if (calcDiscount < 0) calcDiscount = 0;
+                    this.globalDiscount = calcDiscount.toFixed(2);
+                },
+
+                resetSelection() {
+                    this.selectedIds = [];
+                    this.currentContract = null;
+                    this.globalDiscount = 100;
+                    this.finalTotalAmount = 0;
                 }
             }
         }
