@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>常用菜单配置 - 弹窗模式</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        
+        /* 拖拽时的样式 */
+        .sortable-ghost { opacity: 0.4; background: #e0f2fe; border: 1px dashed #3b82f6; }
+        .sortable-drag { cursor: grabbing; }
+        .cursor-grab { cursor: grab; }
+        .cursor-grab:active { cursor: grabbing; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans h-screen overflow-hidden relative">
+
+    <div class="absolute inset-0 z-0 p-6 grid grid-cols-4 gap-6 blur-[2px] pointer-events-none opacity-50">
+        <div class="col-span-1 bg-white h-full rounded-lg shadow-sm"></div>
+        <div class="col-span-3 space-y-6">
+            <div class="h-32 bg-white rounded-lg shadow-sm"></div>
+            <div class="h-64 bg-white rounded-lg shadow-sm"></div>
+            <div class="h-64 bg-white rounded-lg shadow-sm"></div>
+        </div>
+    </div>
+
+    <div x-data="menuConfig()" x-init="initSortable()" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm" x-cloak>
+        
+        <div class="bg-white w-[900px] h-[650px] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-up transform transition-all">
+            
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800">配置常用菜单</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">拖拽可调整顺序，最多选择 10 个</p>
+                </div>
+                <button class="text-gray-400 hover:text-gray-600 transition w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 flex overflow-hidden">
+                
+                <div class="w-1/3 bg-gray-50 border-r border-gray-200 flex flex-col">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-white">
+                        <span class="text-sm font-bold text-gray-700">已选菜单</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full" 
+                              :class="selectedMenus.length >= maxSelection ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'">
+                            <span x-text="selectedMenus.length"></span>/<span x-text="maxSelection"></span>
+                        </span>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto custom-scroll p-3 space-y-2" x-ref="selectedList">
+                        <template x-for="(menu, index) in selectedMenus" :key="menu.id">
+                            <div :data-id="menu.id" class="group relative flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:border-blue-300 hover:shadow-md transition-all cursor-grab select-none">
+                                <div class="text-gray-300 group-hover:text-blue-400 cursor-grab px-1">
+                                    <i class="fa-solid fa-grip-vertical"></i>
+                                </div>
+                                
+                                <div class="flex-1 flex items-center gap-2 overflow-hidden">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 text-sm">
+                                        <i :class="menu.icon"></i>
+                                    </div>
+                                    <div class="truncate">
+                                        <div class="text-sm font-medium text-gray-700" x-text="menu.name"></div>
+                                        <div class="text-[10px] text-gray-400" x-text="menu.category"></div>
+                                    </div>
+                                </div>
+
+                                <button @click="removeMenu(menu.id)" class="text-gray-300 hover:text-red-500 p-1.5 rounded hover:bg-red-50 transition">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </template>
+                        
+                        <div x-show="selectedMenus.length === 0" class="h-full flex flex-col items-center justify-center text-gray-400 text-sm pb-10">
+                            <i class="fa-regular fa-square-plus text-3xl mb-3 opacity-30"></i>
+                            <p>从右侧点击添加菜单</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-2/3 bg-white flex flex-col">
+                    <div class="p-4 border-b border-gray-100">
+                        <div class="relative">
+                            <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                            <input type="text" x-model="searchQuery" placeholder="搜索功能名称..." 
+                                   class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto custom-scroll p-6">
+                        <template x-for="category in filteredCategories" :key="category.name">
+                            <div class="mb-8 last:mb-0">
+                                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 ml-1" x-text="category.name"></h3>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <template x-for="item in category.items" :key="item.id">
+                                        <button @click="toggleMenu(item)" 
+                                                class="flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 group h-24 relative overflow-hidden"
+                                                :class="isSelected(item.id) 
+                                                    ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-300 cursor-default opacity-80' 
+                                                    : 'bg-white border-gray-100 hover:border-blue-300 hover:shadow-md cursor-pointer'">
+                                            
+                                            <div x-show="isSelected(item.id)" class="absolute top-1 right-1 text-blue-600 bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm text-xs border border-blue-100" x-transition.scale>
+                                                <i class="fa-solid fa-check"></i>
+                                            </div>
+
+                                            <div class="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors text-lg"
+                                                 :class="isSelected(item.id) ? 'bg-white text-blue-600' : 'bg-gray-50 text-gray-600 group-hover:bg-blue-50 group-hover:text-blue-600'">
+                                                <i :class="item.icon"></i>
+                                            </div>
+                                            <span class="text-xs text-gray-700 font-medium text-center leading-tight px-1" x-text="item.name"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div x-show="filteredCategories.length === 0" class="text-center py-12 text-gray-500">
+                            <p>未找到匹配的功能</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-white border-t border-gray-200 flex justify-end gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
+                <button class="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition">取消</button>
+                <button class="px-5 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 shadow-md hover:shadow-lg transition transform active:scale-95">保存配置</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function menuConfig() {
+            return {
+                searchQuery: '',
+                maxSelection: 10,
+                
+                // 模拟完整菜单数据
+                categories: [
+                    {
+                        name: '客户管理',
+                        items: [
+                            { id: 101, name: '客户建档', icon: 'fa-solid fa-user-plus', category: 'CRM' },
+                            { id: 102, name: '公海池', icon: 'fa-solid fa-fish', category: 'CRM' },
+                            { id: 103, name: '跟进记录', icon: 'fa-solid fa-clock-rotate-left', category: 'CRM' },
+                            { id: 104, name: '联系人管理', icon: 'fa-regular fa-address-book', category: 'CRM' }
+                        ]
+                    },
+                    {
+                        name: '销售管理',
+                        items: [
+                            { id: 201, name: '创建报价单', icon: 'fa-solid fa-file-invoice-dollar', category: '销售' },
+                            { id: 202, name: '投标管理', icon: 'fa-solid fa-gavel', category: '销售' },
+                            { id: 203, name: '合同拟定', icon: 'fa-solid fa-file-signature', category: '销售' },
+                            { id: 204, name: '业绩看板', icon: 'fa-solid fa-chart-line', category: '销售' }
+                        ]
+                    },
+                    {
+                        name: '业务运营',
+                        items: [
+                            { id: 301, name: '委托单管理', icon: 'fa-solid fa-clipboard-list', category: '运营' },
+                            { id: 302, name: '样品库', icon: 'fa-solid fa-box-open', category: '运营' },
+                            { id: 303, name: '报告查询', icon: 'fa-solid fa-magnifying-glass-chart', category: '运营' },
+                            { id: 304, name: '任务调度', icon: 'fa-solid fa-calendar-days', category: '运营' },
+                            { id: 305, name: '异常处理', icon: 'fa-solid fa-triangle-exclamation', category: '运营' }
+                        ]
+                    },
+                    {
+                        name: '财务协同',
+                        items: [
+                            { id: 401, name: '开票申请', icon: 'fa-solid fa-receipt', category: '财务' },
+                            { id: 402, name: '回款认领', icon: 'fa-solid fa-hand-holding-dollar', category: '财务' },
+                            { id: 403, name: '费用报销', icon: 'fa-solid fa-money-bill-transfer', category: '财务' }
+                        ]
+                    }
+                ],
+
+                // 初始选中的菜单
+                selectedMenus: [
+                    { id: 101, name: '客户建档', icon: 'fa-solid fa-user-plus', category: 'CRM' },
+                    { id: 201, name: '创建报价单', icon: 'fa-solid fa-file-invoice-dollar', category: '销售' },
+                    { id: 301, name: '委托单管理', icon: 'fa-solid fa-clipboard-list', category: '运营' },
+                    { id: 401, name: '开票申请', icon: 'fa-solid fa-receipt', category: '财务' }
+                ],
+
+                // 初始化 SortableJS
+                initSortable() {
+                    const el = this.$refs.selectedList;
+                    new Sortable(el, {
+                        animation: 150,
+                        ghostClass: 'sortable-ghost',
+                        handle: '.cursor-grab', // 只有点击手柄或卡片本身可以拖拽
+                        onEnd: (evt) => {
+                            // 同步数据顺序
+                            const itemEl = evt.item;
+                            const newIndex = evt.newIndex;
+                            const oldIndex = evt.oldIndex;
+                            
+                            // 重新排序数组
+                            const movedItem = this.selectedMenus.splice(oldIndex, 1)[0];
+                            this.selectedMenus.splice(newIndex, 0, movedItem);
+                        }
+                    });
+                },
+
+                // 切换选择状态
+                toggleMenu(item) {
+                    const index = this.selectedMenus.findIndex(i => i.id === item.id);
+                    if (index > -1) {
+                        this.removeMenu(item.id);
+                    } else {
+                        if (this.selectedMenus.length >= this.maxSelection) {
+                            alert('最多只能选择 ' + this.maxSelection + ' 个常用菜单');
+                            return;
+                        }
+                        this.selectedMenus.push(item);
+                        // 滚动到底部查看新添加的项
+                        this.$nextTick(() => {
+                            const container = this.$refs.selectedList;
+                            container.scrollTop = container.scrollHeight;
+                        });
+                    }
+                },
+
+                // 移除菜单
+                removeMenu(id) {
+                    this.selectedMenus = this.selectedMenus.filter(i => i.id !== id);
+                },
+
+                // 判断是否已选
+                isSelected(id) {
+                    return this.selectedMenus.some(i => i.id === id);
+                },
+
+                // 搜索过滤逻辑
+                get filteredCategories() {
+                    if (!this.searchQuery) return this.categories;
+                    
+                    const query = this.searchQuery.toLowerCase();
+                    return this.categories.map(cat => {
+                        return {
+                            name: cat.name,
+                            items: cat.items.filter(item => item.name.toLowerCase().includes(query))
+                        };
+                    }).filter(cat => cat.items.length > 0);
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 0.2s ease-out forwards;
+        }
+    </style>
+</body>
+</html>
