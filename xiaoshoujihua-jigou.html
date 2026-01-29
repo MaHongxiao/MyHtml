@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>目标分配 - 卡片式视图</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 1. 全局布局锁定 */
+        [x-cloak] { display: none !important; }
+        body { 
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: #f1f5f9;
+            color: #334155;
+            font-size: 13px;
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* 2. 布局框架 */
+        .app-header { height: 56px; background: #fff; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; display: flex; align-items: center; padding: 0 24px; z-index: 50; }
+        .app-footer { height: 68px; background: #fff; border-top: 1px solid #e2e8f0; flex-shrink: 0; display: flex; align-items: center; padding: 0 24px; z-index: 50; box-shadow: 0 -4px 12px rgba(0,0,0,0.03); }
+        
+        .main-container { 
+            flex: 1; display: flex; flex-direction: column; 
+            padding: 16px 24px; gap: 16px; overflow: hidden; min-height: 0; 
+            max-width: 1400px; margin: 0 auto; width: 100%;
+        }
+
+        /* 3. 卡片样式 */
+        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .target-panel { padding: 16px; flex-shrink: 0; }
+
+        /* 4. 列表区域 (卡片式列表) */
+        .list-panel {
+            flex: 1; display: flex; flex-direction: column; min-height: 0; 
+            background: transparent; overflow: hidden;
+        }
+        
+        .list-toolbar { 
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 8px 8px 0 0;
+            height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex-shrink: 0;
+        }
+        
+        /* 列表头 (伪表头，用于对齐) */
+        .list-header {
+            display: grid; 
+            /* 定义网格列宽，与下方卡片内容对齐 */
+            grid-template-columns: 40px 3fr 1.5fr 2fr 3fr 1.5fr 60px; 
+            gap: 16px;
+            padding: 10px 24px;
+            background: #e2e8f0;
+            color: #64748b; font-weight: 600; font-size: 12px;
+            border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;
+        }
+
+        .list-scroll-area { 
+            flex: 1; overflow-y: auto; overflow-x: hidden; 
+            padding-bottom: 20px; 
+            /* 滚动条美化 */
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+
+        /* 5. 数据卡片 (Item Card) */
+        .item-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            /* border-top: none; 这种设计如果是紧挨着可以去掉top border，这里我们做成分离式卡片 */
+            margin-top: 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .item-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .item-card.active { border-color: #3b82f6; ring: 1px solid #3b82f6; }
+
+        /* 卡片头部 (父行) */
+        .item-header {
+            display: grid;
+            grid-template-columns: 40px 3fr 1.5fr 2fr 3fr 1.5fr 60px; 
+            gap: 16px;
+            padding: 16px 24px;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        /* 卡片身体 (子行区域) */
+        .item-body {
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 16px 24px 20px 80px; /* 左侧缩进对齐标题 */
+            display: none; /* 默认隐藏 */
+        }
+        .item-card.active .item-body { display: block; animation: slideDown 0.2s ease-out; }
+
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 子项网格 */
+        .sub-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 响应式卡片排列 */
+            gap: 12px;
+        }
+
+        .sub-item {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 6px;
+            padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+            position: relative; overflow: hidden;
+        }
+        .sub-item::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #cbd5e1; }
+        .sub-item.filled::before { background: #3b82f6; }
+
+        /* 6. 输入框优化 */
+        .input-ghost {
+            width: 100%; background: transparent; border: 1px solid transparent; border-radius: 4px;
+            padding: 4px 0; font-family: 'Monaco', monospace; text-align: right; font-weight: 700;
+            outline: none; transition: all 0.2s; color: #1e293b;
+        }
+        .input-ghost:hover:not(:disabled) { background: #f1f5f9; padding-right: 8px; }
+        .input-ghost:focus { background: #fff; border-bottom: 2px solid #2563eb; padding-right: 8px; color: #2563eb; }
+        
+        .input-sub {
+            width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;
+            padding: 6px 8px; text-align: right; font-weight: 600; outline: none; font-size: 13px;
+        }
+        .input-sub:focus { border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
+
+        /* 7. 其他组件 */
+        .dim-btn { 
+            padding: 6px 16px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 12px;
+            display: flex; items-center; gap: 6px; transition: all 0.2s; color: #64748b; border: 1px solid transparent;
+        }
+        .dim-btn.active { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+        .dim-btn:hover:not(.active) { background: #f1f5f9; color: #334155; }
+
+        .progress-bar { height: 6px; border-radius: 3px; background: #e2e8f0; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+
+        .badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .badge-gray { background: #f1f5f9; color: #64748b; }
+    </style>
+</head>
+
+<body x-data="matrixApp()">
+
+    <header class="app-header justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-indigo-600 text-white rounded flex items-center justify-center font-bold shadow-md">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-gray-800 text-sm">2025目标拆解</h1>
+                <div class="text-[10px] text-gray-500">上海分公司</div>
+            </div>
+        </div>
+        <button class="text-gray-400 hover:text-red-500 transition px-2 py-1 rounded hover:bg-red-50" @click="confirmExit">
+            <i class="fa-solid fa-power-off"></i>
+        </button>
+    </header>
+
+    <div class="main-container">
+        
+        <div class="card target-panel">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-1 h-4 bg-indigo-600 rounded"></div>
+                    <h3 class="text-sm font-bold text-gray-800">年度目标设定</h3>
+                </div>
+                <label class="flex items-center gap-2 cursor-pointer select-none text-xs text-gray-500 hover:text-indigo-600">
+                    <input type="checkbox" x-model="showHistory" class="accent-indigo-600 rounded">
+                    <span>显示历史参照</span>
+                </label>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <div class="flex flex-col border-r border-slate-200 pr-6">
+                    <span class="text-[10px] text-gray-500 mb-1">集团下达基准</span>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-2xl font-bold text-gray-600 font-mono tracking-tight" x-text="format(baseTarget)"></span>
+                        <span class="text-xs text-gray-400">万元</span>
+                        <i class="fa-solid fa-lock text-gray-300 text-xs ml-auto"></i>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col border-r border-slate-200 px-6">
+                    <span class="text-[10px] text-indigo-600 font-bold mb-1">挑战上浮比例</span>
+                    <div class="flex items-center">
+                        <input type="number" x-model.number="floatRatio" @input="calcTarget()" step="0.5" 
+                               class="bg-transparent text-xl font-bold text-indigo-600 border-b border-indigo-200 focus:border-indigo-600 outline-none w-20 p-0 text-center">
+                        <span class="text-sm text-indigo-400 font-bold ml-1">%</span>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col pl-6">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] font-bold" :class="isValidTarget ? 'text-gray-800' : 'text-red-600'">内部挑战目标</span>
+                        <span x-show="!isValidTarget" class="badge badge-red">需≥基准</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <input type="number" x-model.number="actualTarget" @input="calcRatio()" 
+                               class="bg-transparent text-3xl font-bold p-0 border-b outline-none w-full font-mono tracking-tight"
+                               :class="isValidTarget ? 'text-indigo-700 border-indigo-200 focus:border-indigo-600' : 'text-red-600 border-red-300 focus:border-red-600'">
+                        <span class="text-xs text-gray-400">万元</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div x-show="showHistory" x-transition class="mt-3 pt-2 border-t border-dashed border-gray-200 flex gap-8 text-xs text-gray-500">
+                <div class="flex gap-2 items-center"><span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span> 24年目标：<span class="font-mono font-bold text-gray-700">480</span></div>
+                <div class="flex gap-2 items-center"><span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span> 24年完成：<span class="font-mono font-bold text-gray-700">492</span></div>
+                <div class="flex gap-2 items-center"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> 达成率：<span class="font-bold text-green-600">102.5%</span></div>
+            </div>
+        </div>
+
+        <div class="list-panel">
+            <div class="list-toolbar card rounded-b-none border-b-0">
+                <div class="flex bg-slate-100 p-1 rounded-lg">
+                    <div class="dim-btn" :class="dim==='staff'?'active':''" @click="switchDim('staff')">
+                        <i class="fa-solid fa-user-group"></i> 按员工拆解
+                    </div>
+                    <div class="dim-btn" :class="dim==='business'?'active':''" @click="switchDim('business')">
+                        <i class="fa-solid fa-cubes"></i> 按业务拆解
+                    </div>
+                </div>
+                <button class="text-xs bg-white border border-indigo-200 text-indigo-600 px-3 py-1.5 rounded hover:bg-indigo-50 transition font-medium shadow-sm" @click="autoDistribute">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 智能初分
+                </button>
+            </div>
+
+            <div class="list-header" x-show="currentList.length > 0">
+                <div class="text-center"><i class="fa-solid fa-expand text-gray-400"></i></div>
+                <div><span x-text="dim==='staff'?'销售员工':'业务类型'"></span></div>
+                <div class="text-right" x-show="showHistory">24年完成</div>
+                <div class="text-right" x-show="!showHistory"></div>
+                <div class="text-right pr-2">设定目标 <span class="text-indigo-500">*</span></div>
+                <div class="pl-2">拆解进度</div>
+                <div class="text-right">差额</div>
+                <div class="text-center">操作</div>
+            </div>
+
+            <div class="list-scroll-area">
+                <template x-for="parent in currentList" :key="parent.id">
+                    <div class="item-card" :class="{'active': expanded.includes(parent.id)}">
+                        
+                        <div class="item-header" @click="toggle(parent.id)">
+                            <div class="flex justify-center">
+                                <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 transition-colors group-hover:bg-indigo-100 group-hover:text-indigo-600"
+                                     :class="{'bg-indigo-100 text-indigo-600': expanded.includes(parent.id)}">
+                                    <i class="fa-solid text-[10px]" :class="expanded.includes(parent.id) ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-500 text-sm border border-slate-300">
+                                    <i :class="dim==='staff'?'fa-solid fa-user':'fa-solid fa-cube'"></i>
+                                </div>
+                                <span class="font-bold text-gray-800 text-sm" x-text="parent.name"></span>
+                            </div>
+
+                            <div class="text-right text-xs font-mono text-gray-400" x-show="showHistory" x-text="format(parent.lastYear)"></div>
+                            <div x-show="!showHistory"></div>
+
+                            <div class="text-right" @click.stop>
+                                <input type="number" x-model.number="parent.target" 
+                                       class="input-ghost text-xl text-indigo-700" placeholder="0">
+                            </div>
+
+                            <div class="flex flex-col justify-center gap-1.5 px-2">
+                                <div class="flex justify-between text-[10px] font-medium">
+                                    <span :class="getStatus(parent).color" x-text="getStatus(parent).text"></span>
+                                    <span class="text-gray-400 font-mono" x-text="getStatus(parent).pct + '%'"></span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" :class="getStatus(parent).bar" :style="`width: ${getStatus(parent).pct}%`"></div>
+                                </div>
+                            </div>
+
+                            <div class="text-right font-mono font-bold" 
+                                 :class="diff(parent) === 0 && parent.target > 0 ? 'text-green-500' : (parent.target===0 ? 'text-gray-300' : 'text-red-500')">
+                                <span x-show="diff(parent) === 0 && parent.target > 0"><i class="fa-solid fa-check mr-1"></i></span>
+                                <span x-show="diff(parent) !== 0 || parent.target === 0" x-text="parent.target===0?'-':diff(parent).toFixed(0)"></span>
+                            </div>
+
+                            <div class="text-center" @click.stop>
+                                <button class="w-8 h-8 rounded-full hover:bg-slate-100 text-gray-400 hover:text-indigo-600 transition" 
+                                        title="自动拆解给子项" @click="distributeRow(parent)">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="item-body">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-share fa-flip-vertical"></i>
+                                    <span x-text="dim==='staff' ? '拆分至各业务线' : '拆分至各销售人员'"></span>
+                                </span>
+                                <span class="text-xs bg-white border border-gray-200 px-2 py-1 rounded text-gray-500 shadow-sm">
+                                    子项合计: <span class="font-mono font-bold text-gray-700" x-text="format(sumChild(parent))"></span>
+                                </span>
+                            </div>
+
+                            <div class="sub-grid">
+                                <template x-for="child in parent.children" :key="child.id">
+                                    <div class="sub-item" :class="{'filled': child.target > 0}">
+                                        <div class="flex justify-between items-start">
+                                            <span class="text-xs font-bold text-gray-700 truncate" x-text="child.name"></span>
+                                            <span class="text-[10px] text-gray-400 font-mono" x-text="parent.target>0 ? ((child.target/parent.target)*100).toFixed(0)+'%' : '-'"></span>
+                                        </div>
+                                        
+                                        <div class="mt-1">
+                                            <input type="number" x-model.number="child.target" 
+                                                   class="input-sub" placeholder="分配目标...">
+                                        </div>
+
+                                        <div class="flex justify-end mt-1" x-show="showHistory">
+                                            <span class="text-[10px] text-gray-400 scale-90 origin-right">去年: <span x-text="format(child.lastYear)"></span></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                
+                <div class="h-8"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="app-footer">
+        <div class="flex items-center gap-8 flex-1">
+            <div class="w-64">
+                <div class="flex justify-between items-end mb-1">
+                    <span class="text-xs font-bold text-gray-600">总进度</span>
+                    <span class="text-[10px] font-bold" :class="globalStatus.color" x-text="globalStatus.text"></span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" :class="globalStatus.bar" :style="`width: ${globalStatus.pct}%`"></div>
+                </div>
+                <div class="flex justify-between mt-1 text-[10px] text-gray-400 font-mono">
+                    <span x-text="'已分: ' + format(globalAllocated)"></span>
+                    <span x-text="'目标: ' + format(actualTarget)"></span>
+                </div>
+            </div>
+            
+            <div class="h-8 w-px bg-gray-200"></div>
+            
+            <div class="flex flex-col">
+                <span class="text-[10px] text-gray-400 uppercase tracking-wide">待分配差额</span>
+                <span class="font-mono font-bold text-lg" 
+                      :class="actualTarget - globalAllocated === 0 ? 'text-green-600' : 'text-red-500'"
+                      x-text="format(actualTarget - globalAllocated)"></span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button class="px-4 py-2 border border-gray-300 rounded text-xs text-gray-600 hover:border-indigo-500 hover:text-indigo-600 transition" @click="saveDraft">
+                保存草稿
+            </button>
+            <button class="px-6 py-2 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2" 
+                    :disabled="!canSubmit" @click="submit">
+                <i class="fa-regular fa-paper-plane"></i> 提交计划
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function matrixApp() {
+            const staffNames = ['王金', '李晓明', '张伟', '赵丽', '钱多多', '孙小美'];
+            const bizNames = ['旧机电检验', '退运检验', '价值鉴定', '设备监造', '技术咨询'];
+
+            return {
+                dim: 'staff',
+                baseTarget: 500,
+                floatRatio: 10.0,
+                actualTarget: 550,
+                showHistory: true,
+                expanded: [],
+                
+                // 双数据源，独立存储
+                staffData: [],
+                bizData: [],
+
+                init() {
+                    this.initData();
+                    this.calcTarget();
+                    // 默认展开第一行
+                    if(this.staffData.length) this.expanded.push(this.staffData[0].id);
+                },
+
+                initData() {
+                    this.staffData = staffNames.map((name, i) => ({
+                        id: `s-${i}`, name: name, lastYear: 80 + i*10, target: 0,
+                        children: bizNames.map((b, j) => ({ id: `sb-${i}-${j}`, name: b, lastYear: 10 + i + j*2, target: 0 }))
+                    }));
+                    this.bizData = bizNames.map((name, i) => ({
+                        id: `b-${i}`, name: name, lastYear: 100 + i*20, target: 0,
+                        children: staffNames.map((s, j) => ({ id: `bs-${i}-${j}`, name: s, lastYear: 15 + i*2 + j, target: 0 }))
+                    }));
+                },
+
+                get currentList() { return this.dim === 'staff' ? this.staffData : this.bizData; },
+                get isValidTarget() { return this.actualTarget >= this.baseTarget; },
+
+                // 计算逻辑
+                calcTarget() { this.actualTarget = Math.ceil(this.baseTarget * (1 + this.floatRatio/100)); },
+                calcRatio() { 
+                    if(this.actualTarget < 0) this.actualTarget = 0;
+                    this.floatRatio = this.baseTarget ? ((this.actualTarget - this.baseTarget)/this.baseTarget * 100).toFixed(1) : 0;
+                },
+
+                switchDim(d) {
+                    this.dim = d;
+                    this.expanded = [];
+                    if(this.currentList.length) this.expanded.push(this.currentList[0].id);
+                },
+
+                toggle(id) {
+                    if(this.expanded.includes(id)) this.expanded = this.expanded.filter(x => x !== id);
+                    else this.expanded.push(id);
+                },
+
+                sumChild(parent) { return parent.children.reduce((s, c) => s + (c.target||0), 0); },
+                get globalAllocated() { return this.currentList.reduce((s, p) => s + (p.target||0), 0); },
+                diff(parent) { return (parent.target||0) - this.sumChild(parent); },
+
+                // 行状态
+                getStatus(parent) {
+                    const sum = this.sumChild(parent);
+                    const t = parent.target || 0;
+                    if(t === 0) return { text: '未设', color: 'text-gray-400', pct: 0, bar: 'bg-gray-200' };
+                    const d = t - sum;
+                    if(d === 0) return { text: '匹配', color: 'text-green-600', pct: 100, bar: 'bg-green-500' };
+                    if(d > 0) return { text: '待拆', color: 'text-indigo-600', pct: Math.round(sum/t*100), bar: 'bg-indigo-500' };
+                    return { text: '超额', color: 'text-red-500', pct: 100, bar: 'bg-red-500' };
+                },
+
+                // 全局状态
+                get globalStatus() {
+                    const diff = this.actualTarget - this.globalAllocated;
+                    if(diff === 0) return { text: '平衡', color: 'text-green-600', bar: 'bg-green-500', pct: 100 };
+                    if(diff > 0) return { text: '未完', color: 'text-indigo-600', bar: 'bg-indigo-500', pct: Math.min((this.globalAllocated/this.actualTarget)*100, 100) };
+                    return { text: '超额', color: 'text-red-500', bar: 'bg-red-500', pct: 100 };
+                },
+
+                get canSubmit() { return this.isValidTarget && (this.actualTarget - this.globalAllocated === 0); },
+
+                autoDistribute() {
+                    if(this.actualTarget <= 0) return;
+                    const list = this.currentList;
+                    const totalRef = list.reduce((s, p) => s + p.lastYear, 0);
+                    let running = 0;
+                    list.forEach((p, i) => {
+                        let val = (i === list.length - 1) ? (this.actualTarget - running) : Math.floor(this.actualTarget * (p.lastYear/totalRef));
+                        p.target = val;
+                        running += val;
+                        this.distributeRow(p);
+                    });
+                },
+
+                distributeRow(parent) {
+                    if(parent.target <= 0) return;
+                    const kids = parent.children;
+                    const ref = kids.reduce((s, k) => s + k.lastYear, 0);
+                    let running = 0;
+                    kids.forEach((k, i) => {
+                        let val = (i === kids.length - 1) ? (parent.target - running) : Math.floor(parent.target * (k.lastYear/ref));
+                        k.target = val;
+                        running += val;
+                    });
+                    if(!this.expanded.includes(parent.id)) this.expanded.push(parent.id);
+                },
+
+                format(v) { return Number(v).toLocaleString('en-US'); },
+                saveDraft() { alert('草稿已保存'); },
+                confirmExit() { if(confirm('确定退出？')) history.back(); },
+                submit() { alert('提交成功！'); }
+            }
+        }
+    </script>
+</body>
+</html>
