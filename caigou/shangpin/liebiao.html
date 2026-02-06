@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品与类目管理</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f1f5f9; color: #334155; }
+        
+        /* 字体规范 */
+        .text-num { font-family: 'Menlo', 'Monaco', monospace; font-weight: 600; }
+        .text-min { font-size: 13px; line-height: 1.5; }
+        
+        /* 滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        
+        /* 树形结构 */
+        .tree-line { position: absolute; left: 15px; top: 32px; bottom: 0; width: 1px; background-color: #e2e8f0; }
+        .tree-item:last-child > .tree-line { display: none; }
+        
+        /* 输入框 */
+        .smart-input {
+            width: 100%; border: 1px solid #e2e8f0; background: #fff; padding: 8px 12px;
+            border-radius: 6px; outline: none; transition: all 0.2s; font-size: 14px;
+        }
+        .smart-input:hover { border-color: #94a3b8; }
+        .smart-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        
+        /* 表格样式 - 关键修改：不折行 */
+        .data-table {
+            table-layout: fixed;
+            width: max-content;
+            min-width: 100%;
+        }
+        .data-table th {
+            background: #f8fafc;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            position: relative;
+        }
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            vertical-align: middle;
+            background: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .data-table tr:hover td { background: #f8fafc; }
+        
+        /* 冻结列 - 强化样式 */
+        .sticky-col-left-1 { 
+            position: sticky; 
+            left: 0; 
+            z-index: 30; 
+            background: white; 
+            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.15);
+            width: 48px;
+            min-width: 48px;
+        }
+        .sticky-col-left-2 { 
+            position: sticky; 
+            left: 48px; 
+            z-index: 30; 
+            background: white; 
+            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.15);
+            width: 120px;
+            min-width: 120px;
+        }
+        .sticky-col-left-3 { 
+            position: sticky; 
+            left: 168px; 
+            z-index: 30; 
+            background: white; 
+            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.15);
+            width: 280px;
+            min-width: 280px;
+        }
+        .sticky-col-right { 
+            position: sticky; 
+            right: 0; 
+            z-index: 30; 
+            background: white; 
+            box-shadow: -2px 0 5px -2px rgba(0,0,0,0.15);
+            width: 140px;
+            min-width: 140px;
+        }
+        
+        /* 表头冻结列背景色 */
+        .data-table thead th.sticky-col-left-1,
+        .data-table thead th.sticky-col-left-2,
+        .data-table thead th.sticky-col-left-3,
+        .data-table thead th.sticky-col-right { 
+            background: #f8fafc; 
+            z-index: 40; 
+        }
+        
+        /* 状态标签 */
+        .status-tag { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+        .status-active { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .status-inactive { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+        
+        /* 操作链接 */
+        .action-link { color: #3b82f6; font-size: 13px; cursor: pointer; transition: all 0.2s; padding: 4px 6px; border-radius: 4px; white-space: nowrap; display: inline-block; }
+        .action-link:hover { color: #2563eb; background: #eff6ff; text-decoration: underline; }
+        .action-link.danger { color: #dc2626; }
+        .action-link.danger:hover { color: #b91c1c; background: #fee2e2; }
+        .action-divider { color: #e2e8f0; margin: 0 2px; display: inline-block; }
+        
+        /* 动画 */
+        .fade-in { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 拖拽 */
+        .dragging { opacity: 0.5; background: #f0f9ff; border: 2px dashed #3b82f6; }
+        .drag-over { background: #eff6ff; border-top: 2px solid #3b82f6; }
+        
+        /* 横向滚动容器 */
+        .table-scroll-container {
+            overflow-x: auto;
+            overflow-y: hidden;
+            position: relative;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 1024px) {
+            .split-layout { flex-direction: column; }
+            .tree-panel { width: 100%; height: auto; max-height: 40vh; border-right: none; border-bottom: 1px solid #e2e8f0; }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden" x-data="unifiedManageApp()">
+
+    <!-- 顶部导航 -->
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex justify-between items-center shadow-sm z-30 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
+                <i class="fa-solid fa-boxes-stacked text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">商品与类目管理</h1>
+                <div class="text-min text-slate-500 mt-0.5" x-text="selectedCategory ? selectedCategory.path : '全部类目'"></div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <button @click="refreshData()" class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="刷新">
+                <i class="fa-solid fa-rotate-right" :class="loading ? 'animate-spin' : ''"></i>
+            </button>
+            <button @click="openCategoryModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 transition flex items-center gap-2">
+                <i class="fa-solid fa-folder-tree"></i> <span class="hidden sm:inline">管理类目</span>
+            </button>
+            <button @click="openAddProductModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> 新增商品
+            </button>
+        </div>
+    </header>
+
+    <!-- 统计卡片 -->
+    <div class="bg-white border-b border-slate-200 px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
+        <div class="bg-slate-50 rounded-lg border border-slate-200 p-4 flex items-center justify-between hover:shadow-md transition cursor-pointer" @click="selectCategory(null)">
+            <div>
+                <div class="text-min text-slate-500 mb-1">全部商品</div>
+                <div class="text-2xl font-bold text-slate-800" x-text="stats.total">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+        </div>
+        
+        <div class="bg-slate-50 rounded-lg border border-slate-200 p-4 flex items-center justify-between hover:shadow-md transition cursor-pointer" @click="setFilter('status', 'active')">
+            <div>
+                <div class="text-min text-slate-500 mb-1">已上架</div>
+                <div class="text-2xl font-bold text-emerald-600" x-text="stats.active">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <i class="fa-solid fa-check-circle"></i>
+            </div>
+        </div>
+        
+        <div class="bg-slate-50 rounded-lg border border-slate-200 p-4 flex items-center justify-between hover:shadow-md transition cursor-pointer" @click="setFilter('status', 'inactive')">
+            <div>
+                <div class="text-min text-slate-500 mb-1">已下架</div>
+                <div class="text-2xl font-bold text-slate-600" x-text="stats.inactive">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                <i class="fa-solid fa-circle-pause"></i>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 rounded-lg border border-slate-200 p-4 flex items-center justify-between hover:shadow-md transition cursor-pointer">
+            <div>
+                <div class="text-min text-slate-500 mb-1">类目总数</div>
+                <div class="text-2xl font-bold text-blue-600" x-text="stats.categories">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                <i class="fa-solid fa-folder-tree"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主体内容区 -->
+    <main class="flex-1 flex overflow-hidden split-layout">
+        
+        <!-- 左侧：类目树 -->
+        <aside class="w-full lg:w-[360px] bg-white border-r border-slate-200 flex flex-col z-20 flex-shrink-0 tree-panel">
+            <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
+                    <input type="text" x-model="categorySearch" placeholder="搜索类目名称..." 
+                           class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:border-blue-500 outline-none transition shadow-sm">
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scroll p-2 space-y-1">
+                <!-- 全部商品选项 -->
+                <div class="px-2 py-2 rounded-lg cursor-pointer transition-all flex items-center gap-3 mb-2"
+                     :class="!selectedCategory ? 'bg-blue-50 border border-blue-200' : 'hover:bg-slate-50 border border-transparent'"
+                     @click="selectCategory(null)">
+                    <div class="w-8 h-8 rounded bg-slate-100 flex items-center justify-center text-slate-600">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-semibold text-slate-800 text-sm">全部商品</div>
+                        <div class="text-min text-slate-400" x-text="stats.total + ' 个商品'"></div>
+                    </div>
+                </div>
+
+                <!-- 类目树 -->
+                <template x-for="(node, index) in filteredCategories" :key="node.id">
+                    <div class="tree-item select-none" draggable="true"
+                         @dragstart="dragStart($event, node, index)"
+                         @dragover.prevent="dragOver($event, index)"
+                         @drop="drop($event, index)"
+                         :class="{'drag-over': dragOverIndex === index}">
+                        
+                        <div class="flex items-start gap-2 py-1.5 px-2 rounded-lg transition-all cursor-pointer group relative"
+                             :class="selectedCategory?.id === node.id ? 'bg-blue-50 border border-blue-200' : 'hover:bg-slate-50 border border-transparent'"
+                             @click="selectCategory(node)">
+                            
+                            <button @click.stop="toggleExpand(node)" 
+                                    class="mt-1 w-5 h-5 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-transform flex-shrink-0"
+                                    :class="node.expanded ? 'rotate-90' : ''"
+                                    x-show="node.children && node.children.length > 0">
+                                <i class="fa-solid fa-caret-right"></i>
+                            </button>
+                            <span x-show="!node.children || node.children.length === 0" class="w-5 mt-1"></span>
+
+                            <div class="mt-0.5 flex-shrink-0" :class="node.level === 1 ? 'text-blue-600' : (node.level === 2 ? 'text-indigo-500' : 'text-slate-400')">
+                                <i class="fa-solid" :class="node.children?.length > 0 ? (node.expanded ? 'fa-folder-open' : 'fa-folder') : 'fa-file'"></i>
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-medium text-slate-700 text-sm truncate" x-text="node.name"></span>
+                                </div>
+                                <div class="text-min text-slate-400 mt-0.5 flex items-center gap-2">
+                                    <span x-text="(node.productCount || 0) + ' 个商品'"></span>
+                                    <span x-show="node.children?.length > 0" x-text="'· ' + node.children.length + ' 个子类'" class="text-slate-300"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 子类目 -->
+                        <div x-show="node.expanded && node.children && node.children.length > 0" 
+                             x-transition class="ml-6 border-l border-slate-200 pl-2 mt-1 space-y-1">
+                            <template x-for="(child, cIndex) in node.children" :key="child.id">
+                                <div>
+                                    <div class="flex items-start gap-2 py-1.5 px-2 rounded-lg transition-all cursor-pointer group"
+                                         :class="selectedCategory?.id === child.id ? 'bg-blue-50 border border-blue-200' : 'hover:bg-slate-50 border border-transparent'"
+                                         @click="selectCategory(child)">
+                                        
+                                        <button @click.stop="toggleExpand(child)" 
+                                                class="mt-1 w-5 h-5 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-transform flex-shrink-0"
+                                                :class="child.expanded ? 'rotate-90' : ''"
+                                                x-show="child.children && child.children.length > 0">
+                                            <i class="fa-solid fa-caret-right"></i>
+                                        </button>
+                                        <span x-show="!child.children || child.children.length === 0" class="w-5 mt-1"></span>
+
+                                        <div class="mt-0.5 flex-shrink-0 text-indigo-500">
+                                            <i class="fa-solid" :class="child.children?.length > 0 ? (child.expanded ? 'fa-folder-open' : 'fa-folder') : 'fa-file'"></i>
+                                        </div>
+
+                                        <div class="flex-1 min-w-0">
+                                            <div class="font-medium text-slate-700 text-sm truncate" x-text="child.name"></div>
+                                            <div class="text-min text-slate-400" x-text="(child.productCount || 0) + ' 个商品'"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 三级类目 -->
+                                    <div x-show="child.expanded && child.children && child.children.length > 0" 
+                                         x-transition class="ml-6 border-l border-slate-200 pl-2 mt-1 space-y-1">
+                                        <template x-for="grandChild in child.children" :key="grandChild.id">
+                                            <div class="flex items-center gap-2 py-1.5 px-2 rounded-lg transition-all cursor-pointer"
+                                                 :class="selectedCategory?.id === grandChild.id ? 'bg-blue-50 border border-blue-200' : 'hover:bg-slate-50 border border-transparent'"
+                                                 @click="selectCategory(grandChild)">
+                                                <span class="w-5"></span>
+                                                <div class="mt-0.5 text-slate-400"><i class="fa-solid fa-file"></i></div>
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="text-sm text-slate-700 truncate" x-text="grandChild.name"></div>
+                                                    <div class="text-min text-slate-400" x-text="(grandChild.productCount || 0) + ' 个商品'"></div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="p-4 border-t border-slate-200 bg-slate-50 text-min text-slate-500 flex justify-between items-center">
+                <span>共 <b x-text="categoryCount"></b> 个类目</span>
+                <button @click="expandAll()" class="text-blue-600 hover:text-blue-700">展开全部</button>
+            </div>
+        </aside>
+
+        <!-- 右侧：商品列表 -->
+        <section class="flex-1 bg-slate-50 overflow-hidden flex flex-col p-6">
+            
+            <!-- 筛选栏 -->
+            <div class="bg-white rounded-xl border border-slate-200 p-4 mb-4 flex flex-wrap gap-4 items-end shadow-sm">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-min text-slate-500 mb-1">关键词搜索</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                        <input type="text" x-model="filters.keyword" placeholder="商品编码/名称/CAS号..." 
+                               class="smart-input pl-9" @input.debounce.500="currentPage = 1">
+                    </div>
+                </div>
+                
+                <div class="w-32">
+                    <label class="block text-min text-slate-500 mb-1">状态</label>
+                    <select x-model="filters.status" class="smart-input" @change="currentPage = 1">
+                        <option value="">全部</option>
+                        <option value="active">已上架</option>
+                        <option value="inactive">已下架</option>
+                    </select>
+                </div>
+                
+                <div class="w-40">
+                    <label class="block text-min text-slate-500 mb-1">供应商</label>
+                    <select x-model="filters.supplier" class="smart-input" @change="currentPage = 1">
+                        <option value="">全部供应商</option>
+                        <template x-for="sup in suppliers" :key="sup.id">
+                            <option :value="sup.id" x-text="sup.name"></option>
+                        </template>
+                    </select>
+                </div>
+                
+                <button @click="resetFilters()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm font-medium transition mb-0.5">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> 重置
+                </button>
+            </div>
+
+            <!-- 批量操作栏 -->
+            <div x-show="selectedIds.length > 0" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex items-center justify-between fade-in" x-cloak>
+                <div class="flex items-center gap-3">
+                    <span class="text-min font-medium text-blue-900">
+                        已选择 <span x-text="selectedIds.length" class="font-bold"></span> 项
+                    </span>
+                    <span class="text-blue-300">|</span>
+                    <button @click="batchAction('up')" class="text-sm text-emerald-700 hover:text-emerald-800 font-medium px-2 py-1 rounded hover:bg-emerald-100 transition">
+                        批量上架
+                    </button>
+                    <button @click="batchAction('down')" class="text-sm text-amber-700 hover:text-amber-800 font-medium px-2 py-1 rounded hover:bg-amber-100 transition">
+                        批量下架
+                    </button>
+                    <button @click="batchAction('delete')" class="text-sm text-red-700 hover:text-red-800 font-medium px-2 py-1 rounded hover:bg-red-100 transition">
+                        批量删除
+                    </button>
+                </div>
+                <button @click="selectedIds = []" class="text-min text-slate-500 hover:text-slate-700">
+                    取消选择
+                </button>
+            </div>
+
+            <!-- 数据表格 - 横向滚动容器 -->
+            <div class="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                <div class="table-scroll-container custom-scroll flex-1">
+                    <table class="data-table border-collapse">
+                        <thead class="sticky top-0 z-20">
+                            <tr>
+                                <th class="sticky-col-left-1 text-center">
+                                    <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                </th>
+                                <th class="sticky-col-left-2">商品编码</th>
+                                <th class="sticky-col-left-3">商品名称</th>
+                                <th style="width: 120px; min-width: 120px;">类目</th>
+                                <th style="width: 100px; min-width: 100px;">CAS号</th>
+                                <th style="width: 250px; min-width: 250px;">规格</th>
+                                <th style="width: 60px; min-width: 60px;">单位</th>
+                                <th style="width: 150px; min-width: 150px;">供应商</th>
+                                <th style="width: 80px; min-width: 80px;">品牌</th>
+                                <th style="width: 100px; min-width: 100px; text-align: center;">单价</th>
+                                <th style="width: 90px; min-width: 90px; text-align: center;">状态</th>
+                                <th class="sticky-col-right text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in paginatedData" :key="item.id">
+                                <tr class="group">
+                                    <td class="text-center sticky-col-left-1">
+                                        <input type="checkbox" :value="item.id" x-model="selectedIds" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                    </td>
+                                    <td class="font-mono text-slate-600 text-num sticky-col-left-2" x-text="item.code"></td>
+                                    <td class="sticky-col-left-3" :title="item.name">
+                                        <div class="font-medium text-slate-800 truncate" x-text="item.name"></div>
+                                        <div class="text-min text-slate-400 mt-0.5 truncate" x-show="item.brand" x-text="'品牌: ' + item.brand"></div>
+                                    </td>
+                                    <td>
+                                        <span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600" x-text="getCategoryName(item.category)"></span>
+                                    </td>
+                                    <td class="text-num text-slate-600" x-text="item.casNo || '-'"></td>
+                                    <td :title="item.spec" x-text="item.spec"></td>
+                                    <td class="text-slate-700" x-text="item.unit"></td>
+                                    <td>
+                                        <div class="text-sm text-slate-700 truncate" x-text="item.supplierName"></div>
+                                    </td>
+                                    <td class="text-slate-600" x-text="item.brand || '-'"></td>
+                                    <td class="text-center font-bold text-slate-700 text-num" x-text="'¥' + item.price.toFixed(2)"></td>
+                                    <td class="text-center">
+                                        <span class="status-tag" :class="'status-' + item.status">
+                                            <i class="fa-solid fa-circle text-[8px]"></i>
+                                            <span x-text="item.status === 'active' ? '已上架' : '已下架'"></span>
+                                        </span>
+                                    </td>
+                                    <td class="text-center sticky-col-right">
+                                        <div class="flex items-center justify-center gap-1">
+                                            <span class="action-link" @click="editProduct(item)">编辑</span>
+                                            <span class="action-divider">|</span>
+                                            <template x-if="item.status === 'inactive'">
+                                                <span class="action-link" @click="changeStatus(item, 'active')">上架</span>
+                                            </template>
+                                            <template x-if="item.status === 'active'">
+                                                <span class="action-link" @click="changeStatus(item, 'inactive')">下架</span>
+                                            </template>
+                                            <span class="action-divider">|</span>
+                                            <span class="action-link danger" @click="deleteProduct(item)">删除</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                            
+                            <tr x-show="paginatedData.length === 0">
+                                <td colspan="12" class="text-center py-16 text-slate-400">
+                                    <div class="mb-3 text-4xl">📭</div>
+                                    <div class="text-min">暂无符合条件的商品</div>
+                                    <button @click="resetFilters()" class="mt-2 text-blue-600 hover:underline text-sm">清除筛选条件</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 分页 -->
+                <div class="border-t border-slate-200 px-6 py-4 flex items-center justify-between bg-slate-50 flex-shrink-0">
+                    <div class="text-min text-slate-500">
+                        显示 <span x-text="(currentPage - 1) * pageSize + 1" class="font-medium"></span> - 
+                        <span x-text="Math.min(currentPage * pageSize, filteredData.length)" class="font-medium"></span> 条，
+                        共 <span x-text="filteredData.length" class="font-medium"></span> 条
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="currentPage = 1" :disabled="currentPage === 1" class="px-3 py-1.5 border border-slate-200 rounded bg-white text-slate-600 text-sm hover:border-blue-400 disabled:opacity-50">
+                            <i class="fa-solid fa-angles-left"></i>
+                        </button>
+                        <button @click="currentPage--" :disabled="currentPage === 1" class="px-3 py-1.5 border border-slate-200 rounded bg-white text-slate-600 text-sm hover:border-blue-400 disabled:opacity-50">
+                            <i class="fa-solid fa-angle-left"></i>
+                        </button>
+                        
+                        <template x-for="page in displayedPages" :key="page">
+                            <button @click="currentPage = page" 
+                                    class="px-3 py-1.5 border rounded text-sm font-medium transition"
+                                    :class="page === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'"
+                                    x-text="page"></button>
+                        </template>
+                        
+                        <button @click="currentPage++" :disabled="currentPage === totalPages" class="px-3 py-1.5 border border-slate-200 rounded bg-white text-slate-600 text-sm hover:border-blue-400 disabled:opacity-50">
+                            <i class="fa-solid fa-angle-right"></i>
+                        </button>
+                        <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="px-3 py-1.5 border border-slate-200 rounded bg-white text-slate-600 text-sm hover:border-blue-400 disabled:opacity-50">
+                            <i class="fa-solid fa-angles-right"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2 text-min text-slate-500">
+                        <select x-model.number="pageSize" @change="currentPage = 1" class="smart-input py-1 px-2 w-16 text-center">
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                        <span>条/页</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 类目管理弹窗 - 支持三级 -->
+    <div x-show="categoryModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm" x-cloak @click.self="closeCategoryModal()">
+        <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden fade-in mx-4 max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 flex-shrink-0">
+                <h3 class="text-lg font-bold text-slate-800">管理类目（支持三级）</h3>
+                <button @click="closeCategoryModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-6">
+                <div class="space-y-4">
+                    <template x-for="(node, index) in categories" :key="node.id">
+                        <div class="border border-slate-200 rounded-lg p-4 bg-slate-50/30">
+                            <!-- 一级类目 -->
+                            <div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
+                                <div class="flex items-center gap-3">
+                                    <i class="fa-solid fa-folder text-blue-600 text-lg"></i>
+                                    <div>
+                                        <span class="font-bold text-slate-800" x-text="node.name"></span>
+                                        <span class="text-xs text-slate-400 ml-2" x-text="node.code"></span>
+                                        <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded ml-2">一级</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="openEditCategory(node)" class="text-xs px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded border border-blue-200 transition">编辑</button>
+                                    <button @click="openAddSubCategory(node)" class="text-xs px-3 py-1.5 text-emerald-600 hover:bg-emerald-50 rounded border border-emerald-200 transition">添加二级</button>
+                                    <button @click="confirmDeleteCategory(node)" class="text-xs px-3 py-1.5 text-rose-600 hover:bg-rose-50 rounded border border-rose-200 transition">删除</button>
+                                </div>
+                            </div>
+                            
+                            <!-- 二级类目 -->
+                            <div x-show="node.children && node.children.length > 0" class="ml-6 space-y-3">
+                                <template x-for="child in node.children" :key="child.id">
+                                    <div class="border border-slate-200 rounded-lg p-3 bg-white">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center gap-3">
+                                                <i class="fa-solid fa-folder text-indigo-500"></i>
+                                                <div>
+                                                    <span class="font-semibold text-slate-700" x-text="child.name"></span>
+                                                    <span class="text-xs text-slate-400 ml-2" x-text="child.code"></span>
+                                                    <span class="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded ml-2">二级</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex gap-2">
+                                                <button @click="openEditCategory(child)" class="text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 rounded border border-blue-200">编辑</button>
+                                                <button @click="openAddSubCategory(child)" class="text-xs px-2 py-1 text-emerald-600 hover:bg-emerald-50 rounded border border-emerald-200">添加三级</button>
+                                                <button @click="confirmDeleteCategory(child)" class="text-xs px-2 py-1 text-rose-600 hover:bg-rose-50 rounded border border-rose-200">删除</button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 三级类目 -->
+                                        <div x-show="child.children && child.children.length > 0" class="ml-6 mt-2 space-y-2 border-l-2 border-slate-100 pl-4">
+                                            <template x-for="grandChild in child.children" :key="grandChild.id">
+                                                <div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                                                    <div class="flex items-center gap-3">
+                                                        <i class="fa-solid fa-file text-slate-400 text-sm"></i>
+                                                        <div>
+                                                            <span class="text-sm text-slate-700" x-text="grandChild.name"></span>
+                                                            <span class="text-xs text-slate-400 ml-2" x-text="grandChild.code"></span>
+                                                            <span class="text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded ml-2">三级</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex gap-2">
+                                                        <button @click="openEditCategory(grandChild)" class="text-xs px-2 py-1 text-blue-600 hover:underline">编辑</button>
+                                                        <button @click="confirmDeleteCategory(grandChild)" class="text-xs px-2 py-1 text-rose-600 hover:underline">删除</button>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        
+                                        <!-- 添加三级提示 -->
+                                        <div x-show="!child.children || child.children.length === 0" class="ml-6 mt-2 text-xs text-slate-400 italic">
+                                            暂无三级类目，点击"添加三级"创建
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <!-- 空状态 -->
+                            <div x-show="!node.children || node.children.length === 0" class="ml-6 text-sm text-slate-400 italic">
+                                暂无二级类目，点击"添加二级"创建
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                
+                <button @click="openAddCategory()" class="mt-6 w-full py-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:border-blue-400 hover:text-blue-600 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-plus"></i> 新增一级类目
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 类目编辑弹窗 -->
+    <div x-show="categoryEditModal.open" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm" x-cloak>
+        <div class="bg-white w-full max-w-md rounded-xl shadow-2xl p-6 fade-in mx-4">
+            <h3 class="text-lg font-bold text-slate-800 mb-4" x-text="categoryEditModal.editing ? '编辑类目' : '新增类目'"></h3>
+            
+            <div class="space-y-4">
+                <div x-show="!categoryEditModal.editing && categoryEditModal.parentId">
+                    <label class="block text-min font-bold text-slate-700 mb-2">上级类目</label>
+                    <input type="text" class="smart-input bg-slate-50" :value="getCategoryPath(categoryEditModal.parentId)" readonly>
+                </div>
+
+                <div>
+                    <label class="block text-min font-bold text-slate-700 mb-2">类目编码 <span class="text-rose-500">*</span></label>
+                    <input type="text" class="smart-input font-mono" x-model="categoryEditModal.data.code" 
+                           :readonly="categoryEditModal.editing"
+                           placeholder="如：01 或 0101 或 010101">
+                </div>
+
+                <div>
+                    <label class="block text-min font-bold text-slate-700 mb-2">类目名称 <span class="text-rose-500">*</span></label>
+                    <input type="text" class="smart-input" x-model="categoryEditModal.data.name" placeholder="请输入类目名称">
+                </div>
+
+                <div>
+                    <label class="block text-min font-bold text-slate-700 mb-2">排序号</label>
+                    <input type="number" class="smart-input" x-model.number="categoryEditModal.data.sort" min="1">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button @click="categoryEditModal.open = false" class="px-5 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 transition">取消</button>
+                <button @click="saveCategory()" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition">确认保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品编辑弹窗 -->
+    <div x-show="productModal.open" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm overflow-y-auto py-10" x-cloak>
+        <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden fade-in mx-4 my-auto">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800" x-text="productModal.editing ? '编辑商品' : '新增商品'"></h3>
+                <button @click="productModal.open = false" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto custom-scroll">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">商品编码 <span class="text-rose-500">*</span></label>
+                        <input type="text" class="smart-input font-mono" x-model="productModal.data.code" :readonly="productModal.editing">
+                    </div>
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">所属类目 <span class="text-rose-500">*</span></label>
+                        <select class="smart-input" x-model="productModal.data.category">
+                            <option value="">请选择类目</option>
+                            <template x-for="cat in flatCategories" :key="cat.id">
+                                <option :value="cat.code" x-text="cat.path || cat.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-min font-bold text-slate-700 mb-2">商品名称 <span class="text-rose-500">*</span></label>
+                    <input type="text" class="smart-input" x-model="productModal.data.name" placeholder="请输入商品名称">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">CAS号</label>
+                        <input type="text" class="smart-input" x-model="productModal.data.casNo" placeholder="如：67-56-1">
+                    </div>
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">货号</label>
+                        <input type="text" class="smart-input" x-model="productModal.data.itemNo" placeholder="供应商货号">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-min font-bold text-slate-700 mb-2">规格描述</label>
+                    <input type="text" class="smart-input" x-model="productModal.data.spec" placeholder="如：4L/瓶，HPLC级，≥99.9%">
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">单位</label>
+                        <input type="text" class="smart-input" x-model="productModal.data.unit" placeholder="瓶/个/支">
+                    </div>
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">单价 (¥)</label>
+                        <input type="number" step="0.01" class="smart-input" x-model.number="productModal.data.price">
+                    </div>
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">最小起订量</label>
+                        <input type="number" class="smart-input" x-model.number="productModal.data.minOrderQty" min="1">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">供应商</label>
+                        <select class="smart-input" x-model="productModal.data.supplier">
+                            <option value="">请选择</option>
+                            <template x-for="sup in suppliers" :key="sup.id">
+                                <option :value="sup.id" x-text="sup.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">品牌</label>
+                        <input type="text" class="smart-input" x-model="productModal.data.brand" placeholder="品牌名称">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-min font-bold text-slate-700 mb-2">状态</label>
+                    <div class="flex gap-4 mt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" x-model="productModal.data.status" value="active" class="text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-slate-700">上架</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" x-model="productModal.data.status" value="inactive" class="text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-slate-700">下架</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="productModal.open = false" class="px-5 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 transition">取消</button>
+                <button @click="saveProduct()" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition">确认保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div x-show="deleteModal.open" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm" x-cloak>
+        <div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 text-center fade-in mx-4">
+            <div class="w-14 h-14 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-exclamation text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">确认删除?</h3>
+            <p class="text-min text-slate-500 mb-6">
+                <span x-show="deleteModal.type === 'product'">
+                    商品 <b x-text="deleteModal.item?.name" class="text-slate-700"></b> 将被永久删除<br>
+                    <span class="text-rose-500 text-xs">此操作不可恢复</span>
+                </span>
+                <span x-show="deleteModal.type === 'category'">
+                    类目 <b x-text="deleteModal.item?.name" class="text-slate-700"></b> 将被删除<br>
+                    <span x-show="deleteModal.item?.children?.length > 0" class="text-rose-500 text-xs block mt-1">
+                        (包含 <span x-text="deleteModal.item?.children?.length"></span> 个子类目)
+                    </span>
+                    <span class="text-rose-500 text-xs">关联商品将变为未分类</span>
+                </span>
+            </p>
+            <div class="flex justify-center gap-3">
+                <button @click="deleteModal.open = false" class="px-5 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 transition">取消</button>
+                <button @click="executeDelete()" class="px-5 py-2 bg-rose-600 text-white rounded-lg text-sm font-medium hover:bg-rose-700 shadow-md shadow-rose-200 transition">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div x-show="toast.show" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed top-20 right-6 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-2xl z-[100] flex items-center gap-3">
+        <i class="fa-solid" :class="toast.type === 'success' ? 'fa-check-circle text-emerald-400' : 'fa-circle-exclamation text-rose-400'"></i>
+        <span class="text-sm font-medium" x-text="toast.message"></span>
+    </div>
+
+    <script>
+        function unifiedManageApp() {
+            return {
+                loading: false,
+                selectedIds: [],
+                currentPage: 1,
+                pageSize: 10,
+                
+                // 类目相关 - 包含三级结构示例
+                categories: [
+                    {
+                        id: '1', code: '01', name: '化学试剂', level: 1, sort: 1, expanded: true,
+                        children: [
+                            { 
+                                id: '1-1', code: '0101', name: '有机试剂', level: 2, sort: 1, expanded: false,
+                                children: [
+                                    { id: '1-1-1', code: '010101', name: '醇类', level: 3, sort: 1 },
+                                    { id: '1-1-2', code: '010102', name: '烷烃类', level: 3, sort: 2 }
+                                ]
+                            },
+                            { id: '1-2', code: '0102', name: '无机试剂', level: 2, sort: 2, expanded: false, children: [] }
+                        ]
+                    },
+                    {
+                        id: '2', code: '02', name: '玻璃器皿', level: 1, sort: 2, expanded: false,
+                        children: [
+                            { id: '2-1', code: '0201', name: '烧杯', level: 2, sort: 1, children: [] },
+                            { id: '2-2', code: '0202', name: '容量瓶', level: 2, sort: 2, children: [] }
+                        ]
+                    },
+                    {
+                        id: '3', code: '03', name: '仪器配件', level: 1, sort: 3, expanded: false, children: [] },
+                    {
+                        id: '4', code: '04', name: '样品前处理耗材', level: 1, sort: 4, expanded: false, children: [] }
+                ],
+                
+                selectedCategory: null,
+                categorySearch: '',
+                dragOverIndex: null,
+                draggedNode: null,
+                
+                // 商品相关
+                products: [
+                    { id: 1, code: '0101010001', name: '甲醇（色谱级）', spec: '4L/瓶，HPLC级，≥99.9%', casNo: '67-56-1', itemNo: 'M049-4L', unit: '瓶', category: '0101', supplier: 'S001', supplierName: '西安化学试剂有限公司', brand: '国产', minOrderQty: 1, price: 128.00, status: 'active' },
+                    { id: 2, code: '0101010002', name: '乙醇（无水）', spec: '500ml/瓶，≥99.7%', casNo: '64-17-5', itemNo: 'E001', unit: '瓶', category: '0101', supplier: 'S001', supplierName: '西安化学试剂有限公司', brand: '国产', minOrderQty: 1, price: 35.00, status: 'active' },
+                    { id: 3, code: '0102010001', name: '盐酸', spec: '500ml/瓶，36-38%', casNo: '7647-01-0', itemNo: 'H001', unit: '瓶', category: '0102', supplier: 'S002', supplierName: '国药集团化学试剂', brand: 'SCRC', minOrderQty: 1, price: 28.00, status: 'active' },
+                    { id: 4, code: '0201000001', name: '烧杯（低型）', spec: '100ml，硼硅玻璃，加厚型，耐高温', casNo: '', itemNo: 'BE100', unit: '个', category: '0201', supplier: 'S001', supplierName: '西安化学试剂有限公司', brand: '天玻', minOrderQty: 10, price: 12.00, status: 'active' },
+                    { id: 5, code: '0202000001', name: '容量瓶（A级）', spec: '100ml，蓝标，高精度', casNo: '', itemNo: 'VB100', unit: '个', category: '0202', supplier: 'S001', supplierName: '西安化学试剂有限公司', brand: '天玻', minOrderQty: 5, price: 35.00, status: 'inactive' },
+                    { id: 6, code: '0300000001', name: 'C18色谱柱', spec: '4.6×250mm，5μm，高分离度', casNo: '', itemNo: 'C18-4625', unit: '支', category: '03', supplier: 'S003', supplierName: '赛默飞世尔科技', brand: 'Thermo', minOrderQty: 1, price: 2850.00, status: 'active' },
+                    { id: 7, code: '0400000001', name: '有机系微孔滤膜', spec: '0.45μm，47mm，100片/盒', casNo: '', itemNo: 'MF-045', unit: '盒', category: '04', supplier: 'S003', supplierName: '赛默飞世尔科技', brand: 'Millipore', minOrderQty: 2, price: 89.00, status: 'active' },
+                    { id: 8, code: '0400000002', name: '一次性离心管', spec: '10ml，无菌无酶，100支/袋，PP材质', casNo: '', itemNo: 'CT-010', unit: '袋', category: '04', supplier: 'S002', supplierName: '国药集团化学试剂', brand: '国产', minOrderQty: 5, price: 45.00, status: 'active' },
+                    { id: 9, code: '0101020001', name: '正己烷', spec: '4L/瓶，HPLC级，农残级', casNo: '110-54-3', itemNo: 'HX001', unit: '瓶', category: '010102', supplier: 'S003', supplierName: '赛默飞世尔科技', brand: 'Fisher', minOrderQty: 1, price: 168.00, status: 'inactive' },
+                    { id: 10, code: '0101020002', name: '环己烷', spec: '500ml/瓶，AR级，分析纯', casNo: '110-82-7', itemNo: 'CH001', unit: '瓶', category: '010102', supplier: 'S001', supplierName: '西安化学试剂有限公司', brand: '国产', minOrderQty: 1, price: 42.00, status: 'active' }
+                ],
+                
+                suppliers: [
+                    { id: 'S001', name: '西安化学试剂有限公司' },
+                    { id: 'S002', name: '国药集团化学试剂' },
+                    { id: 'S003', name: '赛默飞世尔科技' }
+                ],
+                
+                filters: {
+                    keyword: '',
+                    status: '',
+                    supplier: ''
+                },
+                
+                // 弹窗状态
+                categoryModalOpen: false,
+                categoryEditModal: {
+                    open: false,
+                    editing: false,
+                    parentId: null,
+                    data: { code: '', name: '', sort: 1 }
+                },
+                productModal: {
+                    open: false,
+                    editing: false,
+                    data: { code: '', name: '', category: '', casNo: '', itemNo: '', spec: '', unit: '', price: 0, minOrderQty: 1, supplier: '', brand: '', status: 'active' }
+                },
+                deleteModal: {
+                    open: false,
+                    type: '', // 'product' 或 'category'
+                    item: null
+                },
+                
+                toast: { show: false, message: '', type: 'success' },
+
+                init() {
+                    this.calculateProductCounts();
+                },
+
+                // 计算属性
+                get filteredCategories() {
+                    if (!this.categorySearch) return this.categories;
+                    return this.filterTree(this.categories, this.categorySearch.toLowerCase());
+                },
+
+                get flatCategories() {
+                    const result = [];
+                    const walk = (nodes, parentPath = '') => {
+                        nodes.forEach(node => {
+                            const path = parentPath ? `${parentPath} > ${node.name}` : node.name;
+                            result.push({ ...node, path });
+                            if (node.children) walk(node.children, path);
+                        });
+                    };
+                    walk(this.categories);
+                    return result;
+                },
+
+                get categoryCount() {
+                    let count = 0;
+                    const countNodes = (nodes) => {
+                        nodes.forEach(n => {
+                            count++;
+                            if (n.children) countNodes(n.children);
+                        });
+                    };
+                    countNodes(this.categories);
+                    return count;
+                },
+
+                get stats() {
+                    const total = this.products.length;
+                    const active = this.products.filter(p => p.status === 'active').length;
+                    const inactive = total - active;
+                    return { total, active, inactive, categories: this.categoryCount };
+                },
+
+                get filteredData() {
+                    let result = this.products.filter(item => {
+                        // 类目筛选
+                        if (this.selectedCategory) {
+                            const catCode = this.selectedCategory.code;
+                            if (!item.category.startsWith(catCode)) return false;
+                        }
+                        
+                        // 关键词搜索
+                        if (this.filters.keyword) {
+                            const keyword = this.filters.keyword.toLowerCase();
+                            if (!item.code.toLowerCase().includes(keyword) && 
+                                !item.name.toLowerCase().includes(keyword) &&
+                                !(item.casNo && item.casNo.toLowerCase().includes(keyword))) {
+                                return false;
+                            }
+                        }
+                        
+                        // 状态筛选
+                        if (this.filters.status && item.status !== this.filters.status) return false;
+                        
+                        // 供应商筛选
+                        if (this.filters.supplier && item.supplier !== this.filters.supplier) return false;
+                        
+                        return true;
+                    });
+                    
+                    return result;
+                },
+
+                get paginatedData() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    const end = start + this.pageSize;
+                    return this.filteredData.slice(start, end);
+                },
+
+                get totalPages() {
+                    return Math.ceil(this.filteredData.length / this.pageSize) || 1;
+                },
+
+                get displayedPages() {
+                    const pages = [];
+                    const maxDisplay = 5;
+                    let start = Math.max(1, this.currentPage - 2);
+                    let end = Math.min(this.totalPages, start + maxDisplay - 1);
+                    
+                    if (end - start < maxDisplay - 1) {
+                        start = Math.max(1, end - maxDisplay + 1);
+                    }
+                    
+                    for (let i = start; i <= end; i++) {
+                        pages.push(i);
+                    }
+                    return pages;
+                },
+
+                get isAllSelected() {
+                    return this.paginatedData.length > 0 && this.paginatedData.every(item => this.selectedIds.includes(item.id));
+                },
+
+                // 方法
+                filterTree(nodes, query) {
+                    return nodes.filter(node => {
+                        const match = node.name.toLowerCase().includes(query);
+                        if (node.children) {
+                            const filteredChildren = this.filterTree(node.children, query);
+                            if (filteredChildren.length > 0) {
+                                node.children = filteredChildren;
+                                return true;
+                            }
+                        }
+                        return match;
+                    });
+                },
+
+                calculateProductCounts() {
+                    const countMap = {};
+                    
+                    // 初始化
+                    const initCount = (nodes) => {
+                        nodes.forEach(n => {
+                            countMap[n.code] = 0;
+                            if (n.children) initCount(n.children);
+                        });
+                    };
+                    initCount(this.categories);
+                    
+                    // 统计商品
+                    this.products.forEach(p => {
+                        // 找到对应类目及其所有父类目
+                        const findAndIncrement = (nodes, targetCode) => {
+                            for (let node of nodes) {
+                                if (targetCode.startsWith(node.code)) {
+                                    countMap[node.code] = (countMap[node.code] || 0) + 1;
+                                    if (node.children) findAndIncrement(node.children, targetCode);
+                                    return true;
+                                }
+                            }
+                            return false;
+                        };
+                        findAndIncrement(this.categories, p.category);
+                    });
+                    
+                    // 回填到树
+                    const fillCount = (nodes) => {
+                        nodes.forEach(n => {
+                            n.productCount = countMap[n.code] || 0;
+                            if (n.children) fillCount(n.children);
+                        });
+                    };
+                    fillCount(this.categories);
+                },
+
+                selectCategory(node) {
+                    this.selectedCategory = node;
+                    this.currentPage = 1;
+                    this.selectedIds = [];
+                },
+
+                toggleExpand(node) {
+                    node.expanded = !node.expanded;
+                },
+
+                expandAll() {
+                    const expand = (nodes) => {
+                        nodes.forEach(n => {
+                            n.expanded = true;
+                            if (n.children) expand(n.children);
+                        });
+                    };
+                    expand(this.categories);
+                },
+
+                getCategoryName(code) {
+                    const cat = this.flatCategories.find(c => c.code === code);
+                    return cat ? cat.name : code;
+                },
+
+                getCategoryPath(id) {
+                    if (!id) return '根类目';
+                    const cat = this.findCategoryById(this.categories, id);
+                    return cat ? cat.name : '';
+                },
+
+                findCategoryById(nodes, id) {
+                    for (let n of nodes) {
+                        if (n.id === id) return n;
+                        if (n.children) {
+                            const found = this.findCategoryById(n.children, id);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                },
+
+                findCategoryByCode(nodes, code) {
+                    for (let n of nodes) {
+                        if (n.code === code) return n;
+                        if (n.children) {
+                            const found = this.findCategoryByCode(n.children, code);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                },
+
+                // 拖拽排序
+                dragStart(e, node, index) {
+                    this.draggedNode = node;
+                    e.target.classList.add('dragging');
+                },
+
+                dragOver(e, index) {
+                    e.preventDefault();
+                    this.dragOverIndex = index;
+                },
+
+                drop(e, index) {
+                    e.preventDefault();
+                    this.dragOverIndex = null;
+                    if (this.draggedNode) {
+                        // 简化的同级排序
+                        this.showToast('排序已更新', 'success');
+                    }
+                    this.draggedNode = null;
+                    document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+                },
+
+                // 筛选操作
+                setFilter(key, value) {
+                    this.filters[key] = value;
+                    this.currentPage = 1;
+                },
+
+                resetFilters() {
+                    this.filters = { keyword: '', status: '', supplier: '' };
+                    this.currentPage = 1;
+                },
+
+                // 表格操作
+                toggleSelectAll() {
+                    if (this.isAllSelected) {
+                        this.selectedIds = [];
+                    } else {
+                        this.selectedIds = this.paginatedData.map(item => item.id);
+                    }
+                },
+
+                changeStatus(item, newStatus) {
+                    item.status = newStatus;
+                    this.showToast(newStatus === 'active' ? '已上架' : '已下架', 'success');
+                },
+
+                batchAction(action) {
+                    const count = this.selectedIds.length;
+                    if (count === 0) return;
+                    
+                    let updated = 0;
+                    this.products.forEach(p => {
+                        if (this.selectedIds.includes(p.id)) {
+                            if (action === 'up') { p.status = 'active'; updated++; }
+                            else if (action === 'down') { p.status = 'inactive'; updated++; }
+                        }
+                    });
+                    
+                    if (action === 'delete') {
+                        this.products = this.products.filter(p => !this.selectedIds.includes(p.id));
+                        this.calculateProductCounts();
+                        this.showToast(`已删除 ${count} 个商品`, 'success');
+                    } else {
+                        this.showToast(`已更新 ${updated} 个商品`, 'success');
+                    }
+                    this.selectedIds = [];
+                },
+
+                // 弹窗操作
+                openCategoryModal() {
+                    this.categoryModalOpen = true;
+                },
+
+                closeCategoryModal() {
+                    this.categoryModalOpen = false;
+                },
+
+                openAddCategory() {
+                    this.categoryEditModal = {
+                        open: true,
+                        editing: false,
+                        parentId: null,
+                        data: { 
+                            code: String(this.categories.length + 1).padStart(2, '0'), 
+                            name: '', 
+                            sort: this.categories.length + 1 
+                        }
+                    };
+                },
+
+                openAddSubCategory(parent) {
+                    const siblingCount = parent.children?.length || 0;
+                    const level = parent.level + 1;
+                    let code;
+                    
+                    if (level === 2) {
+                        code = parent.code + String(siblingCount + 1).padStart(2, '0');
+                    } else if (level === 3) {
+                        code = parent.code + String(siblingCount + 1).padStart(2, '0');
+                    } else {
+                        code = parent.code + '01';
+                    }
+                    
+                    this.categoryEditModal = {
+                        open: true,
+                        editing: false,
+                        parentId: parent.id,
+                        data: { 
+                            code: code, 
+                            name: '', 
+                            sort: siblingCount + 1 
+                        }
+                    };
+                },
+
+                openEditCategory(node) {
+                    this.categoryEditModal = {
+                        open: true,
+                        editing: true,
+                        parentId: null,
+                        data: { ...node }
+                    };
+                },
+
+                saveCategory() {
+                    const data = this.categoryEditModal.data;
+                    if (!data.code || !data.name) {
+                        this.showToast('请填写完整信息', 'error');
+                        return;
+                    }
+
+                    if (this.categoryEditModal.editing) {
+                        // 更新现有类目
+                        const updateNode = (nodes) => {
+                            for (let n of nodes) {
+                                if (n.id === data.id) {
+                                    Object.assign(n, data);
+                                    return true;
+                                }
+                                if (n.children && updateNode(n.children)) return true;
+                            }
+                            return false;
+                        };
+                        updateNode(this.categories);
+                        this.showToast('修改成功');
+                    } else {
+                        // 新增类目
+                        const parent = this.categoryEditModal.parentId ? 
+                            this.findCategoryById(this.categories, this.categoryEditModal.parentId) : null;
+                        
+                        const newNode = {
+                            id: Date.now().toString(),
+                            ...data,
+                            level: parent ? parent.level + 1 : 1,
+                            children: [],
+                            productCount: 0,
+                            expanded: false
+                        };
+                        
+                        if (parent) {
+                            if (!parent.children) parent.children = [];
+                            parent.children.push(newNode);
+                            parent.children.sort((a, b) => a.sort - b.sort);
+                            parent.expanded = true;
+                        } else {
+                            this.categories.push(newNode);
+                            this.categories.sort((a, b) => a.sort - b.sort);
+                        }
+                        this.showToast('创建成功');
+                    }
+                    this.categoryEditModal.open = false;
+                },
+
+                confirmDeleteCategory(node) {
+                    this.deleteModal = {
+                        open: true,
+                        type: 'category',
+                        item: node
+                    };
+                },
+
+                openAddProductModal() {
+                    this.productModal = {
+                        open: true,
+                        editing: false,
+                        data: { 
+                            code: '', 
+                            name: '', 
+                            category: this.selectedCategory?.code || '', 
+                            casNo: '', 
+                            itemNo: '', 
+                            spec: '', 
+                            unit: '', 
+                            price: 0, 
+                            minOrderQty: 1, 
+                            supplier: '', 
+                            brand: '', 
+                            status: 'active' 
+                        }
+                    };
+                },
+
+                editProduct(item) {
+                    this.productModal = {
+                        open: true,
+                        editing: true,
+                        data: { ...item }
+                    };
+                },
+
+                saveProduct() {
+                    const data = this.productModal.data;
+                    if (!data.code || !data.name || !data.category) {
+                        this.showToast('请填写必填项', 'error');
+                        return;
+                    }
+
+                    // 自动填充供应商名称
+                    const supplier = this.suppliers.find(s => s.id === data.supplier);
+                    if (supplier) data.supplierName = supplier.name;
+
+                    if (this.productModal.editing) {
+                        const index = this.products.findIndex(p => p.id === data.id);
+                        if (index > -1) {
+                            this.products[index] = { ...this.products[index], ...data };
+                            this.showToast('修改成功');
+                        }
+                    } else {
+                        const newProduct = {
+                            id: Date.now(),
+                            ...data
+                        };
+                        this.products.push(newProduct);
+                        this.showToast('创建成功');
+                    }
+                    
+                    this.calculateProductCounts();
+                    this.productModal.open = false;
+                },
+
+                deleteProduct(item) {
+                    this.deleteModal = {
+                        open: true,
+                        type: 'product',
+                        item: item
+                    };
+                },
+
+                executeDelete() {
+                    if (this.deleteModal.type === 'product') {
+                        this.products = this.products.filter(p => p.id !== this.deleteModal.item.id);
+                        this.calculateProductCounts();
+                        this.showToast('删除成功');
+                    } else if (this.deleteModal.type === 'category') {
+                        this.removeCategory(this.categories, this.deleteModal.item.id);
+                        this.calculateProductCounts();
+                        this.showToast('类目已删除');
+                        if (this.selectedCategory?.id === this.deleteModal.item.id) {
+                            this.selectedCategory = null;
+                        }
+                    }
+                    this.deleteModal.open = false;
+                },
+
+                removeCategory(nodes, id) {
+                    const idx = nodes.findIndex(n => n.id === id);
+                    if (idx > -1) {
+                        nodes.splice(idx, 1);
+                        return true;
+                    }
+                    for (let n of nodes) {
+                        if (n.children && this.removeCategory(n.children, id)) return true;
+                    }
+                    return false;
+                },
+
+                refreshData() {
+                    this.loading = true;
+                    setTimeout(() => {
+                        this.loading = false;
+                        this.showToast('数据已刷新');
+                    }, 500);
+                },
+
+                showToast(message, type = 'success') {
+                    this.toast = { show: true, message, type };
+                    setTimeout(() => this.toast.show = false, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
