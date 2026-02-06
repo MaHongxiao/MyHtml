@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>采购订单审批</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --td-brand-color: #0052D9;
+            --td-brand-color-hover: #003CAB;
+            --td-error-color: #D54941;
+            --td-text-color-primary: #1d1d1f;
+            --td-text-color-secondary: #00000099;
+            --td-bg-color-page: #f2f3f5;
+        }
+
+        [x-cloak] { display: none !important; }
+        
+        body { 
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif; 
+            background-color: var(--td-bg-color-page);
+            color: var(--td-text-color-primary);
+        }
+
+        /* TDesign 按钮 */
+        .t-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            height: 36px; padding: 0 24px; font-size: 14px; border-radius: 3px;
+            cursor: pointer; transition: all 0.2s linear; border: 1px solid transparent; outline: none;
+        }
+        .t-btn-primary { background-color: var(--td-brand-color); color: white; }
+        .t-btn-primary:hover { background-color: var(--td-brand-color-hover); }
+        .t-btn-danger { background-color: var(--td-error-color); color: white; }
+        .t-btn-danger:hover { background-color: #ad352f; }
+        .t-btn-default { background-color: #fff; border-color: #dcdcdc; color: var(--td-text-color-primary); }
+        .t-btn-default:hover { border-color: var(--td-brand-color); color: var(--td-brand-color); }
+
+        /* 标签页 */
+        .tab-nav { display: flex; border-bottom: 1px solid #e7e7e7; }
+        .tab-item {
+            padding: 12px 24px; cursor: pointer; font-weight: 500; color: var(--td-text-color-secondary);
+            border-bottom: 2px solid transparent; transition: all 0.2s;
+        }
+        .tab-item.active { color: var(--td-brand-color); border-bottom-color: var(--td-brand-color); font-weight: 600; }
+        .tab-item:hover:not(.active) { color: var(--td-text-color-primary); }
+
+        /* 表格样式 */
+        .read-table th { background-color: #f7f8fa; color: var(--td-text-color-secondary); font-weight: 600; font-size: 13px; padding: 12px; text-align: left; }
+        .read-table td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+        .read-table tr:last-child td { border-bottom: none; }
+
+        /* 审批进度条 */
+        .step-item { position: relative; flex: 1; text-align: center; }
+        .step-item::before { content: ''; position: absolute; top: 10px; left: -50%; width: 100%; height: 2px; background: #e7e7e7; z-index: 0; }
+        .step-item:first-child::before { display: none; }
+        .step-item.active::before { background: var(--td-brand-color); }
+        .step-icon { width: 22px; height: 22px; background: #e7e7e7; color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; position: relative; z-index: 1; font-size: 12px; }
+        .step-item.active .step-icon { background: var(--td-brand-color); }
+        .step-item.finish .step-icon { background: #2BA471; }
+
+        /* 弹窗动画 */
+        .modal-enter { animation: modalIn 0.2s ease-out forwards; }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* 紧急程度标签 */
+        .urgency-tag {
+            display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600;
+        }
+        .urgency-normal { background: #f2f3f5; color: #606266; border: 1px solid #e4e7ed; }
+        .urgency-urgent { background: #fdf6ec; color: #e6a23c; border: 1px solid #f5dab1; }
+        .urgency-critical { background: #fef0f0; color: #f56c6c; border: 1px solid #fbc4c4; }
+
+        /* 供应商标签 */
+        .supplier-tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; background: #ecf5ff; color: #409eff;
+            border-radius: 3px; font-size: 12px; border: 1px solid #d9ecff;
+        }
+
+        .info-card {
+            background: #fff; border: 1px solid #e7e7e7; border-radius: 4px;
+        }
+        .info-card-header {
+            padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-weight: 600; font-size: 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .info-card-body { padding: 16px; }
+        
+        .info-row { display: flex; margin-bottom: 12px; }
+        .info-row:last-child { margin-bottom: 0; }
+        .info-label { width: 120px; color: #909399; font-size: 13px; flex-shrink: 0; }
+        .info-value { flex: 1; font-size: 13px; color: #1d1d1f; font-weight: 500; }
+    </style>
+</head>
+
+<body class="pb-24" x-data="purchaseApproval()">
+
+    <!-- 顶部Header -->
+    <div class="bg-white px-6 py-5 shadow-sm border-b border-gray-200 sticky top-0 z-30">
+        <div class="max-w-[1400px] mx-auto">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-xl font-bold text-gray-900" x-text="'采购订单审批：' + orderInfo.orderNo"></h1>
+                        <span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs border border-blue-100" x-text="orderInfo.status"></span>
+                        <span class="urgency-tag" :class="'urgency-' + orderInfo.urgency" x-text="getUrgencyText(orderInfo.urgency)"></span>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">
+                        提交人：<span class="text-gray-900" x-text="orderInfo.submitter"></span> &nbsp;|&nbsp; 
+                        提交时间：<span x-text="orderInfo.submitTime"></span> &nbsp;|&nbsp;
+                        申请机构：<span class="text-gray-900" x-text="orderInfo.institution"></span>
+                    </p>
+                </div>
+                
+                <!-- 审批进度条 -->
+                <div class="w-80">
+                    <div class="flex justify-between">
+                        <template x-for="(step, index) in approvalSteps" :key="index">
+                            <div class="step-item" :class="step.status">
+                                <div class="step-icon">
+                                    <i class="fa-solid fa-check" x-show="step.status === 'finish'"></i>
+                                    <span x-show="step.status !== 'finish'" x-text="index + 1"></span>
+                                </div>
+                                <div class="text-xs mt-1" :class="step.status === 'active' ? 'text-blue-600 font-bold' : (step.status === 'finish' ? 'text-gray-600' : 'text-gray-400')" x-text="step.name"></div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 关键指标卡片 -->
+            <div class="grid grid-cols-4 gap-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div class="border-r border-gray-200 pr-4">
+                    <div class="text-xs text-gray-500 mb-1">订单总金额</div>
+                    <div class="text-xl font-bold text-gray-900" x-text="'¥ ' + formatMoney(orderInfo.totalAmount)"></div>
+                </div>
+                <div class="border-r border-gray-200 pr-4 pl-4">
+                    <div class="text-xs text-gray-500 mb-1">商品种类</div>
+                    <div class="text-xl font-bold text-gray-900" x-text="orderInfo.productCount"></div>
+                </div>
+                <div class="border-r border-gray-200 pr-4 pl-4">
+                    <div class="text-xs text-gray-500 mb-1">商品总数量</div>
+                    <div class="text-xl font-bold text-gray-900" x-text="orderInfo.totalQuantity"></div>
+                </div>
+                <div class="pl-4">
+                    <div class="text-xs text-gray-500 mb-1">涉及供应商</div>
+                    <div class="text-xl font-bold text-blue-600" x-text="orderInfo.supplierCount + ' 家'"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-[1400px] mx-auto p-6 space-y-6">
+        
+        <div class="bg-white border border-gray-200 rounded-sm shadow-sm min-h-[500px]">
+            <!-- Tab导航 -->
+            <div class="tab-nav px-6 pt-2">
+                <div class="tab-item" :class="currentTab === 'detail' ? 'active' : ''" @click="currentTab = 'detail'">
+                    <i class="fa-solid fa-file-invoice mr-2"></i>订单明细
+                </div>
+                <div class="tab-item" :class="currentTab === 'delivery' ? 'active' : ''" @click="currentTab = 'delivery'">
+                    <i class="fa-solid fa-truck-fast mr-2"></i>配送信息
+                </div>
+                <div class="tab-item" :class="currentTab === 'history' ? 'active' : ''" @click="currentTab = 'history'">
+                    <i class="fa-solid fa-clock-rotate-left mr-2"></i>审批记录
+                </div>
+            </div>
+
+            <div class="p-6">
+                
+                <!-- 订单明细Tab -->
+                <div x-show="currentTab === 'detail'" x-transition:enter="transition opacity ease-out duration-200">
+                    
+                    <!-- 基本信息卡片 -->
+                    <div class="info-card mb-6">
+                        <div class="info-card-header">
+                            <i class="fa-solid fa-circle-info text-blue-600"></i>
+                            基本信息
+                        </div>
+                        <div class="info-card-body">
+                            <div class="grid grid-cols-2 gap-x-8 gap-y-3">
+                                <div class="info-row">
+                                    <div class="info-label">申请部门</div>
+                                    <div class="info-value" x-text="orderInfo.department"></div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">期望送达日期</div>
+                                    <div class="info-value" x-text="orderInfo.deliveryDate"></div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">收货时间范围</div>
+                                    <div class="info-value" x-text="orderInfo.deliveryTimeRange"></div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">周末是否可配送</div>
+                                    <div class="info-value" x-text="orderInfo.weekendDelivery === 'yes' ? '是' : '否'"></div>
+                                </div>
+                                <div class="info-row" style="grid-column: span 2;">
+                                    <div class="info-label">备注说明</div>
+                                    <div class="info-value text-gray-600" x-text="orderInfo.remark || '无'"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 商品明细表格 -->
+                    <h4 class="text-sm font-bold text-gray-800 border-l-4 border-blue-600 pl-3 mb-4">采购商品明细</h4>
+                    <div class="overflow-x-auto border border-gray-200 rounded">
+                        <table class="w-full read-table">
+                            <thead>
+                                <tr>
+                                    <th class="w-10 text-center">#</th>
+                                    <th class="min-w-[180px]">商品信息</th>
+                                    <th class="w-24">CAS号</th>
+                                    <th class="w-24">货号</th>
+                                    <th class="w-28">规格</th>
+                                    <th class="w-24">品牌</th>
+                                    <th class="min-w-[120px]">供应商</th>
+                                    <th class="w-20 text-center">单位</th>
+                                    <th class="w-24 text-right">单价(¥)</th>
+                                    <th class="w-20 text-center">数量</th>
+                                    <th class="w-24 text-right">小计(¥)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(product, index) in products" :key="index">
+                                    <tr>
+                                        <td class="text-center text-gray-500" x-text="index + 1"></td>
+                                        <td>
+                                            <div class="font-medium text-gray-900" x-text="product.name"></div>
+                                            <div class="text-xs text-gray-500 mt-0.5" x-text="product.code"></div>
+                                        </td>
+                                        <td class="font-mono text-gray-600 text-xs" x-text="product.cas || '-'"></td>
+                                        <td class="text-gray-600 text-xs" x-text="product.artNo || '-'"></td>
+                                        <td class="text-gray-600 text-xs" x-text="product.spec"></td>
+                                        <td class="text-gray-600 text-xs" x-text="product.brand || '-'"></td>
+                                        <td>
+                                            <span class="supplier-tag" x-text="product.supplierName"></span>
+                                            <div class="text-xs text-gray-400 mt-1" x-show="product.deliveryDays">
+                                                货期：<span x-text="product.deliveryDays"></span>天
+                                            </div>
+                                        </td>
+                                        <td class="text-center" x-text="product.unit"></td>
+                                        <td class="text-right font-mono" x-text="formatMoney(product.price)"></td>
+                                        <td class="text-center" x-text="product.quantity"></td>
+                                        <td class="text-right font-mono font-bold" x-text="formatMoney(product.subtotal)"></td>
+                                    </tr>
+                                </template>
+                                <tr class="bg-gray-50">
+                                    <td colspan="10" class="text-right font-bold text-gray-700">订单总计：</td>
+                                    <td class="text-right font-bold text-blue-600 text-lg" x-text="'¥ ' + formatMoney(orderInfo.totalAmount)"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 多供应商提示 -->
+                    <div x-show="orderInfo.supplierCount > 1" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded flex items-start gap-2">
+                        <i class="fa-solid fa-circle-info text-amber-600 mt-0.5"></i>
+                        <div class="text-sm text-amber-800">
+                            <div class="font-medium mb-1">多供应商订单提示</div>
+                            <div>该订单包含 <span class="font-bold" x-text="orderInfo.supplierCount"></span> 家供应商的商品，审批通过后将按供应商自动拆分为多个送货单。</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 配送信息Tab -->
+                <div x-show="currentTab === 'delivery'" x-transition:enter="transition opacity ease-out duration-200">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <i class="fa-solid fa-location-dot text-blue-600"></i>
+                                收货地址
+                            </div>
+                            <div class="info-card-body">
+                                <div class="info-row">
+                                    <div class="info-label">详细地址</div>
+                                    <div class="info-value" x-text="deliveryInfo.address"></div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">交货方式</div>
+                                    <div class="info-value" x-text="deliveryInfo.deliveryMethod"></div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">邮政编码</div>
+                                    <div class="info-value" x-text="deliveryInfo.zipCode || '无'"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <i class="fa-solid fa-user text-blue-600"></i>
+                                联系人信息
+                            </div>
+                            <div class="info-card-body">
+                                <div class="info-row">
+                                    <div class="info-label">收货人</div>
+                                    <div class="info-value" x-text="deliveryInfo.contactName"></div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">联系电话</div>
+                                    <div class="info-value" x-text="deliveryInfo.contactPhone"></div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">备用电话</div>
+                                    <div class="info-value" x-text="deliveryInfo.contactPhone2 || '无'"></div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">电子邮箱</div>
+                                    <div class="info-value" x-text="deliveryInfo.contactEmail || '无'"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 审批记录Tab -->
+                <div x-show="currentTab === 'history'">
+                    <div class="space-y-6 pl-4 border-l border-gray-200 ml-4 relative">
+                        <template x-for="(record, index) in approvalHistory" :key="index">
+                            <div class="relative">
+                                <div class="absolute -left-[25px] top-0 w-4 h-4 rounded-full border-4 border-white shadow-sm"
+                                     :class="record.action === 'submit' ? 'bg-blue-500' : (record.action === 'approve' ? 'bg-green-500' : 'bg-red-500')"></div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="font-bold text-gray-800" x-text="record.operator + ' (' + record.role + ')'"></span>
+                                    <span class="text-xs text-gray-400" x-text="record.time"></span>
+                                </div>
+                                <div class="text-xs text-gray-500 mb-1" x-text="getActionText(record.action)"></div>
+                                <p x-show="record.comment" class="text-sm text-gray-600 bg-gray-50 p-3 rounded mt-2" x-text="record.comment"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部固定操作栏 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-50">
+        <div class="max-w-[1400px] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button @click="goBack()" class="t-btn t-btn-default">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> 返回列表
+                </button>
+            </div>
+            <div class="flex gap-3">
+                <button @click="showRejectModal = true" class="t-btn t-btn-danger hover:opacity-90">
+                    <i class="fa-solid fa-xmark mr-2"></i> 驳回
+                </button>
+                <button @click="handleApprove()" class="t-btn t-btn-primary shadow-lg shadow-blue-200">
+                    <i class="fa-solid fa-check mr-2"></i> 审批通过
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 驳回弹窗 -->
+    <div x-show="showRejectModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm" x-cloak x-transition.opacity>
+        <div class="bg-white rounded-lg shadow-2xl w-[480px] p-0 modal-enter overflow-hidden" @click.outside="showRejectModal = false">
+            
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800">驳回订单</h3>
+                <button @click="showRejectModal = false" class="text-gray-400 hover:text-gray-600 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <div class="mb-4">
+                    <div class="flex items-center gap-2 mb-3 text-orange-600 bg-orange-50 p-3 rounded border border-orange-100 text-sm">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span>驳回后订单将退回至申请人，需修改后重新提交审批。</span>
+                    </div>
+                    
+                    <label class="block text-sm font-bold text-gray-700 mb-2">
+                        <span class="text-red-500 mr-1">*</span>驳回原因
+                    </label>
+                    <textarea 
+                        x-model="rejectReason" 
+                        class="w-full border border-gray-300 rounded p-3 text-sm focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition resize-none h-32" 
+                        placeholder="请输入具体的驳回原因，如：采购数量超出预算、送货地址不明确等..."
+                    ></textarea>
+                    
+                    <p x-show="rejectError" class="text-red-500 text-xs mt-2 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-xmark"></i> 请填写驳回原因，该项为必填。
+                    </p>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                <button @click="showRejectModal = false" class="t-btn t-btn-default">取消</button>
+                <button @click="confirmReject()" class="t-btn t-btn-danger shadow-sm">
+                    确认驳回
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function purchaseApproval() {
+            return {
+                currentTab: 'detail',
+                showRejectModal: false,
+                rejectReason: '',
+                rejectError: false,
+                
+                // 审批步骤
+                approvalSteps: [
+                    { name: '提交', status: 'finish' },
+                    { name: '部门经理', status: 'active' },
+                    { name: '已审批', status: '' }
+                ],
+                
+                // 订单基本信息
+                orderInfo: {
+                    orderNo: '中心实验室-20240115-001',
+                    status: '待审批',
+                    submitter: '张三 (有机分析实验室)',
+                    submitTime: '2024-01-15 10:30',
+                    institution: '中心实验室',
+                    department: '有机分析实验室',
+                    urgency: 'urgent', // normal, urgent, critical
+                    deliveryDate: '2024-01-22',
+                    deliveryTimeRange: '工作日9:00-17:00',
+                    weekendDelivery: 'no',
+                    remark: '急需用于本周三的客户检测项目，请优先处理。',
+                    totalAmount: 12580.00,
+                    productCount: 3,
+                    totalQuantity: 25,
+                    supplierCount: 2
+                },
+                
+                // 商品明细
+                products: [
+                    { 
+                        code: '0101000001', 
+                        name: '甲醇（色谱级）', 
+                        cas: '67-56-1',
+                        artNo: 'M178-4L',
+                        spec: '4L/瓶，HPLC级', 
+                        brand: 'Sigma',
+                        supplierName: '赛默飞世尔科技',
+                        deliveryDays: 5,
+                        unit: '瓶',
+                        price: 128.00, 
+                        quantity: 10,
+                        subtotal: 1280.00
+                    },
+                    { 
+                        code: '0402000001', 
+                        name: '10ml一次性离心管（无菌无酶）', 
+                        cas: '',
+                        artNo: 'GBT-001',
+                        spec: 'PP材质，100支/袋', 
+                        brand: '洁特',
+                        supplierName: '西安化学试剂有限公司',
+                        deliveryDays: 3,
+                        unit: '袋',
+                        price: 45.00, 
+                        quantity: 10,
+                        subtotal: 450.00
+                    },
+                    { 
+                        code: '0301000001', 
+                        name: 'C18色谱柱', 
+                        cas: '',
+                        artNo: 'HS-18-250',
+                        spec: '4.6×250mm，5μm', 
+                        brand: 'Agilent',
+                        supplierName: '赛默飞世尔科技',
+                        deliveryDays: 7,
+                        unit: '支',
+                        price: 2850.00, 
+                        quantity: 4,
+                        subtotal: 10850.00
+                    }
+                ],
+                
+                // 配送信息
+                deliveryInfo: {
+                    address: '陕西省西安市雁塔区科技路XXX号中心实验室A栋2楼203库房',
+                    deliveryMethod: '送货上门',
+                    zipCode: '710000',
+                    contactName: '张三',
+                    contactPhone: '13800138000',
+                    contactPhone2: '029-88886666',
+                    contactEmail: 'zhangsan@lab.com'
+                },
+                
+                // 审批历史
+                approvalHistory: [
+                    {
+                        operator: '张三',
+                        role: '申请人',
+                        action: 'submit',
+                        time: '2024-01-15 10:30',
+                        comment: '提交采购订单审批，用于本周检测项目。'
+                    }
+                ],
+
+                init() {
+                    this.$watch('rejectReason', (value) => {
+                        if(value.trim()) this.rejectError = false;
+                    });
+                },
+
+                getUrgencyText(urgency) {
+                    const map = {
+                        'normal': '普通',
+                        'urgent': '紧急',
+                        'critical': '特急'
+                    };
+                    return map[urgency] || '普通';
+                },
+
+                getActionText(action) {
+                    const map = {
+                        'submit': '提交订单',
+                        'approve': '审批通过',
+                        'reject': '驳回订单'
+                    };
+                    return map[action] || action;
+                },
+
+                formatMoney(amount) {
+                    return amount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+
+                handleApprove() {
+                    if(confirm('确认审批通过该采购订单？\n\n通过后将通知商品管理员和申请人，并按供应商拆分生成送货单。')) {
+                        alert('审批通过！订单已流转至商品管理员。');
+                        // 实际业务中这里调用API，然后跳转列表页
+                        // window.location.href = '采购订单管理.html';
+                    }
+                },
+
+                confirmReject() {
+                    if (!this.rejectReason.trim()) {
+                        this.rejectError = true;
+                        return;
+                    }
+                    
+                    this.rejectError = false;
+                    alert(`已驳回订单！\n原因：${this.rejectReason}`);
+                    
+                    this.showRejectModal = false;
+                    this.rejectReason = '';
+                    // 实际业务中这里调用API，然后跳转列表页
+                },
+
+                goBack() {
+                    if(confirm('确定要返回列表页吗？')) {
+                        window.history.back();
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
