@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>送货单详情 - 入库记录追踪</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f1f5f9; color: #334155; }
+        
+        .text-num { font-family: 'Menlo', 'Monaco', monospace; font-weight: 600; }
+        .text-min { font-size: 13px; line-height: 1.5; }
+        
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .status-confirmed { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .status-partial { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+        .status-completed { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .status-reconciled { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+        
+        .urgency-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .urgency-normal { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .urgency-urgent { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .urgency-critical { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        
+        .info-card {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        .info-card-header {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            font-size: 14px;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-card-body { padding: 16px; }
+        .info-row {
+            display: flex;
+            margin-bottom: 12px;
+            align-items: flex-start;
+        }
+        .info-row:last-child { margin-bottom: 0; }
+        .info-label {
+            width: 100px;
+            color: #64748b;
+            font-size: 13px;
+            flex-shrink: 0;
+            line-height: 1.5;
+        }
+        .info-value {
+            flex: 1;
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 500;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .data-table th {
+            background: #f8fafc;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .data-table tbody tr:hover td { background: #f8fafc; }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        .progress-fill.completed { background: #10b981; }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-success {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+        .btn-default {
+            background: white;
+            color: #475569;
+            border-color: #e2e8f0;
+        }
+        .btn-default:hover { border-color: #cbd5e1; background: #f8fafc; }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        
+        /* 入库历史时间轴 */
+        .timeline {
+            position: relative;
+            padding-left: 24px;
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+            border-left: 2px solid #e2e8f0;
+            padding-left: 24px;
+            margin-left: 8px;
+        }
+        .timeline-item:last-child {
+            border-left-color: transparent;
+            padding-bottom: 0;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -9px;
+            top: 4px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            border: 4px solid #cbd5e1;
+        }
+        .timeline-item.completed::before {
+            border-color: #10b981;
+            background: #10b981;
+        }
+        .timeline-item.partial::before {
+            border-color: #f59e0b;
+            background: #f59e0b;
+        }
+        .timeline-item.active::before {
+            border-color: #3b82f6;
+            background: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.2);
+        }
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .timeline-title {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+        }
+        .timeline-time {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .timeline-content {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        /* 商品入库进度条 */
+        .item-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .item-progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            max-width: 100px;
+        }
+        .item-progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            border-radius: 3px;
+        }
+        .item-progress-fill.completed { background: #10b981; }
+        
+        .loss-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: #fee2e2;
+            color: #991b1b;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .supplier-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid #dbeafe;
+        }
+        
+        @media print {
+            .no-print { display: none !important; }
+            .btn { display: none; }
+        }
+        
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(-10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+    </style>
+</head>
+<body class="pb-24" x-data="deliveryNoteDetailApp()">
+
+    <!-- 顶部Header -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button @click="goBack()" class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <div>
+                    <div class="flex items-center gap-3 mb-1">
+                        <h1 class="text-xl font-bold text-slate-800">送货单详情</h1>
+                        <span class="status-tag" :class="'status-' + deliveryNote.status" x-text="getStatusText(deliveryNote.status)"></span>
+                        <span class="urgency-tag" :class="'urgency-' + deliveryNote.urgency" x-text="getUrgencyText(deliveryNote.urgency)"></span>
+                    </div>
+                    <div class="text-min text-slate-500 flex items-center gap-2">
+                        <span>送货单号：<span class="text-num text-blue-600 font-medium" x-text="deliveryNote.code"></span></span>
+                        <span class="text-slate-300">|</span>
+                        <span>关联采购单：<span class="text-num text-slate-600" x-text="deliveryNote.poCode"></span></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button @click="exportDeliveryNote()" class="btn btn-default">
+                    <i class="fa-solid fa-file-export"></i>
+                    导出送货单
+                </button>
+                <button @click="printPage()" class="btn btn-default">
+                    <i class="fa-solid fa-print"></i>
+                    打印
+                </button>
+                <template x-if="deliveryNote.status === 'pending'">
+                    <button @click="confirmDeliveryNote()" class="btn btn-primary">
+                        <i class="fa-solid fa-check"></i>
+                        确认送货单
+                    </button>
+                </template>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-6 fade-in">
+        
+        <!-- 整体进度卡片 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg">入库进度总览</h3>
+                    <p class="text-min text-slate-500 mt-1">
+                        <span x-show="deliveryNote.status === 'pending'">送货单待确认，确认后可开始入库</span>
+                        <span x-show="deliveryNote.status === 'confirmed'">已确认，等待首次入库</span>
+                        <span x-show="deliveryNote.status === 'partial'">分批入库中，已完成 <span class="font-bold text-blue-600" x-text="totalInboundProgress + '%'"></span></span>
+                        <span x-show="deliveryNote.status === 'completed'">全部商品已完成入库</span>
+                        <span x-show="deliveryNote.status === 'reconciled'">已完成对账</span>
+                    </p>
+                </div>
+                <div class="text-right">
+                    <div class="text-3xl font-bold text-blue-600" x-text="totalInboundProgress + '%'"></div>
+                    <div class="text-min text-slate-500">总进度</div>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" :class="{'completed': deliveryNote.status === 'completed' || deliveryNote.status === 'reconciled'}" :style="'width: ' + totalInboundProgress + '%'"></div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-100">
+                <div class="text-center">
+                    <div class="text-min text-slate-500 mb-1">送货总数</div>
+                    <div class="text-2xl font-bold text-slate-800" x-text="totalDeliveryQty"></div>
+                    <div class="text-min text-slate-400">件</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-min text-slate-500 mb-1">已入库</div>
+                    <div class="text-2xl font-bold text-emerald-600" x-text="totalInboundQty"></div>
+                    <div class="text-min text-emerald-600" x-text="totalInboundProgress + '%'"></div>
+                </div>
+                <div class="text-center">
+                    <div class="text-min text-slate-500 mb-1">损耗数量</div>
+                    <div class="text-2xl font-bold" :class="totalLossQty > 0 ? 'text-red-600' : 'text-slate-400'" x-text="totalLossQty"></div>
+                    <div class="text-min text-slate-400">件</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-min text-slate-500 mb-1">剩余待入</div>
+                    <div class="text-2xl font-bold text-amber-600" x-text="totalRemainingQty"></div>
+                    <div class="text-min text-slate-400">件</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 信息卡片区 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 基本信息 -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="fa-solid fa-file-invoice text-blue-600"></i>
+                    送货单信息
+                </div>
+                <div class="info-card-body">
+                    <div class="info-row">
+                        <div class="info-label">送货单编号</div>
+                        <div class="info-value text-num text-blue-600" x-text="deliveryNote.code"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">关联采购单</div>
+                        <div class="info-value text-num" x-text="deliveryNote.poCode"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">生成日期</div>
+                        <div class="info-value" x-text="deliveryNote.createDate"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">期望送达</div>
+                        <div class="info-value font-bold text-slate-800" x-text="deliveryNote.expectedDate"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">紧急程度</div>
+                        <div class="info-value">
+                            <span class="urgency-tag" :class="'urgency-' + deliveryNote.urgency" x-text="getUrgencyText(deliveryNote.urgency)"></span>
+                        </div>
+                    </div>
+                    <div class="info-row" x-show="deliveryNote.confirmDate">
+                        <div class="info-label">确认时间</div>
+                        <div class="info-value text-emerald-600" x-text="deliveryNote.confirmDate"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 供应商信息 -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="fa-solid fa-building-user text-indigo-600"></i>
+                    供应商信息
+                </div>
+                <div class="info-card-body">
+                    <div class="info-row">
+                        <div class="info-label">供应商名称</div>
+                        <div class="info-value font-bold text-slate-800" x-text="deliveryNote.supplierName"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">联系人</div>
+                        <div class="info-value" x-text="deliveryNote.supplierContact"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">联系电话</div>
+                        <div class="info-value text-num" x-text="deliveryNote.supplierPhone"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">供应商编码</div>
+                        <div class="info-value text-num text-slate-500" x-text="deliveryNote.supplierCode"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 收货信息 -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="fa-solid fa-location-dot text-rose-600"></i>
+                    收货信息
+                </div>
+                <div class="info-card-body">
+                    <div class="info-row">
+                        <div class="info-label">收货地址</div>
+                        <div class="info-value" x-text="deliveryNote.deliveryAddress"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">收货人</div>
+                        <div class="info-value font-bold" x-text="deliveryNote.receiverName"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">联系电话</div>
+                        <div class="info-value text-num" x-text="deliveryNote.receiverPhone"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">收货时间</div>
+                        <div class="info-value" x-text="deliveryNote.deliveryTimeRange"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">周末配送</div>
+                        <div class="info-value" x-text="deliveryNote.weekendDelivery === 'yes' ? '是' : '否'"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 商品入库明细概览 -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-stacked text-blue-600"></i>
+                    <h3 class="font-bold text-slate-800">商品入库明细概览</h3>
+                    <span class="text-min text-slate-500 ml-2">共 <span class="font-bold text-slate-800" x-text="products.length"></span> 种商品</span>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="w-10 text-center">#</th>
+                            <th class="min-w-[180px]">商品信息</th>
+                            <th class="w-28">CAS号</th>
+                            <th class="w-28">货号</th>
+                            <th class="min-w-[100px]">规格</th>
+                            <th class="w-24">品牌</th>
+                            <th class="w-20 text-center">单位</th>
+                            <th class="w-20 text-center">送货数</th>
+                            <th class="w-24 text-center">已入库</th>
+                            <th class="w-20 text-center">损耗</th>
+                            <th class="w-24 text-center">剩余待入</th>
+                            <th class="w-32">入库进度</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(product, index) in products" :key="index">
+                            <tr :class="{'bg-red-50': product.totalLoss > 0, 'bg-emerald-50': product.inboundQty === product.deliveryQty && product.inboundQty > 0}">
+                                <td class="text-center text-slate-400" x-text="index + 1"></td>
+                                <td>
+                                    <div class="font-medium text-slate-800" x-text="product.name"></div>
+                                    <div class="text-min text-slate-400 mt-0.5" x-text="product.code"></div>
+                                </td>
+                                <td class="text-num text-slate-600 text-min" x-text="product.cas || '-'"></td>
+                                <td class="text-slate-600 text-min" x-text="product.artNo || '-'"></td>
+                                <td class="text-slate-600 text-min" x-text="product.spec"></td>
+                                <td class="text-slate-600 text-min" x-text="product.brand || '-'"></td>
+                                <td class="text-center" x-text="product.unit"></td>
+                                <td class="text-center font-bold" x-text="product.deliveryQty"></td>
+                                <td class="text-center">
+                                    <span class="font-bold" :class="product.inboundQty > 0 ? 'text-emerald-600' : 'text-slate-400'" x-text="product.inboundQty || 0"></span>
+                                </td>
+                                <td class="text-center">
+                                    <span x-show="product.totalLoss > 0" class="loss-badge" x-text="product.totalLoss"></span>
+                                    <span x-show="!product.totalLoss" class="text-slate-400">-</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="font-medium" :class="(product.deliveryQty - (product.inboundQty || 0)) > 0 ? 'text-amber-600' : 'text-emerald-600'" x-text="product.deliveryQty - (product.inboundQty || 0)"></span>
+                                </td>
+                                <td>
+                                    <div class="item-progress">
+                                        <div class="item-progress-bar">
+                                            <div class="item-progress-fill" :class="{'completed': product.inboundQty === product.deliveryQty}" :style="'width: ' + ((product.inboundQty || 0) / product.deliveryQty * 100) + '%'"></div>
+                                        </div>
+                                        <span class="text-min text-slate-500 w-10 text-right" x-text="Math.round((product.inboundQty || 0) / product.deliveryQty * 100) + '%'"></span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                    <tfoot class="bg-slate-50 border-t border-slate-200 font-bold">
+                        <tr>
+                            <td colspan="7" class="text-right py-4 text-slate-700">合计：</td>
+                            <td class="text-center py-4 text-slate-800" x-text="totalDeliveryQty"></td>
+                            <td class="text-center py-4 text-emerald-600" x-text="totalInboundQty"></td>
+                            <td class="text-center py-4 text-red-600" x-text="totalLossQty"></td>
+                            <td class="text-center py-4 text-amber-600" x-text="totalRemainingQty"></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- 入库历史记录 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6" x-show="inboundHistory.length > 0">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-blue-600"></i>
+                    入库历史记录
+                </h3>
+                <span class="text-min text-slate-500">共 <span class="font-bold" x-text="inboundHistory.length"></span> 次入库</span>
+            </div>
+            
+            <div class="timeline">
+                <template x-for="(record, index) in inboundHistory" :key="index">
+                    <div class="timeline-item" :class="{'completed': record.isCompleted, 'partial': !record.isCompleted && index === 0}">
+                        <div class="timeline-header">
+                            <div class="flex items-center gap-2">
+                                <span class="timeline-title" x-text="'第 ' + (inboundHistory.length - index) + ' 次入库'"></span>
+                                <span x-show="record.isPartial" class="text-min px-2 py-0.5 bg-amber-100 text-amber-700 rounded border border-amber-200">分批入库</span>
+                                <span x-show="record.isCompleted" class="text-min px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded border border-emerald-200">完成入库</span>
+                            </div>
+                            <span class="timeline-time" x-text="record.time"></span>
+                        </div>
+                        
+                        <div class="timeline-content space-y-3">
+                            <div class="flex items-center gap-4 text-min text-slate-600 mb-2">
+                                <span><i class="fa-solid fa-user mr-1"></i>操作人：<span class="font-medium text-slate-800" x-text="record.operator"></span></span>
+                                <span><i class="fa-solid fa-box mr-1"></i>入库数量：<span class="font-medium text-emerald-600" x-text="record.totalQty"></span></span>
+                                <span x-show="record.totalLoss > 0"><i class="fa-solid fa-triangle-exclamation mr-1"></i>损耗数量：<span class="font-medium text-red-600" x-text="record.totalLoss"></span></span>
+                            </div>
+                            
+                            <!-- 本次入库商品明细 -->
+                            <div class="space-y-2">
+                                <template x-for="item in record.items" :key="item.productCode">
+                                    <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0 text-sm">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-medium text-slate-700" x-text="item.productName"></span>
+                                            <span x-show="item.loss > 0" class="loss-badge" x-text="'损耗 ' + item.loss + ' ' + item.unit"></span>
+                                        </div>
+                                        <div class="flex items-center gap-4 text-min">
+                                            <span class="text-slate-500">入库：<span class="font-bold text-emerald-600" x-text="item.qty + ' ' + item.unit"></span></span>
+                                            <span x-show="item.loss > 0" class="text-slate-500">原因：<span class="text-red-600" x-text="getLossReasonText(item.lossReason)"></span></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <!-- 损耗说明 -->
+                            <div x-show="record.lossRemark" class="text-min text-slate-600 bg-amber-50 p-2 rounded border border-amber-100 mt-2">
+                                <i class="fa-solid fa-circle-info text-amber-500 mr-1"></i>
+                                <span x-text="record.lossRemark"></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- 损耗汇总统计（有损耗时显示） -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6" x-show="totalLossQty > 0">
+            <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-red-600"></i>
+                损耗汇总分析
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <template x-for="(stat, reason) in lossStatistics" :key="reason">
+                    <div class="bg-red-50 border border-red-100 rounded-lg p-4" x-show="stat.count > 0">
+                        <div class="text-min text-red-600 mb-1" x-text="stat.label"></div>
+                        <div class="text-2xl font-bold text-red-700" x-text="stat.count"></div>
+                        <div class="text-min text-red-500 mt-1" x-text="'涉及 ' + stat.products + ' 种商品'"></div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- 操作日志 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-6">
+            <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-list-ul text-slate-600"></i>
+                操作日志
+            </h3>
+            <div class="space-y-3">
+                <template x-for="(log, index) in operationLogs" :key="index">
+                    <div class="flex items-center gap-4 py-2 border-b border-slate-100 last:border-0 text-min">
+                        <div class="w-2 h-2 rounded-full" :class="{
+                            'bg-blue-500': log.type === 'confirm',
+                            'bg-emerald-500': log.type === 'inbound',
+                            'bg-purple-500': log.type === 'system'
+                        }"></div>
+                        <div class="flex-1">
+                            <span class="font-medium text-slate-800" x-text="log.operator"></span>
+                            <span class="text-slate-600" x-text="log.action"></span>
+                        </div>
+                        <div class="text-slate-400" x-text="log.time"></div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </main>
+
+    <!-- 确认送货单弹窗 -->
+    <div x-show="showConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" x-cloak>
+        <div class="bg-white w-full max-w-md rounded-xl shadow-2xl p-6 fade-in">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 mb-2">确认送货单？</h3>
+                <p class="text-min text-slate-500">确认后送货单状态将变为"待完成"，可在收货入库管理中进行入库操作。</p>
+            </div>
+            
+            <div class="bg-slate-50 rounded-lg p-4 mb-6 space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">供应商：</span>
+                    <span class="font-medium" x-text="deliveryNote.supplierName"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">商品种类：</span>
+                    <span class="font-medium" x-text="products.length + ' 种'"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">送货总数：</span>
+                    <span class="font-medium" x-text="totalDeliveryQty + ' 件'"></span>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <button @click="showConfirmModal = false" class="flex-1 btn btn-default">
+                    取消
+                </button>
+                <button @click="executeConfirm()" class="flex-1 btn btn-primary">
+                    确认
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示Toast -->
+    <div x-show="toast.show" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed top-6 right-6 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-2xl z-[100] flex items-center gap-3">
+        <i class="fa-solid" :class="toast.type === 'success' ? 'fa-check-circle text-emerald-400' : 'fa-circle-exclamation text-rose-400'"></i>
+        <span class="text-sm font-medium" x-text="toast.message"></span>
+    </div>
+
+    <script>
+        function deliveryNoteDetailApp() {
+            return {
+                showConfirmModal: false,
+                toast: { show: false, message: '', type: 'success' },
+                
+                // 送货单数据（符合文档字段：待完成、已完成、待对账、已对账）
+                deliveryNote: {
+                    code: 'SH20240115001',
+                    poCode: 'CG202401150001',
+                    createDate: '2024-01-15',
+                    status: 'partial', // pending(待确认), confirmed(待完成), partial(部分完成), completed(已完成), reconciled(已对账)
+                    urgency: 'urgent',
+                    expectedDate: '2024-01-22',
+                    confirmDate: '2024-01-15 10:35:00',
+                    supplierName: '西安化学试剂有限公司',
+                    supplierCode: 'S001',
+                    supplierContact: '张经理',
+                    supplierPhone: '029-88886666',
+                    deliveryAddress: '陕西省西安市雁塔区科技路XXX号中心实验室A栋2楼203库房',
+                    receiverName: '张三',
+                    receiverPhone: '13800138000',
+                    deliveryTimeRange: '工作日9:00-17:00',
+                    weekendDelivery: 'no',
+                    remark: '送货时需携带商品合格证与检测报告'
+                },
+                
+                // 商品明细（符合文档字段：CAS号、货号、品牌、送货数量、入库数量、损耗数量等）
+                products: [
+                    {
+                        code: '0101000001',
+                        name: '甲醇（色谱级）',
+                        cas: '67-56-1',
+                        artNo: 'M178-4L',
+                        spec: '4L/瓶，HPLC级，≥99.9%',
+                        brand: 'Sigma',
+                        unit: '瓶',
+                        price: 128.00,
+                        deliveryQty: 10,
+                        inboundQty: 8,   // 累计已入库
+                        totalLoss: 1,    // 累计损耗
+                        lossReason: 'transport'
+                    },
+                    {
+                        code: '0402000001',
+                        name: '10ml一次性离心管（无菌无酶）',
+                        cas: '',
+                        artNo: 'GBT-001',
+                        spec: 'PP材质，容量10ml，γ射线灭菌，100支/袋',
+                        brand: '洁特',
+                        unit: '袋',
+                        price: 45.00,
+                        deliveryQty: 50,
+                        inboundQty: 50,  // 已完成
+                        totalLoss: 2,    // 损耗
+                        lossReason: 'transport'
+                    },
+                    {
+                        code: '0301000001',
+                        name: 'C18色谱柱',
+                        cas: '',
+                        artNo: 'HS-18-250',
+                        spec: '4.6×250mm，5μm',
+                        brand: 'Agilent',
+                        unit: '支',
+                        price: 2850.00,
+                        deliveryQty: 2,
+                        inboundQty: 0,   // 待入库
+                        totalLoss: 0,
+                        lossReason: ''
+                    }
+                ],
+                
+                // 入库历史记录（多次入库记录）
+                inboundHistory: [
+                    {
+                        operator: '张三',
+                        time: '2024-01-20 14:30:00',
+                        totalQty: 50,
+                        totalLoss: 2,
+                        isPartial: true,
+                        isCompleted: false,
+                        lossRemark: '运输途中包装破损，2袋离心管外箱受损',
+                        items: [
+                            { productCode: '0402000001', productName: '10ml一次性离心管（无菌无酶）', qty: 50, unit: '袋', loss: 2, lossReason: 'transport' }
+                        ]
+                    },
+                    {
+                        operator: '张三',
+                        time: '2024-01-22 09:15:00',
+                        totalQty: 8,
+                        totalLoss: 1,
+                        isPartial: true,
+                        isCompleted: false,
+                        lossRemark: '甲醇瓶身轻微渗漏',
+                        items: [
+                            { productCode: '0101000001', productName: '甲醇（色谱级）', qty: 8, unit: '瓶', loss: 1, lossReason: 'transport' }
+                        ]
+                    }
+                ],
+                
+                // 操作日志
+                operationLogs: [
+                    { operator: '系统', action: '自动生成送货单', time: '2024-01-15 10:35:22', type: 'system' },
+                    { operator: '商品管理员-李', action: '确认送货单，状态变为待完成', time: '2024-01-15 10:35:25', type: 'confirm' },
+                    { operator: '张三', action: '第1次入库：入库50件，损耗2件', time: '2024-01-20 14:30:00', type: 'inbound' },
+                    { operator: '张三', action: '第2次入库：入库8件，损耗1件', time: '2024-01-22 09:15:00', type: 'inbound' }
+                ],
+
+                init() {
+                    // 模拟从URL参数获取ID
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const id = urlParams.get('id');
+                    if (id) {
+                        console.log('加载送货单ID:', id);
+                    }
+                },
+
+                get totalDeliveryQty() {
+                    return this.products.reduce((sum, p) => sum + p.deliveryQty, 0);
+                },
+
+                get totalInboundQty() {
+                    return this.products.reduce((sum, p) => sum + (p.inboundQty || 0), 0);
+                },
+
+                get totalLossQty() {
+                    return this.products.reduce((sum, p) => sum + (p.totalLoss || 0), 0);
+                },
+
+                get totalRemainingQty() {
+                    return this.totalDeliveryQty - this.totalInboundQty;
+                },
+
+                get totalInboundProgress() {
+                    if (this.totalDeliveryQty === 0) return 0;
+                    return Math.round((this.totalInboundQty / this.totalDeliveryQty) * 100);
+                },
+
+                get lossStatistics() {
+                    const stats = {
+                        transport: { label: '运输破损', count: 0, products: 0 },
+                        quality: { label: '质量不合格', count: 0, products: 0 },
+                        wrong: { label: '规格不符', count: 0, products: 0 },
+                        short: { label: '数量短缺', count: 0, products: 0 },
+                        expired: { label: '过期/临期', count: 0, products: 0 },
+                        other: { label: '其他原因', count: 0, products: 0 }
+                    };
+                    
+                    this.products.forEach(p => {
+                        if (p.totalLoss > 0 && p.lossReason) {
+                            stats[p.lossReason].count += p.totalLoss;
+                            stats[p.lossReason].products += 1;
+                        }
+                    });
+                    
+                    return stats;
+                },
+
+                getStatusText(status) {
+                    const map = {
+                        'pending': '待确认',
+                        'confirmed': '待完成',
+                        'partial': '部分完成',
+                        'completed': '已完成',
+                        'reconciled': '已对账'
+                    };
+                    return map[status] || status;
+                },
+
+                getUrgencyText(urgency) {
+                    const map = {
+                        'normal': '普通',
+                        'urgent': '紧急',
+                        'critical': '特急'
+                    };
+                    return map[urgency] || '普通';
+                },
+
+                getLossReasonText(reason) {
+                    const map = {
+                        'transport': '运输破损',
+                        'quality': '质量不合格',
+                        'wrong': '规格/型号不符',
+                        'short': '数量短缺',
+                        'expired': '过期/临期',
+                        'other': '其他原因'
+                    };
+                    return map[reason] || reason;
+                },
+
+                goBack() {
+                    window.history.back();
+                },
+
+                confirmDeliveryNote() {
+                    this.showConfirmModal = true;
+                },
+
+                executeConfirm() {
+                    this.deliveryNote.status = 'confirmed';
+                    this.deliveryNote.confirmDate = new Date().toLocaleString();
+                    this.operationLogs.unshift({
+                        operator: '商品管理员-李',
+                        action: '确认送货单，状态变为待完成',
+                        time: new Date().toLocaleString(),
+                        type: 'confirm'
+                    });
+                    this.showConfirmModal = false;
+                    this.showToast('送货单已确认，可在收货入库管理中进行入库操作', 'success');
+                },
+
+                exportDeliveryNote() {
+                    this.showToast('正在生成送货单导出文件...', 'success');
+                },
+
+                printPage() {
+                    window.print();
+                },
+
+                showToast(message, type = 'success') {
+                    this.toast = { show: true, message, type };
+                    setTimeout(() => this.toast.show = false, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
