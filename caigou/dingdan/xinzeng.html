@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建采购订单</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f1f5f9; color: #334155; }
+        
+        .text-num { font-family: 'Menlo', 'Monaco', monospace; font-weight: 600; }
+        .text-min { font-size: 13px; line-height: 1.5; }
+        
+        .smart-input {
+            width: 100%; 
+            border: 1px solid #e2e8f0; 
+            background: #fff; 
+            padding: 8px 12px;
+            border-radius: 6px; 
+            outline: none; 
+            transition: all 0.2s; 
+            font-size: 14px;
+            color: #334155;
+        }
+        .smart-input:hover { border-color: #94a3b8; }
+        .smart-input:focus { 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1); 
+        }
+        .smart-input::placeholder { color: #94a3b8; }
+        .smart-input:disabled { background-color: #f1f5f9; cursor: not-allowed; color: #64748b; }
+        .smart-input.error { border-color: #ef4444; }
+        .smart-input.error:focus { box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+        
+        .smart-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .field-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .field-label .required { color: #ef4444; margin-left: 2px; }
+        
+        .error-msg {
+            font-size: 12px;
+            color: #ef4444;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .data-table th {
+            background: #f8fafc;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .data-table tr:hover td { background: #f8fafc; }
+        
+        .bottom-bar {
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+        
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .step-active {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #93c5fd;
+        }
+        .step-completed {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+        .step-pending {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(-10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        
+        .validation-highlight {
+            border-left: 3px solid #ef4444;
+            background-color: #fef2f2;
+        }
+        
+        .supplier-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid #dbeafe;
+        }
+        
+        .urgency-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .urgency-normal { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .urgency-urgent { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .urgency-critical { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        
+        .address-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .address-card:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .address-card.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+        }
+        
+        .min-qty-warning {
+            font-size: 11px;
+            color: #d97706;
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+        
+        @media (max-width: 1024px) {
+            .form-grid { grid-template-columns: 1fr !important; }
+            .hide-mobile { display: none; }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden" x-data="purchaseOrderApp()">
+
+    <!-- 顶部Header -->
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex justify-between items-center shadow-sm z-30 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
+                <i class="fa-solid fa-file-invoice-dollar text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">创建采购订单</h1>
+                <div class="text-min text-slate-500 mt-0.5" x-text="form.institution ? form.institution + ' · ' + (form.department || '未选择部门') : '草稿状态 · 待完善信息'"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 进度步骤条 -->
+    <div class="bg-white border-b border-slate-200 px-6 py-3 flex-shrink-0">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="step-item" :class="step1Valid ? 'step-completed' : (currentStep === 1 ? 'step-active' : 'step-pending')">
+                    <i class="fa-solid" :class="step1Valid ? 'fa-check-circle' : 'fa-file-pen'"></i>
+                    <span>1. 订单信息</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300 text-sm"></i>
+                <div class="step-item" :class="step2Valid ? 'step-completed' : (currentStep === 2 ? 'step-active' : 'step-pending')">
+                    <i class="fa-solid" :class="step2Valid ? 'fa-check-circle' : 'fa-truck'"></i>
+                    <span>2. 配送信息</span>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300 text-sm"></i>
+                <div class="step-item" :class="currentStep === 3 ? 'step-active' : 'step-pending'">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    <span>3. 提交确认</span>
+                </div>
+            </div>
+            <div class="text-min text-slate-500">
+                当前步骤：<span class="font-medium text-blue-600" x-text="currentStep === 1 ? '订单信息' : (currentStep === 2 ? '配送信息' : '提交确认')"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计卡片区域 -->
+    <div class="bg-white border-b border-slate-200 px-6 py-4 grid grid-cols-1 md:grid-cols-4 gap-4 flex-shrink-0">
+        <div class="stat-card flex items-center justify-between">
+            <div>
+                <div class="text-min text-slate-500 mb-1">订单总金额</div>
+                <div class="text-2xl font-bold text-blue-600 text-num" x-text="'¥' + formatMoney(totalAmount)">¥0.00</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                <i class="fa-solid fa-yen-sign"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between">
+            <div>
+                <div class="text-min text-slate-500 mb-1">商品种类</div>
+                <div class="text-2xl font-bold text-slate-800" x-text="products.length">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                <i class="fa-solid fa-list-ol"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between">
+            <div>
+                <div class="text-min text-slate-500 mb-1">商品总数量</div>
+                <div class="text-2xl font-bold text-slate-800" x-text="totalQuantity">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+        </div>
+
+        <div class="stat-card flex items-center justify-between">
+            <div>
+                <div class="text-min text-slate-500 mb-1">涉及供应商</div>
+                <div class="text-2xl font-bold text-slate-800" x-text="uniqueSuppliers.length">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                <i class="fa-solid fa-building-user"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主体内容区 -->
+    <main class="flex-1 overflow-y-auto bg-slate-50 custom-scroll pb-32">
+        <div class="max-w-7xl mx-auto p-6 space-y-6">
+            
+            <!-- 第一部分：订单基本信息 -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 fade-in" :class="errors.step1 ? 'validation-highlight' : ''" id="step1">
+                <div class="section-title">
+                    <i class="fa-solid fa-file-pen text-blue-600"></i>
+                    订单基本信息
+                    <span class="ml-auto text-min font-normal text-slate-400" x-show="step1Valid">
+                        <i class="fa-solid fa-check-circle text-emerald-500 mr-1"></i>已完成
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 form-grid">
+                    <!-- 订单编号 -->
+                    <div>
+                        <label class="field-label">订单编号 <span class="text-slate-400 font-normal">(自动生成)</span></label>
+                        <input type="text" x-model="form.orderNo" disabled 
+                               class="smart-input bg-slate-50 text-num text-slate-600">
+                        <p class="text-min text-slate-400 mt-1">格式：机构简称+日期+流水号</p>
+                    </div>
+
+                    <!-- 申请机构（自动带出） -->
+                    <div>
+                        <label class="field-label">申请机构</label>
+                        <input type="text" x-model="form.institution" disabled 
+                               class="smart-input bg-slate-50 text-slate-600" placeholder="自动带出当前登录机构">
+                    </div>
+
+                    <!-- 申请部门 -->
+                    <div>
+                        <label class="field-label">申请部门 <span class="required">*</span></label>
+                        <select x-model="form.department" class="smart-input smart-select" :class="errors.department ? 'error' : ''">
+                            <option value="">请选择</option>
+                            <template x-for="dept in departments" :key="dept.code">
+                                <option :value="dept.name" x-text="dept.name"></option>
+                            </template>
+                        </select>
+                        <p x-show="errors.department" class="error-msg" x-text="errors.department"></p>
+                    </div>
+
+                    <!-- 紧急程度 -->
+                    <div>
+                        <label class="field-label">紧急程度 <span class="required">*</span></label>
+                        <div class="flex gap-2 mt-1">
+                            <button type="button" @click="form.urgency = 'normal'" 
+                                    class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition"
+                                    :class="form.urgency === 'normal' ? 'urgency-normal border-slate-400 bg-slate-50' : 'border-slate-200 text-slate-600 hover:border-slate-300'">
+                                普通
+                            </button>
+                            <button type="button" @click="form.urgency = 'urgent'" 
+                                    class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition"
+                                    :class="form.urgency === 'urgent' ? 'urgency-urgent border-amber-400 bg-amber-50' : 'border-slate-200 text-slate-600 hover:border-slate-300'">
+                                紧急
+                            </button>
+                            <button type="button" @click="form.urgency = 'critical'" 
+                                    class="flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition"
+                                    :class="form.urgency === 'critical' ? 'urgency-critical border-red-400 bg-red-50' : 'border-slate-200 text-slate-600 hover:border-slate-300'">
+                                特急
+                            </button>
+                        </div>
+                        <p x-show="errors.urgency" class="error-msg" x-text="errors.urgency"></p>
+                    </div>
+
+                    <!-- 期望送达日期 -->
+                    <div>
+                        <label class="field-label">期望送达日期 <span class="required">*</span></label>
+                        <input type="date" x-model="form.deliveryDate" @blur="validateStep1()"
+                               class="smart-input" :class="errors.deliveryDate ? 'error' : ''">
+                        <p x-show="errors.deliveryDate" class="error-msg" x-text="errors.deliveryDate"></p>
+                        <p class="text-min text-slate-400 mt-1" x-show="maxDeliveryDays > 0">
+                            <i class="fa-solid fa-circle-info mr-1"></i>所选商品最长货期：<span x-text="maxDeliveryDays"></span>天
+                        </p>
+                    </div>
+
+                    <!-- 收货时间范围 -->
+                    <div>
+                        <label class="field-label">收货时间范围 <span class="required">*</span></label>
+                        <select x-model="form.deliveryTimeRange" class="smart-input smart-select" :class="errors.deliveryTimeRange ? 'error' : ''">
+                            <option value="">请选择</option>
+                            <option value="anytime">随时</option>
+                            <option value="workday">工作日均可</option>
+                            <option value="worktime">仅工作时间（9:00-18:00）</option>
+                            <option value="morning">上午（9:00-12:00）</option>
+                            <option value="afternoon">下午（14:00-18:00）</option>
+                        </select>
+                        <p x-show="errors.deliveryTimeRange" class="error-msg" x-text="errors.deliveryTimeRange"></p>
+                    </div>
+
+                    <!-- 周末是否可配送 -->
+                    <div>
+                        <label class="field-label">周末是否可配送 <span class="required">*</span></label>
+                        <div class="flex gap-4 mt-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" x-model="form.weekendDelivery" value="yes" class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500">
+                                <span class="text-sm text-slate-700">是</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" x-model="form.weekendDelivery" value="no" class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500">
+                                <span class="text-sm text-slate-700">否</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 订单备注 -->
+                    <div class="lg:col-span-4">
+                        <label class="field-label">备注说明</label>
+                        <textarea x-model="form.remark" rows="2" class="smart-input resize-none" 
+                                  placeholder="如有特殊要求请在此说明，如：送货时需携带商品合格证与检测报告、外包装需标注防潮易碎等"></textarea>
+                    </div>
+                </div>
+
+                <!-- 商品明细区域 -->
+                <div class="mt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-700">采购商品明细 <span class="required">*</span></h3>
+                            <p class="text-min text-slate-500 mt-1">选择商品后自动关联供应商信息</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="openProductModal()" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center gap-1">
+                                <i class="fa-solid fa-plus"></i> 添加商品
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 商品表格（含CAS号、货号、品牌、供应商） -->
+                    <div class="overflow-x-auto border border-slate-200 rounded-lg" :class="errors.products ? 'border-red-300' : ''">
+                        <table class="w-full data-table">
+                            <thead>
+                                <tr>
+                                    <th class="w-10 text-center">#</th>
+                                    <th class="min-w-[160px]">商品信息</th>
+                                    <th class="w-24">CAS号</th>
+                                    <th class="w-24">货号</th>
+                                    <th class="min-w-[100px]">规格</th>
+                                    <th class="w-24">品牌</th>
+                                    <th class="min-w-[120px]">供应商</th>
+                                    <th class="w-20 text-center">单位</th>
+                                    <th class="w-24 text-right">单价(¥)</th>
+                                    <th class="w-20 text-center">数量</th>
+                                    <th class="w-24 text-right">小计(¥)</th>
+                                    <th class="w-16 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(product, index) in products" :key="index">
+                                    <tr class="group">
+                                        <td class="text-center text-slate-400" x-text="index + 1"></td>
+                                        <td>
+                                            <div class="font-medium text-slate-800" x-text="product.name"></div>
+                                            <div class="text-min text-slate-400" x-text="product.code"></div>
+                                            <div x-show="product.minOrderQty > 1 && product.quantity < product.minOrderQty" class="min-qty-warning">
+                                                <i class="fa-solid fa-triangle-exclamation mr-1"></i>最小起订量：<span x-text="product.minOrderQty"></span>
+                                            </div>
+                                        </td>
+                                        <td class="text-min text-slate-600 font-mono" x-text="product.cas || '-'"></td>
+                                        <td class="text-min text-slate-600" x-text="product.artNo || '-'"></td>
+                                        <td class="text-min text-slate-600" x-text="product.spec"></td>
+                                        <td class="text-min text-slate-600" x-text="product.brand || '-'"></td>
+                                        <td>
+                                            <span class="supplier-tag" x-text="product.supplierName || '-'"></span>
+                                            <div class="text-min text-slate-400 mt-1" x-show="product.deliveryDays">
+                                                货期：<span x-text="product.deliveryDays"></span>天
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="text" x-model="product.unit" class="smart-input text-center py-1 px-2 text-sm">
+                                        </td>
+                                        <td>
+                                            <input type="number" x-model.number="product.price" @input="calculateRow(index)" 
+                                                   class="smart-input text-right py-1 px-2 text-sm text-num" step="0.01" min="0">
+                                        </td>
+                                        <td>
+                                            <input type="number" x-model.number="product.quantity" @input="calculateRow(index)" 
+                                                   class="smart-input text-center py-1 px-2 text-sm text-num" min="1"
+                                                   :class="product.quantity < product.minOrderQty ? 'border-amber-300 bg-amber-50' : ''">
+                                        </td>
+                                        <td class="text-right font-medium text-slate-800 text-num" x-text="'¥' + formatMoney(product.subtotal)"></td>
+                                        <td class="text-center">
+                                            <button @click="removeProduct(index)" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                
+                                <!-- 空状态 -->
+                                <tr x-show="products.length === 0">
+                                    <td colspan="12" class="text-center py-12 text-slate-400">
+                                        <div class="mb-3 text-4xl">🛒</div>
+                                        <div class="text-min mb-2">暂无商品，请添加采购商品</div>
+                                        <button @click="openProductModal()" class="text-blue-600 hover:underline text-sm">添加商品</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot x-show="products.length > 0" class="bg-slate-50 border-t border-slate-200">
+                                <tr>
+                                    <td colspan="10" class="text-right font-medium text-slate-600">商品小计：</td>
+                                    <td class="text-right font-bold text-slate-800 text-num" x-text="'¥' + formatMoney(subtotal)"></td>
+                                    <td></td>
+                                </tr>
+                                <tr class="border-t border-slate-200 bg-blue-50">
+                                    <td colspan="10" class="text-right font-bold text-slate-800 text-base">订单总计：</td>
+                                    <td class="text-right font-bold text-blue-600 text-lg text-num" x-text="'¥' + formatMoney(totalAmount)"></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <p x-show="errors.products" class="error-msg mt-2" x-text="errors.products"></p>
+                    
+                    <!-- 多供应商提示 -->
+                    <div x-show="uniqueSuppliers.length > 1" class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                        <i class="fa-solid fa-circle-info text-amber-600 mt-0.5"></i>
+                        <div class="text-min text-amber-800">
+                            <div class="font-medium mb-1">多供应商订单</div>
+                            <div>当前订单包含 <span x-text="uniqueSuppliers.length" class="font-bold"></span> 家供应商的商品，审批通过后将按供应商拆分为多个送货单。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第二部分：配送与联系人信息完善 -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 fade-in" :class="errors.step2 ? 'validation-highlight' : ''" id="step2">
+                <div class="section-title">
+                    <i class="fa-solid fa-truck-fast text-indigo-600"></i>
+                    配送与联系人信息完善
+                    <span class="ml-auto text-min font-normal" x-show="step2Valid">
+                        <i class="fa-solid fa-check-circle text-emerald-500 mr-1"></i>已完成
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- 左侧：收货地址 -->
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-bold text-slate-700">收货地址信息</h3>
+                            <button @click="openAddressModal()" class="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                                <i class="fa-solid fa-address-book"></i> 选择常用地址
+                            </button>
+                        </div>
+                        
+                        <div>
+                            <label class="field-label">详细收货地址 <span class="required">*</span></label>
+                            <textarea x-model="form.address" rows="3" @blur="validateStep2()"
+                                      class="smart-input resize-none" :class="errors.address ? 'error' : ''"
+                                      placeholder="请输入详细收货地址（省市区街道门牌号）"></textarea>
+                            <p x-show="errors.address" class="error-msg" x-text="errors.address"></p>
+                        </div>
+
+                        <div>
+                            <label class="field-label">交货方式 <span class="required">*</span></label>
+                            <select x-model="form.deliveryMethod" class="smart-input smart-select">
+                                <option value="delivery">送货上门</option>
+                                <option value="pickup">上门自提</option>
+                                <option value="express">快递物流</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 右侧：联系人信息 -->
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-slate-700 mb-3">联系人信息</h3>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="field-label">收货人姓名 <span class="required">*</span></label>
+                                <input type="text" x-model="form.contactName" @blur="validateStep2()"
+                                       class="smart-input" :class="errors.contactName ? 'error' : ''" placeholder="收货人姓名">
+                                <p x-show="errors.contactName" class="error-msg" x-text="errors.contactName"></p>
+                            </div>
+                            <div>
+                                <label class="field-label">联系电话 <span class="required">*</span></label>
+                                <input type="tel" x-model="form.contactPhone" @blur="validateStep2()"
+                                       class="smart-input text-num" :class="errors.contactPhone ? 'error' : ''" placeholder="11位手机号">
+                                <p x-show="errors.contactPhone" class="error-msg" x-text="errors.contactPhone"></p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="field-label">备用联系电话</label>
+                            <input type="tel" x-model="form.contactPhone2" class="smart-input text-num" placeholder="备用电话（选填）">
+                        </div>
+
+                        <div>
+                            <label class="field-label">电子邮箱</label>
+                            <input type="email" x-model="form.contactEmail" class="smart-input" placeholder="用于接收订单通知">
+                        </div>
+
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-4">
+                            <div class="flex items-start gap-2">
+                                <i class="fa-solid fa-circle-info text-amber-600 mt-0.5"></i>
+                                <div class="text-min text-amber-800">
+                                    <div class="font-medium mb-1">配送提示</div>
+                                    <div>化学品及危险物品需指定专人接收，并提前准备相应的储存条件和安全防护措施。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第三部分：订单提交与校验 -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 fade-in" id="step3">
+                <div class="section-title">
+                    <i class="fa-solid fa-clipboard-check text-emerald-600"></i>
+                    订单提交前确认
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- 校验状态汇总 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="p-4 rounded-lg border" :class="step1Valid ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fa-solid" :class="step1Valid ? 'fa-check-circle text-emerald-600' : 'fa-circle-xmark text-slate-400'"></i>
+                                <span class="font-medium text-sm" :class="step1Valid ? 'text-emerald-800' : 'text-slate-600'">订单信息完整性</span>
+                            </div>
+                            <div class="text-min" :class="step1Valid ? 'text-emerald-700' : 'text-slate-500'">
+                                <span x-text="step1Valid ? '基本信息完整，商品已添加' : '待完善订单基本信息和商品明细'"></span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-lg border" :class="step2Valid ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fa-solid" :class="step2Valid ? 'fa-check-circle text-emerald-600' : 'fa-circle-xmark text-slate-400'"></i>
+                                <span class="font-medium text-sm" :class="step2Valid ? 'text-emerald-800' : 'text-slate-600'">配送信息完整性</span>
+                            </div>
+                            <div class="text-min" :class="step2Valid ? 'text-emerald-700' : 'text-slate-500'">
+                                <span x-text="step2Valid ? '收货地址和联系人已填写' : '待完善收货地址和联系人信息'"></span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 rounded-lg border" :class="allValid ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fa-solid" :class="allValid ? 'fa-check-circle text-emerald-600' : 'fa-triangle-exclamation text-amber-600'"></i>
+                                <span class="font-medium text-sm" :class="allValid ? 'text-emerald-800' : 'text-amber-800'">订单可提交状态</span>
+                            </div>
+                            <div class="text-min" :class="allValid ? 'text-emerald-700' : 'text-amber-700'">
+                                <span x-text="allValid ? '所有校验通过，可提交订单' : '存在未完成的必填项'"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 订单摘要 -->
+                    <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                        <h4 class="font-bold text-slate-800 mb-3 text-sm">订单信息汇总</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                            <div>
+                                <div class="text-min text-slate-500 mb-1">申请机构</div>
+                                <div class="font-medium text-slate-800" x-text="form.institution || '-'">-</div>
+                            </div>
+                            <div>
+                                <div class="text-min text-slate-500 mb-1">申请部门</div>
+                                <div class="font-medium text-slate-800" x-text="form.department || '-'">-</div>
+                            </div>
+                            <div>
+                                <div class="text-min text-slate-500 mb-1">紧急程度</div>
+                                <div class="font-medium">
+                                    <span class="urgency-tag" :class="'urgency-' + form.urgency" x-text="getUrgencyText(form.urgency)"></span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-min text-slate-500 mb-1">期望送达日期</div>
+                                <div class="font-medium text-slate-800" x-text="form.deliveryDate || '-'">-</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4 pt-4 border-t border-slate-200">
+                            <div>
+                                <div class="text-min text-slate-500 mb-1">收货人</div>
+                                <div class="font-medium text-slate-800" x-text="form.contactName || '-'">-</div>
+                            </div>
+                            <div>
+                                <div class="text-min text-slate-500 mb-1">联系电话</div>
+                                <div class="font-medium text-slate-800 text-num" x-text="form.contactPhone || '-'">-</div>
+                            </div>
+                            <div>
+                                <div class="text-min text-slate-500 mb-1">收货时间</div>
+                                <div class="font-medium text-slate-800" x-text="getTimeRangeText(form.deliveryTimeRange)">-</div>
+                            </div>
+                            <div>
+                                <div class="text-min text-slate-500 mb-1">周末配送</div>
+                                <div class="font-medium text-slate-800" x-text="form.weekendDelivery === 'yes' ? '是' : '否'">-</div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-slate-200 flex justify-between items-center">
+                            <div class="text-min text-slate-600">
+                                共 <span class="font-bold text-slate-800" x-text="products.length">0</span> 种商品， 
+                                涉及 <span class="font-bold text-slate-800" x-text="uniqueSuppliers.length">0</span> 家供应商，
+                                合计 <span class="font-bold text-slate-800" x-text="totalQuantity">0</span> 件
+                            </div>
+                            <div class="text-lg font-bold text-blue-600 text-num">
+                                订单总额：¥<span x-text="formatMoney(totalAmount)">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 底部固定操作栏 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-4 bottom-bar z-40">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="text-min text-slate-500">
+                    订单金额：<span class="font-bold text-blue-600 text-num text-lg" x-text="'¥' + formatMoney(totalAmount)"></span>
+                </div>
+                <div class="h-4 w-px bg-slate-300"></div>
+                <div class="text-min text-slate-500">
+                    商品：<span class="font-medium text-slate-800" x-text="products.length">0</span> 种 / 
+                    <span class="font-medium text-slate-800" x-text="totalQuantity">0</span> 件
+                </div>
+                <div class="h-4 w-px bg-slate-300"></div>
+                <div class="text-min" :class="allValid ? 'text-emerald-600' : 'text-amber-600'">
+                    <i class="fa-solid" :class="allValid ? 'fa-check-circle' : 'fa-circle-exclamation'"></i>
+                    <span x-text="allValid ? '可提交审批' : '信息待完善'"></span>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button @click="goBack()" class="px-5 py-2.5 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition">
+                    取消
+                </button>
+                <button @click="saveDraft()" class="px-5 py-2.5 border border-blue-300 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50 transition flex items-center gap-2">
+                    <i class="fa-regular fa-floppy-disk"></i> 保存草稿
+                </button>
+                <button @click="validateAndSubmit()" :disabled="!allValid"
+                        :class="allValid ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200' : 'bg-slate-300 text-slate-500 cursor-not-allowed'"
+                        class="px-6 py-2.5 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> 提交审批
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品选择弹窗（增加CAS号、货号、品牌、货期显示） -->
+    <div x-show="productModal.open" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" x-cloak @click.self="closeProductModal()">
+        <div class="bg-white w-full max-w-5xl rounded-xl shadow-2xl max-h-[80vh] flex flex-col fade-in">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800">选择商品</h3>
+                <button @click="closeProductModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 border-b border-slate-100 flex gap-3">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                    <input type="text" x-model="productModal.keyword" placeholder="搜索商品名称/CAS号/货号/编码..." 
+                           class="smart-input pl-9">
+                </div>
+                <select x-model="productModal.category" class="smart-input smart-select w-40">
+                    <option value="">全部分类</option>
+                    <option value="reagent">化学试剂</option>
+                    <option value="consumable">耗材</option>
+                    <option value="equipment">设备</option>
+                </select>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll">
+                <table class="w-full data-table">
+                    <thead class="sticky top-0 bg-white z-10">
+                        <tr>
+                            <th class="min-w-[160px]">商品信息</th>
+                            <th class="w-28">CAS号</th>
+                            <th class="w-24">货号</th>
+                            <th class="w-32">规格</th>
+                            <th class="w-24">品牌</th>
+                            <th class="min-w-[120px]">供应商</th>
+                            <th class="w-20">货期</th>
+                            <th class="w-24 text-right">单价</th>
+                            <th class="w-20 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="product in filteredProducts" :key="product.id">
+                            <tr class="hover:bg-slate-50 cursor-pointer" @click="addProduct(product)">
+                                <td>
+                                    <div class="font-medium text-slate-800" x-text="product.name"></div>
+                                    <div class="text-min text-slate-400" x-text="product.code"></div>
+                                </td>
+                                <td class="text-min text-slate-600 font-mono" x-text="product.cas || '-'"></td>
+                                <td class="text-min text-slate-600" x-text="product.artNo || '-'"></td>
+                                <td class="text-min text-slate-600" x-text="product.spec"></td>
+                                <td class="text-min text-slate-600" x-text="product.brand || '-'"></td>
+                                <td>
+                                    <span class="supplier-tag" x-text="product.supplierName"></span>
+                                </td>
+                                <td class="text-min text-center">
+                                    <span x-text="product.deliveryDays || '-'"></span>
+                                    <span x-show="product.deliveryDays">天</span>
+                                </td>
+                                <td class="text-right text-num font-medium" x-text="'¥' + product.price.toFixed(2)"></td>
+                                <td class="text-center">
+                                    <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition" @click.stop="addProduct(product)">
+                                        添加
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end">
+                <button @click="closeProductModal()" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-white transition">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 常用地址选择弹窗 -->
+    <div x-show="addressModal.open" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" x-cloak @click.self="closeAddressModal()">
+        <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl max-h-[80vh] flex flex-col fade-in">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800">选择常用地址</h3>
+                <button @click="closeAddressModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-4">
+                <div class="grid gap-3">
+                    <template x-for="addr in addressList" :key="addr.id">
+                        <div class="address-card" :class="{'selected': addressModal.selectedId === addr.id}" @click="selectAddress(addr)">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-medium text-slate-800" x-text="addr.contactName"></span>
+                                        <span class="text-min text-slate-500" x-text="addr.contactPhone"></span>
+                                        <span x-show="addr.isDefault" class="text-min px-2 py-0.5 bg-blue-100 text-blue-700 rounded">默认</span>
+                                    </div>
+                                    <div class="text-sm text-slate-600" x-text="addr.fullAddress"></div>
+                                    <div class="text-min text-slate-400 mt-1" x-text="addr.institution + ' · ' + addr.department"></div>
+                                </div>
+                                <div x-show="addressModal.selectedId === addr.id" class="text-blue-600">
+                                    <i class="fa-solid fa-check-circle text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                <button @click="closeAddressModal()" class="px-5 py-2 text-slate-600 hover:text-slate-800 text-sm font-medium">
+                    手动输入地址
+                </button>
+                <div class="flex gap-3">
+                    <button @click="closeAddressModal()" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-white transition">取消</button>
+                    <button @click="confirmAddressSelection()" 
+                            class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+                            :disabled="!addressModal.selectedId"
+                            :class="{'opacity-50 cursor-not-allowed': !addressModal.selectedId}">
+                        确认选择
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div x-show="toast.show" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed top-20 right-6 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-2xl z-[100] flex items-center gap-3">
+        <i class="fa-solid" :class="toast.type === 'success' ? 'fa-check-circle text-emerald-400' : 'fa-circle-exclamation text-rose-400'"></i>
+        <span class="text-sm font-medium" x-text="toast.message"></span>
+    </div>
+
+    <script>
+        function purchaseOrderApp() {
+            return {
+                currentStep: 1,
+                
+                form: {
+                    orderNo: '',
+                    institution: '中心实验室', // 自动带出当前登录人所属机构
+                    department: '',
+                    urgency: 'normal', // normal, urgent, critical
+                    deliveryDate: '',
+                    deliveryTimeRange: '',
+                    weekendDelivery: 'no',
+                    remark: '',
+                    address: '',
+                    deliveryMethod: 'delivery',
+                    contactName: '',
+                    contactPhone: '',
+                    contactPhone2: '',
+                    contactEmail: ''
+                },
+                products: [],
+                errors: {},
+                
+                productModal: {
+                    open: false,
+                    keyword: '',
+                    category: ''
+                },
+                
+                addressModal: {
+                    open: false,
+                    selectedId: null
+                },
+                
+                // 商品库（按需求文档字段：CAS号、货号、品牌、货期、供应商、最小起订量）
+                productLibrary: [
+                    { 
+                        id: 1, 
+                        code: '0402000001', 
+                        name: '10ml一次性离心管（无菌无酶）', 
+                        cas: '',
+                        artNo: 'GBT-001',
+                        brand: '洁特',
+                        spec: 'PP材质，100支/袋', 
+                        price: 45.00, 
+                        stock: 120, 
+                        category: 'consumable', 
+                        supplierId: 'S001', 
+                        supplierName: '西安化学试剂有限公司',
+                        deliveryDays: 3,
+                        minOrderQty: 10
+                    },
+                    { 
+                        id: 2, 
+                        code: '0101000001', 
+                        name: '甲醇（色谱级）', 
+                        cas: '67-56-1',
+                        artNo: 'M178-4L',
+                        brand: 'Sigma',
+                        spec: '4L/瓶，HPLC级', 
+                        price: 128.00, 
+                        stock: 50, 
+                        category: 'reagent', 
+                        supplierId: 'S002', 
+                        supplierName: '赛默飞世尔科技',
+                        deliveryDays: 5,
+                        minOrderQty: 1
+                    },
+                    { 
+                        id: 3, 
+                        code: '0201000001', 
+                        name: '容量瓶（A级）', 
+                        cas: '',
+                        artNo: 'GBW-100',
+                        brand: '天玻',
+                        spec: '100ml，硼硅玻璃', 
+                        price: 35.00, 
+                        stock: 200, 
+                        category: 'consumable', 
+                        supplierId: 'S003', 
+                        supplierName: '国药集团化学试剂',
+                        deliveryDays: 2,
+                        minOrderQty: 5
+                    }
+                ],
+                
+                departments: [
+                    { code: 'ORG001', name: '有机分析实验室' },
+                    { code: 'ORG002', name: '无机分析实验室' },
+                    { code: 'ORG003', name: '微生物检测部' },
+                    { code: 'ORG004', name: '质控部' }
+                ],
+                
+                // 常用地址列表
+                addressList: [
+                    {
+                        id: 1,
+                        institution: '中心实验室',
+                        department: '有机分析实验室',
+                        contactName: '张三',
+                        contactPhone: '13800138000',
+                        fullAddress: '陕西省西安市雁塔区科技路XXX号中心实验室A栋2楼203库房',
+                        isDefault: true
+                    },
+                    {
+                        id: 2,
+                        institution: '中心实验室',
+                        department: '微生物检测部',
+                        contactName: '李四',
+                        contactPhone: '13900139000',
+                        fullAddress: '陕西省西安市雁塔区科技路XXX号中心实验室B栋1楼105库房',
+                        isDefault: false
+                    }
+                ],
+                
+                toast: { show: false, message: '', type: 'success' },
+
+                get subtotal() {
+                    return this.products.reduce((sum, p) => sum + (p.subtotal || 0), 0);
+                },
+                
+                get totalAmount() {
+                    return this.subtotal;
+                },
+                
+                get totalQuantity() {
+                    return this.products.reduce((sum, p) => sum + (parseInt(p.quantity) || 0), 0);
+                },
+                
+                get uniqueSuppliers() {
+                    const suppliers = new Map();
+                    this.products.forEach(p => {
+                        if (p.supplierId) {
+                            suppliers.set(p.supplierId, p.supplierName);
+                        }
+                    });
+                    return Array.from(suppliers.entries());
+                },
+                
+                // 计算最长货期
+                get maxDeliveryDays() {
+                    if (this.products.length === 0) return 0;
+                    return Math.max(...this.products.map(p => p.deliveryDays || 0));
+                },
+                
+                get step1Valid() {
+                    return this.form.institution && this.form.department && 
+                           this.form.urgency && this.form.deliveryDate && 
+                           this.form.deliveryTimeRange && this.products.length > 0 &&
+                           this.products.every(p => p.supplierId && p.quantity >= p.minOrderQty);
+                },
+                
+                get step2Valid() {
+                    return this.form.address && this.form.contactName && this.form.contactPhone;
+                },
+                
+                get allValid() {
+                    return this.step1Valid && this.step2Valid;
+                },
+                
+                get filteredProducts() {
+                    return this.productLibrary.filter(p => {
+                        const matchKeyword = !this.productModal.keyword || 
+                            p.name.includes(this.productModal.keyword) || 
+                            p.code.includes(this.productModal.keyword) ||
+                            (p.cas && p.cas.includes(this.productModal.keyword)) ||
+                            (p.artNo && p.artNo.includes(this.productModal.keyword));
+                        const matchCategory = !this.productModal.category || p.category === this.productModal.category;
+                        return matchKeyword && matchCategory;
+                    });
+                },
+
+                init() {
+                    // 生成订单编号：机构简称+日期+流水号
+                    const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
+                    this.form.orderNo = '中心实验室-' + date + '-001';
+                    
+                    // 设置默认交货日期为7天后
+                    const defaultDate = new Date();
+                    defaultDate.setDate(defaultDate.getDate() + 7);
+                    this.form.deliveryDate = defaultDate.toISOString().split('T')[0];
+                },
+
+                getUrgencyText(urgency) {
+                    const map = {
+                        'normal': '普通',
+                        'urgent': '紧急',
+                        'critical': '特急'
+                    };
+                    return map[urgency] || '普通';
+                },
+                
+                getTimeRangeText(range) {
+                    const map = {
+                        'anytime': '随时',
+                        'workday': '工作日均可',
+                        'worktime': '仅工作时间（9:00-18:00）',
+                        'morning': '上午（9:00-12:00）',
+                        'afternoon': '下午（14:00-18:00）'
+                    };
+                    return map[range] || '-';
+                },
+
+                validateStep1() {
+                    this.errors.department = !this.form.department ? '请选择申请部门' : '';
+                    this.errors.deliveryDate = !this.form.deliveryDate ? '请选择期望送达日期' : '';
+                    this.errors.deliveryTimeRange = !this.form.deliveryTimeRange ? '请选择收货时间范围' : '';
+                    this.errors.products = this.products.length === 0 ? '请至少添加一个商品' : '';
+                    
+                    // 检查最小起订量
+                    const invalidQty = this.products.find(p => p.quantity < p.minOrderQty);
+                    if (invalidQty) {
+                        this.errors.products = `【${invalidQty.name}】数量小于最小起订量${invalidQty.minOrderQty}`;
+                    }
+                    
+                    Object.keys(this.errors).forEach(key => {
+                        if (!this.errors[key]) delete this.errors[key];
+                    });
+                    
+                    if (this.step1Valid) {
+                        this.currentStep = 2;
+                    }
+                    return this.step1Valid;
+                },
+                
+                validateStep2() {
+                    this.errors.address = !this.form.address ? '请输入详细收货地址' : '';
+                    this.errors.contactName = !this.form.contactName ? '请输入收货人姓名' : '';
+                    this.errors.contactPhone = !this.form.contactPhone ? '请输入联系电话' : '';
+                    if (this.form.contactPhone && !/^1[3-9]\d{9}$/.test(this.form.contactPhone)) {
+                        this.errors.contactPhone = '请输入正确的11位手机号';
+                    }
+                    
+                    Object.keys(this.errors).forEach(key => {
+                        if (!this.errors[key]) delete this.errors[key];
+                    });
+                    
+                    if (this.step2Valid && this.step1Valid) {
+                        this.currentStep = 3;
+                    }
+                    return this.step2Valid;
+                },
+
+                openProductModal() {
+                    this.productModal.open = true;
+                },
+                closeProductModal() {
+                    this.productModal.open = false;
+                },
+                
+                addProduct(product) {
+                    const exists = this.products.find(p => p.id === product.id);
+                    if (exists) {
+                        exists.quantity += 1;
+                        this.calculateRow(this.products.indexOf(exists));
+                        this.showToast('商品数量已增加', 'success');
+                    } else {
+                        this.products.push({
+                            id: product.id,
+                            code: product.code,
+                            name: product.name,
+                            cas: product.cas,
+                            artNo: product.artNo,
+                            brand: product.brand,
+                            spec: product.spec,
+                            price: product.price,
+                            supplierId: product.supplierId,
+                            supplierName: product.supplierName,
+                            deliveryDays: product.deliveryDays,
+                            minOrderQty: product.minOrderQty,
+                            quantity: product.minOrderQty > 1 ? product.minOrderQty : 1,
+                            unit: '个',
+                            subtotal: product.price * (product.minOrderQty > 1 ? product.minOrderQty : 1),
+                            remark: ''
+                        });
+                        this.validateStep1();
+                        this.showToast(`已添加【${product.name}】`, 'success');
+                    }
+                },
+                
+                removeProduct(index) {
+                    if (confirm('确定删除该商品吗？')) {
+                        this.products.splice(index, 1);
+                        this.validateStep1();
+                        this.showToast('商品已删除', 'success');
+                    }
+                },
+                
+                calculateRow(index) {
+                    const product = this.products[index];
+                    product.subtotal = (parseFloat(product.price) || 0) * (parseInt(product.quantity) || 0);
+                    // 实时校验最小起订量
+                    if (product.quantity < product.minOrderQty) {
+                        this.showToast(`【${product.name}】数量小于最小起订量${product.minOrderQty}`, 'error');
+                    }
+                },
+
+                // 常用地址选择
+                openAddressModal() {
+                    this.addressModal.open = true;
+                    this.addressModal.selectedId = null;
+                },
+                closeAddressModal() {
+                    this.addressModal.open = false;
+                },
+                selectAddress(addr) {
+                    this.addressModal.selectedId = addr.id;
+                },
+                confirmAddressSelection() {
+                    const addr = this.addressList.find(a => a.id === this.addressModal.selectedId);
+                    if (addr) {
+                        this.form.address = addr.fullAddress;
+                        this.form.contactName = addr.contactName;
+                        this.form.contactPhone = addr.contactPhone;
+                        this.showToast('地址已填充', 'success');
+                    }
+                    this.closeAddressModal();
+                },
+
+                validateAndSubmit() {
+                    const step1 = this.validateStep1();
+                    const step2 = this.validateStep2();
+                    
+                    if (!step1) {
+                        this.scrollToSection('step1');
+                        this.showToast('请完善订单基本信息', 'error');
+                        return;
+                    }
+                    
+                    if (!step2) {
+                        this.scrollToSection('step2');
+                        this.showToast('请完善配送与联系人信息', 'error');
+                        return;
+                    }
+                    
+                    // 检查是否有数量不足的商品
+                    const invalidProducts = this.products.filter(p => p.quantity < p.minOrderQty);
+                    if (invalidProducts.length > 0) {
+                        this.showToast(`【${invalidProducts[0].name}】数量小于最小起订量`, 'error');
+                        return;
+                    }
+                    
+                    const supplierInfo = this.uniqueSuppliers.length > 1 
+                        ? `涉及 ${this.uniqueSuppliers.length} 家供应商，审批通过后将拆分为多个送货单` 
+                        : `供应商：${this.products[0]?.supplierName || ''}`;
+                    
+                    if (confirm(`确认提交采购订单？\n\n${supplierInfo}\n订单金额：¥${this.formatMoney(this.totalAmount)}\n商品数量：${this.totalQuantity} 件`)) {
+                        console.log('提交数据：', {
+                            form: this.form,
+                            products: this.products,
+                            totalAmount: this.totalAmount,
+                            supplierCount: this.uniqueSuppliers.length
+                        });
+                        this.showToast('采购订单已提交审批！', 'success');
+                        setTimeout(() => {
+                            if (confirm('提交成功！是否返回列表页？')) {
+                                window.history.back();
+                            }
+                        }, 1500);
+                    }
+                },
+                
+                scrollToSection(id) {
+                    document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                },
+
+                saveDraft() {
+                    localStorage.setItem('purchaseOrderDraft', JSON.stringify({
+                        form: this.form,
+                        products: this.products,
+                        saveTime: new Date().toLocaleString()
+                    }));
+                    this.showToast('草稿已保存', 'success');
+                },
+                
+                goBack() {
+                    if (confirm('确定要离开吗？未保存的更改将丢失。')) {
+                        window.history.back();
+                    }
+                },
+                
+                formatMoney(amount) {
+                    return amount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+                
+                showToast(message, type = 'success') {
+                    this.toast = { show: true, message, type };
+                    setTimeout(() => this.toast.show = false, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
