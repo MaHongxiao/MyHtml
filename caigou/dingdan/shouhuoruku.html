@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收货入库管理</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #f1f5f9; color: #334155; }
+        
+        .text-num { font-family: 'Menlo', 'Monaco', monospace; font-weight: 600; }
+        .text-min { font-size: 13px; line-height: 1.5; }
+        
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        
+        .smart-input {
+            width: 100%; border: 1px solid #e2e8f0; background: #fff; padding: 8px 12px;
+            border-radius: 6px; outline: none; transition: all 0.2s; font-size: 14px;
+        }
+        .smart-input:hover { border-color: #94a3b8; }
+        .smart-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        .smart-input.error { border-color: #ef4444; background-color: #fef2f2; }
+        
+        .data-table th {
+            background: #f8fafc; font-size: 13px; font-weight: 600; color: #475569;
+            padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; white-space: nowrap;
+        }
+        .data-table td {
+            padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle;
+        }
+        .data-table tr:hover td { background: #f8fafc; }
+        
+        .status-tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; white-space: nowrap;
+        }
+        .status-pending { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .status-completed { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .status-pending-recon { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .status-reconciled { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+        .status-draft { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+        
+        .stat-card {
+            background: white; border-radius: 10px; padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+            transition: all 0.3s; cursor: pointer;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+        
+        .filter-bar {
+            background: white; border-radius: 10px; border: 1px solid #e2e8f0;
+            padding: 16px; margin-bottom: 20px;
+        }
+        
+        .action-link {
+            color: #3b82f6; font-size: 13px; cursor: pointer; transition: all 0.2s;
+            padding: 4px 8px; border-radius: 4px; white-space: nowrap;
+        }
+        .action-link:hover { color: #2563eb; background: #eff6ff; text-decoration: underline; }
+        .action-link.danger { color: #dc2626; }
+        .action-link.danger:hover { color: #b91c1c; background: #fee2e2; }
+        
+        .product-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 20px; margin-bottom: 16px; transition: all 0.2s;
+        }
+        .product-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .product-card.has-loss { border-left: 4px solid #ef4444; }
+        .product-card.completed { border-left: 4px solid #10b981; }
+        
+        .batch-record {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 12px; margin-bottom: 8px; position: relative;
+        }
+        .batch-record.deduct { border-left: 3px solid #f59e0b; }
+        .batch-record.compensate { border-left: 3px solid #3b82f6; }
+        
+        .qty-input {
+            width: 100px; text-align: center; font-weight: 600; font-size: 16px;
+            padding: 8px; border: 2px solid #e2e8f0; border-radius: 8px; outline: none;
+        }
+        .qty-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        
+        .bottom-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; background: white;
+            border-top: 1px solid #e2e8f0; padding: 16px 24px;
+            box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.05); z-index: 40;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        .modal-backdrop {
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        .step-bar {
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+            background: white; border-bottom: 1px solid #e2e8f0;
+        }
+        .step-item {
+            display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+            border-radius: 20px; font-size: 14px; font-weight: 500; color: #64748b;
+        }
+        .step-item.active { background: #eff6ff; color: #3b82f6; }
+        .step-item.completed { color: #10b981; }
+        .step-divider { width: 40px; height: 2px; background: #e2e8f0; margin: 0 8px; }
+        .step-divider.active { background: #3b82f6; }
+        
+        .expand-content {
+            max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;
+        }
+        .expand-content.open { max-height: 800px; }
+        
+        .stat-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 12px; background: #f1f5f9; border-radius: 20px; font-size: 13px; font-weight: 500;
+        }
+        
+        .badge {
+            display: inline-flex; align-items: center; padding: 2px 8px;
+            border-radius: 12px; font-size: 11px; font-weight: 600;
+        }
+        .badge-deduct { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        .badge-compensate { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        
+        @media (max-width: 1024px) {
+            .hide-mobile { display: none; }
+            .bottom-bar { flex-direction: column; gap: 12px; padding: 12px 16px; }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden" x-data="deliveryManageApp()">
+
+    <!-- 顶部Header -->
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex justify-between items-center shadow-sm z-30 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
+                <i class="fa-solid fa-truck-fast text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">收货入库管理</h1>
+                <div class="text-min text-slate-500 mt-0.5">多批次收货 · 损耗登记</div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <button @click="refreshData()" class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="刷新">
+                <i class="fa-solid fa-rotate-right" :class="loading ? 'animate-spin' : ''"></i>
+            </button>
+            <button @click="exportData()" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition flex items-center gap-2">
+                <i class="fa-solid fa-download"></i> 导出数据
+            </button>
+        </div>
+    </header>
+
+    <!-- 视图切换：列表视图 vs 详情/编辑视图 -->
+    <template x-if="currentView === 'list'">
+        <div class="flex-1 flex flex-col overflow-hidden">
+            
+            <!-- 统计卡片区域 -->
+            <div class="bg-white border-b border-slate-200 px-6 py-4 grid grid-cols-2 md:grid-cols-6 gap-4 flex-shrink-0">
+                <div class="stat-card flex items-center justify-between" @click="setFilter('status', '')">
+                    <div>
+                        <div class="text-min text-slate-500 mb-1">全部送货单</div>
+                        <div class="text-2xl font-bold text-slate-800" x-text="stats.total">0</div>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card flex items-center justify-between" @click="setFilter('status', 'pending')">
+                    <div>
+                        <div class="text-min text-slate-500 mb-1">待完成</div>
+                        <div class="text-2xl font-bold text-amber-600" x-text="stats.pending">0</div>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card flex items-center justify-between" @click="setFilter('status', 'completed')">
+                    <div>
+                        <div class="text-min text-slate-500 mb-1">已完成</div>
+                        <div class="text-2xl font-bold text-emerald-600" x-text="stats.completed">0</div>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                        <i class="fa-solid fa-check-circle"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card flex items-center justify-between" @click="setFilter('status', 'pending_recon')">
+                    <div>
+                        <div class="text-min text-slate-500 mb-1">待对账</div>
+                        <div class="text-2xl font-bold text-blue-600" x-text="stats.pendingRecon">0</div>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card flex items-center justify-between" @click="setFilter('status', 'reconciled')">
+                    <div>
+                        <div class="text-min text-slate-500 mb-1">已对账</div>
+                        <div class="text-2xl font-bold text-purple-600" x-text="stats.reconciled">0</div>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                        <i class="fa-solid fa-file-signature"></i>
+                    </div>
+                </div>
+                
+                <div class="stat-card flex items-center justify-between border-red-200 bg-red-50" @click="setFilter('hasLoss', true)">
+                    <div>
+                        <div class="text-min text-red-600 mb-1 font-medium">异常损耗</div>
+                        <div class="text-2xl font-bold text-red-600" x-text="stats.loss">0</div>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主体内容区 -->
+            <main class="flex-1 overflow-hidden flex flex-col bg-slate-50 p-6">
+                
+                <!-- 筛选栏 -->
+                <div class="filter-bar flex flex-wrap gap-4 items-end">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-min text-slate-500 mb-1">关键词搜索</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                            <input type="text" x-model="filters.keyword" placeholder="送货单号/订单号/供应商" 
+                                   class="smart-input pl-9" @input.debounce.500="applyFilters()">
+                        </div>
+                    </div>
+                    
+                    <div class="w-40">
+                        <label class="block text-min text-slate-500 mb-1">送货单状态</label>
+                        <select x-model="filters.status" class="smart-input" @change="applyFilters()">
+                            <option value="">全部状态</option>
+                            <option value="pending">待完成</option>
+                            <option value="completed">已完成</option>
+                            <option value="pending_recon">待对账</option>
+                            <option value="reconciled">已对账</option>
+                        </select>
+                    </div>
+                    
+                    <div class="w-48">
+                        <label class="block text-min text-slate-500 mb-1">供应商</label>
+                        <select x-model="filters.supplier" class="smart-input" @change="applyFilters()">
+                            <option value="">全部供应商</option>
+                            <template x-for="sup in suppliers" :key="sup.id">
+                                <option :value="sup.id" x-text="sup.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    
+                    <div class="w-48">
+                        <label class="block text-min text-slate-500 mb-1">期望送达日期</label>
+                        <input type="date" x-model="filters.date" class="smart-input" @change="applyFilters()">
+                    </div>
+                    
+                    <button @click="resetFilters()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm font-medium transition mb-0.5">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> 重置
+                    </button>
+                </div>
+
+                <!-- 数据表格 -->
+                <div class="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div class="overflow-auto custom-scroll flex-1">
+                        <table class="w-full data-table">
+                            <thead class="sticky top-0 z-10">
+                                <tr>
+                                    <th class="w-32">送货单号</th>
+                                    <th class="w-32 hide-mobile">订单号</th>
+                                    <th class="min-w-[200px]">供应商</th>
+                                    <th class="hide-mobile">期望送达日期</th>
+                                    <th class="text-center">商品种数</th>
+                                    <th class="text-center">收货进度</th>
+                                    <th class="text-center">状态</th>
+                                    <th class="text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="item in paginatedData" :key="item.id">
+                                    <tr>
+                                        <td class="font-mono text-slate-600 text-num" x-text="item.code"></td>
+                                        <td class="hide-mobile text-num text-slate-500" x-text="item.orderCode"></td>
+                                        <td>
+                                            <div class="font-medium text-slate-800" x-text="item.supplierName"></div>
+                                            <div class="text-min text-slate-400 mt-0.5" x-text="item.supplierContact"></div>
+                                        </td>
+                                        <td class="hide-mobile text-num" x-text="item.deliveryDate"></td>
+                                        <td class="text-center">
+                                            <span class="font-medium" x-text="item.productCount"></span>
+                                            <span x-show="item.lossCount > 0" class="text-red-500 text-xs ml-1" :title="'异常：' + item.lossCount + '种商品有损耗'">
+                                                <i class="fa-solid fa-circle-exclamation"></i>
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="flex items-center justify-center gap-2">
+                                                <div class="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                                    <div class="h-full bg-blue-500 rounded-full" :style="`width: ${getProgress(item)}%`"></div>
+                                                </div>
+                                                <span class="text-min text-slate-600" x-text="getProgress(item) + '%'"></span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="status-tag" :class="'status-' + item.status">
+                                                <i class="fa-solid fa-circle text-[8px]"></i>
+                                                <span x-text="getStatusText(item.status)"></span>
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="flex items-center justify-center gap-1">
+                                                <span x-show="item.status === 'pending'" class="action-link" @click="openReceiveModal(item)">
+                                                    <i class="fa-solid fa-box-open mr-1"></i>收货入库
+                                                </span>
+                                                <span x-show="item.status !== 'pending'" class="action-link" @click="viewDetail(item)">
+                                                    <i class="fa-solid fa-eye mr-1"></i>查看详情
+                                                </span>
+                                                <span x-show="item.status === 'completed'" class="action-link" @click="startReconcile(item)">
+                                                    <i class="fa-solid fa-file-invoice mr-1"></i>对账
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                                
+                                <tr x-show="paginatedData.length === 0">
+                                    <td colspan="8" class="text-center py-16 text-slate-400">
+                                        <div class="mb-3 text-4xl">📭</div>
+                                        <div class="text-min">暂无符合条件的送货单</div>
+                                        <button @click="resetFilters()" class="mt-2 text-blue-600 hover:underline text-sm">清除筛选条件</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- 分页 -->
+                    <div class="border-t border-slate-200 px-6 py-4 flex items-center justify-between bg-slate-50">
+                        <div class="text-min text-slate-500">
+                            显示 <span x-text="(currentPage - 1) * pageSize + 1" class="font-medium"></span> - 
+                            <span x-text="Math.min(currentPage * pageSize, filteredData.length)" class="font-medium"></span> 条，
+                            共 <span x-text="filteredData.length" class="font-medium"></span> 条
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="currentPage = 1" :disabled="currentPage === 1" class="pagination-btn">
+                                <i class="fa-solid fa-angles-left"></i>
+                            </button>
+                            <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn">
+                                <i class="fa-solid fa-angle-left"></i>
+                            </button>
+                            
+                            <template x-for="page in displayedPages" :key="page">
+                                <button @click="currentPage = page" 
+                                        class="pagination-btn" 
+                                        :class="page === currentPage ? 'active' : ''"
+                                        x-text="page"></button>
+                            </template>
+                            
+                            <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn">
+                                <i class="fa-solid fa-angle-right"></i>
+                            </button>
+                            <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="pagination-btn">
+                                <i class="fa-solid fa-angles-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </template>
+
+    <!-- 收货入库详情/操作视图 -->
+    <template x-if="currentView === 'detail' && currentDelivery">
+        <div class="flex-1 flex flex-col overflow-hidden bg-slate-50">
+            
+            <!-- 步骤条 -->
+            <div class="step-bar bg-white border-b border-slate-200 flex-shrink-0">
+                <div class="step-item" :class="{'completed': currentDelivery.status !== 'pending', 'active': currentDelivery.status === 'pending'}">
+                    <i class="fa-solid" :class="currentDelivery.status === 'pending' ? 'fa-truck' : 'fa-check-circle'"></i>
+                    <span>收货入库</span>
+                </div>
+                <div class="step-divider" :class="{'active': ['completed', 'pending_recon', 'reconciled'].includes(currentDelivery.status)}"></div>
+                <div class="step-item" :class="{'completed': ['pending_recon', 'reconciled'].includes(currentDelivery.status), 'active': currentDelivery.status === 'completed'}">
+                    <i class="fa-solid" :class="['pending_recon', 'reconciled'].includes(currentDelivery.status) ? 'fa-check-circle' : 'fa-clipboard-check'"></i>
+                    <span>完成收货</span>
+                </div>
+                <div class="step-divider" :class="{'active': ['pending_recon', 'reconciled'].includes(currentDelivery.status)}"></div>
+                <div class="step-item" :class="{'completed': currentDelivery.status === 'reconciled', 'active': currentDelivery.status === 'pending_recon'}">
+                    <i class="fa-solid" :class="currentDelivery.status === 'reconciled' ? 'fa-check-circle' : 'fa-file-invoice-dollar'"></i>
+                    <span>财务对账</span>
+                </div>
+            </div>
+
+            <!-- Header信息 -->
+            <div class="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-4">
+                        <button @click="backToList()" class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <h1 class="text-lg font-bold text-slate-800">送货单收货入库</h1>
+                                <span class="text-min px-2 py-0.5 rounded border" 
+                                      :class="{
+                                          'bg-amber-50 text-amber-700 border-amber-200': currentDelivery.status === 'pending',
+                                          'bg-emerald-50 text-emerald-700 border-emerald-200': currentDelivery.status === 'completed',
+                                          'bg-blue-50 text-blue-700 border-blue-200': currentDelivery.status === 'pending_recon',
+                                          'bg-purple-50 text-purple-700 border-purple-200': currentDelivery.status === 'reconciled'
+                                      }" 
+                                      x-text="getStatusText(currentDelivery.status)"></span>
+                            </div>
+                            <div class="text-min text-slate-500 flex items-center gap-3">
+                                <span>送货单号：<span class="text-num text-blue-600" x-text="currentDelivery.code"></span></span>
+                                <span class="text-slate-300">|</span>
+                                <span>订单号：<span class="text-num" x-text="currentDelivery.orderCode"></span></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <button x-show="currentDelivery.status === 'completed'" @click="startReconcile(currentDelivery)" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition flex items-center gap-2">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                            生成对账单
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap gap-6 text-min bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-500">供应商：</span>
+                        <span class="font-medium text-slate-800" x-text="currentDelivery.supplierName"></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-500">联系人：</span>
+                        <span class="font-medium text-slate-800" x-text="currentDelivery.supplierContact"></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-500">期望送达：</span>
+                        <span class="font-medium text-slate-800" x-text="currentDelivery.deliveryDate + ' ' + currentDelivery.deliveryTime"></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-500">送货人：</span>
+                        <span class="font-medium text-slate-800" x-text="currentDelivery.deliverName + ' ' + currentDelivery.deliverPhone"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计栏 -->
+            <div class="px-6 py-3 flex flex-wrap gap-3 items-center justify-between bg-white border-b border-slate-200 flex-shrink-0">
+                <div class="flex gap-3 flex-wrap">
+                    <div class="stat-pill">
+                        <i class="fa-solid fa-box text-blue-600"></i>
+                        <span>共 <b x-text="currentDelivery.products?.length || 0">0</b> 种商品</span>
+                    </div>
+                    <div class="stat-pill">
+                        <i class="fa-solid fa-check-circle text-emerald-600"></i>
+                        <span>已收完 <b x-text="completedProducts">0</b> 种</span>
+                    </div>
+                    <div class="stat-pill" :class="totalLoss > 0 ? 'bg-red-50 text-red-700' : ''">
+                        <i class="fa-solid fa-triangle-exclamation" :class="totalLoss > 0 ? 'text-red-600' : 'text-slate-400'"></i>
+                        <span>总损耗 <b x-text="totalLoss">0</b> 件</span>
+                    </div>
+                </div>
+                
+                <div x-show="currentDelivery.status === 'pending'" class="text-min text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                    <i class="fa-solid fa-circle-info mr-1"></i>
+                    支持多批次收货，每次到货请如实登记损耗情况
+                </div>
+            </div>
+
+            <!-- 商品清点列表 -->
+            <main class="flex-1 overflow-y-auto custom-scroll p-6 pb-24">
+                <template x-for="(product, index) in currentDelivery.products" :key="product.id">
+                    <div class="product-card" :class="{'has-loss': product.totalLoss > 0, 'completed': isProductCompleted(product)}">
+                        
+                        <div class="flex flex-col lg:flex-row gap-4">
+                            <!-- 商品信息 -->
+                            <div class="flex-1 flex gap-4">
+                                <div class="w-20 h-20 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0 border border-slate-200">
+                                    <i class="fa-solid fa-box text-2xl text-slate-300"></i>
+                                </div>
+                                
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div>
+                                            <h3 class="font-bold text-slate-800 text-base mb-1" x-text="product.name"></h3>
+                                            <div class="text-min text-slate-500 mb-2" x-text="product.spec"></div>
+                                            <div class="flex gap-3 text-min">
+                                                <span class="text-slate-400">编码：<span class="text-num text-slate-600" x-text="product.code"></span></span>
+                                                <span class="text-slate-400">单价：<span class="text-num text-blue-600" x-text="'¥' + product.price.toFixed(2)"></span></span>
+                                                <span class="text-slate-400">单位：<span class="text-slate-600" x-text="product.unit"></span></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 数量统计区 -->
+                            <div class="flex flex-col sm:flex-row gap-6 items-start lg:items-center lg:justify-end lg:w-auto w-full border-t lg:border-t-0 lg:border-l border-slate-100 pt-4 lg:pt-0 lg:pl-6">
+                                <div class="text-center min-w-[80px]">
+                                    <div class="text-min text-slate-500 mb-1">预期数量</div>
+                                    <div class="text-lg font-bold text-slate-700 text-num" x-text="product.expectedQty"></div>
+                                </div>
+                                
+                                <div class="text-center min-w-[80px]">
+                                    <div class="text-min text-slate-500 mb-1">累计到货</div>
+                                    <div class="text-lg font-bold text-emerald-600 text-num" x-text="product.totalReceived || 0"></div>
+                                </div>
+                                
+                                <div class="text-center min-w-[80px]">
+                                    <div class="text-min text-slate-500 mb-1">剩余待收</div>
+                                    <div class="text-lg font-bold" :class="product.remainingQty > 0 ? 'text-amber-600' : 'text-slate-400'" x-text="product.remainingQty || 0"></div>
+                                </div>
+                                
+                                <div class="text-center min-w-[80px]" x-show="product.totalLoss > 0">
+                                    <div class="text-min text-red-500 mb-1">累计损耗</div>
+                                    <div class="text-lg font-bold text-red-600 text-num" x-text="product.totalLoss || 0"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 到货记录展开区 -->
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-list-ul text-slate-400"></i>
+                                    <span class="font-bold text-slate-700 text-sm">到货记录 (<span x-text="product.batches?.length || 0"></span>批次)</span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button x-show="currentDelivery.status === 'pending' && product.remainingQty > 0" 
+                                            @click="openBatchModal(product)" 
+                                            class="text-sm text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 rounded-lg hover:bg-blue-50 transition flex items-center gap-1">
+                                        <i class="fa-solid fa-plus"></i> 登记到货
+                                    </button>
+                                    <button @click="product.showDetail = !product.showDetail" 
+                                            class="text-slate-400 hover:text-slate-600 transition p-1">
+                                        <i class="fa-solid" :class="product.showDetail ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 批次列表 -->
+                            <div x-show="product.showDetail || (product.batches?.length > 0 && currentDelivery.status !== 'pending')" 
+                                 class="expand-content" 
+                                 :class="{'open': product.showDetail || (product.batches?.length > 0 && currentDelivery.status !== 'pending')}">
+                                <div class="space-y-2 mt-3">
+                                    <template x-for="(batch, bIdx) in product.batches" :key="batch.id">
+                                        <div class="batch-record text-sm" :class="batch.handleWay">
+                                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                                <div class="flex items-center gap-3">
+                                                    <span class="badge" :class="batch.handleWay === 'deduct' ? 'badge-deduct' : 'badge-compensate'">
+                                                        <span x-text="batch.handleWay === 'deduct' ? '扣减后入库' : '供应商补货'"></span>
+                                                    </span>
+                                                    <span class="text-slate-500">
+                                                        <i class="fa-regular fa-clock mr-1"></i>
+                                                        <span x-text="batch.date"></span>
+                                                    </span>
+                                                    <span class="font-medium text-slate-700">
+                                                        到货：<span class="text-emerald-600 font-bold" x-text="batch.actualQty"></span> 
+                                                        <span x-text="product.unit"></span>
+                                                    </span>
+                                                    <span x-show="batch.lossQty > 0" class="text-red-600">
+                                                        (损耗 <span x-text="batch.lossQty"></span> <span x-text="product.unit"></span>)
+                                                    </span>
+                                                </div>
+                                                <div class="text-min text-slate-500">
+                                                    有效入库：<span class="font-bold text-blue-600" x-text="batch.effectiveQty"></span>
+                                                    <span x-show="batch.handleWay === 'compensate' && batch.lossQty > 0" class="text-blue-500 text-xs ml-1">
+                                                        (已扣除损耗)
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div x-show="batch.lossReason" class="mt-2 text-slate-600 bg-white p-2 rounded border border-slate-200">
+                                                <span class="text-slate-400">损耗原因：</span>
+                                                <span x-text="getLossReasonText(batch.lossReason)"></span>
+                                                <span x-show="batch.remark" class="ml-2 text-slate-400">| <span x-text="batch.remark"></span></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    
+                                    <div x-show="!product.batches || product.batches.length === 0" class="text-center py-4 text-slate-400 text-min bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                                        暂无到货记录
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </main>
+
+            <!-- 底部固定栏 -->
+            <div x-show="currentDelivery.status === 'pending'" class="bottom-bar">
+                <div class="left-stats flex items-center gap-6 text-min">
+                    <div>
+                        <span class="text-slate-500">总预期：</span>
+                        <span class="font-bold text-slate-800 text-num" x-text="totalExpected"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">累计到货：</span>
+                        <span class="font-bold text-emerald-600 text-num" x-text="totalReceived"></span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">剩余待收：</span>
+                        <span class="font-bold text-amber-600 text-num" x-text="totalRemaining"></span>
+                    </div>
+                    <div :class="totalLoss > 0 ? 'text-red-600' : 'text-slate-500'">
+                        <span>损耗总数：</span>
+                        <span class="font-bold text-num" x-text="totalLoss"></span>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button @click="backToList()" class="px-5 py-2.5 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition">
+                        返回列表
+                    </button>
+                    <button @click="completeDelivery()" 
+                            class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-md shadow-blue-200 transition flex items-center gap-2"
+                            :disabled="!canComplete"
+                            :class="{'opacity-50 cursor-not-allowed': !canComplete}">
+                        <i class="fa-solid fa-check-double"></i>
+                        确认完成收货
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 登记到货批次弹窗 -->
+    <div x-show="showBatchModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak @click.self="closeBatchModal()">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl modal-content">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800">登记到货批次</h3>
+                <button @click="closeBatchModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="text-sm text-blue-800 font-medium" x-text="currentProduct?.name"></div>
+                    <div class="text-min text-blue-600 mt-1">
+                        预期：<span x-text="currentProduct?.expectedQty"></span> 
+                        <span x-text="currentProduct?.unit"></span> | 
+                        剩余待收：<span class="font-bold" x-text="currentProduct?.remainingQty"></span>
+                        <span x-text="currentProduct?.unit"></span>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">本次到货数量 <span class="text-red-500">*</span></label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" x-model.number="batchForm.actualQty" class="smart-input" min="1" :max="currentProduct?.remainingQty" placeholder="输入数量">
+                            <span class="text-slate-500 text-sm" x-text="currentProduct?.unit"></span>
+                        </div>
+                        <p class="text-min text-slate-400 mt-1">不能超过剩余待收数量</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-min font-bold text-slate-700 mb-2">损耗数量</label>
+                            <input type="number" x-model.number="batchForm.lossQty" class="smart-input" min="0" :max="batchForm.actualQty" placeholder="0">
+                        </div>
+                        <div>
+                            <label class="block text-min font-bold text-slate-700 mb-2">损耗原因</label>
+                            <select x-model="batchForm.lossReason" class="smart-input" :required="batchForm.lossQty > 0" :class="{'error': batchForm.lossQty > 0 && !batchForm.lossReason}">
+                                <option value="">请选择</option>
+                                <option value="transport">运输破损</option>
+                                <option value="quality">质量不合格</option>
+                                <option value="wrong">规格/型号不符</option>
+                                <option value="short">数量短缺</option>
+                                <option value="expired">过期/临期</option>
+                                <option value="other">其他原因</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">处理方式 <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition" 
+                                   :class="batchForm.handleWay === 'deduct' ? 'border-amber-500 bg-amber-50' : 'border-slate-200 hover:border-slate-300'">
+                                <input type="radio" x-model="batchForm.handleWay" value="deduct" class="mt-1">
+                                <div>
+                                    <div class="font-medium text-sm" :class="batchForm.handleWay === 'deduct' ? 'text-amber-900' : 'text-slate-700'">扣减后入库</div>
+                                    <div class="text-min text-slate-500 mt-0.5">损耗计入到货，按实收数量入库</div>
+                                    <div class="text-min font-medium text-amber-600 mt-1" x-show="batchForm.handleWay === 'deduct'">
+                                        有效入库：<span x-text="batchForm.actualQty || 0"></span>
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition"
+                                   :class="batchForm.handleWay === 'compensate' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'">
+                                <input type="radio" x-model="batchForm.handleWay" value="compensate" class="mt-1">
+                                <div>
+                                    <div class="font-medium text-sm" :class="batchForm.handleWay === 'compensate' ? 'text-blue-900' : 'text-slate-700'">供应商补货</div>
+                                    <div class="text-min text-slate-500 mt-0.5">损耗不计入到货，后续补发</div>
+                                    <div class="text-min font-medium text-blue-600 mt-1" x-show="batchForm.handleWay === 'compensate'">
+                                        有效入库：<span x-text="(batchForm.actualQty || 0) - (batchForm.lossQty || 0)"></span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-min font-bold text-slate-700 mb-2">备注</label>
+                        <input type="text" x-model="batchForm.remark" class="smart-input" placeholder="可选填，如包装情况等...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+                <button @click="closeBatchModal()" class="px-5 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-white transition">取消</button>
+                <button @click="saveBatch()" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition">
+                    <i class="fa-solid fa-check mr-1"></i> 确认登记
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认完成收货弹窗 -->
+    <div x-show="showCompleteModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak>
+        <div class="bg-white w-full max-w-md rounded-xl shadow-2xl p-6 modal-content">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 mb-2">确认完成收货？</h3>
+                <p class="text-min text-slate-500">确认后将无法继续登记到货，生成入库记录并更新订单状态</p>
+            </div>
+            
+            <div class="bg-slate-50 rounded-lg p-4 mb-6 space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">商品种类：</span>
+                    <span class="font-medium" x-text="currentDelivery?.products?.length + ' 种'"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">总预期数量：</span>
+                    <span class="font-medium" x-text="totalExpected"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">累计到货数量：</span>
+                    <span class="font-medium text-emerald-600" x-text="totalReceived"></span>
+                </div>
+                <div x-show="totalLoss > 0" class="flex justify-between text-red-600">
+                    <span>损耗数量：</span>
+                    <span class="font-bold" x-text="totalLoss"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">剩余未收：</span>
+                    <span class="font-bold text-amber-600" x-text="totalRemaining"></span>
+                </div>
+            </div>
+            
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 text-min text-amber-800">
+                <i class="fa-solid fa-circle-info mr-1"></i>
+                <span x-show="totalRemaining > 0">仍有剩余未到货商品，确认后将标记为部分到货</span>
+                <span x-show="totalRemaining === 0">所有商品已收齐，确认后状态将更新为已完成</span>
+            </div>
+            
+            <div class="flex gap-3">
+                <button @click="showCompleteModal = false" class="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition">
+                    再检查下
+                </button>
+                <button @click="confirmComplete()" class="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 shadow-md shadow-emerald-200 transition">
+                    确认完成
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 查看详情弹窗（只读） -->
+    <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak @click.self="showDetailModal = false">
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl max-h-[90vh] flex flex-col modal-content">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800">送货单详情</h3>
+                <button @click="showDetailModal = false" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto custom-scroll flex-1">
+                <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="text-slate-500 block text-min mb-1">送货单号</span>
+                        <span class="font-mono font-bold text-slate-800" x-text="detailDelivery?.code"></span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="text-slate-500 block text-min mb-1">订单号</span>
+                        <span class="font-mono font-bold text-slate-800" x-text="detailDelivery?.orderCode"></span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="text-slate-500 block text-min mb-1">供应商</span>
+                        <span class="font-bold text-slate-800" x-text="detailDelivery?.supplierName"></span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="text-slate-500 block text-min mb-1">状态</span>
+                        <span class="status-tag inline-flex" :class="'status-' + detailDelivery?.status" x-text="getStatusText(detailDelivery?.status)"></span>
+                    </div>
+                </div>
+
+                <h4 class="font-bold text-slate-800 mb-3">商品到货明细</h4>
+                <div class="space-y-3">
+                    <template x-for="prod in detailDelivery?.products" :key="prod.id">
+                        <div class="border border-slate-200 rounded-lg p-4" :class="{'border-l-4 border-l-red-400': prod.totalLoss > 0}">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="font-bold text-slate-800" x-text="prod.name"></div>
+                                    <div class="text-min text-slate-500" x-text="prod.spec"></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-min text-slate-500">预期/累计到货/剩余</div>
+                                    <div class="font-bold text-num">
+                                        <span x-text="prod.expectedQty"></span> / 
+                                        <span class="text-emerald-600" x-text="prod.totalReceived || 0"></span> / 
+                                        <span x-text="prod.remainingQty || 0"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 批次记录 -->
+                            <div class="bg-slate-50 rounded-lg p-3 space-y-2">
+                                <template x-for="batch in prod.batches" :key="batch.id">
+                                    <div class="text-min flex justify-between items-center py-1 border-b border-slate-200 last:border-0">
+                                        <div class="flex items-center gap-2">
+                                            <span class="badge" :class="batch.handleWay === 'deduct' ? 'badge-deduct' : 'badge-compensate'">
+                                                <span x-text="batch.handleWay === 'deduct' ? '扣减' : '补货'"></span>
+                                            </span>
+                                            <span class="text-slate-500" x-text="batch.date"></span>
+                                            <span>到货 <b x-text="batch.actualQty"></b></span>
+                                            <span x-show="batch.lossQty > 0" class="text-red-500">(损 <b x-text="batch.lossQty"></b>)</span>
+                                        </div>
+                                        <div class="text-slate-600">
+                                            入库：<b x-text="batch.effectiveQty"></b>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button @click="showDetailModal = false" class="px-5 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 transition">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div x-show="toast.show" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed top-6 right-6 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-2xl z-[100] flex items-center gap-3">
+        <i class="fa-solid" :class="toast.type === 'success' ? 'fa-check-circle text-emerald-400' : 'fa-circle-exclamation text-rose-400'"></i>
+        <span class="text-sm font-medium" x-text="toast.message"></span>
+    </div>
+
+    <script>
+        function deliveryManageApp() {
+            return {
+                // 视图状态
+                currentView: 'list',
+                currentDelivery: null,
+                detailDelivery: null,
+                
+                // 弹窗状态
+                showBatchModal: false,
+                showCompleteModal: false,
+                showDetailModal: false,
+                currentProduct: null,
+                
+                // 列表数据
+                loading: false,
+                currentPage: 1,
+                pageSize: 10,
+                
+                // 筛选条件
+                filters: {
+                    keyword: '',
+                    status: '',
+                    supplier: '',
+                    date: '',
+                    hasLoss: false
+                },
+                
+                // 批次表单
+                batchForm: {
+                    actualQty: '',
+                    lossQty: 0,
+                    lossReason: '',
+                    handleWay: 'deduct',
+                    remark: ''
+                },
+                
+                toast: { show: false, message: '', type: 'success' },
+                
+                // 供应商数据
+                suppliers: [
+                    { id: 'S001', name: '西安化学试剂有限公司', contact: '张经理 029-88886666' },
+                    { id: 'S002', name: '赛默飞世尔科技', contact: '李经理 400-820-3360' },
+                    { id: 'S003', name: '国药集团化学试剂', contact: '王经理 021-12345678' }
+                ],
+                
+                // 送货单数据（多批次支持）
+                deliveryOrders: [
+                    {
+                        id: 1,
+                        code: 'SH20240115001',
+                        orderCode: 'CG202401150123',
+                        supplierId: 'S001',
+                        supplierName: '西安化学试剂有限公司',
+                        supplierContact: '张经理 029-88886666',
+                        deliveryDate: '2024-01-15',
+                        deliveryTime: '09:30',
+                        deliverName: '张师傅',
+                        deliverPhone: '13800138000',
+                        status: 'pending', // pending, completed, pending_recon, reconciled
+                        productCount: 3,
+                        lossCount: 0,
+                        products: [
+                            { 
+                                id: 1, 
+                                code: '0402000001', 
+                                name: '10ml一次性离心管（无菌无酶）', 
+                                spec: '材质PP、容量10ml、100支/袋', 
+                                price: 45.00, 
+                                unit: '袋', 
+                                expectedQty: 50,
+                                batches: [],
+                                showDetail: false
+                            },
+                            { 
+                                id: 2, 
+                                code: '0402000002', 
+                                name: '50ml螺口离心管', 
+                                spec: 'PP材质、尖底、带刻度', 
+                                price: 68.00, 
+                                unit: '包', 
+                                expectedQty: 30,
+                                batches: [
+                                    { id: 1, actualQty: 20, lossQty: 2, lossReason: 'transport', handleWay: 'deduct', date: '2024-01-15 10:30', remark: '包装破损', effectiveQty: 20 }
+                                ],
+                                showDetail: true
+                            },
+                            { 
+                                id: 3, 
+                                code: '0101000001', 
+                                name: '甲醇（色谱级）', 
+                                spec: '4L/瓶，HPLC级', 
+                                price: 128.00, 
+                                unit: '瓶', 
+                                expectedQty: 20,
+                                batches: [],
+                                showDetail: false
+                            }
+                        ]
+                    },
+                    {
+                        id: 2,
+                        code: 'SH20240114002',
+                        orderCode: 'CG202401140089',
+                        supplierId: 'S002',
+                        supplierName: '赛默飞世尔科技',
+                        supplierContact: '李经理 400-820-3360',
+                        deliveryDate: '2024-01-14',
+                        deliveryTime: '14:00',
+                        deliverName: '王师傅',
+                        deliverPhone: '13900139000',
+                        status: 'completed',
+                        productCount: 2,
+                        lossCount: 1,
+                        products: [
+                            { 
+                                id: 4, 
+                                code: '0301000001', 
+                                name: 'C18色谱柱', 
+                                spec: '4.6×250mm，5μm', 
+                                price: 2850.00, 
+                                unit: '支', 
+                                expectedQty: 2,
+                                batches: [
+                                    { id: 1, actualQty: 2, lossQty: 0, lossReason: '', handleWay: 'deduct', date: '2024-01-14 14:30', remark: '', effectiveQty: 2 }
+                                ],
+                                showDetail: false
+                            },
+                            { 
+                                id: 5, 
+                                code: '0402000003', 
+                                name: '有机系微孔滤膜', 
+                                spec: '0.45μm，47mm，100片/盒', 
+                                price: 89.00, 
+                                unit: '盒', 
+                                expectedQty: 100,
+                                batches: [
+                                    { id: 1, actualQty: 95, lossQty: 5, lossReason: 'transport', handleWay: 'compensate', date: '2024-01-14 14:30', remark: '包装破损5盒', effectiveQty: 90 }
+                                ],
+                                showDetail: false
+                            }
+                        ]
+                    },
+                    {
+                        id: 3,
+                        code: 'SH20240113003',
+                        orderCode: 'CG202401130056',
+                        supplierId: 'S003',
+                        supplierName: '国药集团化学试剂',
+                        supplierContact: '王经理 021-12345678',
+                        deliveryDate: '2024-01-13',
+                        deliveryTime: '10:00',
+                        deliverName: '刘师傅',
+                        deliverPhone: '13700137000',
+                        status: 'pending_recon',
+                        productCount: 1,
+                        lossCount: 0,
+                        products: [
+                            { 
+                                id: 6, 
+                                code: '0101000002', 
+                                name: '乙腈（色谱级）', 
+                                spec: '4L/瓶', 
+                                price: 156.00, 
+                                unit: '瓶', 
+                                expectedQty: 50,
+                                batches: [
+                                    { id: 1, actualQty: 50, lossQty: 0, lossReason: '', handleWay: 'deduct', date: '2024-01-13 10:30', remark: '', effectiveQty: 50 }
+                                ],
+                                showDetail: false
+                            }
+                        ]
+                    }
+                ],
+                
+                init() {
+                    this.calculateAllProducts();
+                    this.applyFilters();
+                },
+                
+                // 计算每个商品的累计数据
+                calculateProductStats(product) {
+                    let totalReceived = 0;
+                    let totalLoss = 0;
+                    let effectiveReceived = 0;
+                    
+                    (product.batches || []).forEach(batch => {
+                        totalReceived += parseInt(batch.actualQty) || 0;
+                        totalLoss += parseInt(batch.lossQty) || 0;
+                        
+                        // 根据处理方式计算有效入库数量
+                        if (batch.handleWay === 'deduct') {
+                            // 扣减后入库：损耗也算到货（按实收入库）
+                            effectiveReceived += parseInt(batch.actualQty) || 0;
+                        } else if (batch.handleWay === 'compensate') {
+                            // 供应商补货：损耗不算到货（后续补发）
+                            effectiveReceived += (parseInt(batch.actualQty) || 0) - (parseInt(batch.lossQty) || 0);
+                        }
+                    });
+                    
+                    product.totalReceived = totalReceived;
+                    product.totalLoss = totalLoss;
+                    product.effectiveReceived = effectiveReceived;
+                    // 剩余待收 = 预期 - 有效到货（即实际入库数）
+                    product.remainingQty = product.expectedQty - effectiveReceived;
+                    
+                    return product;
+                },
+                
+                calculateAllProducts() {
+                    this.deliveryOrders.forEach(order => {
+                        order.products.forEach(prod => this.calculateProductStats(prod));
+                    });
+                },
+                
+                // 计算属性
+                get stats() {
+                    return {
+                        total: this.deliveryOrders.length,
+                        pending: this.deliveryOrders.filter(o => o.status === 'pending').length,
+                        completed: this.deliveryOrders.filter(o => o.status === 'completed').length,
+                        pendingRecon: this.deliveryOrders.filter(o => o.status === 'pending_recon').length,
+                        reconciled: this.deliveryOrders.filter(o => o.status === 'reconciled').length,
+                        loss: this.deliveryOrders.filter(o => o.lossCount > 0).length
+                    };
+                },
+                
+                get filteredData() {
+                    return this.deliveryOrders.filter(item => {
+                        if (this.filters.keyword) {
+                            const keyword = this.filters.keyword.toLowerCase();
+                            if (!item.code.toLowerCase().includes(keyword) && 
+                                !item.orderCode.toLowerCase().includes(keyword) &&
+                                !item.supplierName.toLowerCase().includes(keyword)) {
+                                return false;
+                            }
+                        }
+                        if (this.filters.status && item.status !== this.filters.status) return false;
+                        if (this.filters.supplier && item.supplierId !== this.filters.supplier) return false;
+                        if (this.filters.date && item.deliveryDate !== this.filters.date) return false;
+                        if (this.filters.hasLoss && item.lossCount === 0) return false;
+                        return true;
+                    });
+                },
+                
+                get paginatedData() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    return this.filteredData.slice(start, start + this.pageSize);
+                },
+                
+                get totalPages() {
+                    return Math.ceil(this.filteredData.length / this.pageSize);
+                },
+                
+                get displayedPages() {
+                    const pages = [];
+                    const maxDisplay = 5;
+                    let start = Math.max(1, this.currentPage - 2);
+                    let end = Math.min(this.totalPages, start + maxDisplay - 1);
+                    if (end - start < maxDisplay - 1) start = Math.max(1, end - maxDisplay + 1);
+                    for (let i = start; i <= end; i++) pages.push(i);
+                    return pages;
+                },
+                
+                get completedProducts() {
+                    if (!this.currentDelivery) return 0;
+                    return this.currentDelivery.products.filter(p => p.remainingQty <= 0).length;
+                },
+                
+                get totalExpected() {
+                    if (!this.currentDelivery) return 0;
+                    return this.currentDelivery.products.reduce((sum, p) => sum + p.expectedQty, 0);
+                },
+                
+                get totalReceived() {
+                    if (!this.currentDelivery) return 0;
+                    return this.currentDelivery.products.reduce((sum, p) => sum + (p.totalReceived || 0), 0);
+                },
+                
+                get totalLoss() {
+                    if (!this.currentDelivery) return 0;
+                    return this.currentDelivery.products.reduce((sum, p) => sum + (p.totalLoss || 0), 0);
+                },
+                
+                get totalRemaining() {
+                    if (!this.currentDelivery) return 0;
+                    return this.currentDelivery.products.reduce((sum, p) => sum + (p.remainingQty || 0), 0);
+                },
+                
+                get canComplete() {
+                    if (!this.currentDelivery) return false;
+                    // 至少要有到货记录才能确认完成
+                    return this.currentDelivery.products.some(p => p.batches && p.batches.length > 0);
+                },
+                
+                // 方法
+                applyFilters() {
+                    this.currentPage = 1;
+                },
+                
+                resetFilters() {
+                    this.filters = { keyword: '', status: '', supplier: '', date: '', hasLoss: false };
+                    this.applyFilters();
+                },
+                
+                setFilter(key, value) {
+                    this.filters[key] = value;
+                    this.applyFilters();
+                },
+                
+                getStatusText(status) {
+                    const map = {
+                        'pending': '待完成',
+                        'completed': '已完成',
+                        'pending_recon': '待对账',
+                        'reconciled': '已对账',
+                        'draft': '草稿'
+                    };
+                    return map[status] || status;
+                },
+                
+                getLossReasonText(reason) {
+                    const map = {
+                        'transport': '运输破损',
+                        'quality': '质量不合格',
+                        'wrong': '规格不符',
+                        'short': '数量短缺',
+                        'expired': '过期/临期',
+                        'other': '其他原因'
+                    };
+                    return map[reason] || reason;
+                },
+                
+                getProgress(item) {
+                    const total = item.products.reduce((sum, p) => sum + p.expectedQty, 0);
+                    const received = item.products.reduce((sum, p) => sum + (p.effectiveReceived || 0), 0);
+                    return total > 0 ? Math.round((received / total) * 100) : 0;
+                },
+                
+                isProductCompleted(product) {
+                    return (product.remainingQty || 0) <= 0;
+                },
+                
+                // 视图切换
+                openReceiveModal(item) {
+                    this.currentDelivery = JSON.parse(JSON.stringify(item));
+                    this.currentDelivery.products.forEach(p => {
+                        p.showDetail = true; // 默认展开显示已有记录
+                    });
+                    this.currentView = 'detail';
+                },
+                
+                viewDetail(item) {
+                    this.detailDelivery = item;
+                    this.showDetailModal = true;
+                },
+                
+                backToList() {
+                    this.currentView = 'list';
+                    this.currentDelivery = null;
+                    // 刷新数据以更新列表状态
+                    this.calculateAllProducts();
+                },
+                
+                // 批次操作
+                openBatchModal(product) {
+                    if (product.remainingQty <= 0) {
+                        this.showToast('该商品已收齐，无需再登记', 'error');
+                        return;
+                    }
+                    this.currentProduct = product;
+                    this.batchForm = {
+                        actualQty: '',
+                        lossQty: 0,
+                        lossReason: '',
+                        handleWay: 'deduct',
+                        remark: ''
+                    };
+                    this.showBatchModal = true;
+                },
+                
+                closeBatchModal() {
+                    this.showBatchModal = false;
+                    setTimeout(() => {
+                        this.currentProduct = null;
+                    }, 200);
+                },
+                
+                saveBatch() {
+                    if (!this.batchForm.actualQty || this.batchForm.actualQty <= 0) {
+                        this.showToast('请输入本次到货数量', 'error');
+                        return;
+                    }
+                    if (this.batchForm.actualQty > this.currentProduct.remainingQty) {
+                        this.showToast('本次到货数量不能超过剩余待收数量', 'error');
+                        return;
+                    }
+                    if (this.batchForm.lossQty > 0 && !this.batchForm.lossReason) {
+                        this.showToast('请选择损耗原因', 'error');
+                        return;
+                    }
+                    if (this.batchForm.lossQty > this.batchForm.actualQty) {
+                        this.showToast('损耗数量不能超过到货数量', 'error');
+                        return;
+                    }
+                    
+                    const newBatch = {
+                        id: Date.now(),
+                        actualQty: parseInt(this.batchForm.actualQty),
+                        lossQty: parseInt(this.batchForm.lossQty) || 0,
+                        lossReason: this.batchForm.lossReason,
+                        handleWay: this.batchForm.handleWay,
+                        remark: this.batchForm.remark,
+                        date: new Date().toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+                        effectiveQty: this.batchForm.handleWay === 'deduct' 
+                            ? parseInt(this.batchForm.actualQty) 
+                            : parseInt(this.batchForm.actualQty) - (parseInt(this.batchForm.lossQty) || 0)
+                    };
+                    
+                    // 找到原商品并添加批次
+                    const prod = this.currentDelivery.products.find(p => p.id === this.currentProduct.id);
+                    if (prod) {
+                        if (!prod.batches) prod.batches = [];
+                        prod.batches.push(newBatch);
+                        this.calculateProductStats(prod);
+                    }
+                    
+                    this.closeBatchModal();
+                    this.showToast('到货登记成功', 'success');
+                },
+                
+                // 完成收货
+                completeDelivery() {
+                    this.showCompleteModal = true;
+                },
+                
+                confirmComplete() {
+                    // 更新送货单状态
+                    const index = this.deliveryOrders.findIndex(o => o.id === this.currentDelivery.id);
+                    if (index > -1) {
+                        const order = this.deliveryOrders[index];
+                        order.products = this.currentDelivery.products;
+                        
+                        // 计算是否有损耗
+                        order.lossCount = order.products.filter(p => p.totalLoss > 0).length;
+                        
+                        // 判断是否全部收齐（remainingQty都为0）
+                        const allCompleted = order.products.every(p => p.remainingQty <= 0);
+                        
+                        // 状态流转：pending -> completed
+                        order.status = 'completed';
+                        
+                        this.showCompleteModal = false;
+                        this.showToast('收货完成！送货单已更新', 'success');
+                        
+                        setTimeout(() => {
+                            this.backToList();
+                        }, 1500);
+                    }
+                },
+                
+                // 对账
+                startReconcile(item) {
+                    if (item.status === 'completed') {
+                        const index = this.deliveryOrders.findIndex(o => o.id === item.id);
+                        if (index > -1) {
+                            this.deliveryOrders[index].status = 'pending_recon';
+                            this.showToast('已生成对账单，状态更新为待对账', 'success');
+                            if (this.currentDelivery) {
+                                this.currentDelivery.status = 'pending_recon';
+                            }
+                        }
+                    } else if (item.status === 'pending_recon') {
+                        const index = this.deliveryOrders.findIndex(o => o.id === item.id);
+                        if (index > -1) {
+                            this.deliveryOrders[index].status = 'reconciled';
+                            this.showToast('对账完成！', 'success');
+                            if (this.currentDelivery) {
+                                this.currentDelivery.status = 'reconciled';
+                            }
+                        }
+                    }
+                },
+                
+                // 其他
+                exportData() {
+                    this.showToast('正在导出送货单数据...', 'success');
+                },
+                
+                refreshData() {
+                    this.loading = true;
+                    setTimeout(() => {
+                        this.loading = false;
+                        this.showToast('数据已刷新', 'success');
+                    }, 500);
+                },
+                
+                showToast(message, type = 'success') {
+                    this.toast = { show: true, message, type };
+                    setTimeout(() => this.toast.show = false, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
