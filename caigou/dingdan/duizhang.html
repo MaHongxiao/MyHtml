@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>对账单管理</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f1f5f9; color: #334155; }
+        
+        /* 字体规范 */
+        .text-num { font-family: 'Menlo', 'Monaco', monospace; font-weight: 600; }
+        .text-min { font-size: 13px; line-height: 1.5; }
+        
+        /* 滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        
+        /* 输入框样式 */
+        .smart-input {
+            width: 100%; 
+            border: 1px solid #e2e8f0; 
+            background: #fff; 
+            padding: 8px 12px;
+            border-radius: 6px; 
+            outline: none; 
+            transition: all 0.2s; 
+            font-size: 14px;
+        }
+        .smart-input:hover { border-color: #94a3b8; }
+        .smart-input:focus { 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1); 
+        }
+        
+        /* 表格样式 */
+        .data-table th {
+            background: #f8fafc;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .data-table tr:hover td {
+            background: #f8fafc;
+        }
+        
+        /* 状态标签 */
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .status-draft { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+        .status-pending { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .status-confirmed { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .status-archived { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+        
+        /* 统计卡片 */
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+        }
+        .stat-card.active {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        
+        /* 操作链接 */
+        .action-link {
+            color: #3b82f6;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        .action-link:hover {
+            color: #2563eb;
+            background: #eff6ff;
+            text-decoration: underline;
+        }
+        .action-link.danger {
+            color: #dc2626;
+        }
+        .action-link.danger:hover {
+            color: #b91c1c;
+            background: #fee2e2;
+        }
+        .action-divider {
+            color: #e2e8f0;
+            margin: 0 4px;
+        }
+        
+        /* 分页 */
+        .pagination-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+            font-size: 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pagination-btn:hover:not(:disabled) {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        .pagination-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 筛选栏 */
+        .filter-bar {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        /* 模态框动画 */
+        .modal-backdrop {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        /* 步骤条 */
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            background: #f1f5f9;
+            transition: all 0.2s;
+        }
+        .step-item.active {
+            background: #3b82f6;
+            color: white;
+        }
+        .step-item.completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        /* 订单卡片（在对账弹窗中） */
+        .order-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
+            transition: all 0.2s;
+        }
+        .order-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.1);
+        }
+        .order-card.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        /* 金额高亮 */
+        .amount-highlight {
+            font-size: 24px;
+            font-weight: 700;
+            color: #334155;
+            font-family: 'Menlo', 'Monaco', monospace;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .hide-mobile { display: none; }
+            .data-table td, .data-table th { padding: 10px 8px; }
+        }
+        
+        /* 打印样式 */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden" x-data="reconciliationApp()">
+
+    <!-- 顶部Header -->
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex justify-between items-center shadow-sm z-30 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
+                <i class="fa-solid fa-file-invoice-dollar text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">对账单管理</h1>
+                <div class="text-min text-slate-500 mt-0.5">周期结算 · 供应商对账 · 财务归档</div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <button @click="refreshData()" class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="刷新">
+                <i class="fa-solid fa-rotate-right" :class="loading ? 'animate-spin' : ''"></i>
+            </button>
+            <button @click="exportAll()" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition flex items-center gap-2 no-print">
+                <i class="fa-solid fa-download"></i> 导出全部
+            </button>
+            <button @click="openGenerateModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition flex items-center gap-2 no-print">
+                <i class="fa-solid fa-plus"></i> 生成对账单
+            </button>
+        </div>
+    </header>
+
+    <!-- 统计卡片区域 -->
+    <div class="bg-white border-b border-slate-200 px-6 py-4 grid grid-cols-2 md:grid-cols-5 gap-4 flex-shrink-0 overflow-x-auto">
+        <div class="stat-card flex items-center justify-between" 
+             :class="{'active': filters.status === ''}" 
+             @click="setFilter('status', '')">
+            <div>
+                <div class="text-min text-slate-500 mb-1">全部对账单</div>
+                <div class="text-2xl font-bold text-slate-800" x-text="stats.total">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between" 
+             :class="{'active': filters.status === 'draft'}" 
+             @click="setFilter('status', 'draft')">
+            <div>
+                <div class="text-min text-slate-500 mb-1">草稿</div>
+                <div class="text-2xl font-bold text-indigo-600" x-text="stats.draft">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                <i class="fa-solid fa-file-pen"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between" 
+             :class="{'active': filters.status === 'pending'}" 
+             @click="setFilter('status', 'pending')">
+            <div>
+                <div class="text-min text-slate-500 mb-1">待确认</div>
+                <div class="text-2xl font-bold text-amber-500" x-text="stats.pending">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between" 
+             :class="{'active': filters.status === 'confirmed'}" 
+             @click="setFilter('status', 'confirmed')">
+            <div>
+                <div class="text-min text-slate-500 mb-1">已确认</div>
+                <div class="text-2xl font-bold text-emerald-600" x-text="stats.confirmed">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <i class="fa-solid fa-check-circle"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between" 
+             :class="{'active': filters.status === 'archived'}" 
+             @click="setFilter('status', 'archived')">
+            <div>
+                <div class="text-min text-slate-500 mb-1">已归档</div>
+                <div class="text-2xl font-bold text-slate-600" x-text="stats.archived">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                <i class="fa-solid fa-box-archive"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主体内容区 -->
+    <main class="flex-1 overflow-hidden flex flex-col bg-slate-50 p-6">
+        
+        <!-- 筛选栏 -->
+        <div class="filter-bar flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-min text-slate-500 mb-1">关键词搜索</label>
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                    <input type="text" x-model="filters.keyword" placeholder="对账单号/供应商名称" 
+                           class="smart-input pl-9" @input.debounce.500="applyFilters()">
+                </div>
+            </div>
+            
+            <div class="w-40">
+                <label class="block text-min text-slate-500 mb-1">对账状态</label>
+                <select x-model="filters.status" class="smart-input" @change="applyFilters()">
+                    <option value="">全部状态</option>
+                    <option value="draft">草稿</option>
+                    <option value="pending">待确认</option>
+                    <option value="confirmed">已确认</option>
+                    <option value="archived">已归档</option>
+                </select>
+            </div>
+            
+            <div class="w-48">
+                <label class="block text-min text-slate-500 mb-1">供应商</label>
+                <select x-model="filters.supplier" class="smart-input" @change="applyFilters()">
+                    <option value="">全部供应商</option>
+                    <template x-for="sup in suppliers" :key="sup.id">
+                        <option :value="sup.id" x-text="sup.name"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <div class="w-40">
+                <label class="block text-min text-slate-500 mb-1">对账周期</label>
+                <select x-model="filters.period" class="smart-input" @change="applyFilters()">
+                    <option value="">全部周期</option>
+                    <option value="2025-01">2025年1月</option>
+                    <option value="2025-02">2025年2月</option>
+                    <option value="2025-03">2025年3月</option>
+                    <option value="2025-Q1">2025年第一季度</option>
+                </select>
+            </div>
+            
+            <button @click="resetFilters()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm font-medium transition mb-0.5">
+                <i class="fa-solid fa-rotate-left mr-1"></i> 重置
+            </button>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div class="overflow-auto custom-scroll flex-1">
+                <table class="w-full data-table">
+                    <thead class="sticky top-0 z-10">
+                        <tr>
+                            <th class="w-10 text-center cursor-default">#</th>
+                            <th class="w-36 cursor-default">对账单号</th>
+                            <th class="min-w-[200px] cursor-default">供应商</th>
+                            <th class="w-32 cursor-default">对账周期</th>
+                            <th class="w-24 text-center cursor-default">订单数</th>
+                            <th class="w-32 text-right cursor-default">对账金额</th>
+                            <th class="w-24 text-center cursor-default">状态</th>
+                            <th class="w-40 cursor-default">创建时间</th>
+                            <th class="w-48 text-center cursor-default">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(item, index) in paginatedData" :key="item.id">
+                            <tr>
+                                <td class="text-center text-slate-400 text-min" x-text="(currentPage - 1) * pageSize + index + 1"></td>
+                                <td>
+                                    <span class="text-num text-blue-600 font-medium" x-text="item.code"></span>
+                                </td>
+                                <td>
+                                    <div class="font-medium text-slate-800" x-text="item.supplierName"></div>
+                                    <div class="text-min text-slate-400 mt-0.5" x-text="item.supplierContact || '张经理 13800138000'"></div>
+                                </td>
+                                <td>
+                                    <span class="text-num text-slate-700 bg-slate-100 px-2 py-1 rounded text-xs" x-text="item.period"></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="font-medium text-slate-700" x-text="item.orderCount"></span>
+                                    <span class="text-min text-slate-400">单</span>
+                                </td>
+                                <td class="text-right">
+                                    <span class="text-num font-bold text-slate-800" x-text="'¥' + item.amount.toLocaleString('zh-CN', {minimumFractionDigits: 2})"></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="status-tag" :class="'status-' + item.status">
+                                        <i class="fa-solid fa-circle text-[8px]"></i>
+                                        <span x-text="getStatusText(item.status)"></span>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="text-min text-slate-600" x-text="item.createTime.split(' ')[0]"></div>
+                                    <div class="text-min text-slate-400" x-text="item.createTime.split(' ')[1]"></div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="flex items-center justify-center gap-1 flex-wrap">
+                                        <span class="action-link" @click="viewDetail(item)">查看</span>
+                                        <span class="action-divider">|</span>
+                                        <span class="action-link" @click="exportItem(item)">导出</span>
+                                        <span class="action-divider">|</span>
+                                        <template x-if="item.status === 'draft'">
+                                            <span class="action-link" @click="submitConfirm(item)">提交</span>
+                                        </template>
+                                        <template x-if="item.status === 'pending'">
+                                            <span class="action-link text-emerald-600" @click="openConfirmModal(item)">确认</span>
+                                        </template>
+                                        <template x-if="item.status === 'draft' || item.status === 'pending'">
+                                            <span class="action-divider">|</span>
+                                        </template>
+                                        <span class="action-link danger" @click="deleteItem(item)">删除</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                        
+                        <!-- 空状态 -->
+                        <tr x-show="paginatedData.length === 0">
+                            <td colspan="9" class="text-center py-16 text-slate-400">
+                                <div class="mb-3 text-4xl">📭</div>
+                                <div class="text-min">暂无对账单记录</div>
+                                <button @click="openGenerateModal()" class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition">
+                                    立即生成对账单
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="border-t border-slate-200 px-6 py-4 flex items-center justify-between bg-slate-50">
+                <div class="text-min text-slate-500">
+                    显示 <span x-text="(currentPage - 1) * pageSize + 1" class="font-medium"></span> - 
+                    <span x-text="Math.min(currentPage * pageSize, filteredData.length)" class="font-medium"></span> 条，
+                    共 <span x-text="filteredData.length" class="font-medium"></span> 条
+                </div>
+                <div class="flex gap-2">
+                    <button @click="currentPage = 1" :disabled="currentPage === 1" class="pagination-btn">
+                        <i class="fa-solid fa-angles-left"></i>
+                    </button>
+                    <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn">
+                        <i class="fa-solid fa-angle-left"></i>
+                    </button>
+                    
+                    <template x-for="page in displayedPages" :key="page">
+                        <button @click="currentPage = page" 
+                                class="pagination-btn" 
+                                :class="page === currentPage ? 'active' : ''"
+                                x-text="page"></button>
+                    </template>
+                    
+                    <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn">
+                        <i class="fa-solid fa-angle-right"></i>
+                    </button>
+                    <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="pagination-btn">
+                        <i class="fa-solid fa-angles-right"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-2 text-min text-slate-500">
+                    <span>每页</span>
+                    <select x-model.number="pageSize" @change="currentPage = 1" class="smart-input py-1 px-2 w-16 text-center">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                    <span>条</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 生成对账单弹窗（Wizard） -->
+    <div x-show="generateModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak>
+        <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl modal-content flex flex-col max-h-[90vh]">
+            <!-- 弹窗头部 -->
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800">生成对账单</h3>
+                <button @click="closeGenerateModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <!-- 步骤条 -->
+            <div class="px-6 py-4 border-b border-slate-200 bg-white">
+                <div class="flex items-center justify-center gap-4">
+                    <div class="step-item" :class="{'active': generateModal.step === 1, 'completed': generateModal.step > 1}">
+                        <i class="fa-solid" :class="generateModal.step > 1 ? 'fa-check' : 'fa-1'"></i>
+                        <span>选择条件</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300"></i>
+                    <div class="step-item" :class="{'active': generateModal.step === 2, 'completed': generateModal.step > 2}">
+                        <i class="fa-solid" :class="generateModal.step > 2 ? 'fa-check' : 'fa-2'"></i>
+                        <span>核对订单</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300"></i>
+                    <div class="step-item" :class="{'active': generateModal.step === 3}">
+                        <i class="fa-solid fa-3"></i>
+                        <span>确认生成</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 步骤1：选择条件 -->
+            <div x-show="generateModal.step === 1" class="p-6 overflow-y-auto custom-scroll flex-1">
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">选择供应商 <span class="text-red-500">*</span></label>
+                        <div class="space-y-2 max-h-48 overflow-y-auto custom-scroll border border-slate-200 rounded-lg p-3">
+                            <template x-for="sup in suppliers" :key="sup.id">
+                                <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                                    <input type="checkbox" :value="sup.id" x-model="generateModal.selectedSuppliers" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm text-slate-700" x-text="sup.name"></span>
+                                </label>
+                            </template>
+                        </div>
+                        <p x-show="generateModal.selectedSuppliers.length === 0" class="text-min text-red-500 mt-2">请至少选择一个供应商</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">对账周期 <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-min text-slate-500 mb-1">周期类型</label>
+                                <select x-model="generateModal.periodType" class="smart-input">
+                                    <option value="month">月度</option>
+                                    <option value="quarter">季度</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-min text-slate-500 mb-1">具体周期</label>
+                                <select x-model="generateModal.period" class="smart-input">
+                                    <template x-if="generateModal.periodType === 'month'">
+                                        <optgroup label="2025年">
+                                            <option value="2025-01">2025年1月</option>
+                                            <option value="2025-02">2025年2月</option>
+                                            <option value="2025-03">2025年3月</option>
+                                        </optgroup>
+                                    </template>
+                                    <template x-if="generateModal.periodType === 'quarter'">
+                                        <optgroup label="2025年">
+                                            <option value="2025-Q1">2025年第一季度</option>
+                                        </optgroup>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 步骤2：核对订单 -->
+            <div x-show="generateModal.step === 2" class="flex-1 overflow-hidden flex flex-col">
+                <div class="p-4 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
+                    <div class="text-sm text-blue-800">
+                        <i class="fa-solid fa-info-circle mr-1"></i>
+                        已筛选出 <b x-text="generateModal.availableOrders.length"></b> 个符合条件的订单（已确认收货且未对账）
+                    </div>
+                    <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                        <input type="checkbox" @change="toggleSelectAllOrders()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span>全选</span>
+                    </label>
+                </div>
+                <div class="flex-1 overflow-y-auto custom-scroll p-4 bg-slate-50">
+                    <div x-show="generateModal.availableOrders.length === 0" class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-inbox text-3xl mb-2"></i>
+                        <p class="text-min">该条件下暂无待对账订单</p>
+                    </div>
+                    <template x-for="order in generateModal.availableOrders" :key="order.id">
+                        <div class="order-card" :class="{'selected': generateModal.selectedOrders.includes(order.id)}">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" :value="order.id" x-model="generateModal.selectedOrders" class="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <span class="text-num text-blue-600 font-medium" x-text="order.code"></span>
+                                            <span class="text-min text-slate-500 ml-2" x-text="order.date"></span>
+                                        </div>
+                                        <span class="text-num font-bold text-slate-800" x-text="'¥' + order.amount.toFixed(2)"></span>
+                                    </div>
+                                    <div class="text-sm text-slate-600 mb-1" x-text="order.supplierName"></div>
+                                    <div class="text-min text-slate-400">
+                                        入库数量: <span x-text="order.quantity"></span> 件 | 
+                                        送货单号: <span class="text-num" x-text="order.deliveryNo"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="p-4 border-t border-slate-200 bg-white">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-slate-600">已选择 <b x-text="generateModal.selectedOrders.length" class="text-blue-600"></b> 个订单</span>
+                        <span class="text-lg font-bold text-slate-800">合计: <span class="text-num text-blue-600" x-text="'¥' + calculateSelectedAmount().toFixed(2)"></span></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 步骤3：确认生成 -->
+            <div x-show="generateModal.step === 3" class="p-6 overflow-y-auto custom-scroll flex-1">
+                <div class="max-w-lg mx-auto text-center mb-6">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-slate-800 mb-2">确认生成对账单？</h4>
+                    <p class="text-min text-slate-500">生成后关联订单将标记为"已对账"，不可再次绑定</p>
+                </div>
+                
+                <div class="bg-slate-50 rounded-lg p-4 space-y-3 border border-slate-200">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">供应商：</span>
+                        <span class="font-medium text-slate-800" x-text="getSelectedSupplierNames()"></span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">对账周期：</span>
+                        <span class="font-medium text-slate-800" x-text="generateModal.period"></span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">订单数量：</span>
+                        <span class="font-medium text-slate-800" x-text="generateModal.selectedOrders.length + ' 单'"></span>
+                    </div>
+                    <div class="border-t border-slate-200 pt-3 flex justify-between items-center">
+                        <span class="text-slate-600 font-medium">对账金额合计：</span>
+                        <span class="amount-highlight text-blue-600" x-text="'¥' + calculateSelectedAmount().toFixed(2)"></span>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">备注说明（选填）</label>
+                    <textarea x-model="generateModal.remark" rows="3" class="smart-input resize-none" placeholder="添加对账备注信息..."></textarea>
+                </div>
+            </div>
+            
+            <!-- 弹窗底部 -->
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                <button x-show="generateModal.step > 1" @click="generateModal.step--" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-white transition">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> 上一步
+                </button>
+                <div x-show="generateModal.step === 1" class="text-min text-slate-400">
+                    共选择 <span x-text="generateModal.selectedSuppliers.length" class="font-medium text-slate-700"></span> 个供应商
+                </div>
+                
+                <div class="flex gap-3">
+                    <button @click="closeGenerateModal()" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-white transition">取消</button>
+                    <button x-show="generateModal.step < 3" 
+                            @click="nextStep()" 
+                            class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition"
+                            :disabled="!canProceed()"
+                            :class="{'opacity-50 cursor-not-allowed': !canProceed()}">
+                        下一步 <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                    <button x-show="generateModal.step === 3" 
+                            @click="generateReconciliation()" 
+                            class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition">
+                        确认生成
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 对账单详情弹窗 -->
+    <div x-show="detailModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak @click.self="detailModal.open = false">
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl max-h-[90vh] flex flex-col modal-content">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">对账单详情</h3>
+                    <p class="text-min text-slate-500 mt-0.5" x-text="'单号：' + detailModal.item?.code"></p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button @click="printDetail()" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition">
+                        <i class="fa-solid fa-print mr-1"></i> 打印
+                    </button>
+                    <button @click="detailModal.open = false" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-6">
+                <!-- 基本信息 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <div class="text-min text-slate-500 mb-1">供应商</div>
+                        <div class="font-medium text-slate-800 text-sm" x-text="detailModal.item?.supplierName"></div>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <div class="text-min text-slate-500 mb-1">对账周期</div>
+                        <div class="font-medium text-slate-800 text-sm" x-text="detailModal.item?.period"></div>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <div class="text-min text-slate-500 mb-1">订单数量</div>
+                        <div class="font-medium text-slate-800 text-sm" x-text="detailModal.item?.orderCount + ' 单'"></div>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <div class="text-min text-slate-500 mb-1">对账金额</div>
+                        <div class="font-bold text-blue-600 text-num" x-text="'¥' + (detailModal.item?.amount || 0).toLocaleString('zh-CN', {minimumFractionDigits: 2})"></div>
+                    </div>
+                </div>
+
+                <!-- 关联订单列表 -->
+                <div class="border border-slate-200 rounded-lg overflow-hidden">
+                    <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 font-bold text-slate-800 text-sm">
+                        <i class="fa-solid fa-list-ul mr-2 text-slate-400"></i>关联订单明细
+                    </div>
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 text-slate-500 text-min">
+                            <tr>
+                                <th class="px-4 py-2 text-left font-medium border-b">送货单号</th>
+                                <th class="px-4 py-2 text-left font-medium border-b">订单日期</th>
+                                <th class="px-4 py-2 text-right font-medium border-b">金额</th>
+                                <th class="px-4 py-2 text-center font-medium border-b">状态</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="order in detailModal.orders" :key="order.id">
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-4 py-3 text-num text-blue-600" x-text="order.deliveryNo"></td>
+                                    <td class="px-4 py-3 text-slate-600" x-text="order.date"></td>
+                                    <td class="px-4 py-3 text-right font-medium text-num" x-text="'¥' + order.amount.toFixed(2)"></td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">已对账</span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                        <tfoot class="bg-slate-50 border-t border-slate-200">
+                            <tr>
+                                <td colspan="2" class="px-4 py-3 text-right font-bold text-slate-700">合计：</td>
+                                <td class="px-4 py-3 text-right font-bold text-num text-blue-600" x-text="'¥' + (detailModal.item?.amount || 0).toLocaleString('zh-CN', {minimumFractionDigits: 2})"></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- 备注 -->
+                <div x-show="detailModal.item?.remark" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                    <i class="fa-solid fa-note-sticky mr-1"></i> 备注：<span x-text="detailModal.item?.remark"></span>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+                <button @click="exportItem(detailModal.item)" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition">
+                    <i class="fa-solid fa-download mr-1"></i> 导出Excel
+                </button>
+                <button @click="detailModal.open = false" class="px-5 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 transition">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认对账弹窗 -->
+    <div x-show="confirmModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak>
+        <div class="bg-white w-full max-w-md rounded-xl shadow-2xl p-6 modal-content text-center">
+            <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">确认对账</h3>
+            <p class="text-min text-slate-500 mb-6">
+                确认与 <b x-text="confirmModal.item?.supplierName"></b> 的对账信息无误？<br>
+                确认后将对账单状态更新为"已确认"
+            </p>
+            
+            <div class="bg-slate-50 rounded-lg p-4 mb-6 text-left">
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-slate-500">对账金额：</span>
+                    <span class="font-bold text-slate-800 text-num" x-text="'¥' + (confirmModal.item?.amount || 0).toFixed(2)"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-500">订单数量：</span>
+                    <span class="font-medium text-slate-800" x-text="confirmModal.item?.orderCount + ' 单'"></span>
+                </div>
+            </div>
+
+            <div class="flex gap-3 justify-center">
+                <button @click="confirmModal.open = false" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition">取消</button>
+                <button @click="executeConfirm()" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 shadow-md shadow-emerald-200 transition">确认无误</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div x-show="deleteModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak>
+        <div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 text-center modal-content">
+            <div class="w-14 h-14 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-exclamation"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">确认删除?</h3>
+            <p class="text-min text-slate-500 mb-6">
+                对账单 <b x-text="deleteModal.item?.code" class="text-slate-700"></b> 将被删除<br>
+                <span class="text-amber-600 text-xs block mt-1">关联订单将恢复为"未对账"状态</span>
+            </p>
+            <div class="flex justify-center gap-3">
+                <button @click="deleteModal.open = false" class="px-5 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 transition">取消</button>
+                <button @click="executeDelete()" class="px-5 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 shadow-md shadow-red-200 transition">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div x-show="toast.show" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed top-6 right-6 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-2xl z-[100] flex items-center gap-3">
+        <i class="fa-solid" :class="toast.type === 'success' ? 'fa-check-circle text-emerald-400' : 'fa-circle-exclamation text-rose-400'"></i>
+        <span class="text-sm font-medium" x-text="toast.message"></span>
+    </div>
+
+    <script>
+        function reconciliationApp() {
+            return {
+                loading: false,
+                currentPage: 1,
+                pageSize: 10,
+                
+                filters: {
+                    keyword: '',
+                    status: '',
+                    supplier: '',
+                    period: ''
+                },
+                
+                suppliers: [
+                    { id: 'S001', name: '西安化学试剂有限公司', contact: '张经理 13800138000' },
+                    { id: 'S002', name: '赛默飞世尔科技', contact: '李经理 13900139000' },
+                    { id: 'S003', name: '国药集团化学试剂', contact: '王经理 13700137000' }
+                ],
+                
+                // 对账单数据
+                reconciliations: [
+                    {
+                        id: 1,
+                        code: 'DZ20250115001',
+                        supplierId: 'S001',
+                        supplierName: '西安化学试剂有限公司',
+                        supplierContact: '张经理 13800138000',
+                        period: '2025-01',
+                        orderCount: 12,
+                        amount: 12580.50,
+                        status: 'confirmed',
+                        createTime: '2025-01-15 14:30:00',
+                        remark: '月度常规对账'
+                    },
+                    {
+                        id: 2,
+                        code: 'DZ20250120002',
+                        supplierId: 'S002',
+                        supplierName: '赛默飞世尔科技',
+                        supplierContact: '李经理 13900139000',
+                        period: '2025-01',
+                        orderCount: 5,
+                        amount: 56800.00,
+                        status: 'pending',
+                        createTime: '2025-01-20 10:15:00',
+                        remark: ''
+                    },
+                    {
+                        id: 3,
+                        code: 'DZ20250201003',
+                        supplierId: 'S001',
+                        supplierName: '西安化学试剂有限公司',
+                        supplierContact: '张经理 13800138000',
+                        period: '2025-02',
+                        orderCount: 8,
+                        amount: 8320.00,
+                        status: 'draft',
+                        createTime: '2025-02-01 09:00:00',
+                        remark: ''
+                    },
+                    {
+                        id: 4,
+                        code: 'DZ20231210004',
+                        supplierId: 'S003',
+                        supplierName: '国药集团化学试剂',
+                        supplierContact: '王经理 13700137000',
+                        period: '2023-12',
+                        orderCount: 15,
+                        amount: 23450.80,
+                        status: 'archived',
+                        createTime: '2023-12-10 16:45:00',
+                        remark: '年度最后一批对账'
+                    }
+                ],
+                
+                // 模拟订单数据（用于生成对账单时选择）
+                availableOrders: [
+                    { id: 'O001', code: 'CG20250115001', deliveryNo: 'SH20250115001', date: '2025-01-15', supplierId: 'S001', supplierName: '西安化学试剂有限公司', amount: 1250.00, quantity: 50 },
+                    { id: 'O002', code: 'CG20250116002', deliveryNo: 'SH20250116002', date: '2025-01-16', supplierId: 'S001', supplierName: '西安化学试剂有限公司', amount: 2380.50, quantity: 120 },
+                    { id: 'O003', code: 'CG20250118003', deliveryNo: 'SH20250118003', date: '2025-01-18', supplierId: 'S002', supplierName: '赛默飞世尔科技', amount: 15600.00, quantity: 30 },
+                    { id: 'O004', code: 'CG20250120004', deliveryNo: 'SH20250120004', date: '2025-01-20', supplierId: 'S001', supplierName: '西安化学试剂有限公司', amount: 450.00, quantity: 20 },
+                    { id: 'O005', code: 'CG20250122005', deliveryNo: 'SH20250122005', date: '2025-01-22', supplierId: 'S003', supplierName: '国药集团化学试剂', amount: 3200.00, quantity: 80 }
+                ],
+                
+                // 弹窗状态
+                generateModal: {
+                    open: false,
+                    step: 1,
+                    selectedSuppliers: [],
+                    periodType: 'month',
+                    period: '2025-01',
+                    availableOrders: [],
+                    selectedOrders: [],
+                    remark: ''
+                },
+                
+                detailModal: {
+                    open: false,
+                    item: null,
+                    orders: []
+                },
+                
+                confirmModal: {
+                    open: false,
+                    item: null
+                },
+                
+                deleteModal: {
+                    open: false,
+                    item: null
+                },
+                
+                toast: { show: false, message: '', type: 'success' },
+                
+                init() {
+                    this.applyFilters();
+                },
+                
+                get stats() {
+                    return {
+                        total: this.reconciliations.length,
+                        draft: this.reconciliations.filter(r => r.status === 'draft').length,
+                        pending: this.reconciliations.filter(r => r.status === 'pending').length,
+                        confirmed: this.reconciliations.filter(r => r.status === 'confirmed').length,
+                        archived: this.reconciliations.filter(r => r.status === 'archived').length
+                    };
+                },
+                
+                get filteredData() {
+                    return this.reconciliations.filter(item => {
+                        // 关键词搜索
+                        if (this.filters.keyword) {
+                            const keyword = this.filters.keyword.toLowerCase();
+                            if (!item.code.toLowerCase().includes(keyword) && 
+                                !item.supplierName.toLowerCase().includes(keyword)) {
+                                return false;
+                            }
+                        }
+                        
+                        // 状态筛选
+                        if (this.filters.status && item.status !== this.filters.status) return false;
+                        
+                        // 供应商筛选
+                        if (this.filters.supplier && item.supplierId !== this.filters.supplier) return false;
+                        
+                        // 周期筛选
+                        if (this.filters.period && item.period !== this.filters.period) return false;
+                        
+                        return true;
+                    });
+                },
+                
+                get paginatedData() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    const end = start + this.pageSize;
+                    return this.filteredData.slice(start, end);
+                },
+                
+                get totalPages() {
+                    return Math.ceil(this.filteredData.length / this.pageSize);
+                },
+                
+                get displayedPages() {
+                    const pages = [];
+                    const maxDisplay = 5;
+                    let start = Math.max(1, this.currentPage - 2);
+                    let end = Math.min(this.totalPages, start + maxDisplay - 1);
+                    
+                    if (end - start < maxDisplay - 1) {
+                        start = Math.max(1, end - maxDisplay + 1);
+                    }
+                    
+                    for (let i = start; i <= end; i++) {
+                        pages.push(i);
+                    }
+                    return pages;
+                },
+                
+                applyFilters() {
+                    this.currentPage = 1;
+                },
+                
+                resetFilters() {
+                    this.filters = {
+                        keyword: '',
+                        status: '',
+                        supplier: '',
+                        period: ''
+                    };
+                    this.applyFilters();
+                },
+                
+                setFilter(key, value) {
+                    this.filters[key] = value;
+                    this.applyFilters();
+                },
+                
+                getStatusText(status) {
+                    const map = {
+                        'draft': '草稿',
+                        'pending': '待确认',
+                        'confirmed': '已确认',
+                        'archived': '已归档'
+                    };
+                    return map[status] || status;
+                },
+                
+                // 生成对账单相关
+                openGenerateModal() {
+                    this.generateModal = {
+                        open: true,
+                        step: 1,
+                        selectedSuppliers: [],
+                        periodType: 'month',
+                        period: '2025-01',
+                        availableOrders: [],
+                        selectedOrders: [],
+                        remark: ''
+                    };
+                },
+                
+                closeGenerateModal() {
+                    this.generateModal.open = false;
+                },
+                
+                canProceed() {
+                    if (this.generateModal.step === 1) {
+                        return this.generateModal.selectedSuppliers.length > 0;
+                    }
+                    if (this.generateModal.step === 2) {
+                        return this.generateModal.selectedOrders.length > 0;
+                    }
+                    return true;
+                },
+                
+                nextStep() {
+                    if (this.generateModal.step === 1) {
+                        // 筛选符合条件的订单（已确认收货且未对账）
+                        this.generateModal.availableOrders = this.availableOrders.filter(o => 
+                            this.generateModal.selectedSuppliers.includes(o.supplierId)
+                        );
+                    }
+                    this.generateModal.step++;
+                },
+                
+                toggleSelectAllOrders() {
+                    if (this.generateModal.selectedOrders.length === this.generateModal.availableOrders.length) {
+                        this.generateModal.selectedOrders = [];
+                    } else {
+                        this.generateModal.selectedOrders = this.generateModal.availableOrders.map(o => o.id);
+                    }
+                },
+                
+                calculateSelectedAmount() {
+                    return this.generateModal.availableOrders
+                        .filter(o => this.generateModal.selectedOrders.includes(o.id))
+                        .reduce((sum, o) => sum + o.amount, 0);
+                },
+                
+                getSelectedSupplierNames() {
+                    return this.suppliers
+                        .filter(s => this.generateModal.selectedSuppliers.includes(s.id))
+                        .map(s => s.name)
+                        .join('、');
+                },
+                
+                generateReconciliation() {
+                    // 为每个供应商生成一张对账单
+                    this.generateModal.selectedSuppliers.forEach(supplierId => {
+                        const supplier = this.suppliers.find(s => s.id === supplierId);
+                        const orders = this.generateModal.availableOrders.filter(o => 
+                            o.supplierId === supplierId && this.generateModal.selectedOrders.includes(o.id)
+                        );
+                        
+                        if (orders.length > 0) {
+                            const totalAmount = orders.reduce((sum, o) => sum + o.amount, 0);
+                            const newReconciliation = {
+                                id: Date.now() + Math.random(),
+                                code: 'DZ' + new Date().toISOString().slice(0,10).replace(/-/g,'') + Math.floor(Math.random()*1000),
+                                supplierId: supplierId,
+                                supplierName: supplier.name,
+                                supplierContact: supplier.contact,
+                                period: this.generateModal.period,
+                                orderCount: orders.length,
+                                amount: totalAmount,
+                                status: 'draft',
+                                createTime: new Date().toLocaleString('zh-CN'),
+                                remark: this.generateModal.remark
+                            };
+                            this.reconciliations.unshift(newReconciliation);
+                        }
+                    });
+                    
+                    this.showToast('对账单生成成功', 'success');
+                    this.closeGenerateModal();
+                    this.applyFilters();
+                },
+                
+                // 详情查看
+                viewDetail(item) {
+                    this.detailModal.item = item;
+                    // 模拟获取关联订单
+                    this.detailModal.orders = this.availableOrders.slice(0, item.orderCount).map((o, i) => ({
+                        ...o,
+                        deliveryNo: 'SH' + item.code.slice(2) + String(i+1).padStart(3,'0'),
+                        amount: item.amount / item.orderCount // 模拟平均分配
+                    }));
+                    this.detailModal.open = true;
+                },
+                
+                printDetail() {
+                    window.print();
+                },
+                
+                // 提交确认（草稿→待确认）
+                submitConfirm(item) {
+                    if (confirm('确定提交对账单进行确认？')) {
+                        item.status = 'pending';
+                        this.showToast('已提交确认', 'success');
+                    }
+                },
+                
+                // 确认对账（待确认→已确认）
+                openConfirmModal(item) {
+                    this.confirmModal.item = item;
+                    this.confirmModal.open = true;
+                },
+                
+                executeConfirm() {
+                    if (this.confirmModal.item) {
+                        this.confirmModal.item.status = 'confirmed';
+                        this.showToast('对账确认成功', 'success');
+                        this.confirmModal.open = false;
+                        this.confirmModal.item = null;
+                    }
+                },
+                
+                // 删除
+                deleteItem(item) {
+                    this.deleteModal.item = item;
+                    this.deleteModal.open = true;
+                },
+                
+                executeDelete() {
+                    if (this.deleteModal.item) {
+                        const index = this.reconciliations.findIndex(r => r.id === this.deleteModal.item.id);
+                        if (index > -1) {
+                            this.reconciliations.splice(index, 1);
+                            this.showToast('删除成功', 'success');
+                        }
+                        this.deleteModal.open = false;
+                        this.deleteModal.item = null;
+                    }
+                },
+                
+                // 导出
+                exportItem(item) {
+                    this.showToast(`正在导出对账单 ${item.code}...`, 'success');
+                    setTimeout(() => {
+                        this.showToast('导出成功', 'success');
+                    }, 1000);
+                },
+                
+                exportAll() {
+                    this.showToast('正在导出全部对账单...', 'success');
+                    setTimeout(() => {
+                        this.showToast('导出成功', 'success');
+                    }, 1500);
+                },
+                
+                refreshData() {
+                    this.loading = true;
+                    setTimeout(() => {
+                        this.loading = false;
+                        this.showToast('数据已刷新', 'success');
+                    }, 500);
+                },
+                
+                showToast(message, type = 'success') {
+                    this.toast = { show: true, message, type };
+                    setTimeout(() => this.toast.show = false, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
