@@ -3,97 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>对账单管理</title>
+    <title>对账单管理系统</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         [x-cloak] { display: none !important; }
-        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #334155; }
+        body { font-family: 'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #334155; }
+        .text-num { font-family: 'JetBrains Mono', 'Menlo', monospace; font-weight: 600; }
         
-        .text-num { font-family: 'Menlo', 'Monaco', 'Consolas', monospace; font-weight: 600; }
-        .text-min { font-size: 12px; line-height: 1.5; }
-        
+        /* 滚动条 */
         .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         
-        .smart-input {
-            width: 100%; 
-            border: 1px solid #e2e8f0; 
-            background: #fff; 
-            padding: 8px 12px;
-            border-radius: 6px; 
-            outline: none; 
-            transition: all 0.2s; 
-            font-size: 14px;
+        /* 统计卡片 */
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+            cursor: pointer;
         }
-        .smart-input:hover { border-color: #94a3b8; }
-        .smart-input:focus { 
-            border-color: #3b82f6; 
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.1); 
-        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08); }
+        .stat-card.active { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
         
+        /* 表格样式 */
         .data-table th {
-            background: #f1f5f9;
-            font-size: 13px;
+            background: #f8fafc;
+            font-size: 12px;
             font-weight: 600;
-            color: #475569;
+            color: #64748b;
             padding: 12px 16px;
             text-align: left;
             border-bottom: 1px solid #e2e8f0;
             white-space: nowrap;
         }
         .data-table td {
-            padding: 12px 16px;
+            padding: 14px 16px;
             border-bottom: 1px solid #f1f5f9;
             font-size: 14px;
             vertical-align: middle;
+            transition: all 0.15s;
         }
         .data-table tr:hover td { background: #f8fafc; }
+        .data-table tr.selected td { background: #eff6ff; }
         
+        /* 文字操作链接 */
+        .action-link {
+            color: #3b82f6;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        .action-link:hover {
+            color: #2563eb;
+            background: #eff6ff;
+            text-decoration: underline;
+        }
+        .action-link.danger {
+            color: #dc2626;
+        }
+        .action-link.danger:hover {
+            color: #b91c1c;
+            background: #fee2e2;
+        }
+        .action-link.success {
+            color: #059669;
+        }
+        .action-link.success:hover {
+            color: #047857;
+            background: #d1fae5;
+        }
+        .action-divider {
+            color: #e2e8f0;
+            margin: 0 4px;
+        }
+        
+        /* 状态标签 */
         .status-tag {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 4px 10px;
+            gap: 6px;
+            padding: 4px 12px;
             border-radius: 20px;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
             white-space: nowrap;
         }
         .status-draft { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-        .status-confirmed { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .status-confirmed { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .status-archived { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
         
-        .tab-btn {
-            padding: 8px 20px;
+        /* 侧滑面板 */
+        .slide-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 600px;
+            height: 100vh;
+            background: white;
+            box-shadow: -10px 0 40px rgba(0,0,0,0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-panel.open { transform: translateX(0); }
+        .slide-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 40;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .slide-overlay.open { opacity: 1; visibility: visible; }
+        
+        /* 模态框 */
+        .modal-backdrop {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content { animation: modalSlideIn 0.3s ease-out; }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        /* 步骤条 */
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
             border-radius: 8px;
             font-size: 14px;
             font-weight: 500;
-            cursor: pointer;
+            color: #64748b;
+            background: #f1f5f9;
             transition: all 0.2s;
-            border: 1px solid transparent;
         }
-        .tab-btn:hover { background: #f1f5f9; }
-        .tab-btn.active {
-            background: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-        }
+        .step-item.active { background: #3b82f6; color: white; }
+        .step-item.completed { background: #d1fae5; color: #065f46; }
         
-        .stat-card {
-            background: white;
-            border-radius: 10px;
-            padding: 16px 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        .stat-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .stat-card.active { border-color: #3b82f6; background: #eff6ff; }
-        
+        /* 送货单卡片 */
         .delivery-card {
             border: 1px solid #e2e8f0;
             border-radius: 8px;
@@ -102,223 +165,285 @@
             background: white;
             transition: all 0.2s;
         }
-        .delivery-card:hover { border-color: #3b82f6; box-shadow: 0 2px 8px rgba(59,130,246,0.08); }
-        .delivery-card.selected {
-            border-color: #3b82f6;
-            background: #eff6ff;
-        }
+        .delivery-card:hover { border-color: #3b82f6; }
+        .delivery-card.selected { border-color: #3b82f6; background: #eff6ff; }
         
-        .modal-backdrop {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
-        }
-        .modal-content {
-            animation: modalSlideIn 0.3s ease-out;
-        }
-        @keyframes modalSlideIn {
-            from { opacity: 0; transform: translateY(-20px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        
-        .supplier-tag {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 8px;
-            background: #e0e7ff;
-            color: #3730a3;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-right: 4px;
-            margin-bottom: 2px;
-        }
-        
-        .step-bar {
+        /* 分组标题 */
+        .group-header {
+            background: #f8fafc;
+            padding: 10px 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 24px;
+            justify-content: space-between;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .step-item {
-            flex: 1;
-            padding: 12px;
-            background: #f1f5f9;
-            border-radius: 8px;
-            text-align: center;
+        .group-header:hover { background: #f1f5f9; }
+        
+        /* 折叠面板 */
+        .collapse-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .collapse-content.expanded { max-height: 2000px; }
+        
+        /* 输入框 */
+        .smart-input {
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            outline: none;
+            transition: all 0.2s;
             font-size: 14px;
-            color: #64748b;
-            position: relative;
         }
-        .step-item.active {
-            background: #3b82f6;
-            color: white;
+        .smart-input:hover { border-color: #94a3b8; }
+        .smart-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        
+        /* 批量操作栏 */
+        .batch-bar {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideDown 0.3s ease-out;
         }
-        .step-item.completed {
-            background: #dcfce7;
-            color: #166534;
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        /* 操作按钮样式 - 确保一行展示 */
-        .action-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 12px;
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: white;
+            padding: 16px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            border-left: 4px solid;
+            z-index: 100;
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-color: #10b981; }
+        .toast.error { border-color: #ef4444; }
+        .toast.warning { border-color: #f59e0b; }
+        
+        /* 按钮样式 */
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
             font-weight: 500;
-            white-space: nowrap;
             transition: all 0.2s;
             border: none;
             cursor: pointer;
         }
-        .action-btn-primary {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        .action-btn-primary:hover { background: #bfdbfe; }
-        .action-btn-secondary {
-            background: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-        }
-        .action-btn-secondary:hover { background: #e2e8f0; }
-        .action-btn-danger {
-            background: transparent;
-            color: #dc2626;
-        }
-        .action-btn-danger:hover { background: #fee2e2; }
+        .btn-primary:hover { background: #2563eb; }
         
-        @media (max-width: 1280px) {
+        .btn-secondary {
+            background: white;
+            color: #475569;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+        }
+        .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+        
+        .btn-success {
+            background: #059669;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-success:hover { background: #047857; }
+        
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-danger:hover { background: #b91c1c; }
+        
+        /* 分页 */
+        .pagination-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+            font-size: 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pagination-btn:hover:not(:disabled) {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        .pagination-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .slide-panel { width: 100%; }
             .hide-mobile { display: none; }
         }
         
+        /* 打印样式 */
         @media print {
             .no-print { display: none !important; }
             body { background: white; }
+            .slide-panel { position: static; transform: none; width: 100%; box-shadow: none; }
         }
     </style>
+<base target="_blank">
 </head>
-<body class="h-screen flex flex-col overflow-hidden" x-data="reconciliationApp()" x-init="init()">
+<body class="h-screen flex flex-col overflow-hidden" x-data="reconciliationApp()">
 
     <!-- 顶部Header -->
     <header class="bg-white border-b border-slate-200 h-16 px-6 flex justify-between items-center shadow-sm z-30 flex-shrink-0">
         <div class="flex items-center gap-4">
-            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
                 <i class="fa-solid fa-file-invoice-dollar text-white text-lg"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800">对账单管理</h1>
-                <div class="text-min text-slate-500 mt-0.5">周期结算 · 供应商对账 · 财务归档</div>
+                <h1 class="text-lg font-bold text-slate-800">对账单管理系统</h1>
+                <div class="text-xs text-slate-500 mt-0.5">Reconciliation Management System</div>
             </div>
         </div>
         
         <div class="flex items-center gap-3">
-            <button @click="refreshData()" class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="刷新">
-                <i class="fa-solid fa-rotate-right" :class="loading ? 'animate-spin' : ''"></i>
+            <button @click="refreshData()" class="btn-secondary flex items-center gap-2">
+                刷新数据
             </button>
-            <button @click="batchExport()" :disabled="selectedItems.length === 0" 
-                    class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition flex items-center gap-2 no-print disabled:opacity-50 disabled:cursor-not-allowed">
-                <i class="fa-solid fa-download"></i> 批量导出<span x-show="selectedItems.length > 0" x-text="'(' + selectedItems.length + ')'"></span>
+            <button @click="exportAll()" class="btn-secondary flex items-center gap-2">
+                导出全部
             </button>
-            <button @click="openGenerateModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition flex items-center gap-2 no-print">
-                <i class="fa-solid fa-plus"></i> 生成对账单
+            <button @click="openGenerateModal()" class="btn-primary flex items-center gap-2">
+                生成对账单
             </button>
         </div>
     </header>
 
-    <!-- 统计卡片区域 -->
-    <div class="bg-white border-b border-slate-200 px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
-        <div class="stat-card flex items-center justify-between" 
-             :class="{'active': currentTab === 'all'}" 
-             @click="currentTab = 'all'">
+    <!-- Dashboard 统计区 -->
+    <div class="bg-white border-b border-slate-200 px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
+        <div class="stat-card flex items-center justify-between" :class="{'active': filters.status === ''}" @click="setFilter('status', '')">
             <div>
-                <div class="text-min text-slate-500 mb-1">全部对账单</div>
+                <div class="text-xs text-slate-500 mb-1 font-medium">全部对账单</div>
                 <div class="text-2xl font-bold text-slate-800" x-text="stats.total">0</div>
             </div>
-            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
-                <i class="fa-solid fa-layer-group"></i>
+            <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                <i class="fa-solid fa-layer-group text-xl"></i>
             </div>
         </div>
         
-        <div class="stat-card flex items-center justify-between" 
-             :class="{'active': currentTab === 'draft'}" 
-             @click="currentTab = 'draft'">
+        <div class="stat-card flex items-center justify-between" :class="{'active': filters.status === 'draft'}" @click="setFilter('status', 'draft')">
             <div>
-                <div class="text-min text-slate-500 mb-1">草稿</div>
+                <div class="text-xs text-slate-500 mb-1 font-medium">草稿待确认</div>
                 <div class="text-2xl font-bold text-amber-600" x-text="stats.draft">0</div>
             </div>
-            <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
-                <i class="fa-solid fa-file-pen"></i>
+            <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                <i class="fa-solid fa-file-pen text-xl"></i>
             </div>
         </div>
         
-        <div class="stat-card flex items-center justify-between" 
-             :class="{'active': currentTab === 'confirmed'}" 
-             @click="currentTab = 'confirmed'">
+        <div class="stat-card flex items-center justify-between" :class="{'active': filters.status === 'confirmed'}" @click="setFilter('status', 'confirmed')">
             <div>
-                <div class="text-min text-slate-500 mb-1">已对账</div>
+                <div class="text-xs text-slate-500 mb-1 font-medium">已对账确认</div>
                 <div class="text-2xl font-bold text-emerald-600" x-text="stats.confirmed">0</div>
             </div>
-            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                <i class="fa-solid fa-check-circle"></i>
+            <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <i class="fa-solid fa-circle-check text-xl"></i>
             </div>
         </div>
         
-        <div class="stat-card flex items-center justify-between">
+        <div class="stat-card flex items-center justify-between" :class="{'active': filters.status === 'archived'}" @click="setFilter('status', 'archived')">
             <div>
-                <div class="text-min text-slate-500 mb-1">本月对账金额</div>
-                <div class="text-2xl font-bold text-blue-600 text-num" x-text="'¥' + stats.monthAmount.toLocaleString()">0</div>
+                <div class="text-xs text-slate-500 mb-1 font-medium">已归档</div>
+                <div class="text-2xl font-bold text-slate-600" x-text="stats.archived">0</div>
             </div>
-            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                <i class="fa-solid fa-yen-sign"></i>
+            <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                <i class="fa-solid fa-box-archive text-xl"></i>
             </div>
-        </div>
-    </div>
-
-    <!-- Tab切换 -->
-    <div class="bg-white border-b border-slate-200 px-6 pt-4 flex-shrink-0">
-        <div class="flex gap-2 mb-4">
-            <button class="tab-btn" :class="{'active': currentTab === 'all'}" @click="currentTab = 'all'">全部</button>
-            <button class="tab-btn" :class="{'active': currentTab === 'draft'}" @click="currentTab = 'draft'">
-                <i class="fa-solid fa-file-pen mr-1"></i>草稿
-            </button>
-            <button class="tab-btn" :class="{'active': currentTab === 'confirmed'}" @click="currentTab = 'confirmed'">
-                <i class="fa-solid fa-check-circle mr-1"></i>已对账
-            </button>
         </div>
     </div>
 
     <!-- 主体内容区 -->
     <main class="flex-1 overflow-hidden flex flex-col bg-slate-50 p-6">
         
-        <!-- 筛选栏 -->
-        <div class="bg-white rounded-xl border border-slate-200 p-4 mb-4 flex flex-wrap gap-4 items-end shadow-sm">
+        <!-- 批量操作栏 -->
+        <div x-show="selectedItems.length > 0" class="batch-bar no-print" x-cloak x-transition>
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-medium text-blue-900">
+                    已选择 <span x-text="selectedItems.length" class="font-bold"></span> 项
+                </span>
+                <button @click="selectedItems = []" class="text-xs text-blue-600 hover:text-blue-800 underline">取消选择</button>
+            </div>
+            <div class="flex gap-2">
+                <button @click="batchConfirmPreview()" class="btn-success text-sm">批量确认</button>
+                <button @click="batchExport()" class="btn-secondary text-sm">批量导出</button>
+                <button @click="batchDelete()" class="btn-danger text-sm">批量删除</button>
+            </div>
+        </div>
+
+        <!-- 高级筛选栏 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 mb-4 flex flex-wrap gap-3 items-end shadow-sm">
             <div class="flex-1 min-w-[200px]">
-                <label class="block text-min text-slate-500 mb-1.5">关键词搜索</label>
+                <label class="block text-xs text-slate-500 mb-1.5 font-medium">关键词搜索</label>
                 <div class="relative">
-                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
                     <input type="text" x-model="filters.keyword" placeholder="对账单号/供应商名称" 
-                           class="smart-input pl-9" @input.debounce.500="applyFilters()">
+                           class="smart-input" @input.debounce.300="applyFilters()">
                 </div>
             </div>
             
-            <div class="w-48">
-                <label class="block text-min text-slate-500 mb-1.5">对账日期</label>
-                <input type="date" x-model="filters.date" class="smart-input" @change="applyFilters()">
-            </div>
-            
-            <div class="w-48">
-                <label class="block text-min text-slate-500 mb-1.5">对账周期</label>
-                <select x-model="filters.period" class="smart-input" @change="applyFilters()">
-                    <option value="">全部周期</option>
-                    <template x-for="period in availablePeriods" :key="period">
-                        <option :value="period" x-text="period"></option>
-                    </template>
+            <div class="w-36">
+                <label class="block text-xs text-slate-500 mb-1.5 font-medium">状态</label>
+                <select x-model="filters.status" class="smart-input" @change="applyFilters()">
+                    <option value="">全部状态</option>
+                    <option value="draft">草稿</option>
+                    <option value="confirmed">已确认</option>
+                    <option value="archived">已归档</option>
                 </select>
             </div>
             
-            <div class="w-48">
-                <label class="block text-min text-slate-500 mb-1.5">供应商</label>
+            <div class="w-40">
+                <label class="block text-xs text-slate-500 mb-1.5 font-medium">供应商</label>
                 <select x-model="filters.supplier" class="smart-input" @change="applyFilters()">
                     <option value="">全部供应商</option>
                     <template x-for="sup in suppliers" :key="sup.id">
@@ -327,8 +452,26 @@
                 </select>
             </div>
             
-            <button @click="resetFilters()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm font-medium transition mb-0.5">
-                <i class="fa-solid fa-rotate-left mr-1"></i> 重置
+            <div class="w-48">
+                <label class="block text-xs text-slate-500 mb-1.5 font-medium">创建日期</label>
+                <div class="flex gap-2">
+                    <input type="date" x-model="filters.dateFrom" class="smart-input" @change="applyFilters()">
+                    <span class="text-slate-400 self-center">-</span>
+                    <input type="date" x-model="filters.dateTo" class="smart-input" @change="applyFilters()">
+                </div>
+            </div>
+            
+            <div class="w-40">
+                <label class="block text-xs text-slate-500 mb-1.5 font-medium">金额范围</label>
+                <div class="flex gap-2 items-center">
+                    <input type="number" x-model="filters.amountMin" placeholder="最小" class="smart-input" @input.debounce.500="applyFilters()">
+                    <span class="text-slate-400">-</span>
+                    <input type="number" x-model="filters.amountMax" placeholder="最大" class="smart-input" @input.debounce.500="applyFilters()">
+                </div>
+            </div>
+            
+            <button @click="resetFilters()" class="btn-secondary mb-0.5 h-10">
+                重置筛选
             </button>
         </div>
 
@@ -339,95 +482,93 @@
                     <thead class="sticky top-0 z-10">
                         <tr>
                             <th class="w-10 text-center">
-                                <input type="checkbox" @change="toggleSelectAll()" :checked="isAllSelected" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                <input type="checkbox" @change="toggleSelectAll($event)" :checked="isAllSelected" class="rounded border-slate-300 text-blue-600">
                             </th>
-                            <th class="w-36">对账单号</th>
-                            <th class="w-32">对账日期</th>
-                            <th class="min-w-[240px]">供应商信息</th>
-                            <th class="w-28">对账周期</th>
-                            <th class="w-24 text-center">送货单数</th>
-                            <th class="w-32 text-right">对账金额</th>
+                            <th class="w-36 cursor-pointer" @click="sortBy('code')">
+                                对账单号 <i class="fa-solid fa-sort text-slate-400 ml-1"></i>
+                            </th>
+                            <th class="min-w-[180px] cursor-pointer" @click="sortBy('supplierName')">
+                                供应商 <i class="fa-solid fa-sort text-slate-400 ml-1"></i>
+                            </th>
+                            <th class="w-32 cursor-pointer" @click="sortBy('period')">
+                                对账周期 <i class="fa-solid fa-sort text-slate-400 ml-1"></i>
+                            </th>
+                            <th class="w-24 text-center">订单数</th>
+                            <th class="w-32 text-right cursor-pointer" @click="sortBy('amount')">
+                                对账金额 <i class="fa-solid fa-sort text-slate-400 ml-1"></i>
+                            </th>
                             <th class="w-24 text-center">状态</th>
-                            <th class="w-52 text-center">操作</th>
+                            <th class="w-36 cursor-pointer" @click="sortBy('createTime')">
+                                创建时间 <i class="fa-solid fa-sort text-slate-400 ml-1"></i>
+                            </th>
+                            <th class="w-48 text-left">操作</th>
                         </tr>
                     </thead>
                     <tbody>
                         <template x-for="(item, index) in paginatedData" :key="item.id">
-                            <tr>
-                                <td class="text-center">
-                                    <input type="checkbox" :value="item.id" x-model="selectedItems" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            <tr :class="{'selected': selectedItems.includes(item.id)}" 
+                                @click.shift.prevent="shiftSelect(item.id, index)"
+                                class="cursor-pointer group">
+                                <td class="text-center" @click.stop>
+                                    <input type="checkbox" :value="item.id" x-model="selectedItems" class="rounded border-slate-300 text-blue-600">
                                 </td>
                                 <td>
-                                    <span class="text-num text-blue-600 font-medium" x-text="item.code"></span>
+                                    <span class="text-num text-blue-600 font-medium text-sm" x-text="item.code"></span>
                                 </td>
                                 <td>
-                                    <div class="text-slate-700" x-text="item.createTime.split(' ')[0]"></div>
-                                </td>
-                                <td>
-                                    <template x-if="item.suppliers.length === 1">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold" x-text="item.supplierName.charAt(0)"></div>
                                         <div>
-                                            <div class="font-medium text-slate-800" x-text="item.suppliers[0].name"></div>
-                                            <div class="text-min text-slate-400 mt-0.5" x-text="item.suppliers[0].contact"></div>
+                                            <div class="font-medium text-slate-800 text-sm" x-text="item.supplierName"></div>
+                                            <div class="text-xs text-slate-400" x-text="item.supplierContact"></div>
                                         </div>
-                                    </template>
-                                    <template x-if="item.suppliers.length > 1">
-                                        <div>
-                                            <div class="flex flex-wrap gap-1 mb-1">
-                                                <template x-for="(sup, idx) in item.suppliers.slice(0, 2)" :key="sup.id">
-                                                    <span class="supplier-tag" x-text="sup.name"></span>
-                                                </template>
-                                                <span x-show="item.suppliers.length > 2" class="supplier-tag bg-slate-200 text-slate-600" x-text="'+' + (item.suppliers.length - 2) + '家'"></span>
-                                            </div>
-                                            <div class="text-min text-slate-400">
-                                                共 <span x-text="item.suppliers.length"></span> 个供应商 | 
-                                                <a href="#" @click.prevent="viewSuppliersDetail(item)" class="text-blue-600 hover:underline">查看详情</a>
-                                            </div>
-                                        </div>
-                                    </template>
+                                    </div>
                                 </td>
                                 <td>
-                                    <span class="text-num text-slate-700 bg-slate-100 px-2 py-1 rounded text-xs" x-text="item.period"></span>
+                                    <span class="text-num bg-slate-100 px-2 py-1 rounded text-xs font-medium text-slate-700" x-text="item.period"></span>
                                 </td>
                                 <td class="text-center">
-                                    <span class="font-medium text-slate-700" x-text="item.deliveryCount"></span>
-                                    <span class="text-min text-slate-400">单</span>
+                                    <span class="font-medium text-slate-700" x-text="item.orderCount"></span>
+                                    <span class="text-xs text-slate-400">单</span>
                                 </td>
                                 <td class="text-right">
                                     <span class="text-num font-bold text-slate-800" x-text="'¥' + item.amount.toLocaleString('zh-CN', {minimumFractionDigits: 2})"></span>
                                 </td>
                                 <td class="text-center">
                                     <span class="status-tag" :class="'status-' + item.status">
-                                        <i class="fa-solid fa-circle text-[8px]"></i>
                                         <span x-text="getStatusText(item.status)"></span>
                                     </span>
                                 </td>
-                                <td class="text-center">
-                                    <div class="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                                <td>
+                                    <div class="text-xs text-slate-600" x-text="formatDate(item.createTime)"></div>
+                                    <div class="text-xs text-slate-400" x-text="formatTime(item.createTime)"></div>
+                                </td>
+                                <td class="text-left" @click.stop>
+                                    <div class="flex items-center gap-1">
+                                        <span class="action-link" @click="openSlidePanel(item)">查看详情</span>
+                                        <span class="action-divider">|</span>
                                         <template x-if="item.status === 'draft'">
-                                            <button @click="openConfirmModal(item)" class="action-btn action-btn-primary">
-                                                <i class="fa-solid fa-check text-xs mr-1"></i>确认
-                                            </button>
+                                            <span class="action-link success" @click="openConfirmDetail(item)">确认对账</span>
                                         </template>
-                                        <button @click="viewDetail(item)" class="action-btn action-btn-secondary">
-                                            查看
-                                        </button>
-                                        <button @click="exportItem(item)" class="action-btn action-btn-secondary">
-                                            导出
-                                        </button>
-                                        <button @click="deleteItem(item)" class="action-btn action-btn-danger">
-                                            删除
-                                        </button>
+                                        <template x-if="item.status === 'draft'">
+                                            <span class="action-divider">|</span>
+                                        </template>
+                                        <span class="action-link" @click="exportItem(item)">导出</span>
+                                        <template x-if="item.status === 'draft'">
+                                            <span class="action-divider">|</span>
+                                            <span class="action-link danger" @click="deleteItem(item)">删除</span>
+                                        </template>
                                     </div>
                                 </td>
                             </tr>
                         </template>
                         
                         <!-- 空状态 -->
-                        <tr x-show="paginatedData.length === 0">
+                        <tr x-show="paginatedData.length === 0 && !loading">
                             <td colspan="9" class="text-center py-16 text-slate-400">
-                                <div class="mb-3 text-5xl">📭</div>
-                                <div class="text-min mb-4">暂无对账单记录</div>
-                                <button @click="openGenerateModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition">
+                                <div class="mb-4 text-lg">暂无对账单记录</div>
+                                <div class="text-xs mb-4">当前筛选条件下没有找到数据</div>
+                                <button @click="openGenerateModal()" class="btn-primary">
                                     立即生成对账单
                                 </button>
                             </td>
@@ -438,18 +579,14 @@
             
             <!-- 分页 -->
             <div class="border-t border-slate-200 px-6 py-4 flex items-center justify-between bg-slate-50">
-                <div class="text-min text-slate-500">
+                <div class="text-xs text-slate-500">
                     显示 <span x-text="filteredData.length > 0 ? (currentPage - 1) * pageSize + 1 : 0" class="font-medium"></span> - 
                     <span x-text="Math.min(currentPage * pageSize, filteredData.length)" class="font-medium"></span> 条，
                     共 <span x-text="filteredData.length" class="font-medium"></span> 条
                 </div>
                 <div class="flex gap-2">
-                    <button @click="currentPage = 1" :disabled="currentPage === 1" class="pagination-btn">
-                        <i class="fa-solid fa-angles-left"></i>
-                    </button>
-                    <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn">
-                        <i class="fa-solid fa-angle-left"></i>
-                    </button>
+                    <button @click="currentPage = 1" :disabled="currentPage === 1" class="pagination-btn">首页</button>
+                    <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn">上一页</button>
                     
                     <template x-for="page in displayedPages" :key="page">
                         <button @click="currentPage = page" 
@@ -458,14 +595,10 @@
                                 x-text="page"></button>
                     </template>
                     
-                    <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn">
-                        <i class="fa-solid fa-angle-right"></i>
-                    </button>
-                    <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="pagination-btn">
-                        <i class="fa-solid fa-angles-right"></i>
-                    </button>
+                    <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn">下一页</button>
+                    <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="pagination-btn">末页</button>
                 </div>
-                <div class="flex items-center gap-2 text-min text-slate-500">
+                <div class="flex items-center gap-2 text-xs text-slate-500">
                     <span>每页</span>
                     <select x-model.number="pageSize" @change="currentPage = 1" class="smart-input py-1 px-2 w-16 text-center">
                         <option value="10">10</option>
@@ -478,430 +611,447 @@
         </div>
     </main>
 
-    <!-- 生成对账单弹窗（分步向导） -->
+    <!-- 侧滑面板（详情与确认） -->
+    <div class="slide-overlay" :class="{'open': slidePanel.open}" @click="closeSlidePanel()"></div>
+    <div class="slide-panel" :class="{'open': slidePanel.open}">
+        <template x-if="slidePanel.item">
+            <div class="flex flex-col h-full">
+                <!-- 头部 -->
+                <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-start bg-slate-50">
+                    <div>
+                        <div class="flex items-center gap-3 mb-1">
+                            <h3 class="text-lg font-bold text-slate-800" x-text="slidePanel.item.code"></h3>
+                            <span class="status-tag" :class="'status-' + slidePanel.item.status">
+                                <span x-text="getStatusText(slidePanel.item.status)"></span>
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500">创建于 <span x-text="slidePanel.item.createTime"></span></p>
+                    </div>
+                    <button @click="closeSlidePanel()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition text-lg">
+                        ×
+                    </button>
+                </div>
+                
+                <!-- 内容区 -->
+                <div class="flex-1 overflow-y-auto custom-scroll p-6">
+                    <!-- 金额卡片 -->
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white mb-6 shadow-lg">
+                        <div class="text-blue-100 text-sm mb-1">对账金额</div>
+                        <div class="text-3xl font-bold text-num" x-text="'¥' + slidePanel.item.amount.toLocaleString('zh-CN', {minimumFractionDigits: 2})"></div>
+                        <div class="mt-4 flex gap-4 text-sm text-blue-100">
+                            <span>送货单数量：<span x-text="slidePanel.item.orderCount"></span> 单</span>
+                            <span>对账周期：<span x-text="slidePanel.item.period"></span></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 供应商信息 -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 mb-6">
+                        <h4 class="text-sm font-bold text-slate-800 mb-3">供应商信息</h4>
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg font-bold" x-text="slidePanel.item.supplierName.charAt(0)"></div>
+                            <div>
+                                <div class="font-medium text-slate-800" x-text="slidePanel.item.supplierName"></div>
+                                <div class="text-sm text-slate-500" x-text="slidePanel.item.supplierContact"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 送货单清单 -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold text-slate-800">送货单明细</h4>
+                            <button @click="slidePanel.expandAll = !slidePanel.expandAll" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                <span x-text="slidePanel.expandAll ? '收起全部' : '展开全部'"></span>
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <template x-for="(order, idx) in slidePanel.orders" :key="order.id">
+                                <div class="border border-slate-200 rounded-lg overflow-hidden">
+                                    <div class="bg-slate-50 px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition" @click="order.expanded = !order.expanded">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-xs text-slate-400 font-medium w-6" x-text="(idx + 1).toString().padStart(2, '0')"></span>
+                                            <span class="text-num text-sm text-blue-600 font-medium" x-text="order.deliveryNo"></span>
+                                            <span class="text-xs text-slate-500" x-text="order.date"></span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-num font-bold text-slate-700" x-text="'¥' + order.amount.toFixed(2)"></span>
+                                            <i class="fa-solid fa-chevron-down text-slate-400 transition-transform text-xs" :class="{'rotate-180': order.expanded}"></i>
+                                        </div>
+                                    </div>
+                                    <div class="collapse-content" :class="{'expanded': order.expanded}">
+                                        <div class="p-4 bg-white border-t border-slate-100">
+                                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                                <div>
+                                                    <span class="text-slate-500">关联订单：</span>
+                                                    <span class="text-num text-slate-700" x-text="order.orderNo"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-slate-500">数量：</span>
+                                                    <span class="text-slate-700" x-text="order.quantity + ' 件'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-slate-500">规格：</span>
+                                                    <span class="text-slate-700" x-text="order.spec || '标准规格'"></span>
+                                                </div>
+                                                <div>
+                                                    <span class="text-slate-500">状态：</span>
+                                                    <span class="text-emerald-600 font-medium">已对账</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <div class="mt-3 pt-3 border-t border-slate-200 flex justify-between items-center">
+                            <span class="text-sm text-slate-500">合计金额</span>
+                            <span class="text-xl font-bold text-num text-slate-800" x-text="'¥' + slidePanel.item.amount.toLocaleString('zh-CN', {minimumFractionDigits: 2})"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 备注 -->
+                    <div x-show="slidePanel.item.remark" class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800 mb-6">
+                        <div class="font-medium mb-1">备注信息</div>
+                        <div x-text="slidePanel.item.remark"></div>
+                    </div>
+                    
+                    <!-- 确认操作区域（仅在确认模式下显示） -->
+                    <div x-show="slidePanel.confirmMode" class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
+                        <div class="flex items-start gap-3">
+                            <input type="checkbox" x-model="slidePanel.confirmChecked" id="confirmCheck" class="mt-1 rounded border-slate-300 text-blue-600">
+                            <div>
+                                <label for="confirmCheck" class="font-medium text-slate-800 cursor-pointer">
+                                    我已核对以上对账单信息
+                                </label>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    确认后将对账单状态更新为"已确认"，关联送货单将锁定，不可再次对账。此操作不可撤销。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 底部操作 -->
+                <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <div class="flex gap-2">
+                        <button @click="printDetail()" class="btn-secondary text-sm">打印</button>
+                        <button @click="exportItem(slidePanel.item)" class="btn-secondary text-sm">导出Excel</button>
+                    </div>
+                    
+                    <!-- 普通查看模式 -->
+                    <div x-show="!slidePanel.confirmMode" class="flex gap-2">
+                        <button x-show="slidePanel.item.status === 'draft'" @click="enableConfirmMode()" class="btn-success text-sm">
+                            确认对账
+                        </button>
+                        <button x-show="slidePanel.item.status !== 'draft'" class="btn-secondary text-sm opacity-50 cursor-not-allowed" disabled>
+                            已确认
+                        </button>
+                    </div>
+                    
+                    <!-- 确认模式 -->
+                    <div x-show="slidePanel.confirmMode" class="flex gap-2">
+                        <button @click="cancelConfirmMode()" class="btn-secondary text-sm">返回查看</button>
+                        <button @click="executeConfirm()" :disabled="!slidePanel.confirmChecked" 
+                                class="btn-success text-sm" :class="{'opacity-50 cursor-not-allowed': !slidePanel.confirmChecked}">
+                            确认无误并提交
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- 生成对账单弹窗（Wizard） -->
     <div x-show="generateModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak>
-        <div class="bg-white w-full max-w-5xl rounded-xl shadow-2xl modal-content flex flex-col max-h-[90vh]">
-            <!-- 弹窗头部 -->
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl modal-content flex flex-col max-h-[90vh]">
+            <!-- 头部 -->
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                 <h3 class="text-lg font-bold text-slate-800">生成对账单</h3>
-                <button @click="closeGenerateModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
-                    <i class="fa-solid fa-xmark"></i>
+                <button @click="closeGenerateModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition text-xl">
+                    ×
                 </button>
             </div>
             
             <!-- 步骤条 -->
             <div class="px-6 py-4 border-b border-slate-200 bg-white">
-                <div class="step-bar">
+                <div class="flex items-center justify-center gap-4">
                     <div class="step-item" :class="{'active': generateModal.step === 1, 'completed': generateModal.step > 1}">
-                        <i class="fa-solid" :class="generateModal.step > 1 ? 'fa-check' : 'fa-calendar'"></i>
-                        <div class="mt-1 font-medium">选择周期</div>
+                        <span>1. 选择周期</span>
                     </div>
+                    <span class="text-slate-300">→</span>
                     <div class="step-item" :class="{'active': generateModal.step === 2, 'completed': generateModal.step > 2}">
-                        <i class="fa-solid" :class="generateModal.step > 2 ? 'fa-check' : 'fa-list-check'"></i>
-                        <div class="mt-1 font-medium">核对送货单</div>
+                        <span>2. 选择送货单</span>
                     </div>
+                    <span class="text-slate-300">→</span>
                     <div class="step-item" :class="{'active': generateModal.step === 3}">
-                        <i class="fa-solid fa-file-invoice"></i>
-                        <div class="mt-1 font-medium">确认生成</div>
+                        <span>3. 确认生成</span>
                     </div>
                 </div>
             </div>
             
-            <!-- 步骤1：选择对账周期 -->
+            <!-- Step 1: 选择周期 -->
             <div x-show="generateModal.step === 1" class="p-6 overflow-y-auto custom-scroll flex-1">
-                <div class="max-w-md mx-auto">
-                    <div class="mb-6">
-                        <label class="block text-sm font-bold text-slate-700 mb-3">选择对账周期 <span class="text-red-500">*</span></label>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-min text-slate-500 mb-1">周期类型</label>
-                                <select x-model="generateModal.periodType" class="smart-input" @change="updatePeriodOptions()">
-                                    <option value="month">月度</option>
-                                    <option value="quarter">季度</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-min text-slate-500 mb-1">具体周期</label>
-                                <select x-model="generateModal.period" class="smart-input">
-                                    <template x-for="p in generateModal.periodOptions" :key="p">
-                                        <option :value="p" x-text="p"></option>
-                                    </template>
-                                </select>
-                            </div>
+                <div class="max-w-lg mx-auto space-y-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-3">对账周期类型 <span class="text-red-500">*</span></label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex items-center gap-3 p-4 border-2 border-slate-200 rounded-xl cursor-pointer hover:border-blue-400 transition" :class="{'border-blue-500 bg-blue-50': generateModal.periodType === 'month'}">
+                                <input type="radio" value="month" x-model="generateModal.periodType" class="text-blue-600">
+                                <div>
+                                    <div class="font-medium text-slate-800">月度对账</div>
+                                    <div class="text-xs text-slate-500">按自然月汇总</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-4 border-2 border-slate-200 rounded-xl cursor-pointer hover:border-blue-400 transition" :class="{'border-blue-500 bg-blue-50': generateModal.periodType === 'quarter'}">
+                                <input type="radio" value="quarter" x-model="generateModal.periodType" class="text-blue-600">
+                                <div>
+                                    <div class="font-medium text-slate-800">季度对账</div>
+                                    <div class="text-xs text-slate-500">按季度汇总</div>
+                                </div>
+                            </label>
                         </div>
-                        <p class="text-min text-slate-500 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                            <i class="fa-solid fa-circle-info mr-1 text-blue-500"></i>
-                            选择周期后，系统将自动筛选该周期内已完成且未对账的送货单
-                        </p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 步骤2：核对送货单（带供应商筛选） -->
-            <div x-show="generateModal.step === 2" class="flex-1 overflow-hidden flex flex-col">
-                <!-- 筛选栏 -->
-                <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-3 items-center justify-between">
-                    <div class="flex items-center gap-3 flex-1">
-                        <div class="text-sm font-bold text-slate-700 whitespace-nowrap">供应商筛选：</div>
-                        <div class="flex gap-2 flex-wrap">
-                            <button @click="filterDeliveriesBySupplier('')" 
-                                    class="px-3 py-1.5 rounded-full text-xs font-medium transition border"
-                                    :class="generateModal.supplierFilter === '' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'">
-                                全部
-                            </button>
-                            <template x-for="sup in generateModal.availableSuppliers" :key="sup.id">
-                                <button @click="filterDeliveriesBySupplier(sup.id)" 
-                                        class="px-3 py-1.5 rounded-full text-xs font-medium transition border"
-                                        :class="generateModal.supplierFilter === sup.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'">
-                                    <span x-text="sup.name"></span>
-                                    <span class="ml-1 opacity-75" x-text="'(' + getDeliveryCountBySupplier(sup.id) + ')'"></span>
-                                </button>
-                            </template>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3 border-l border-slate-300 pl-3">
-                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-400 transition">
-                            <input type="checkbox" :checked="generateModal.selectedDeliveries.length === filteredAvailableDeliveries.length && filteredAvailableDeliveries.length > 0" @change="toggleSelectAllFilteredDeliveries()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                            <span>全选</span>
-                        </label>
-                        <span class="text-sm text-slate-600 whitespace-nowrap">已选 <b x-text="generateModal.selectedDeliveries.length" class="text-blue-600"></b> 单</span>
-                    </div>
-                </div>
-                
-                <!-- 送货单列表 -->
-                <div class="flex-1 overflow-y-auto custom-scroll p-4 bg-slate-50">
-                    <div x-show="filteredAvailableDeliveries.length === 0" class="text-center py-12 text-slate-400">
-                        <i class="fa-solid fa-inbox text-4xl mb-3"></i>
-                        <p class="text-min">该周期内暂无符合条件的送货单</p>
-                        <button @click="generateModal.step = 1" class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition">修改周期</button>
                     </div>
                     
-                    <div class="grid grid-cols-1 gap-3">
-                        <template x-for="delivery in filteredAvailableDeliveries" :key="delivery.id">
-                            <div class="delivery-card" :class="{'selected': generateModal.selectedDeliveries.includes(delivery.id)}">
-                                <div class="flex items-start gap-3">
-                                    <input type="checkbox" :value="delivery.id" x-model="generateModal.selectedDeliveries" class="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                                    <div class="flex-1 grid grid-cols-12 gap-4">
-                                        <div class="col-span-3">
-                                            <div class="text-min text-slate-500 mb-1">送货单号</div>
-                                            <div class="text-num text-blue-600 font-medium" x-text="delivery.code"></div>
-                                            <div class="text-min text-slate-400 mt-1">关联订单：<span x-text="delivery.orderCode"></span></div>
-                                        </div>
-                                        <div class="col-span-2">
-                                            <div class="text-min text-slate-500 mb-1">日期</div>
-                                            <div class="text-sm text-slate-700" x-text="delivery.date"></div>
-                                        </div>
-                                        <div class="col-span-3">
-                                            <div class="text-min text-slate-500 mb-1">供应商</div>
-                                            <div class="text-sm font-medium text-slate-800" x-text="delivery.supplierName"></div>
-                                            <div class="text-min text-slate-400 mt-1" x-text="delivery.supplierContact"></div>
-                                        </div>
-                                        <div class="col-span-2">
-                                            <div class="text-min text-slate-500 mb-1">商品数量</div>
-                                            <div class="text-sm text-slate-700"><span x-text="delivery.quantity"></span> 件</div>
-                                        </div>
-                                        <div class="col-span-2 text-right">
-                                            <div class="text-min text-slate-500 mb-1">金额</div>
-                                            <div class="text-num font-bold text-slate-800 text-lg" x-text="'¥' + delivery.amount.toFixed(2)"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-3">具体周期 <span class="text-red-500">*</span></label>
+                        <select x-model="generateModal.period" class="smart-input py-3">
+                            <template x-if="generateModal.periodType === 'month'">
+                                <optgroup label="2024年">
+                                    <option value="2024-01">2024年1月</option>
+                                    <option value="2024-02">2024年2月</option>
+                                    <option value="2024-03">2024年3月</option>
+                                    <option value="2024-04">2024年4月</option>
+                                    <option value="2024-05">2024年5月</option>
+                                    <option value="2024-06">2024年6月</option>
+                                </optgroup>
+                            </template>
+                            <template x-if="generateModal.periodType === 'quarter'">
+                                <optgroup label="2024年">
+                                    <option value="2024-Q1">2024年第一季度</option>
+                                    <option value="2024-Q2">2024年第二季度</option>
+                                </optgroup>
+                            </template>
+                        </select>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Step 2: 选择送货单 -->
+            <div x-show="generateModal.step === 2" class="flex-1 overflow-hidden flex flex-col bg-slate-50">
+                <div class="p-4 bg-white border-b border-slate-200 flex justify-between items-center gap-4">
+                    <div class="relative flex-1 max-w-md">
+                        <input type="text" x-model="generateModal.searchKeyword" placeholder="搜索送货单号/订单号..." 
+                               class="smart-input" @input.debounce.300="filterAvailableOrders()">
+                    </div>
+                    <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-slate-800">
+                        <input type="checkbox" @change="toggleSelectAllOrders()" :checked="generateModal.selectedOrders.length === generateModal.filteredOrders.length && generateModal.filteredOrders.length > 0" class="rounded border-slate-300 text-blue-600">
+                        <span class="font-medium">全选</span>
+                    </label>
                 </div>
                 
-                <!-- 底部统计 -->
-                <div class="p-4 border-t border-slate-200 bg-white flex justify-between items-center">
-                    <div class="text-sm text-slate-600">
-                        已选择 <b x-text="generateModal.selectedDeliveries.length" class="text-blue-600 text-lg"></b> 个送货单
-                        <span class="mx-2 text-slate-300">|</span>
-                        涉及 <b x-text="getSelectedSuppliers().length" class="text-slate-800"></b> 个供应商
+                <div class="flex-1 overflow-y-auto custom-scroll p-4">
+                    <div x-show="generateModal.filteredOrders.length === 0" class="text-center py-12 text-slate-400">
+                        <div class="text-lg mb-2">暂无符合条件的送货单</div>
+                        <p class="text-sm">该周期内所有送货单已被对账或没有新送货单</p>
                     </div>
-                    <div class="text-lg font-bold text-slate-800">
-                        合计：<span class="text-num text-blue-600 text-2xl" x-text="'¥' + calculateSelectedAmount().toFixed(2)"></span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 步骤3：确认生成 -->
-            <div x-show="generateModal.step === 3" class="p-6 overflow-y-auto custom-scroll flex-1 bg-slate-50">
-                <div class="max-w-2xl mx-auto">
-                    <div class="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-                        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl">
-                                <i class="fa-solid fa-file-invoice-dollar"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-lg font-bold text-slate-800">对账单预览</h4>
-                                <p class="text-min text-slate-500">请核对以下信息，确认后将生成对账单</p>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <div class="flex justify-between py-2 border-b border-slate-100">
-                                <span class="text-slate-500">对账周期</span>
-                                <span class="font-medium text-slate-800" x-text="generateModal.period"></span>
-                            </div>
-                            <div class="flex justify-between py-2 border-b border-slate-100">
-                                <span class="text-slate-500">涉及供应商</span>
-                                <div class="text-right">
-                                    <span class="font-medium text-slate-800" x-text="getSelectedSuppliers().length + ' 家'"></span>
-                                    <div class="text-min text-slate-400 mt-1 max-w-xs truncate" x-text="getSelectedSuppliers().map(s=>s.name).join('、')"></div>
+                    
+                    <!-- 按供应商分组 -->
+                    <template x-for="(group, supplierId) in generateModal.groupedOrders" :key="supplierId">
+                        <div class="mb-4">
+                            <div class="group-header" @click="group.expanded = !group.expanded">
+                                <div class="flex items-center gap-3">
+                                    <input type="checkbox" 
+                                           :checked="isGroupSelected(supplierId)" 
+                                           @click.stop="toggleGroupSelection(supplierId)"
+                                           class="rounded border-slate-300 text-blue-600">
+                                    <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold" x-text="group.supplierName.charAt(0)"></div>
+                                    <div>
+                                        <span class="font-medium text-slate-800" x-text="group.supplierName"></span>
+                                        <span class="text-xs text-slate-500 ml-2" x-text="group.items.length + ' 单'"></span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-num font-bold text-slate-700" x-text="'¥' + group.items.reduce((sum, o) => sum + o.amount, 0).toFixed(2)"></span>
+                                    <i class="fa-solid fa-chevron-down text-slate-400 transition-transform text-xs" :class="{'rotate-180': group.expanded}"></i>
                                 </div>
                             </div>
-                            <div class="flex justify-between py-2 border-b border-slate-100">
-                                <span class="text-slate-500">送货单数量</span>
-                                <span class="font-medium text-slate-800" x-text="generateModal.selectedDeliveries.length + ' 单'"></span>
-                            </div>
-                            <div class="flex justify-between py-3 bg-blue-50 px-4 rounded-lg mt-4">
-                                <span class="font-bold text-slate-700">对账金额合计</span>
-                                <span class="font-bold text-num text-blue-600 text-xl" x-text="'¥' + calculateSelectedAmount().toFixed(2)"></span>
+                            
+                            <div class="collapse-content" :class="{'expanded': group.expanded}">
+                                <div class="space-y-2 mt-2">
+                                    <template x-for="order in group.items" :key="order.id">
+                                        <div class="delivery-card" :class="{'selected': generateModal.selectedOrders.includes(order.id)}">
+                                            <div class="flex items-center gap-3">
+                                                <input type="checkbox" :value="order.id" x-model="generateModal.selectedOrders" class="rounded border-slate-300 text-blue-600">
+                                                <div class="flex-1">
+                                                    <div class="flex justify-between items-start mb-1">
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="text-num text-sm text-blue-600 font-medium" x-text="order.deliveryNo"></span>
+                                                            <span class="text-xs text-slate-400" x-text="order.date"></span>
+                                                        </div>
+                                                        <span class="text-num font-bold text-slate-800" x-text="'¥' + order.amount.toFixed(2)"></span>
+                                                    </div>
+                                                    <div class="text-xs text-slate-500 flex gap-3">
+                                                        <span>订单: <span class="text-num" x-text="order.orderNo"></span></span>
+                                                        <span>数量: <span x-text="order.quantity"></span> 件</span>
+                                                        <span>规格: <span x-text="order.spec"></span></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="mt-6">
-                            <label class="block text-sm font-bold text-slate-700 mb-2">备注说明</label>
-                            <textarea x-model="generateModal.remark" rows="3" class="smart-input resize-none" placeholder="添加对账备注信息（选填）..."></textarea>
+                    </template>
+                </div>
+                
+                <div class="p-4 bg-white border-t border-slate-200">
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm text-slate-600">
+                            已选择 <b class="text-blue-600 text-lg" x-text="generateModal.selectedOrders.length"></b> 个送货单，
+                            涉及 <b x-text="Object.keys(generateModal.selectedSuppliers).length"></b> 个供应商
+                        </div>
+                        <div class="text-lg font-bold text-slate-800">
+                            合计: <span class="text-num text-blue-600 text-2xl" x-text="'¥' + calculateSelectedAmount().toFixed(2)"></span>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- 弹窗底部 -->
-            <div class="px-6 py-4 border-t border-slate-200 bg-white flex justify-between items-center">
-                <button x-show="generateModal.step > 1" @click="generateModal.step--" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition">
-                    <i class="fa-solid fa-arrow-left mr-1"></i> 上一步
+            <!-- Step 3: 确认生成 -->
+            <div x-show="generateModal.step === 3" class="p-6 overflow-y-auto custom-scroll flex-1">
+                <div class="max-w-2xl mx-auto">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+                            检
+                        </div>
+                        <h4 class="text-lg font-bold text-slate-800 mb-2">确认生成对账单</h4>
+                        <p class="text-sm text-slate-500">系统将按供应商自动拆分为多个对账单</p>
+                    </div>
+                    
+                    <!-- 拆分预览 -->
+                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden mb-6">
+                        <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 font-medium text-slate-700 text-sm">
+                            生成预览（共 <span x-text="Object.keys(generateModal.selectedSuppliers).length"></span> 个对账单）
+                        </div>
+                        <div class="divide-y divide-slate-100">
+                            <template x-for="(group, supplierId) in generateModal.selectedSuppliers" :key="supplierId">
+                                <div class="p-4 flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold" x-text="group.supplierName.charAt(0)"></div>
+                                        <div>
+                                            <div class="font-medium text-slate-800" x-text="group.supplierName"></div>
+                                            <div class="text-xs text-slate-500" x-text="group.count + ' 个送货单'"></div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-num font-bold text-slate-800" x-text="'¥' + group.amount.toFixed(2)"></div>
+                                        <div class="text-xs text-slate-400">对账金额</div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-between items-center">
+                            <span class="text-sm font-medium text-slate-700">总计</span>
+                            <span class="text-xl font-bold text-num text-blue-600" x-text="'¥' + calculateSelectedAmount().toFixed(2)"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 备注 -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">备注说明（应用到所有对账单）</label>
+                        <textarea x-model="generateModal.remark" rows="3" class="smart-input resize-none" placeholder="添加对账备注信息..."></textarea>
+                    </div>
+                    
+                    <!-- 警告提示 -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800 flex gap-3">
+                        <span class="font-bold text-lg">!</span>
+                        <div>
+                            <div class="font-medium mb-1">生成后提示</div>
+                            <div>生成后关联送货单将标记为"已对账"状态，不可再次用于生成其他对账单。如需调整，请先删除对应对账单。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 底部按钮 -->
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                <button x-show="generateModal.step > 1" @click="generateModal.step--" class="btn-secondary">
+                    ← 上一步
                 </button>
                 <div x-show="generateModal.step === 1"></div>
                 
                 <div class="flex gap-3">
-                    <button @click="closeGenerateModal()" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition">取消</button>
+                    <button @click="closeGenerateModal()" class="btn-secondary">取消</button>
                     <button x-show="generateModal.step < 3" 
                             @click="nextStep()" 
-                            class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition"
+                            class="btn-primary"
                             :disabled="!canProceed()"
                             :class="{'opacity-50 cursor-not-allowed': !canProceed()}">
-                        下一步 <i class="fa-solid fa-arrow-right ml-1"></i>
+                        下一步 →
                     </button>
                     <button x-show="generateModal.step === 3" 
                             @click="generateReconciliation()" 
-                            class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition">
-                        <i class="fa-solid fa-check mr-1"></i> 确认生成
+                            :disabled="generateModal.generating"
+                            class="btn-primary flex items-center gap-2">
+                        <span x-text="generateModal.generating ? '生成中...' : '确认生成'"></span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 确认对账弹窗（显示详情后确认） -->
-    <div x-show="confirmModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak>
-        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl max-h-[90vh] flex flex-col modal-content">
-            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-emerald-50">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center">
-                        <i class="fa-solid fa-clipboard-check"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-800">确认对账</h3>
-                        <p class="text-min text-slate-500">请核对以下对账单详情，确认无误后提交</p>
-                    </div>
-                </div>
-                <button @click="confirmModal.open = false" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/50 transition">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto custom-scroll p-6 bg-slate-50">
-                <div class="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-                    <div class="grid grid-cols-4 gap-4 mb-6">
-                        <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                            <div class="text-min text-slate-500 mb-1">对账单号</div>
-                            <div class="text-num font-bold text-slate-800" x-text="confirmModal.item?.code"></div>
-                        </div>
-                        <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                            <div class="text-min text-slate-500 mb-1">对账周期</div>
-                            <div class="font-bold text-slate-800" x-text="confirmModal.item?.period"></div>
-                        </div>
-                        <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                            <div class="text-min text-slate-500 mb-1">送货单数</div>
-                            <div class="font-bold text-slate-800" x-text="confirmModal.item?.deliveryCount + ' 单'"></div>
-                        </div>
-                        <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-                            <div class="text-min text-emerald-600 mb-1">对账金额</div>
-                            <div class="font-bold text-num text-emerald-600 text-xl" x-text="'¥' + (confirmModal.item?.amount || 0).toLocaleString('zh-CN', {minimumFractionDigits: 2})"></div>
-                        </div>
-                    </div>
-
-                    <!-- 供应商清单 -->
-                    <div class="mb-6">
-                        <h4 class="text-sm font-bold text-slate-700 mb-3">涉及供应商</h4>
-                        <div class="flex flex-wrap gap-2">
-                            <template x-for="sup in confirmModal.item?.suppliers" :key="sup.id">
-                                <div class="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg border border-slate-200">
-                                    <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold" x-text="sup.name.charAt(0)"></div>
-                                    <div>
-                                        <div class="text-sm font-medium text-slate-800" x-text="sup.name"></div>
-                                        <div class="text-min text-slate-500" x-text="sup.contact"></div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <!-- 送货单明细 -->
-                    <div class="border border-slate-200 rounded-lg overflow-hidden">
-                        <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 font-bold text-slate-800 text-sm">
-                            送货单明细（共 <span x-text="confirmModal.deliveries?.length"></span> 单）
-                        </div>
-                        <div class="max-h-64 overflow-y-auto custom-scroll">
-                            <table class="w-full text-sm">
-                                <thead class="bg-slate-50 text-slate-500 text-min sticky top-0">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left font-medium border-b">送货单号</th>
-                                        <th class="px-4 py-2 text-left font-medium border-b">供应商</th>
-                                        <th class="px-4 py-2 text-left font-medium border-b">日期</th>
-                                        <th class="px-4 py-2 text-right font-medium border-b">金额</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100">
-                                    <template x-for="d in confirmModal.deliveries" :key="d.id">
-                                        <tr class="hover:bg-slate-50">
-                                            <td class="px-4 py-3 text-num text-blue-600" x-text="d.code"></td>
-                                            <td class="px-4 py-3 text-slate-700" x-text="d.supplierName"></td>
-                                            <td class="px-4 py-3 text-slate-600" x-text="d.date"></td>
-                                            <td class="px-4 py-3 text-right font-medium text-num" x-text="'¥' + d.amount.toFixed(2)"></td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-between items-center">
-                            <span class="text-sm text-slate-500">合计 <span x-text="confirmModal.deliveries?.length"></span> 单</span>
-                            <span class="font-bold text-num text-blue-600" x-text="'¥' + (confirmModal.item?.amount || 0).toLocaleString('zh-CN', {minimumFractionDigits: 2})"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="px-6 py-4 border-t border-slate-200 bg-white flex justify-end gap-3">
-                <button @click="confirmModal.open = false" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition">取消</button>
-                <button @click="executeConfirm()" class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 shadow-md shadow-emerald-200 transition flex items-center gap-2">
-                    <i class="fa-solid fa-check"></i> 确认无误，完成对账
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 查看详情弹窗 -->
-    <div x-show="detailModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak @click.self="detailModal.open = false">
-        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl max-h-[90vh] flex flex-col modal-content">
+    <!-- 批量确认预览弹窗 -->
+    <div x-show="batchConfirmModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak>
+        <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl flex flex-col max-h-[90vh] modal-content">
             <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <div>
-                    <h3 class="text-lg font-bold text-slate-800">对账单详情</h3>
-                    <p class="text-min text-slate-500 mt-0.5" x-text="'单号：' + detailModal.item?.code"></p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button @click="printDetail()" class="px-3 py-1.5 border border-slate-300 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition">
-                        <i class="fa-solid fa-print mr-1"></i> 打印
-                    </button>
-                    <button @click="detailModal.open = false" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
+                <h3 class="text-lg font-bold text-slate-800">批量确认对账</h3>
+                <button @click="batchConfirmModal.open = false" class="text-slate-400 hover:text-slate-600 text-xl">×</button>
             </div>
             
-            <div class="flex-1 overflow-y-auto custom-scroll p-6">
-                <!-- 基本信息 -->
-                <div class="grid grid-cols-4 gap-4 mb-6">
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <div class="text-min text-slate-500 mb-1">对账状态</div>
-                        <span class="status-tag" :class="'status-' + detailModal.item?.status" x-show="detailModal.item">
-                            <i class="fa-solid fa-circle text-[8px]"></i>
-                            <span x-text="getStatusText(detailModal.item?.status)"></span>
-                        </span>
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <div class="text-min text-slate-500 mb-1">对账周期</div>
-                        <div class="font-bold text-slate-800" x-text="detailModal.item?.period"></div>
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <div class="text-min text-slate-500 mb-1">送货单数量</div>
-                        <div class="font-bold text-slate-800" x-text="detailModal.item?.deliveryCount + ' 单'"></div>
-                    </div>
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <div class="text-min text-slate-500 mb-1">对账金额</div>
-                        <div class="font-bold text-blue-600 text-num text-lg" x-text="'¥' + (detailModal.item?.amount || 0).toLocaleString('zh-CN', {minimumFractionDigits: 2})"></div>
-                    </div>
+            <div class="p-6 overflow-y-auto custom-scroll flex-1">
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800 mb-6">
+                    <div class="font-medium mb-1">请仔细核对以下对账单信息</div>
+                    <div>确认后将更新为"已确认"状态，此操作不可撤销。</div>
                 </div>
-
-                <!-- 供应商信息 -->
-                <div class="mb-6">
-                    <h4 class="text-sm font-bold text-slate-700 mb-3">供应商信息</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <template x-for="sup in detailModal.item?.suppliers" :key="sup.id">
-                            <div class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg bg-white">
-                                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-full flex items-center justify-center font-bold" x-text="sup.name.charAt(0)"></div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="font-medium text-slate-800 truncate" x-text="sup.name"></div>
-                                    <div class="text-min text-slate-500" x-text="sup.contact"></div>
+                
+                <div class="space-y-4">
+                    <template x-for="(item, idx) in batchConfirmModal.items" :key="item.id">
+                        <div class="border border-slate-200 rounded-lg p-4 hover:border-blue-400 transition">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-num font-bold text-blue-600" x-text="item.code"></span>
+                                        <span class="text-xs text-slate-500">创建于 <span x-text="item.createTime"></span></span>
+                                    </div>
+                                    <div class="text-sm text-slate-700" x-text="item.supplierName"></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-num font-bold text-slate-800 text-lg" x-text="'¥' + item.amount.toFixed(2)"></div>
+                                    <div class="text-xs text-slate-500"><span x-text="item.orderCount"></span> 个送货单</div>
                                 </div>
                             </div>
-                        </template>
-                    </div>
+                            <div class="bg-slate-50 rounded p-2 text-xs text-slate-600">
+                                周期: <span x-text="item.period"></span> | 
+                                供应商联系人: <span x-text="item.supplierContact"></span>
+                            </div>
+                        </div>
+                    </template>
                 </div>
-
-                <!-- 送货单列表 -->
-                <div class="border border-slate-200 rounded-lg overflow-hidden">
-                    <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 font-bold text-slate-800 text-sm flex justify-between items-center">
-                        <span><i class="fa-solid fa-list-ul mr-2 text-slate-400"></i>送货单明细</span>
-                        <span class="text-min font-normal text-slate-500">共 <span x-text="detailModal.deliveries?.length"></span> 单</span>
+                
+                <div class="mt-6 pt-4 border-t border-slate-200 flex justify-between items-center">
+                    <div class="text-sm text-slate-600">
+                        共 <b x-text="batchConfirmModal.items.length"></b> 个对账单，总计金额：
                     </div>
-                    <div class="max-h-96 overflow-y-auto custom-scroll">
-                        <table class="w-full text-sm">
-                            <thead class="bg-slate-50 text-slate-500 text-min sticky top-0">
-                                <tr>
-                                    <th class="px-4 py-2 text-left font-medium border-b">送货单号</th>
-                                    <th class="px-4 py-2 text-left font-medium border-b">供应商</th>
-                                    <th class="px-4 py-2 text-left font-medium border-b">送货日期</th>
-                                    <th class="px-4 py-2 text-left font-medium border-b">关联订单号</th>
-                                    <th class="px-4 py-2 text-right font-medium border-b">金额</th>
-                                    <th class="px-4 py-2 text-center font-medium border-b">状态</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                <template x-for="d in detailModal.deliveries" :key="d.id">
-                                    <tr class="hover:bg-slate-50">
-                                        <td class="px-4 py-3 text-num text-blue-600" x-text="d.code"></td>
-                                        <td class="px-4 py-3 text-slate-700" x-text="d.supplierName"></td>
-                                        <td class="px-4 py-3 text-slate-600" x-text="d.date"></td>
-                                        <td class="px-4 py-3 text-num text-slate-500" x-text="d.orderCode"></td>
-                                        <td class="px-4 py-3 text-right font-medium text-num" x-text="'¥' + d.amount.toFixed(2)"></td>
-                                        <td class="px-4 py-3 text-center">
-                                            <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">已对账</span>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-between items-center">
-                        <span class="text-sm text-slate-500">合计 <span x-text="detailModal.deliveries?.length"></span> 单</span>
-                        <span class="font-bold text-num text-blue-600" x-text="'¥' + (detailModal.item?.amount || 0).toLocaleString('zh-CN', {minimumFractionDigits: 2})"></span>
-                    </div>
-                </div>
-
-                <!-- 备注 -->
-                <div x-show="detailModal.item?.remark" class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                    <i class="fa-solid fa-note-sticky mr-1"></i> 备注：<span x-text="detailModal.item?.remark"></span>
+                    <div class="text-2xl font-bold text-num text-emerald-600" x-text="'¥' + batchConfirmModal.items.reduce((sum, i) => sum + i.amount, 0).toFixed(2)"></div>
                 </div>
             </div>
             
             <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-                <button @click="exportItem(detailModal.item)" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition">
-                    <i class="fa-solid fa-download mr-1"></i> 导出Excel
-                </button>
-                <button @click="detailModal.open = false" class="px-5 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 transition">关闭</button>
+                <button @click="batchConfirmModal.open = false" class="btn-secondary">返回修改</button>
+                <button @click="executeBatchConfirm()" class="btn-success">确认全部对账</button>
             </div>
         </div>
     </div>
@@ -909,55 +1059,30 @@
     <!-- 删除确认弹窗 -->
     <div x-show="deleteModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak>
         <div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 text-center modal-content">
-            <div class="w-14 h-14 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
-                <i class="fa-solid fa-exclamation"></i>
+            <div class="w-14 h-14 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+                !
             </div>
-            <h3 class="text-lg font-bold text-slate-800 mb-2">确认删除?</h3>
-            <p class="text-min text-slate-500 mb-6">
-                对账单 <b x-text="deleteModal.item?.code" class="text-slate-700"></b> 将被删除<br>
-                <span class="text-amber-600 text-xs block mt-1">关联送货单将恢复为"未对账"状态</span>
+            <h3 class="text-lg font-bold text-slate-800 mb-2" x-text="deleteModal.batch ? '批量删除确认' : '确认删除?'"></h3>
+            <p class="text-sm text-slate-500 mb-2">
+                <span x-show="!deleteModal.batch">对账单 <b class="text-slate-800" x-text="deleteModal.item?.code"></b> 将被删除</span>
+                <span x-show="deleteModal.batch">即将删除 <b class="text-red-600" x-text="deleteModal.items?.length"></b> 个对账单</span>
+            </p>
+            <p class="text-xs text-amber-600 bg-amber-50 p-2 rounded-lg inline-block mb-6">
+                关联送货单将恢复为"未对账"状态，可被其他对账单选用
             </p>
             <div class="flex justify-center gap-3">
-                <button @click="deleteModal.open = false" class="px-5 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 transition">取消</button>
-                <button @click="executeDelete()" class="px-5 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 shadow-md shadow-red-200 transition">确认删除</button>
+                <button @click="deleteModal.open = false" class="btn-secondary">取消</button>
+                <button @click="executeDelete()" class="btn-danger">确认删除</button>
             </div>
         </div>
     </div>
 
-    <!-- 供应商详情弹窗（用于多供应商展示） -->
-    <div x-show="supplierModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak>
-        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 modal-content">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-slate-800">供应商详情</h3>
-                <button @click="supplierModal.open = false" class="text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-            </div>
-            <div class="space-y-3 max-h-96 overflow-y-auto custom-scroll">
-                <template x-for="sup in supplierModal.suppliers" :key="sup.id">
-                    <div class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg">
-                        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold" x-text="sup.name.charAt(0)"></div>
-                        <div>
-                            <div class="font-medium text-slate-800" x-text="sup.name"></div>
-                            <div class="text-min text-slate-500" x-text="sup.contact"></div>
-                        </div>
-                    </div>
-                </template>
-            </div>
+    <!-- Toast 提示 -->
+    <div class="toast" :class="[toast.type, {'show': toast.show}]">
+        <div class="flex items-center gap-3">
+            <div class="font-medium text-slate-800" x-text="toast.title"></div>
         </div>
-    </div>
-
-    <!-- Toast提示 -->
-    <div x-show="toast.show" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 transform translate-y-2"
-         x-transition:enter-end="opacity-100 transform translate-y-0"
-         x-transition:leave="transition ease-in duration-300"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed top-6 right-6 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-2xl z-[100] flex items-center gap-3">
-        <i class="fa-solid" :class="toast.type === 'success' ? 'fa-check-circle text-emerald-400' : 'fa-circle-exclamation text-rose-400'"></i>
-        <span class="text-sm font-medium" x-text="toast.message"></span>
+        <div class="text-xs text-slate-500 mt-1" x-text="toast.message" x-show="toast.message"></div>
     </div>
 
     <script>
@@ -966,191 +1091,196 @@
                 loading: false,
                 currentPage: 1,
                 pageSize: 10,
-                currentTab: 'all',
-                selectedItems: [],
+                sortField: 'createTime',
+                sortDirection: 'desc',
+                lastSelectedIndex: null,
                 
                 filters: {
                     keyword: '',
-                    date: '',
-                    period: '',
-                    supplier: ''
+                    status: '',
+                    supplier: '',
+                    dateFrom: '',
+                    dateTo: '',
+                    amountMin: '',
+                    amountMax: ''
                 },
+                
+                selectedItems: [],
                 
                 suppliers: [
                     { id: 'S001', name: '西安化学试剂有限公司', contact: '张经理 13800138000' },
                     { id: 'S002', name: '赛默飞世尔科技', contact: '李经理 13900139000' },
                     { id: 'S003', name: '国药集团化学试剂', contact: '王经理 13700137000' },
-                    { id: 'S004', name: '阿拉丁生化科技', contact: '刘经理 13600136000' },
-                    { id: 'S005', name: '西格玛奥德里奇', contact: '陈经理 13500135000' },
-                    { id: 'S006', name: '麦克林试剂', contact: '赵经理 13400134000' }
+                    { id: 'S004', name: '阿拉丁试剂', contact: '陈经理 13600136000' }
                 ],
                 
-                availablePeriods: ['2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06', '2024-Q1', '2024-Q2'],
+                reconciliations: [
+                    {
+                        id: 1,
+                        code: 'DZ20240115001',
+                        supplierId: 'S001',
+                        supplierName: '西安化学试剂有限公司',
+                        supplierContact: '张经理 13800138000',
+                        period: '2024-01',
+                        orderCount: 12,
+                        amount: 12580.50,
+                        status: 'confirmed',
+                        createTime: '2024-01-15 14:30:00',
+                        remark: '月度常规对账'
+                    },
+                    {
+                        id: 2,
+                        code: 'DZ20240120002',
+                        supplierId: 'S002',
+                        supplierName: '赛默飞世尔科技',
+                        supplierContact: '李经理 13900139000',
+                        period: '2024-01',
+                        orderCount: 5,
+                        amount: 56800.00,
+                        status: 'draft',
+                        createTime: '2024-01-20 10:15:00',
+                        remark: ''
+                    },
+                    {
+                        id: 3,
+                        code: 'DZ20240201003',
+                        supplierId: 'S001',
+                        supplierName: '西安化学试剂有限公司',
+                        supplierContact: '张经理 13800138000',
+                        period: '2024-02',
+                        orderCount: 8,
+                        amount: 8320.00,
+                        status: 'draft',
+                        createTime: '2024-02-01 09:00:00',
+                        remark: ''
+                    },
+                    {
+                        id: 4,
+                        code: 'DZ20231210004',
+                        supplierId: 'S003',
+                        supplierName: '国药集团化学试剂',
+                        supplierContact: '王经理 13700137000',
+                        period: '2023-12',
+                        orderCount: 15,
+                        amount: 23450.80,
+                        status: 'archived',
+                        createTime: '2023-12-10 16:45:00',
+                        remark: '年度最后一批对账'
+                    },
+                    {
+                        id: 5,
+                        code: 'DZ20240310005',
+                        supplierId: 'S004',
+                        supplierName: '阿拉丁试剂',
+                        supplierContact: '陈经理 13600136000',
+                        period: '2024-03',
+                        orderCount: 20,
+                        amount: 15600.00,
+                        status: 'confirmed',
+                        createTime: '2024-03-10 11:20:00',
+                        remark: ''
+                    }
+                ],
                 
-                reconciliations: [],
-                allDeliveries: [],
+                availableOrders: [
+                    { id: 'O001', code: 'CG20240115001', deliveryNo: 'SH20240115001', orderNo: 'PO20240115001', date: '2024-01-15', supplierId: 'S001', supplierName: '西安化学试剂有限公司', amount: 1250.00, quantity: 50, spec: 'AR级，500ml', used: false },
+                    { id: 'O002', code: 'CG20240116002', deliveryNo: 'SH20240116002', orderNo: 'PO20240116002', date: '2024-01-16', supplierId: 'S001', supplierName: '西安化学试剂有限公司', amount: 2380.50, quantity: 120, spec: 'CP级，1L', used: false },
+                    { id: 'O003', code: 'CG20240118003', deliveryNo: 'SH20240118003', orderNo: 'PO20240118003', date: '2024-01-18', supplierId: 'S002', supplierName: '赛默飞世尔科技', amount: 15600.00, quantity: 30, spec: '色谱纯', used: false },
+                    { id: 'O004', code: 'CG20240120004', deliveryNo: 'SH20240120004', orderNo: 'PO20240120004', date: '2024-01-20', supplierId: 'S001', supplierName: '西安化学试剂有限公司', amount: 450.00, quantity: 20, spec: '标准品', used: false },
+                    { id: 'O005', code: 'CG20240122005', deliveryNo: 'SH20240122005', orderNo: 'PO20240122005', date: '2024-01-22', supplierId: 'S003', supplierName: '国药集团化学试剂', amount: 3200.00, quantity: 80, spec: '分析纯', used: false },
+                    { id: 'O006', code: 'CG20240125006', deliveryNo: 'SH20240125006', orderNo: 'PO20240125006', date: '2024-01-25', supplierId: 'S002', supplierName: '赛默飞世尔科技', amount: 8900.00, quantity: 15, spec: '质谱级', used: false },
+                    { id: 'O007', code: 'CG20240128007', deliveryNo: 'SH20240128007', orderNo: 'PO20240128007', date: '2024-01-28', supplierId: 'S004', supplierName: '阿拉丁试剂', amount: 5600.00, quantity: 100, spec: '生物级', used: false }
+                ],
                 
                 generateModal: {
                     open: false,
                     step: 1,
                     periodType: 'month',
-                    period: '2024-06',
-                    periodOptions: [],
-                    availableDeliveries: [],
-                    filteredDeliveries: [],
-                    selectedDeliveries: [],
-                    availableSuppliers: [],
-                    supplierFilter: '',
-                    remark: ''
+                    period: '2024-01',
+                    searchKeyword: '',
+                    filteredOrders: [],
+                    selectedOrders: [],
+                    groupedOrders: {},
+                    selectedSuppliers: {},
+                    remark: '',
+                    generating: false
                 },
                 
-                detailModal: {
+                slidePanel: {
                     open: false,
                     item: null,
-                    deliveries: []
+                    orders: [],
+                    expandAll: false,
+                    confirmMode: false,
+                    confirmChecked: false
                 },
                 
-                confirmModal: {
+                batchConfirmModal: {
                     open: false,
-                    item: null,
-                    deliveries: []
+                    items: []
                 },
                 
                 deleteModal: {
                     open: false,
-                    item: null
+                    item: null,
+                    items: null,
+                    batch: false
                 },
                 
-                supplierModal: {
-                    open: false,
-                    suppliers: []
-                },
-                
-                toast: { show: false, message: '', type: 'success' },
+                toast: { show: false, type: 'success', title: '', message: '', timer: null },
                 
                 init() {
-                    this.generateMockData();
-                    this.updatePeriodOptions();
                     this.applyFilters();
-                },
-                
-                generateMockData() {
-                    const periods = ['2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06'];
-                    
-                    // 生成送货单数据（200条）
-                    for (let i = 1; i <= 200; i++) {
-                        const supplier = this.suppliers[Math.floor(Math.random() * this.suppliers.length)];
-                        const period = periods[Math.floor(Math.random() * periods.length)];
-                        const date = period + '-' + String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
-                        
-                        this.allDeliveries.push({
-                            id: 'D' + String(i).padStart(5, '0'),
-                            code: 'SH' + date.replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-                            date: date,
-                            supplierId: supplier.id,
-                            supplierName: supplier.name,
-                            supplierContact: supplier.contact,
-                            orderCode: 'CG' + date.replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
-                            amount: Math.floor(Math.random() * 5000) + 500 + Math.random() * 100,
-                            quantity: Math.floor(Math.random() * 100) + 1,
-                            status: Math.random() > 0.3 ? 'completed' : 'pending'
-                        });
-                    }
-                    
-                    // 生成对账单数据（50条）
-                    for (let i = 1; i <= 50; i++) {
-                        const isMultiSupplier = Math.random() > 0.7;
-                        const numSuppliers = isMultiSupplier ? Math.floor(Math.random() * 3) + 2 : 1;
-                        const selectedSups = [];
-                        const supplierIds = [];
-                        
-                        while (selectedSups.length < numSuppliers) {
-                            const sup = this.suppliers[Math.floor(Math.random() * this.suppliers.length)];
-                            if (!supplierIds.includes(sup.id)) {
-                                selectedSups.push({...sup});
-                                supplierIds.push(sup.id);
-                            }
-                        }
-                        
-                        const period = periods[Math.floor(Math.random() * periods.length)];
-                        const status = Math.random() > 0.6 ? 'confirmed' : 'draft';
-                        const createDate = period + '-' + String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
-                        
-                        const deliveryCount = Math.floor(Math.random() * 10) + 1;
-                        const relatedDeliveries = this.allDeliveries
-                            .filter(d => supplierIds.includes(d.supplierId) && d.date.startsWith(period.substring(0, 7)))
-                            .slice(0, deliveryCount);
-                        
-                        const totalAmount = relatedDeliveries.reduce((sum, d) => sum + d.amount, 0);
-                        
-                        this.reconciliations.push({
-                            id: i,
-                            code: 'DZ' + createDate.replace(/-/g, '') + String(i).padStart(3, '0'),
-                            suppliers: selectedSups,
-                            period: period,
-                            deliveryCount: relatedDeliveries.length,
-                            amount: totalAmount,
-                            status: status,
-                            createTime: createDate + ' ' + String(Math.floor(Math.random() * 24)).padStart(2, '0') + ':' + String(Math.floor(Math.random() * 60)).padStart(2, '0') + ':00',
-                            remark: Math.random() > 0.7 ? '月度常规对账，请核对后确认' : '',
-                            deliveryIds: relatedDeliveries.map(d => d.id)
-                        });
-                    }
-                    
-                    this.reconciliations.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
-                },
-                
-                updatePeriodOptions() {
-                    if (this.generateModal.periodType === 'month') {
-                        this.generateModal.periodOptions = ['2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06'];
-                    } else {
-                        this.generateModal.periodOptions = ['2024-Q1', '2024-Q2'];
-                    }
-                    if (!this.generateModal.periodOptions.includes(this.generateModal.period)) {
-                        this.generateModal.period = this.generateModal.periodOptions[0];
-                    }
+                    this.filterAvailableOrders();
                 },
                 
                 get stats() {
-                    const currentMonth = new Date().toISOString().slice(0, 7);
-                    const monthAmount = this.reconciliations
-                        .filter(r => r.createTime.startsWith(currentMonth) && r.status === 'confirmed')
-                        .reduce((sum, r) => sum + r.amount, 0);
-                    
                     return {
                         total: this.reconciliations.length,
                         draft: this.reconciliations.filter(r => r.status === 'draft').length,
                         confirmed: this.reconciliations.filter(r => r.status === 'confirmed').length,
-                        monthAmount: monthAmount
+                        archived: this.reconciliations.filter(r => r.status === 'archived').length
                     };
                 },
                 
                 get filteredData() {
-                    let data = this.reconciliations;
+                    let data = this.reconciliations.filter(item => {
+                        if (this.filters.keyword) {
+                            const keyword = this.filters.keyword.toLowerCase();
+                            if (!item.code.toLowerCase().includes(keyword) && 
+                                !item.supplierName.toLowerCase().includes(keyword)) {
+                                return false;
+                            }
+                        }
+                        
+                        if (this.filters.status && item.status !== this.filters.status) return false;
+                        if (this.filters.supplier && item.supplierId !== this.filters.supplier) return false;
+                        if (this.filters.dateFrom && item.createTime < this.filters.dateFrom) return false;
+                        if (this.filters.dateTo) {
+                            const endDate = this.filters.dateTo + ' 23:59:59';
+                            if (item.createTime > endDate) return false;
+                        }
+                        if (this.filters.amountMin && item.amount < parseFloat(this.filters.amountMin)) return false;
+                        if (this.filters.amountMax && item.amount > parseFloat(this.filters.amountMax)) return false;
+                        
+                        return true;
+                    });
                     
-                    if (this.currentTab !== 'all') {
-                        data = data.filter(item => item.status === this.currentTab);
-                    }
-                    
-                    if (this.filters.keyword) {
-                        const keyword = this.filters.keyword.toLowerCase();
-                        data = data.filter(item => {
-                            if (item.code.toLowerCase().includes(keyword)) return true;
-                            return item.suppliers.some(s => s.name.toLowerCase().includes(keyword));
-                        });
-                    }
-                    
-                    if (this.filters.date) {
-                        data = data.filter(item => item.createTime.startsWith(this.filters.date));
-                    }
-                    
-                    if (this.filters.period) {
-                        data = data.filter(item => item.period === this.filters.period);
-                    }
-                    
-                    if (this.filters.supplier) {
-                        data = data.filter(item => item.suppliers.some(s => s.id === this.filters.supplier));
-                    }
+                    data.sort((a, b) => {
+                        let aVal = a[this.sortField];
+                        let bVal = b[this.sortField];
+                        
+                        if (typeof aVal === 'string') {
+                            aVal = aVal.toLowerCase();
+                            bVal = bVal.toLowerCase();
+                        }
+                        
+                        if (this.sortDirection === 'asc') {
+                            return aVal > bVal ? 1 : -1;
+                        } else {
+                            return aVal < bVal ? 1 : -1;
+                        }
+                    });
                     
                     return data;
                 },
@@ -1185,13 +1315,6 @@
                     return this.paginatedData.length > 0 && this.paginatedData.every(item => this.selectedItems.includes(item.id));
                 },
                 
-                get filteredAvailableDeliveries() {
-                    if (!this.generateModal.supplierFilter) {
-                        return this.generateModal.availableDeliveries;
-                    }
-                    return this.generateModal.availableDeliveries.filter(d => d.supplierId === this.generateModal.supplierFilter);
-                },
-                
                 applyFilters() {
                     this.currentPage = 1;
                     this.selectedItems = [];
@@ -1200,219 +1323,370 @@
                 resetFilters() {
                     this.filters = {
                         keyword: '',
-                        date: '',
-                        period: '',
-                        supplier: ''
+                        status: '',
+                        supplier: '',
+                        dateFrom: '',
+                        dateTo: '',
+                        amountMin: '',
+                        amountMax: ''
                     };
-                    this.currentTab = 'all';
                     this.applyFilters();
+                },
+                
+                setFilter(key, value) {
+                    this.filters[key] = value;
+                    this.applyFilters();
+                },
+                
+                sortBy(field) {
+                    if (this.sortField === field) {
+                        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this.sortField = field;
+                        this.sortDirection = 'desc';
+                    }
                 },
                 
                 getStatusText(status) {
                     const map = {
                         'draft': '草稿',
-                        'confirmed': '已对账'
+                        'confirmed': '已确认',
+                        'archived': '已归档'
                     };
                     return map[status] || status;
                 },
                 
-                toggleSelectAll() {
-                    if (this.isAllSelected) {
-                        this.selectedItems = this.selectedItems.filter(id => !this.paginatedData.some(item => item.id === id));
+                formatDate(datetime) {
+                    return datetime.split(' ')[0];
+                },
+                
+                formatTime(datetime) {
+                    return datetime.split(' ')[1];
+                },
+                
+                toggleSelectAll(e) {
+                    if (e.target.checked) {
+                        this.paginatedData.forEach(item => {
+                            if (!this.selectedItems.includes(item.id)) {
+                                this.selectedItems.push(item.id);
+                            }
+                        });
                     } else {
-                        const newIds = this.paginatedData.map(item => item.id).filter(id => !this.selectedItems.includes(id));
-                        this.selectedItems = [...this.selectedItems, ...newIds];
+                        this.selectedItems = [];
                     }
                 },
                 
-                // 生成对账单相关
+                shiftSelect(id, index) {
+                    if (this.lastSelectedIndex !== null && event.shiftKey) {
+                        const start = Math.min(this.lastSelectedIndex, index);
+                        const end = Math.max(this.lastSelectedIndex, index);
+                        for (let i = start; i <= end; i++) {
+                            const itemId = this.paginatedData[i]?.id;
+                            if (itemId && !this.selectedItems.includes(itemId)) {
+                                this.selectedItems.push(itemId);
+                            }
+                        }
+                    } else {
+                        if (this.selectedItems.includes(id)) {
+                            this.selectedItems = this.selectedItems.filter(i => i !== id);
+                        } else {
+                            this.selectedItems.push(id);
+                        }
+                        this.lastSelectedIndex = index;
+                    }
+                },
+                
+                // 侧滑面板
+                openSlidePanel(item) {
+                    this.slidePanel.item = item;
+                    this.slidePanel.orders = this.generateMockOrders(item);
+                    this.slidePanel.confirmMode = false;
+                    this.slidePanel.confirmChecked = false;
+                    this.slidePanel.open = true;
+                },
+                
+                openConfirmDetail(item) {
+                    this.slidePanel.item = item;
+                    this.slidePanel.orders = this.generateMockOrders(item);
+                    this.slidePanel.confirmMode = true;
+                    this.slidePanel.confirmChecked = false;
+                    this.slidePanel.open = true;
+                },
+                
+                closeSlidePanel() {
+                    this.slidePanel.open = false;
+                    setTimeout(() => {
+                        this.slidePanel.item = null;
+                        this.slidePanel.orders = [];
+                        this.slidePanel.confirmMode = false;
+                    }, 300);
+                },
+                
+                enableConfirmMode() {
+                                        this.slidePanel.confirmMode = true;
+                    this.slidePanel.confirmChecked = false;
+                },
+                
+                cancelConfirmMode() {
+                    this.slidePanel.confirmMode = false;
+                    this.slidePanel.confirmChecked = false;
+                },
+                
+                generateMockOrders(item) {
+                    const orders = [];
+                    const avgAmount = item.amount / item.orderCount;
+                    for (let i = 0; i < item.orderCount; i++) {
+                        orders.push({
+                            id: `ORDER_${i}`,
+                            deliveryNo: `SH${item.code.slice(2)}${String(i+1).padStart(3,'0')}`,
+                            orderNo: `PO${item.code.slice(2)}${String(i+1).padStart(3,'0')}`,
+                            date: item.createTime.split(' ')[0],
+                            amount: avgAmount + (Math.random() - 0.5) * 100,
+                            quantity: Math.floor(Math.random() * 100) + 10,
+                            spec: '标准规格',
+                            expanded: false
+                        });
+                    }
+                    return orders;
+                },
+                
+                executeConfirm() {
+                    if (this.slidePanel.item && this.slidePanel.confirmChecked) {
+                        const found = this.reconciliations.find(r => r.id === this.slidePanel.item.id);
+                        if (found) {
+                            found.status = 'confirmed';
+                            this.slidePanel.item.status = 'confirmed';
+                            this.showToast('对账确认成功', 'success');
+                            this.cancelConfirmMode();
+                        }
+                    }
+                },
+                
+                // 生成对账单 Wizard
                 openGenerateModal() {
                     this.generateModal = {
                         open: true,
                         step: 1,
                         periodType: 'month',
-                        period: '2024-06',
-                        periodOptions: [],
-                        availableDeliveries: [],
-                        filteredDeliveries: [],
-                        selectedDeliveries: [],
-                        availableSuppliers: [],
-                        supplierFilter: '',
-                        remark: ''
+                        period: '2024-01',
+                        searchKeyword: '',
+                        filteredOrders: [],
+                        selectedOrders: [],
+                        groupedOrders: {},
+                        selectedSuppliers: {},
+                        remark: '',
+                        generating: false
                     };
-                    this.updatePeriodOptions();
+                    this.filterAvailableOrders();
                 },
                 
                 closeGenerateModal() {
                     this.generateModal.open = false;
                 },
                 
-                canProceed() {
-                    if (this.generateModal.step === 1) {
-                        return this.generateModal.period;
-                    }
-                    if (this.generateModal.step === 2) {
-                        return this.generateModal.selectedDeliveries.length > 0;
-                    }
-                    return true;
-                },
-                
-                nextStep() {
-                    if (this.generateModal.step === 1) {
-                        // 根据周期筛选送货单
-                        const selectedPeriod = this.generateModal.period;
-                        const periodPrefix = selectedPeriod.substring(0, 7); // 2024-01 或 2024-Q1
-                        
-                        this.generateModal.availableDeliveries = this.allDeliveries.filter(d => {
-                            const periodMatch = selectedPeriod.includes('Q') 
-                                ? this.getQuarter(d.date) === selectedPeriod
-                                : d.date.startsWith(periodPrefix);
-                            const notReconciled = !this.reconciliations.some(r => r.deliveryIds && r.deliveryIds.includes(d.id));
-                            return periodMatch && d.status === 'completed' && notReconciled;
-                        });
-                        
-                        // 提取涉及的供应商
-                        const supplierIds = [...new Set(this.generateModal.availableDeliveries.map(d => d.supplierId))];
-                        this.generateModal.availableSuppliers = this.suppliers.filter(s => supplierIds.includes(s.id));
-                        
-                        // 默认全选
-                        this.generateModal.selectedDeliveries = this.generateModal.availableDeliveries.map(d => d.id);
-                    }
-                    this.generateModal.step++;
-                },
-                
-                getQuarter(dateStr) {
-                    const month = parseInt(dateStr.split('-')[1]);
-                    const year = dateStr.split('-')[0];
-                    const quarter = Math.ceil(month / 3);
-                    return year + '-Q' + quarter;
-                },
-                
-                filterDeliveriesBySupplier(supplierId) {
-                    this.generateModal.supplierFilter = supplierId;
-                },
-                
-                getDeliveryCountBySupplier(supplierId) {
-                    return this.generateModal.availableDeliveries.filter(d => d.supplierId === supplierId).length;
-                },
-                
-                toggleSelectAllFilteredDeliveries() {
-                    const filteredIds = this.filteredAvailableDeliveries.map(d => d.id);
-                    const allSelected = filteredIds.every(id => this.generateModal.selectedDeliveries.includes(id));
+                filterAvailableOrders() {
+                    let orders = this.availableOrders.filter(o => !o.used);
                     
+                    if (this.generateModal.searchKeyword) {
+                        const keyword = this.generateModal.searchKeyword.toLowerCase();
+                        orders = orders.filter(o => 
+                            o.deliveryNo.toLowerCase().includes(keyword) || 
+                            o.orderNo.toLowerCase().includes(keyword)
+                        );
+                    }
+                    
+                    const grouped = {};
+                    orders.forEach(order => {
+                        if (!grouped[order.supplierId]) {
+                            grouped[order.supplierId] = {
+                                supplierId: order.supplierId,
+                                supplierName: order.supplierName,
+                                expanded: true,
+                                items: []
+                            };
+                        }
+                        grouped[order.supplierId].items.push(order);
+                    });
+                    
+                    this.generateModal.filteredOrders = orders;
+                    this.generateModal.groupedOrders = grouped;
+                },
+                
+                isGroupSelected(supplierId) {
+                    const group = this.generateModal.groupedOrders[supplierId];
+                    if (!group) return false;
+                    return group.items.every(o => this.generateModal.selectedOrders.includes(o.id));
+                },
+                
+                toggleGroupSelection(supplierId) {
+                    const group = this.generateModal.groupedOrders[supplierId];
+                    if (!group) return;
+                    
+                    const allSelected = this.isGroupSelected(supplierId);
                     if (allSelected) {
-                        this.generateModal.selectedDeliveries = this.generateModal.selectedDeliveries.filter(id => !filteredIds.includes(id));
+                        group.items.forEach(o => {
+                            const idx = this.generateModal.selectedOrders.indexOf(o.id);
+                            if (idx > -1) this.generateModal.selectedOrders.splice(idx, 1);
+                        });
                     } else {
-                        const newIds = filteredIds.filter(id => !this.generateModal.selectedDeliveries.includes(id));
-                        this.generateModal.selectedDeliveries = [...this.generateModal.selectedDeliveries, ...newIds];
+                        group.items.forEach(o => {
+                            if (!this.generateModal.selectedOrders.includes(o.id)) {
+                                this.generateModal.selectedOrders.push(o.id);
+                            }
+                        });
+                    }
+                },
+                
+                toggleSelectAllOrders() {
+                    if (this.generateModal.selectedOrders.length === this.generateModal.filteredOrders.length) {
+                        this.generateModal.selectedOrders = [];
+                    } else {
+                        this.generateModal.selectedOrders = this.generateModal.filteredOrders.map(o => o.id);
                     }
                 },
                 
                 calculateSelectedAmount() {
-                    return this.generateModal.availableDeliveries
-                        .filter(d => this.generateModal.selectedDeliveries.includes(d.id))
-                        .reduce((sum, d) => sum + d.amount, 0);
+                    return this.generateModal.filteredOrders
+                        .filter(o => this.generateModal.selectedOrders.includes(o.id))
+                        .reduce((sum, o) => sum + o.amount, 0);
                 },
                 
-                getSelectedSuppliers() {
-                    const selectedIds = [...new Set(this.generateModal.availableDeliveries
-                        .filter(d => this.generateModal.selectedDeliveries.includes(d.id))
-                        .map(d => d.supplierId))];
-                    return this.suppliers.filter(s => selectedIds.includes(s.id));
+                canProceed() {
+                    if (this.generateModal.step === 1) return true;
+                    if (this.generateModal.step === 2) return this.generateModal.selectedOrders.length > 0;
+                    return true;
+                },
+                
+                nextStep() {
+                    if (this.generateModal.step === 2) {
+                        const selectedBySupplier = {};
+                        this.generateModal.filteredOrders.forEach(o => {
+                            if (this.generateModal.selectedOrders.includes(o.id)) {
+                                if (!selectedBySupplier[o.supplierId]) {
+                                    selectedBySupplier[o.supplierId] = {
+                                        supplierId: o.supplierId,
+                                        supplierName: o.supplierName,
+                                        count: 0,
+                                        amount: 0
+                                    };
+                                }
+                                selectedBySupplier[o.supplierId].count++;
+                                selectedBySupplier[o.supplierId].amount += o.amount;
+                            }
+                        });
+                        this.generateModal.selectedSuppliers = selectedBySupplier;
+                    }
+                    this.generateModal.step++;
                 },
                 
                 generateReconciliation() {
-                    const selectedDeliveries = this.generateModal.availableDeliveries.filter(d => 
-                        this.generateModal.selectedDeliveries.includes(d.id)
-                    );
+                    this.generateModal.generating = true;
                     
-                    const supplierMap = new Map();
-                    selectedDeliveries.forEach(d => {
-                        if (!supplierMap.has(d.supplierId)) {
-                            const sup = this.suppliers.find(s => s.id === d.supplierId);
-                            supplierMap.set(d.supplierId, {...sup});
+                    setTimeout(() => {
+                        Object.values(this.generateModal.selectedSuppliers).forEach(supplier => {
+                            const orders = this.generateModal.filteredOrders.filter(o => 
+                                o.supplierId === supplier.supplierId && 
+                                this.generateModal.selectedOrders.includes(o.id)
+                            );
+                            
+                            const newReconciliation = {
+                                id: Date.now() + Math.random(),
+                                code: 'DZ' + new Date().toISOString().slice(0,10).replace(/-/g,'') + Math.floor(Math.random()*1000).toString().padStart(3,'0'),
+                                supplierId: supplier.supplierId,
+                                supplierName: supplier.supplierName,
+                                supplierContact: this.suppliers.find(s => s.id === supplier.supplierId)?.contact || '',
+                                period: this.generateModal.period,
+                                orderCount: supplier.count,
+                                amount: supplier.amount,
+                                status: 'draft',
+                                createTime: new Date().toLocaleString('zh-CN'),
+                                remark: this.generateModal.remark
+                            };
+                            
+                            this.reconciliations.unshift(newReconciliation);
+                            
+                            orders.forEach(o => {
+                                const original = this.availableOrders.find(ao => ao.id === o.id);
+                                if (original) original.used = true;
+                            });
+                        });
+                        
+                        this.generateModal.generating = false;
+                        this.closeGenerateModal();
+                        this.showToast('对账单生成成功', 'success');
+                        this.applyFilters();
+                    }, 1500);
+                },
+                
+                // 批量确认预览
+                batchConfirmPreview() {
+                    const items = this.reconciliations.filter(r => 
+                        this.selectedItems.includes(r.id) && r.status === 'draft'
+                    );
+                    if (items.length === 0) {
+                        this.showToast('没有可确认的对账单（仅草稿状态可确认）', 'warning');
+                        return;
+                    }
+                    this.batchConfirmModal.items = items;
+                    this.batchConfirmModal.open = true;
+                },
+                
+                executeBatchConfirm() {
+                    let count = 0;
+                    this.batchConfirmModal.items.forEach(item => {
+                        const found = this.reconciliations.find(r => r.id === item.id);
+                        if (found && found.status === 'draft') {
+                            found.status = 'confirmed';
+                            count++;
                         }
                     });
-                    
-                    const totalAmount = selectedDeliveries.reduce((sum, d) => sum + d.amount, 0);
-                    const now = new Date();
-                    
-                    const newReconciliation = {
-                        id: Date.now(),
-                        code: 'DZ' + now.toISOString().slice(0,10).replace(/-/g,'') + Math.floor(Math.random()*1000),
-                        suppliers: Array.from(supplierMap.values()),
-                        period: this.generateModal.period,
-                        deliveryCount: selectedDeliveries.length,
-                        amount: totalAmount,
-                        status: 'draft',
-                        createTime: now.toLocaleString('zh-CN'),
-                        remark: this.generateModal.remark,
-                        deliveryIds: selectedDeliveries.map(d => d.id)
-                    };
-                    
-                    this.reconciliations.unshift(newReconciliation);
-                    this.showToast('对账单生成成功', 'success');
-                    this.closeGenerateModal();
-                    this.currentTab = 'draft';
-                    this.applyFilters();
-                },
-                
-                // 确认对账流程
-                openConfirmModal(item) {
-                    this.confirmModal.item = item;
-                    this.confirmModal.deliveries = this.allDeliveries.filter(d => item.deliveryIds.includes(d.id));
-                    this.confirmModal.open = true;
-                },
-                
-                executeConfirm() {
-                    if (this.confirmModal.item) {
-                        const item = this.reconciliations.find(r => r.id === this.confirmModal.item.id);
-                        if (item) {
-                            item.status = 'confirmed';
-                            this.showToast('对账确认成功，状态已更新为"已对账"', 'success');
-                        }
-                        this.confirmModal.open = false;
-                        this.confirmModal.item = null;
-                        this.applyFilters();
-                    }
-                },
-                
-                // 详情查看
-                viewDetail(item) {
-                    this.detailModal.item = item;
-                    this.detailModal.deliveries = this.allDeliveries.filter(d => item.deliveryIds.includes(d.id));
-                    this.detailModal.open = true;
-                },
-                
-                viewSuppliersDetail(item) {
-                    this.supplierModal.suppliers = item.suppliers;
-                    this.supplierModal.open = true;
-                },
-                
-                printDetail() {
-                    window.print();
+                    this.batchConfirmModal.open = false;
+                    this.selectedItems = [];
+                    this.showToast(`成功确认 ${count} 个对账单`, 'success');
                 },
                 
                 // 删除
                 deleteItem(item) {
                     this.deleteModal.item = item;
+                    this.deleteModal.batch = false;
+                    this.deleteModal.open = true;
+                },
+                
+                batchDelete() {
+                    const items = this.reconciliations.filter(r => 
+                        this.selectedItems.includes(r.id) && r.status === 'draft'
+                    );
+                    if (items.length === 0) {
+                        this.showToast('没有可删除的对账单（仅草稿状态可删除）', 'warning');
+                        return;
+                    }
+                    this.deleteModal.items = items;
+                    this.deleteModal.batch = true;
                     this.deleteModal.open = true;
                 },
                 
                 executeDelete() {
-                    if (this.deleteModal.item) {
+                    if (this.deleteModal.batch) {
+                        this.deleteModal.items.forEach(item => {
+                            const index = this.reconciliations.findIndex(r => r.id === item.id);
+                            if (index > -1) {
+                                this.reconciliations.splice(index, 1);
+                            }
+                        });
+                        this.showToast(`成功删除 ${this.deleteModal.items.length} 个对账单`, 'success');
+                        this.selectedItems = [];
+                    } else {
                         const index = this.reconciliations.findIndex(r => r.id === this.deleteModal.item.id);
                         if (index > -1) {
                             this.reconciliations.splice(index, 1);
                             this.showToast('删除成功', 'success');
                         }
-                        this.deleteModal.open = false;
-                        this.deleteModal.item = null;
-                        this.applyFilters();
                     }
+                    this.deleteModal.open = false;
+                    this.applyFilters();
                 },
                 
-                // 导出功能
+                // 导出
                 exportItem(item) {
                     this.showToast(`正在导出对账单 ${item.code}...`, 'success');
                     setTimeout(() => {
@@ -1421,27 +1695,42 @@
                 },
                 
                 batchExport() {
-                    if (this.selectedItems.length === 0) {
-                        this.showToast('请先选择要导出的对账单', 'error');
-                        return;
-                    }
-                    this.showToast(`正在批量导出 ${this.selectedItems.length} 个对账单...`, 'success');
+                    this.showToast(`正在导出 ${this.selectedItems.length} 个对账单...`, 'success');
                     setTimeout(() => {
                         this.showToast('批量导出成功', 'success');
                     }, 1500);
                 },
                 
+                exportAll() {
+                    this.showToast('正在导出全部对账单...', 'success');
+                    setTimeout(() => {
+                        this.showToast('导出成功', 'success');
+                    }, 1500);
+                },
+                
+                // 打印
+                printDetail() {
+                    window.print();
+                },
+                
+                // 刷新
                 refreshData() {
                     this.loading = true;
                     setTimeout(() => {
                         this.loading = false;
                         this.showToast('数据已刷新', 'success');
-                    }, 500);
+                    }, 800);
                 },
                 
-                showToast(message, type = 'success') {
-                    this.toast = { show: true, message, type };
-                    setTimeout(() => this.toast.show = false, 3000);
+                // Toast
+                showToast(title, type = 'success', message = '') {
+                    if (this.toast.timer) clearTimeout(this.toast.timer);
+                    
+                    this.toast = { show: true, type, title, message };
+                    
+                    this.toast.timer = setTimeout(() => {
+                        this.toast.show = false;
+                    }, 3000);
                 }
             }
         }
