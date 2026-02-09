@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品批量导入</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f1f5f9; color: #334155; }
+        
+        .text-num { font-family: 'Menlo', 'Monaco', monospace; font-weight: 600; }
+        .text-min { font-size: 12px; line-height: 1.5; }
+        
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-corner { background: transparent; }
+        
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            background: #f8fafc;
+            transition: all 0.3s;
+        }
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .upload-zone.has-file {
+            border-color: #10b981;
+            background: #f0fdf4;
+            border-style: solid;
+        }
+        
+        .step-item { position: relative; }
+        .step-line { 
+            position: absolute; 
+            top: 20px; 
+            left: 50%; 
+            width: 100%; 
+            height: 2px; 
+            background: #e2e8f0; 
+            z-index: 0;
+        }
+        .step-item:last-child .step-line { display: none; }
+        .step-circle {
+            width: 40px; 
+            height: 40px; 
+            border-radius: 50%; 
+            background: white;
+            border: 2px solid #e2e8f0;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            position: relative; 
+            z-index: 1;
+            transition: all 0.3s;
+        }
+        .step-item.active .step-circle {
+            border-color: #3b82f6;
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+        }
+        .step-item.completed .step-circle {
+            border-color: #10b981;
+            background: #10b981;
+            color: white;
+        }
+        
+        .preview-table {
+            table-layout: fixed;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .preview-table th {
+            background: #f8fafc;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .preview-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .preview-table tr:hover td { background: #f8fafc; }
+        .preview-table tr.error-row td {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        .preview-table tr.warning-row td {
+            background: #fffbeb;
+            color: #d97706;
+        }
+        
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .slide-up { animation: slideUp 0.4s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            transition: width 0.3s ease;
+            position: relative;
+        }
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .field-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 4px;
+        }
+        .badge-required { background: #fee2e2; color: #dc2626; }
+        .badge-optional { background: #f1f5f9; color: #64748b; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden" x-data="batchImportApp()">
+
+    <!-- 顶部导航 -->
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex justify-between items-center shadow-sm z-30 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
+                <i class="fa-solid fa-file-import text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">商品批量导入</h1>
+                <div class="text-min text-slate-500 mt-0.5">支持 Excel/CSV 格式，单次最多导入 1000 条</div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <button @click="downloadTemplate()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 transition flex items-center gap-2">
+                <i class="fa-solid fa-download"></i> 下载模板
+            </button>
+            <button @click="closeModal()" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 步骤进度条 -->
+    <div class="bg-white border-b border-slate-200 px-6 py-4">
+        <div class="flex justify-between max-w-3xl mx-auto">
+            <template x-for="(step, index) in steps" :key="index">
+                <div class="step-item flex-1 flex flex-col items-center" 
+                     :class="{ 'active': currentStep === index, 'completed': currentStep > index }">
+                    <div class="step-circle text-sm font-bold" x-text="currentStep > index ? '✓' : (index + 1)"></div>
+                    <div class="text-min mt-2 font-medium" 
+                         :class="currentStep >= index ? 'text-slate-700' : 'text-slate-400'"
+                         x-text="step"></div>
+                    <div class="step-line"></div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- 主体内容 -->
+    <main class="flex-1 overflow-y-auto custom-scroll bg-slate-50 p-6">
+        <div class="max-w-7xl mx-auto">
+            
+            <!-- 第一步：上传文件 -->
+            <div x-show="currentStep === 0" class="fade-in space-y-6">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
+                    <div class="upload-zone rounded-xl p-12 text-center cursor-pointer relative"
+                         :class="{ 'has-file': selectedFile, 'drag-over': isDragging }"
+                         @dragover.prevent="isDragging = true"
+                         @dragleave.prevent="isDragging = false"
+                         @drop.prevent="handleDrop($event)"
+                         @click="$refs.fileInput.click()">
+                        
+                        <input type="file" x-ref="fileInput" class="hidden" accept=".csv,.xlsx,.xls" @change="handleFileSelect($event)">
+                        
+                        <template x-if="!selectedFile">
+                            <div>
+                                <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-blue-500"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-slate-800 mb-2">点击或拖拽文件到此处上传</h3>
+                                <p class="text-min text-slate-500 mb-4">支持 .xlsx, .xls, .csv 格式，文件大小不超过 10MB</p>
+                                <div class="flex justify-center gap-2 text-min text-slate-400">
+                                    <span class="px-3 py-1 bg-slate-100 rounded-full">Excel 文件</span>
+                                    <span class="px-3 py-1 bg-slate-100 rounded-full">CSV 文件</span>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <template x-if="selectedFile">
+                            <div class="slide-up">
+                                <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fa-solid fa-file-excel text-3xl text-emerald-500"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-slate-800 mb-2" x-text="selectedFile.name"></h3>
+                                <p class="text-min text-slate-500" x-text="formatFileSize(selectedFile.size)"></p>
+                                <button @click.stop="selectedFile = null; validationResult = null" 
+                                        class="mt-4 text-sm text-rose-600 hover:text-rose-700 font-medium">
+                                    <i class="fa-solid fa-trash-can mr-1"></i> 移除文件
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- 字段说明 -->
+                    <div class="mt-8">
+                        <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-table-list text-blue-600"></i>
+                            模板字段说明
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-required">必填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">商品编码</span>
+                                </div>
+                                <p class="text-min text-slate-500">唯一标识，如：0101010001</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-required">必填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">商品名称</span>
+                                </div>
+                                <p class="text-min text-slate-500">商品全称</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-required">必填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">类目编码</span>
+                                </div>
+                                <p class="text-min text-slate-500">一级/二级/三级类目</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-required">必填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">规格型号</span>
+                                </div>
+                                <p class="text-min text-slate-500">材质、容量、包装等</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-required">必填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">单价</span>
+                                </div>
+                                <p class="text-min text-slate-500">元，保留2位小数</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-required">必填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">单位</span>
+                                </div>
+                                <p class="text-min text-slate-500">支/袋/箱/瓶等</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-required">必填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">供应商编码</span>
+                                </div>
+                                <p class="text-min text-slate-500">系统中已存在的供应商</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-optional">选填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">材质说明</span>
+                                </div>
+                                <p class="text-min text-slate-500">PP/玻璃/PTFE等</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-optional">选填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">适用场景</span>
+                                </div>
+                                <p class="text-min text-slate-500">气相色谱/细胞培养等</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-optional">选填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">最小起订量</span>
+                                </div>
+                                <p class="text-min text-slate-500">默认1</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-optional">选填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">有效期</span>
+                                </div>
+                                <p class="text-min text-slate-500">月，0表示长期</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="field-badge badge-optional">选填</span>
+                                    <span class="font-semibold text-slate-800 text-sm">技术参数</span>
+                                </div>
+                                <p class="text-min text-slate-500">耐温/精度/离心耐受等</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第二步：数据验证 -->
+            <div x-show="currentStep === 1" class="fade-in space-y-6">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-table text-blue-600"></i>
+                            <h3 class="font-bold text-slate-800">数据预览与验证</h3>
+                        </div>
+                        <div class="flex items-center gap-4 text-min">
+                            <span class="text-slate-500">共 <b class="text-slate-800" x-text="previewData.length"></b> 条数据</span>
+                            <span x-show="validationResult.errors.length > 0" class="text-rose-600">
+                                <i class="fa-solid fa-circle-exclamation mr-1"></i>
+                                <b x-text="validationResult.errors.length"></b> 条错误
+                            </span>
+                            <span x-show="validationResult.warnings.length > 0" class="text-amber-600">
+                                <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                                <b x-text="validationResult.warnings.length"></b> 条警告
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- 错误提示 -->
+                    <div x-show="validationResult.errors.length > 0" class="bg-rose-50 border-b border-rose-200 px-6 py-3">
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-xmark text-rose-500 mt-0.5"></i>
+                            <div class="flex-1">
+                                <div class="font-semibold text-rose-800 text-sm mb-1">发现数据错误，建议修正后重新上传</div>
+                                <div class="text-min text-rose-600 space-y-1">
+                                    <template x-for="error in validationResult.errors.slice(0, 3)" :key="error.row">
+                                        <div>第 <b x-text="error.row"></b> 行：<span x-text="error.message"></span></div>
+                                    </template>
+                                    <div x-show="validationResult.errors.length > 3" class="text-rose-500">
+                                        还有 <span x-text="validationResult.errors.length - 3"></span> 条错误...
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-min text-rose-700 bg-rose-100/50 p-2 rounded border border-rose-200/50">
+                                    <i class="fa-solid fa-info-circle mr-1"></i> 您可以选择忽略错误继续导入，错误数据将被自动跳过
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 数据预览表格 - 完整字段，类目格式修改为 XXX/XXX/XXX -->
+                    <div class="overflow-x-auto max-h-[500px] custom-scroll">
+                        <table class="preview-table">
+                            <thead>
+                                <tr>
+                                    <th class="w-10 text-center sticky left-0 z-20 bg-slate-100">行</th>
+                                    <th class="w-28">商品编码</th>
+                                    <th class="w-48">商品名称</th>
+                                    <th class="w-40">类目(一级/二级/三级)</th>
+                                    <th class="w-40">规格型号</th>
+                                    <th class="w-16 text-center">单位</th>
+                                    <th class="w-20 text-right">单价(元)</th>
+                                    <th class="w-32">供应商</th>
+                                    <th class="w-20 text-center">状态</th>
+                                    <th class="w-24">材质</th>
+                                    <th class="w-24">适用场景</th>
+                                    <th class="w-16 text-center">起订量</th>
+                                    <th class="w-16 text-center">有效期</th>
+                                    <th class="w-32">技术参数</th>
+                                    <th class="w-32">备注</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(row, index) in previewData" :key="index">
+                                    <tr :class="{ 'error-row': row.hasError, 'warning-row': row.hasWarning }">
+                                        <td class="text-center text-slate-400 sticky left-0 bg-white z-10" 
+                                            :class="{ 'bg-rose-50': row.hasError, 'bg-amber-50': row.hasWarning }" 
+                                            x-text="index + 1"></td>
+                                        <td class="font-mono text-num" x-text="row.productCode || '-'"></td>
+                                        <td class="truncate max-w-[200px]" :title="row.productName" x-text="row.productName || '-'"></td>
+                                        <!-- 类目格式修改为：一级/二级/三级 -->
+                                        <td class="truncate" :title="getCategoryFullPath(row)">
+                                            <span class="text-min text-slate-600" x-text="getCategoryFullPath(row)"></span>
+                                        </td>
+                                        <td class="truncate max-w-[150px]" :title="row.specification" x-text="row.specification || '-'"></td>
+                                        <td class="text-center" x-text="row.unit || '-'"></td>
+                                        <td class="text-right font-medium text-num" x-text="row.price ? '¥' + row.price.toFixed(2) : '-'"></td>
+                                        <td class="truncate" x-text="row.supplierName || row.supplierId || '-'"></td>
+                                        <td class="text-center">
+                                            <span class="px-2 py-1 rounded-full text-xs font-medium"
+                                                  :class="row.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'"
+                                                  x-text="row.status === 'active' ? '上架' : '下架'"></span>
+                                        </td>
+                                        <td class="truncate" x-text="row.material || '-'"></td>
+                                        <td class="truncate" x-text="row.application || '-'"></td>
+                                        <td class="text-center" x-text="row.minOrderQty || 1"></td>
+                                        <td class="text-center">
+                                            <span x-text="row.shelfLife ? row.shelfLife + '月' : '长期'"></span>
+                                        </td>
+                                        <td class="truncate max-w-[120px]" :title="row.technicalParams" x-text="row.technicalParams || '-'"></td>
+                                        <td class="truncate max-w-[120px]" :title="row.remark" x-text="row.remark || '-'"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 简化的验证统计 -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-white rounded-lg border border-slate-200 p-4 flex items-center justify-between">
+                        <div>
+                            <div class="text-min text-slate-500 mb-1">有效数据</div>
+                            <div class="text-2xl font-bold text-emerald-600" x-text="validationResult.valid"></div>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center">
+                            <i class="fa-solid fa-check text-emerald-600"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg border border-slate-200 p-4 flex items-center justify-between">
+                        <div>
+                            <div class="text-min text-slate-500 mb-1">存在警告</div>
+                            <div class="text-2xl font-bold text-amber-600" x-text="validationResult.warnings.length"></div>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center">
+                            <i class="fa-solid fa-exclamation text-amber-600"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg border border-slate-200 p-4 flex items-center justify-between">
+                        <div>
+                            <div class="text-min text-slate-500 mb-1">校验失败</div>
+                            <div class="text-2xl font-bold text-rose-600" x-text="validationResult.errors.length"></div>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center">
+                            <i class="fa-solid fa-xmark text-rose-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第三步：确认导入 -->
+            <div x-show="currentStep === 2" class="fade-in space-y-6">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center">
+                    <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fa-solid fa-upload text-4xl text-blue-600"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 mb-2">确认导入数据</h2>
+                    <p class="text-slate-500 mb-8">即将导入 <b class="text-slate-800" x-text="validationResult.valid"></b> 条商品数据到系统中</p>
+                    
+                    <!-- 错误数据警告 -->
+                    <div x-show="validationResult.errors.length > 0" class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 max-w-2xl mx-auto text-left">
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 text-lg"></i>
+                            <div>
+                                <div class="font-semibold text-amber-800 mb-1">注意：将跳过错误数据</div>
+                                <div class="text-min text-amber-700">
+                                    检测到 <b class="text-amber-900" x-text="validationResult.errors.length"></b> 条数据存在格式错误，这些数据将被跳过。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 简化的确认信息 -->
+                    <div class="bg-slate-50 rounded-lg p-6 max-w-lg mx-auto text-left space-y-3 mb-8">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500">导入文件</span>
+                            <span class="text-slate-800 font-medium" x-text="selectedFile?.name"></span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500">总数据条数</span>
+                            <span class="text-slate-800 font-medium" x-text="previewData.length + ' 条'"></span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500">有效数据</span>
+                            <span class="text-emerald-600 font-medium" x-text="validationResult.valid + ' 条'"></span>
+                        </div>
+                        <div x-show="validationResult.errors.length > 0" class="flex justify-between text-sm">
+                            <span class="text-slate-500">将跳过错误</span>
+                            <span class="text-amber-600 font-medium" x-text="validationResult.errors.length + ' 条'"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-center gap-4">
+                        <button @click="currentStep = 1" class="px-6 py-2.5 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-slate-50 transition">
+                            返回修改
+                        </button>
+                        <button @click="startImport()" class="px-8 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 shadow-lg shadow-blue-200 transition flex items-center gap-2">
+                            <i class="fa-solid fa-check"></i> 确认导入
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第四步：导入进度与结果 -->
+            <div x-show="currentStep === 3" class="fade-in space-y-6">
+                <!-- 导入中 -->
+                <div x-show="importStatus === 'processing'" class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+                    <div class="mb-8">
+                        <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 relative">
+                            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-blue-600"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-slate-800 mb-2">正在导入数据...</h2>
+                        <p class="text-slate-500">请勿关闭窗口，正在处理第 <b x-text="currentProgress"></b> / <b x-text="validationResult.valid"></b> 条</p>
+                    </div>
+                    
+                    <div class="max-w-md mx-auto mb-4">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-slate-600">导入进度</span>
+                            <span class="text-blue-600 font-bold" x-text="Math.round((currentProgress / validationResult.valid) * 100) + '%'"></span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" :style="'width: ' + (currentProgress / validationResult.valid * 100) + '%'"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-min text-slate-400" x-text="importLog"></div>
+                </div>
+
+                <!-- 导入完成 -->
+                <div x-show="importStatus === 'completed'" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden slide-up">
+                    <div class="p-8 text-center border-b border-slate-200">
+                        <div class="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fa-solid fa-check-circle text-5xl text-emerald-500"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-800 mb-2">导入完成！</h2>
+                        <p class="text-slate-500">成功导入 <b class="text-emerald-600 text-lg" x-text="importResult.success"></b> 条商品数据</p>
+                    </div>
+                    
+                    <div class="p-6 bg-slate-50">
+                        <!-- 简化的结果统计 -->
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div class="bg-white rounded-lg p-4 text-center border border-slate-200">
+                                <div class="text-3xl font-bold text-emerald-600 mb-1" x-text="importResult.success"></div>
+                                <div class="text-min text-slate-500">导入成功</div>
+                            </div>
+                            <div class="bg-white rounded-lg p-4 text-center border border-slate-200">
+                                <div class="text-3xl font-bold text-amber-600 mb-1" x-text="importResult.skipped"></div>
+                                <div class="text-min text-slate-500">重复跳过</div>
+                            </div>
+                            <div class="bg-white rounded-lg p-4 text-center border border-slate-200">
+                                <div class="text-3xl font-bold text-rose-600 mb-1" x-text="importResult.failed"></div>
+                                <div class="text-min text-slate-500">导入失败</div>
+                            </div>
+                        </div>
+                        
+                        <div x-show="importResult.failed > 0" class="bg-rose-50 border border-rose-200 rounded-lg p-4 mb-6">
+                            <h4 class="font-semibold text-rose-800 mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-exclamation"></i> 失败详情
+                            </h4>
+                            <ul class="text-min text-rose-600 space-y-1">
+                                <template x-for="error in importResult.errorDetails" :key="error">
+                                    <li x-text="error"></li>
+                                </template>
+                            </ul>
+                        </div>
+                        
+                        <div class="flex justify-center gap-3">
+                            <button @click="closeModal()" class="px-6 py-2.5 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-white transition">
+                                关闭窗口
+                            </button>
+                            <button @click="resetImport()" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i> 继续导入
+                            </button>
+                            <button @click="viewProducts()" class="px-6 py-2.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition flex items-center gap-2">
+                                <i class="fa-solid fa-list"></i> 查看商品
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 底部操作栏 -->
+    <div x-show="currentStep < 2" class="bg-white border-t border-slate-200 px-6 py-4 flex justify-between items-center">
+        <button @click="closeModal()" class="px-5 py-2 text-slate-500 hover:text-slate-700 font-medium transition">
+            取消
+        </button>
+        <div class="flex gap-3">
+            <button x-show="currentStep > 0" @click="currentStep--" class="px-5 py-2 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-slate-50 transition">
+                上一步
+            </button>
+            <button x-show="currentStep === 0" @click="validateFile()" 
+                    :disabled="!selectedFile"
+                    :class="{'opacity-50 cursor-not-allowed': !selectedFile}"
+                    class="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
+                开始验证
+            </button>
+            <button x-show="currentStep === 1" @click="handleNextStep()" 
+                    class="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                    :class="{'bg-amber-600 hover:bg-amber-700': validationResult.errors.length > 0}">
+                <template x-if="validationResult.errors.length > 0">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation"></i> 忽略错误并继续
+                    </span>
+                </template>
+                <template x-if="validationResult.errors.length === 0">
+                    <span>下一步</span>
+                </template>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function batchImportApp() {
+            return {
+                currentStep: 0,
+                steps: ['上传文件', '数据验证', '确认导入', '完成'],
+                isDragging: false,
+                selectedFile: null,
+                previewData: [],
+                validationResult: { valid: 0, errors: [], warnings: [] },
+                importStatus: 'processing',
+                currentProgress: 0,
+                importLog: '',
+                importResult: { success: 0, skipped: 0, failed: 0, errorDetails: [] },
+
+                // 辅助方法：生成类目完整路径
+                getCategoryFullPath(row) {
+                    const parts = [];
+                    if (row.categoryLevel1Name) parts.push(row.categoryLevel1Name);
+                    if (row.categoryLevel2Name) parts.push(row.categoryLevel2Name);
+                    if (row.categoryLevel3Name) parts.push(row.categoryLevel3Name);
+                    return parts.length > 0 ? parts.join('/') : '-';
+                },
+
+                handleFileSelect(event) {
+                    const file = event.target.files[0];
+                    if (file) this.processFile(file);
+                },
+
+                handleDrop(event) {
+                    this.isDragging = false;
+                    const file = event.dataTransfer.files[0];
+                    if (file) this.processFile(file);
+                },
+
+                processFile(file) {
+                    const validTypes = ['.csv', '.xlsx', '.xls'];
+                    const ext = '.' + file.name.split('.').pop().toLowerCase();
+                    
+                    if (!validTypes.includes(ext)) {
+                        alert('请上传 Excel 或 CSV 格式的文件');
+                        return;
+                    }
+                    
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('文件大小不能超过 10MB');
+                        return;
+                    }
+                    
+                    this.selectedFile = file;
+                    this.validationResult = null;
+                },
+
+                formatFileSize(bytes) {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                },
+
+                validateFile() {
+                    this.currentStep = 1;
+                    
+                    // 生成模拟预览数据
+                    const mockData = [
+                        { 
+                            productCode: '0101010001', 
+                            productName: '甲醇（色谱级）', 
+                            categoryLevel1: '01', categoryLevel1Name: '化学试剂',
+                            categoryLevel2: '0101', categoryLevel2Name: '无机试剂',
+                            categoryLevel3: '010101', categoryLevel3Name: '有机溶剂',
+                            specification: '4L/瓶，HPLC级，≥99.9%', 
+                            unit: '瓶', 
+                            price: 128.00, 
+                            supplierId: 'S001', supplierName: '西安化学试剂有限公司',
+                            status: 'active',
+                            material: '玻璃瓶装',
+                            application: '气相色谱分析',
+                            minOrderQty: 1,
+                            shelfLife: 36,
+                            technicalParams: '纯度≥99.9%，水分≤0.01%，UV截止波长205nm',
+                            remark: '易燃液体，远离火源',
+                            hasError: false
+                        },
+                        { 
+                            productCode: '0101010002', 
+                            productName: '乙醇（无水，分子生物学级）', 
+                            categoryLevel1: '01', categoryLevel1Name: '化学试剂',
+                            categoryLevel2: '0101', categoryLevel2Name: '无机试剂',
+                            categoryLevel3: '010101', categoryLevel3Name: '有机溶剂',
+                            specification: '500ml/瓶，≥99.9%，分子生物学级', 
+                            unit: '瓶', 
+                            price: 35.00, 
+                            supplierId: 'S002', supplierName: '国药集团化学试剂',
+                            status: 'active',
+                            material: '玻璃瓶',
+                            application: 'DNA/RNA提取',
+                            minOrderQty: 5,
+                            shelfLife: 24,
+                            technicalParams: '纯度≥99.9%，DNase/RNase Free',
+                            remark: '',
+                            hasError: false
+                        },
+                        { 
+                            productCode: '', 
+                            productName: '测试商品（编码缺失）', 
+                            categoryLevel1: '01', categoryLevel1Name: '化学试剂',
+                            categoryLevel2: '0102', categoryLevel2Name: '有机试剂',
+                            categoryLevel3: '', categoryLevel3Name: '',
+                            specification: '测试规格', 
+                            unit: '个', 
+                            price: 0, 
+                            supplierId: 'S009', supplierName: '未知供应商',
+                            status: 'active',
+                            material: '',
+                            application: '测试',
+                            minOrderQty: 1,
+                            shelfLife: 0,
+                            technicalParams: '',
+                            remark: '错误数据示例',
+                            hasError: true
+                        },
+                        { 
+                            productCode: '0402010001', 
+                            productName: '10ml一次性无菌离心管', 
+                            categoryLevel1: '04', categoryLevel1Name: '样品前处理耗材',
+                            categoryLevel2: '0402', categoryLevel2Name: '离心管',
+                            categoryLevel3: '040201', categoryLevel3Name: '微量离心管',
+                            specification: '材质PP、容量10ml、γ射线灭菌、100支/袋', 
+                            unit: '袋', 
+                            price: 45.00, 
+                            supplierId: 'S001', supplierName: '西安化学试剂有限公司',
+                            status: 'active',
+                            material: 'PP（聚丙烯）',
+                            application: '细胞培养、分子生物学',
+                            minOrderQty: 10,
+                            shelfLife: 60,
+                            technicalParams: '耐温范围：-80℃~120℃，离心耐受：12000rpm',
+                            remark: '无菌无酶，DNase/RNase Free',
+                            hasWarning: true
+                        },
+                        { 
+                            productCode: '0402010002', 
+                            productName: '15ml螺口尖底离心管（灭菌）', 
+                            categoryLevel1: '04', categoryLevel1Name: '样品前处理耗材',
+                            categoryLevel2: '0402', categoryLevel2Name: '离心管',
+                            categoryLevel3: '040202', categoryLevel3Name: '螺口离心管',
+                            specification: '15ml，螺口盖，尖底，灭菌，50支/包', 
+                            unit: '包', 
+                            price: 68.00, 
+                            supplierId: 'S003', supplierName: '赛默飞世尔科技',
+                            status: 'inactive',
+                            material: '医用级PP',
+                            application: '细胞离心、样品分装',
+                            minOrderQty: 5,
+                            shelfLife: 48,
+                            technicalParams: '最大RCF: 12000xg，无热原，无菌',
+                            remark: '',
+                            hasError: false
+                        }
+                    ];
+                    
+                    this.previewData = mockData;
+                    
+                    setTimeout(() => {
+                        this.validationResult = {
+                            valid: 4,
+                            errors: [
+                                { row: 3, message: '商品编码不能为空', field: 'productCode' }
+                            ],
+                            warnings: [
+                                { row: 4, message: '建议上传商品主图', field: 'mainImage' }
+                            ]
+                        };
+                    }, 800);
+                },
+
+                handleNextStep() {
+                    if (this.validationResult.errors.length > 0) {
+                        if (!confirm(`检测到 ${this.validationResult.errors.length} 条数据存在错误，这些错误数据将被跳过不导入。\n\n确定要继续导入其他有效数据吗？`)) {
+                            return;
+                        }
+                    }
+                    this.currentStep++;
+                },
+
+                startImport() {
+                    this.currentStep = 3;
+                    this.importStatus = 'processing';
+                    this.currentProgress = 0;
+                    
+                    const total = this.validationResult.valid;
+                    
+                    const interval = setInterval(() => {
+                        this.currentProgress += Math.floor(Math.random() * 2) + 1;
+                        if (this.currentProgress > total) this.currentProgress = total;
+                        
+                        const currentItem = this.previewData.filter(r => !r.hasError)[this.currentProgress - 1];
+                        this.importLog = `正在导入：${currentItem?.productName || '...'}`;
+                        
+                        if (this.currentProgress >= total) {
+                            clearInterval(interval);
+                            setTimeout(() => this.completeImport(), 500);
+                        }
+                    }, 400);
+                },
+
+                completeImport() {
+                    this.importStatus = 'completed';
+                    this.importResult = {
+                        success: 4,
+                        skipped: 0,
+                        failed: 1,
+                        errorDetails: ['第3行: 商品编码不能为空，缺少必填字段']
+                    };
+                },
+
+                downloadTemplate() {
+                    const headers = [
+                        '商品编码', '商品名称', '一级类目编码', '二级类目编码', '三级类目编码',
+                        '规格型号', '单位', '单价', '供应商编码', '上架状态',
+                        '材质说明', '适用场景', '最小起订量', '有效期(月)', '技术参数', '备注'
+                    ];
+                    const sample = [
+                        '0101010001', '甲醇（色谱级）', '01', '0101', '010101',
+                        '4L/瓶，HPLC级，≥99.9%', '瓶', '128.00', 'S001', 'active',
+                        '玻璃瓶装', '气相色谱分析', '1', '36', '纯度≥99.9%', '易燃液体'
+                    ];
+                    const csvContent = headers.join(',') + '\n' + sample.join(',');
+                    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = '商品导入模板.csv';
+                    link.click();
+                },
+
+                resetImport() {
+                    this.currentStep = 0;
+                    this.selectedFile = null;
+                    this.previewData = [];
+                    this.validationResult = { valid: 0, errors: [], warnings: [] };
+                    this.importStatus = 'processing';
+                    this.currentProgress = 0;
+                },
+
+                closeModal() {
+                    if (confirm('确定要关闭导入窗口吗？')) {
+                        window.close();
+                    }
+                },
+
+                viewProducts() {
+                    alert('跳转到商品列表页面');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
