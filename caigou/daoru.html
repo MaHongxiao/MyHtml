@@ -103,10 +103,6 @@
             background: #fef2f2;
             color: #dc2626;
         }
-        .preview-table tr.warning-row td {
-            background: #fffbeb;
-            color: #d97706;
-        }
         
         .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -236,7 +232,7 @@
                     </div>
                     
                     <!-- 字段说明 -->
-                    <div class="mt-8">
+                    <!-- <div class="mt-8">
                         <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
                             <i class="fa-solid fa-table-list text-blue-600"></i>
                             模板字段说明
@@ -327,7 +323,7 @@
                                 <p class="text-min text-slate-500">耐温/精度/离心耐受等</p>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
             </div>
 
@@ -345,10 +341,6 @@
                                 <i class="fa-solid fa-circle-exclamation mr-1"></i>
                                 <b x-text="validationResult.errors.length"></b> 条错误
                             </span>
-                            <span x-show="validationResult.warnings.length > 0" class="text-amber-600">
-                                <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-                                <b x-text="validationResult.warnings.length"></b> 条警告
-                            </span>
                         </div>
                     </div>
                     
@@ -359,12 +351,9 @@
                             <div class="flex-1">
                                 <div class="font-semibold text-rose-800 text-sm mb-1">发现数据错误，建议修正后重新上传</div>
                                 <div class="text-min text-rose-600 space-y-1">
-                                    <template x-for="error in validationResult.errors.slice(0, 3)" :key="error.row">
+                                    <template x-for="error in validationResult.errors" :key="error.row">
                                         <div>第 <b x-text="error.row"></b> 行：<span x-text="error.message"></span></div>
                                     </template>
-                                    <div x-show="validationResult.errors.length > 3" class="text-rose-500">
-                                        还有 <span x-text="validationResult.errors.length - 3"></span> 条错误...
-                                    </div>
                                 </div>
                                 <div class="mt-2 text-min text-rose-700 bg-rose-100/50 p-2 rounded border border-rose-200/50">
                                     <i class="fa-solid fa-info-circle mr-1"></i> 您可以选择忽略错误继续导入，错误数据将被自动跳过
@@ -373,7 +362,7 @@
                         </div>
                     </div>
                     
-                    <!-- 数据预览表格 - 完整字段，类目格式修改为 XXX/XXX/XXX -->
+                    <!-- 数据预览表格 -->
                     <div class="overflow-x-auto max-h-[500px] custom-scroll">
                         <table class="preview-table">
                             <thead>
@@ -397,13 +386,12 @@
                             </thead>
                             <tbody>
                                 <template x-for="(row, index) in previewData" :key="index">
-                                    <tr :class="{ 'error-row': row.hasError, 'warning-row': row.hasWarning }">
+                                    <tr :class="{ 'error-row': row.hasError }">
                                         <td class="text-center text-slate-400 sticky left-0 bg-white z-10" 
-                                            :class="{ 'bg-rose-50': row.hasError, 'bg-amber-50': row.hasWarning }" 
+                                            :class="{ 'bg-rose-50': row.hasError }" 
                                             x-text="index + 1"></td>
                                         <td class="font-mono text-num" x-text="row.productCode || '-'"></td>
                                         <td class="truncate max-w-[200px]" :title="row.productName" x-text="row.productName || '-'"></td>
-                                        <!-- 类目格式修改为：一级/二级/三级 -->
                                         <td class="truncate" :title="getCategoryFullPath(row)">
                                             <span class="text-min text-slate-600" x-text="getCategoryFullPath(row)"></span>
                                         </td>
@@ -431,8 +419,8 @@
                     </div>
                 </div>
                 
-                <!-- 简化的验证统计 -->
-                <div class="grid grid-cols-3 gap-4">
+                <!-- 验证统计：只保留有效和错误 -->
+                <!-- <div class="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
                     <div class="bg-white rounded-lg border border-slate-200 p-4 flex items-center justify-between">
                         <div>
                             <div class="text-min text-slate-500 mb-1">有效数据</div>
@@ -444,15 +432,6 @@
                     </div>
                     <div class="bg-white rounded-lg border border-slate-200 p-4 flex items-center justify-between">
                         <div>
-                            <div class="text-min text-slate-500 mb-1">存在警告</div>
-                            <div class="text-2xl font-bold text-amber-600" x-text="validationResult.warnings.length"></div>
-                        </div>
-                        <div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center">
-                            <i class="fa-solid fa-exclamation text-amber-600"></i>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-lg border border-slate-200 p-4 flex items-center justify-between">
-                        <div>
                             <div class="text-min text-slate-500 mb-1">校验失败</div>
                             <div class="text-2xl font-bold text-rose-600" x-text="validationResult.errors.length"></div>
                         </div>
@@ -460,7 +439,7 @@
                             <i class="fa-solid fa-xmark text-rose-600"></i>
                         </div>
                     </div>
-                </div>
+                </div> -->
             </div>
 
             <!-- 第三步：确认导入 -->
@@ -473,19 +452,19 @@
                     <p class="text-slate-500 mb-8">即将导入 <b class="text-slate-800" x-text="validationResult.valid"></b> 条商品数据到系统中</p>
                     
                     <!-- 错误数据警告 -->
-                    <div x-show="validationResult.errors.length > 0" class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 max-w-2xl mx-auto text-left">
+                    <div x-show="validationResult.errors.length > 0" class="bg-rose-50 border border-rose-200 rounded-lg p-4 mb-6 max-w-2xl mx-auto text-left">
                         <div class="flex items-start gap-3">
-                            <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 text-lg"></i>
+                            <i class="fa-solid fa-circle-exclamation text-rose-500 mt-0.5 text-lg"></i>
                             <div>
-                                <div class="font-semibold text-amber-800 mb-1">注意：将跳过错误数据</div>
-                                <div class="text-min text-amber-700">
-                                    检测到 <b class="text-amber-900" x-text="validationResult.errors.length"></b> 条数据存在格式错误，这些数据将被跳过。
+                                <div class="font-semibold text-rose-800 mb-1">注意：将跳过错误数据</div>
+                                <div class="text-min text-rose-700">
+                                    检测到 <b class="text-rose-900" x-text="validationResult.errors.length"></b> 条数据存在格式错误，这些数据将被跳过不导入。
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- 简化的确认信息 -->
+                    <!-- 确认信息 -->
                     <div class="bg-slate-50 rounded-lg p-6 max-w-lg mx-auto text-left space-y-3 mb-8">
                         <div class="flex justify-between text-sm">
                             <span class="text-slate-500">导入文件</span>
@@ -501,7 +480,7 @@
                         </div>
                         <div x-show="validationResult.errors.length > 0" class="flex justify-between text-sm">
                             <span class="text-slate-500">将跳过错误</span>
-                            <span class="text-amber-600 font-medium" x-text="validationResult.errors.length + ' 条'"></span>
+                            <span class="text-rose-600 font-medium" x-text="validationResult.errors.length + ' 条'"></span>
                         </div>
                     </div>
                     
@@ -552,7 +531,7 @@
                     </div>
                     
                     <div class="p-6 bg-slate-50">
-                        <!-- 简化的结果统计 -->
+                        <!-- 结果统计 -->
                         <div class="grid grid-cols-3 gap-4 mb-6">
                             <div class="bg-white rounded-lg p-4 text-center border border-slate-200">
                                 <div class="text-3xl font-bold text-emerald-600 mb-1" x-text="importResult.success"></div>
@@ -635,7 +614,7 @@
                 isDragging: false,
                 selectedFile: null,
                 previewData: [],
-                validationResult: { valid: 0, errors: [], warnings: [] },
+                validationResult: { valid: 0, errors: [] },
                 importStatus: 'processing',
                 currentProgress: 0,
                 importLog: '',
@@ -690,7 +669,7 @@
                 validateFile() {
                     this.currentStep = 1;
                     
-                    // 生成模拟预览数据
+                    // 生成模拟预览数据 - 包含3个错误数据
                     const mockData = [
                         { 
                             productCode: '0101010001', 
@@ -712,6 +691,25 @@
                             hasError: false
                         },
                         { 
+                            productCode: '', 
+                            productName: '测试商品（编码缺失）', 
+                            categoryLevel1: '01', categoryLevel1Name: '化学试剂',
+                            categoryLevel2: '0102', categoryLevel2Name: '有机试剂',
+                            categoryLevel3: '', categoryLevel3Name: '',
+                            specification: '测试规格', 
+                            unit: '个', 
+                            price: 0, 
+                            supplierId: 'S009', supplierName: '未知供应商',
+                            status: 'active',
+                            material: '',
+                            application: '测试',
+                            minOrderQty: 1,
+                            shelfLife: 0,
+                            technicalParams: '',
+                            remark: '错误示例1：编码为空',
+                            hasError: true
+                        },
+                        { 
                             productCode: '0101010002', 
                             productName: '乙醇（无水，分子生物学级）', 
                             categoryLevel1: '01', categoryLevel1Name: '化学试剂',
@@ -731,42 +729,23 @@
                             hasError: false
                         },
                         { 
-                            productCode: '', 
-                            productName: '测试商品（编码缺失）', 
-                            categoryLevel1: '01', categoryLevel1Name: '化学试剂',
-                            categoryLevel2: '0102', categoryLevel2Name: '有机试剂',
-                            categoryLevel3: '', categoryLevel3Name: '',
-                            specification: '测试规格', 
-                            unit: '个', 
-                            price: 0, 
-                            supplierId: 'S009', supplierName: '未知供应商',
-                            status: 'active',
-                            material: '',
-                            application: '测试',
-                            minOrderQty: 1,
-                            shelfLife: 0,
-                            technicalParams: '',
-                            remark: '错误数据示例',
-                            hasError: true
-                        },
-                        { 
                             productCode: '0402010001', 
-                            productName: '10ml一次性无菌离心管', 
+                            productName: '', 
                             categoryLevel1: '04', categoryLevel1Name: '样品前处理耗材',
                             categoryLevel2: '0402', categoryLevel2Name: '离心管',
                             categoryLevel3: '040201', categoryLevel3Name: '微量离心管',
-                            specification: '材质PP、容量10ml、γ射线灭菌、100支/袋', 
+                            specification: '材质PP、容量10ml、γ射线灭菌', 
                             unit: '袋', 
                             price: 45.00, 
-                            supplierId: 'S001', supplierName: '西安化学试剂有限公司',
+                            supplierId: '', supplierName: '',
                             status: 'active',
                             material: 'PP（聚丙烯）',
-                            application: '细胞培养、分子生物学',
+                            application: '细胞培养',
                             minOrderQty: 10,
                             shelfLife: 60,
-                            technicalParams: '耐温范围：-80℃~120℃，离心耐受：12000rpm',
-                            remark: '无菌无酶，DNase/RNase Free',
-                            hasWarning: true
+                            technicalParams: '耐温范围：-80℃~120℃',
+                            remark: '错误示例2：名称为空，供应商为空',
+                            hasError: true
                         },
                         { 
                             productCode: '0402010002', 
@@ -776,16 +755,16 @@
                             categoryLevel3: '040202', categoryLevel3Name: '螺口离心管',
                             specification: '15ml，螺口盖，尖底，灭菌，50支/包', 
                             unit: '包', 
-                            price: 68.00, 
+                            price: -10, 
                             supplierId: 'S003', supplierName: '赛默飞世尔科技',
                             status: 'inactive',
                             material: '医用级PP',
                             application: '细胞离心、样品分装',
                             minOrderQty: 5,
                             shelfLife: 48,
-                            technicalParams: '最大RCF: 12000xg，无热原，无菌',
-                            remark: '',
-                            hasError: false
+                            technicalParams: '最大RCF: 12000xg',
+                            remark: '错误示例3：单价为负数',
+                            hasError: true
                         }
                     ];
                     
@@ -793,12 +772,11 @@
                     
                     setTimeout(() => {
                         this.validationResult = {
-                            valid: 4,
+                            valid: 2,
                             errors: [
-                                { row: 3, message: '商品编码不能为空', field: 'productCode' }
-                            ],
-                            warnings: [
-                                { row: 4, message: '建议上传商品主图', field: 'mainImage' }
+                                { row: 2, message: '商品编码不能为空' },
+                                { row: 4, message: '商品名称不能为空，供应商编码不能为空' },
+                                { row: 5, message: '单价不能为负数' }
                             ]
                         };
                     }, 800);
@@ -821,8 +799,7 @@
                     const total = this.validationResult.valid;
                     
                     const interval = setInterval(() => {
-                        this.currentProgress += Math.floor(Math.random() * 2) + 1;
-                        if (this.currentProgress > total) this.currentProgress = total;
+                        this.currentProgress += 1;
                         
                         const currentItem = this.previewData.filter(r => !r.hasError)[this.currentProgress - 1];
                         this.importLog = `正在导入：${currentItem?.productName || '...'}`;
@@ -831,16 +808,20 @@
                             clearInterval(interval);
                             setTimeout(() => this.completeImport(), 500);
                         }
-                    }, 400);
+                    }, 600);
                 },
 
                 completeImport() {
                     this.importStatus = 'completed';
                     this.importResult = {
-                        success: 4,
+                        success: 2,
                         skipped: 0,
-                        failed: 1,
-                        errorDetails: ['第3行: 商品编码不能为空，缺少必填字段']
+                        failed: 3,
+                        errorDetails: [
+                            '第2行: 商品编码不能为空',
+                            '第4行: 商品名称不能为空，供应商编码不能为空',
+                            '第5行: 单价不能为负数'
+                        ]
                     };
                 },
 
@@ -867,7 +848,7 @@
                     this.currentStep = 0;
                     this.selectedFile = null;
                     this.previewData = [];
-                    this.validationResult = { valid: 0, errors: [], warnings: [] };
+                    this.validationResult = { valid: 0, errors: [] };
                     this.importStatus = 'processing';
                     this.currentProgress = 0;
                 },
