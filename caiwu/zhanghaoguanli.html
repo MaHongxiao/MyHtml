@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账号管理 - 资金预算管理系统</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { 
+            font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; 
+            background-color: #f8fafc; 
+            color: #334155; 
+        }
+        .text-num { font-family: 'JetBrains Mono', 'Menlo', monospace; font-weight: 600; }
+        .text-min { font-size: 13px; line-height: 1.5; }
+        
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08); }
+        .stat-card.active { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        
+        .data-table th {
+            background: #f8fafc;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        .data-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            vertical-align: middle;
+            transition: all 0.15s;
+        }
+        .data-table tr:hover td { background: #f8fafc; }
+        
+        .smart-input {
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            outline: none;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .smart-input:hover { border-color: #94a3b8; }
+        .smart-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        .smart-input:disabled { background-color: #f8fafc; cursor: not-allowed; color: #64748b; }
+        
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .status-enabled { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .status-disabled { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+        
+        .slide-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 800px;
+            height: 100vh;
+            background: white;
+            box-shadow: -10px 0 40px rgba(0,0,0,0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+        }
+        .slide-panel.open { transform: translateX(0); }
+        .slide-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 40;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .slide-overlay.open { opacity: 1; visibility: visible; }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary:hover { background: #2563eb; }
+        
+        .btn-secondary {
+            background: white;
+            color: #475569;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+        
+        .btn-success {
+            background: #059669;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-success:hover { background: #047857; }
+        
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-danger:hover { background: #b91c1c; }
+        
+        .action-link {
+            color: #3b82f6;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .action-link:hover {
+            color: #2563eb;
+            background: #eff6ff;
+            text-decoration: underline;
+        }
+        .action-link.danger { color: #dc2626; }
+        .action-link.danger:hover { color: #b91c1c; background: #fee2e2; }
+        
+        .pagination-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+            font-size: 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pagination-btn:hover:not(:disabled) { border-color: #3b82f6; color: #3b82f6; }
+        .pagination-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: white;
+            padding: 16px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            border-left: 4px solid;
+            z-index: 100;
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-color: #10b981; }
+        .toast.error { border-color: #ef4444; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .form-section {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .form-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body class="h-screen flex flex-col overflow-hidden" x-data="accountManageApp()">
+
+    <!-- 顶部Header -->
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex justify-between items-center shadow-sm z-30 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
+                <i class="fa-solid fa-credit-card text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">账号管理</h1>
+                <div class="text-xs text-slate-500 mt-0.5">维护资金机构银行账号信息</div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <button @click="refreshData()" class="btn-secondary">
+                <i class="fa-solid fa-rotate-right" :class="loading ? 'animate-spin' : ''"></i> 刷新
+            </button>
+            <button @click="openEditModal()" class="btn-primary">
+                <i class="fa-solid fa-plus"></i> 新增账号
+            </button>
+        </div>
+    </header>
+
+    <!-- Dashboard 统计区 -->
+    <div class="bg-white border-b border-slate-200 px-6 py-5 grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
+        <div class="stat-card flex items-center justify-between" :class="{'active': currentTab === 'all'}" @click="currentTab = 'all'">
+            <div>
+                <div class="text-xs text-slate-500 mb-1 font-medium">全部账号</div>
+                <div class="text-2xl font-bold text-slate-800" x-text="stats.total">0</div>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                <i class="fa-solid fa-wallet text-xl"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between" :class="{'active': currentTab === 'enabled'}" @click="currentTab = 'enabled'">
+            <div>
+                <div class="text-xs text-slate-500 mb-1 font-medium">已启用</div>
+                <div class="text-2xl font-bold text-emerald-600" x-text="stats.enabled">0</div>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <i class="fa-solid fa-check-circle text-xl"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between" :class="{'active': currentTab === 'disabled'}" @click="currentTab = 'disabled'">
+            <div>
+                <div class="text-xs text-slate-500 mb-1 font-medium">已停用</div>
+                <div class="text-2xl font-bold text-slate-600" x-text="stats.disabled">0</div>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">
+                <i class="fa-solid fa-ban text-xl"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between border-amber-100 bg-amber-50">
+            <div>
+                <div class="text-xs text-amber-700 mb-1 font-medium">银企直联</div>
+                <div class="text-2xl font-bold text-amber-700" x-text="stats.directLink">0</div>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                <i class="fa-solid fa-link text-xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主体内容区 -->
+    <main class="flex-1 overflow-hidden flex flex-col bg-slate-50">
+        
+        <!-- 高级筛选栏 -->
+        <div class="bg-white border-b border-slate-200 p-4 flex flex-wrap gap-3 items-end shadow-sm mx-6 mt-4 rounded-t-xl border-x border-t">
+            <div class="flex-1 min-w-[180px]">
+                <label class="block text-xs text-slate-500 mb-1.5 font-medium">机构名称</label>
+                <select x-model="filters.orgName" class="smart-input">
+                    <option value="">全部机构</option>
+                    <template x-for="org in orgList" :key="org">
+                        <option :value="org" x-text="org"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <div class="w-40">
+                <label class="block text-xs text-slate-500 mb-1.5 font-medium">银行名称</label>
+                <input type="text" x-model="filters.bankName" placeholder="搜索银行..." class="smart-input">
+            </div>
+            
+            <div class="w-40">
+                <label class="block text-xs text-slate-500 mb-1.5 font-medium">银行账号</label>
+                <input type="text" x-model="filters.accountNo" placeholder="搜索账号..." class="smart-input text-num">
+            </div>
+            
+            <div class="w-32">
+                <label class="block text-xs text-slate-500 mb-1.5 font-medium">账户状态</label>
+                <select x-model="filters.status" class="smart-input">
+                    <option value="">全部</option>
+                    <option value="enabled">已启用</option>
+                    <option value="disabled">已停用</option>
+                </select>
+            </div>
+            
+            <div class="w-32">
+                <label class="block text-xs text-slate-500 mb-1.5 font-medium">银企直联</label>
+                <select x-model="filters.isDirectLink" class="smart-input">
+                    <option value="">全部</option>
+                    <option value="是">是</option>
+                    <option value="否">否</option>
+                </select>
+            </div>
+            
+            <button @click="resetFilters()" class="btn-secondary mb-0.5 h-10">
+                <i class="fa-solid fa-rotate-left mr-1"></i> 重置
+            </button>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="flex-1 bg-white overflow-hidden flex flex-col mx-6 mb-6 rounded-b-xl border border-slate-200 shadow-sm">
+            <div class="overflow-auto custom-scroll flex-1">
+                <table class="w-full data-table">
+                    <thead class="sticky top-0 z-10">
+                        <tr>
+                            <th class="min-w-[200px]">机构名称</th>
+                            <th class="min-w-[150px]">银行名称</th>
+                            <th class="min-w-[120px]">账户名称</th>
+                            <th class="min-w-[160px]">银行账号</th>
+                            <th class="w-28">账户类型</th>
+                            <th class="w-24 text-center">银企直联</th>
+                            <th class="w-24 text-center">NC查询</th>
+                            <th class="w-24">账户用途</th>
+                            <th class="w-24 text-center">币种</th>
+                            <th class="w-28 text-center">账户状态</th>
+                            <th class="w-40 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(item, index) in paginatedData" :key="item.id">
+                            <tr class="fade-in">
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold" x-text="item.orgName.charAt(0)"></div>
+                                        <span class="font-medium text-slate-800" x-text="item.orgName"></span>
+                                    </div>
+                                </td>
+                                <td class="text-slate-700" x-text="item.bankName"></td>
+                                <td class="text-slate-700" x-text="item.accountName"></td>
+                                <td class="text-num text-slate-600 text-min" x-text="item.accountNo"></td>
+                                <td>
+                                    <span class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs border border-slate-200" x-text="item.accountType"></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="text-xs px-2 py-1 rounded-full" :class="item.isDirectLink === '是' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'" x-text="item.isDirectLink"></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="text-xs px-2 py-1 rounded-full" :class="item.canQueryNC === '是' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'" x-text="item.canQueryNC"></span>
+                                </td>
+                                <td class="text-slate-700 text-min" x-text="item.accountUsage"></td>
+                                <td class="text-center text-min text-slate-600" x-text="item.currency"></td>
+                                <td class="text-center">
+                                    <span class="status-tag" :class="item.status === 'enabled' ? 'status-enabled' : 'status-disabled'">
+                                        <i class="fa-solid fa-circle text-[8px]"></i>
+                                        <span x-text="item.status === 'enabled' ? '已启用' : '已停用'"></span>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <span class="action-link" @click="viewDetail(item)">
+                                            <i class="fa-solid fa-eye"></i> 查看
+                                        </span>
+                                        <span class="action-link" @click="openEditModal(item)">
+                                            <i class="fa-solid fa-pen"></i> 变更
+                                        </span>
+                                        <template x-if="item.status === 'disabled'">
+                                            <button @click="enableItem(item)" class="btn-success text-xs px-2 py-1">
+                                                启用
+                                            </button>
+                                        </template>
+                                        <template x-if="item.status === 'enabled'">
+                                            <button @click="disableItem(item)" class="btn-danger text-xs px-2 py-1">
+                                                停用
+                                            </button>
+                                        </template>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                        
+                        <!-- 空状态 -->
+                        <tr x-show="paginatedData.length === 0">
+                            <td colspan="11" class="text-center py-16 text-slate-400">
+                                <div class="mb-4 text-4xl">💳</div>
+                                <div class="text-min mb-2">暂无银行账号记录</div>
+                                <button @click="openEditModal()" class="btn-primary mt-2">
+                                    <i class="fa-solid fa-plus mr-1"></i> 新增账号
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="border-t border-slate-200 px-6 py-4 flex items-center justify-between bg-slate-50">
+                <div class="text-xs text-slate-500">
+                    显示 <span x-text="filteredData.length > 0 ? (currentPage - 1) * pageSize + 1 : 0" class="font-medium"></span> - 
+                    <span x-text="Math.min(currentPage * pageSize, filteredData.length)" class="font-medium"></span> 条，
+                    共 <span x-text="filteredData.length" class="font-medium"></span> 条
+                </div>
+                <div class="flex gap-2">
+                    <button @click="currentPage = 1" :disabled="currentPage === 1" class="pagination-btn">
+                        <i class="fa-solid fa-angles-left"></i>
+                    </button>
+                    <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn">
+                        <i class="fa-solid fa-angle-left"></i>
+                    </button>
+                    
+                    <template x-for="page in displayedPages" :key="page">
+                        <button @click="currentPage = page" 
+                                class="pagination-btn" 
+                                :class="page === currentPage ? 'active' : ''"
+                                x-text="page"></button>
+                    </template>
+                    
+                    <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn">
+                        <i class="fa-solid fa-angle-right"></i>
+                    </button>
+                    <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="pagination-btn">
+                        <i class="fa-solid fa-angles-right"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                    <select x-model.number="pageSize" @change="currentPage = 1" class="smart-input py-1 px-2 w-16 text-center">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                    <span>条/页</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 新增/编辑侧滑面板 -->
+    <div class="slide-overlay" :class="{'open': editModal.open}" @click="closeEditModal()"></div>
+    <div class="slide-panel" :class="{'open': editModal.open}">
+        <div class="flex flex-col h-full">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800" x-text="editModal.isEdit ? '变更账号信息' : '新增银行账号'"></h3>
+                    <p class="text-xs text-slate-500 mt-1" x-text="editModal.isEdit ? '修改账号相关信息' : '录入新的银行账号信息'"></p>
+                </div>
+                <button @click="closeEditModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-6">
+                <form @submit.prevent="saveItem()" class="space-y-4">
+                    <!-- 基础信息 -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fa-solid fa-building-columns text-blue-600"></i>
+                            基础信息
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">
+                                    机构名称 <span class="text-red-500">*</span>
+                                </label>
+                                <select x-model="editModal.form.orgName" class="smart-input" :class="errors.orgName ? 'border-red-500' : ''" @change="validateField('orgName')" :disabled="editModal.isEdit">
+                                    <option value="">请选择机构</option>
+                                    <template x-for="org in orgList" :key="org">
+                                        <option :value="org" x-text="org"></option>
+                                    </template>
+                                </select>
+                                <p x-show="errors.orgName" class="text-xs text-red-500 mt-1" x-text="errors.orgName"></p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">
+                                    银行名称 <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" x-model="editModal.form.bankName" class="smart-input" :class="errors.bankName ? 'border-red-500' : ''" @blur="validateField('bankName')" placeholder="请输入银行名称">
+                                <p x-show="errors.bankName" class="text-xs text-red-500 mt-1" x-text="errors.bankName"></p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">
+                                    账户名称 <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" x-model="editModal.form.accountName" class="smart-input" :class="errors.accountName ? 'border-red-500' : ''" @blur="validateField('accountName')" placeholder="请输入账户名称">
+                                <p x-show="errors.accountName" class="text-xs text-red-500 mt-1" x-text="errors.accountName"></p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">
+                                    银行账号 <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" x-model="editModal.form.accountNo" class="smart-input text-num" :class="errors.accountNo ? 'border-red-500' : ''" @blur="validateField('accountNo')" placeholder="请输入银行账号">
+                                <p x-show="errors.accountNo" class="text-xs text-red-500 mt-1" x-text="errors.accountNo"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 账户属性 -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fa-solid fa-sliders text-indigo-600"></i>
+                            账户属性
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">
+                                    账户类型 <span class="text-red-500">*</span>
+                                </label>
+                                <select x-model="editModal.form.accountType" class="smart-input" :class="errors.accountType ? 'border-red-500' : ''" @change="validateField('accountType')">
+                                    <option value="">请选择</option>
+                                    <option value="活期户">活期户</option>
+                                    <option value="定期户">定期户</option>
+                                    <option value="基本户">基本户</option>
+                                    <option value="一般户">一般户</option>
+                                    <option value="贷款户">贷款户</option>
+                                    <option value="集团内部存款户">集团内部存款户</option>
+                                    <option value="集团内部账户">集团内部账户</option>
+                                    <option value="集团内部贷款户">集团内部贷款户</option>
+                                    <option value="集团内部活期户">集团内部活期户</option>
+                                    <option value="集团内部定期户">集团内部定期户</option>
+                                </select>
+                                <p x-show="errors.accountType" class="text-xs text-red-500 mt-1" x-text="errors.accountType"></p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">细分类型</label>
+                                <select x-model="editModal.form.subAccountType" class="smart-input">
+                                    <option value="活期">活期</option>
+                                    <option value="定期">定期</option>
+                                    <option value="理财">理财</option>
+                                    <option value="贷款">贷款</option>
+                                    <option value="集团内部存款">集团内部存款</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">账户用途</label>
+                                <select x-model="editModal.form.accountUsage" class="smart-input">
+                                    <option value="支出户">支出户</option>
+                                    <option value="收入户">收入户</option>
+                                    <option value="内部户">内部户</option>
+                                    <option value="项目专户">项目专户</option>
+                                    <option value="专项账户">专项账户</option>
+                                    <option value="收款户">收款户</option>
+                                    <option value="贷款户">贷款户</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">币种</label>
+                                <select x-model="editModal.form.currency" class="smart-input">
+                                    <option value="人民币">人民币</option>
+                                    <option value="美元">美元</option>
+                                    <option value="欧元">欧元</option>
+                                    <option value="港币">港币</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">是否为银企直联户</label>
+                                <select x-model="editModal.form.isDirectLink" class="smart-input">
+                                    <option value="是">是</option>
+                                    <option value="否">否</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">NC系统可查余额</label>
+                                <select x-model="editModal.form.canQueryNC" class="smart-input">
+                                    <option value="是">是</option>
+                                    <option value="否">否</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 联系信息 -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fa-solid fa-address-book text-emerald-600"></i>
+                            联系信息
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">资金管理小组对接人</label>
+                                <input type="text" x-model="editModal.form.contactPerson" class="smart-input" placeholder="请输入对接人姓名">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">对接人电话</label>
+                                <input type="text" x-model="editModal.form.contactPhone" class="smart-input text-num" placeholder="请输入联系电话">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 状态与备注 -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fa-solid fa-circle-info text-amber-600"></i>
+                            状态与备注
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">账户状态</label>
+                                <div class="flex gap-4">
+                                    <label class="flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition flex-1" 
+                                           :class="editModal.form.status === 'enabled' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 hover:border-emerald-300'">
+                                        <input type="radio" x-model="editModal.form.status" value="enabled" class="w-4 h-4 text-emerald-600">
+                                        <div>
+                                            <div class="font-medium text-slate-800">启用</div>
+                                            <div class="text-xs text-slate-500">可用于资金余额录入</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition flex-1"
+                                           :class="editModal.form.status === 'disabled' ? 'border-slate-500 bg-slate-100' : 'border-slate-200 hover:border-slate-400'">
+                                        <input type="radio" x-model="editModal.form.status" value="disabled" class="w-4 h-4 text-slate-600">
+                                        <div>
+                                            <div class="font-medium text-slate-800">停用</div>
+                                            <div class="text-xs text-slate-500">暂时不参与资金录入</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">备注</label>
+                                <textarea x-model="editModal.form.remark" rows="3" class="smart-input resize-none" placeholder="请输入备注信息..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+                <button @click="closeEditModal()" class="btn-secondary">取消</button>
+                <button @click="saveItem()" class="btn-primary">
+                    <i class="fa-solid fa-check"></i> <span x-text="editModal.isEdit ? '保存变更' : '提交保存'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 查看详情侧滑面板 -->
+    <div class="slide-overlay" :class="{'open': viewModal.open}" @click="closeViewModal()"></div>
+    <div class="slide-panel" :class="{'open': viewModal.open}">
+        <div class="flex flex-col h-full" x-show="viewModal.item">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">账号详情</h3>
+                    <p class="text-xs text-slate-500 mt-1">查看银行账号完整信息</p>
+                </div>
+                <button @click="closeViewModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-6">
+                <div class="space-y-6">
+                    <!-- 状态卡片 -->
+                    <div class="p-4 rounded-lg border" :class="viewModal.item?.status === 'enabled' ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm text-slate-500 mb-1">当前状态</div>
+                                <div class="text-lg font-bold" :class="viewModal.item?.status === 'enabled' ? 'text-emerald-700' : 'text-slate-700'" x-text="viewModal.item?.status === 'enabled' ? '已启用' : '已停用'"></div>
+                            </div>
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center" :class="viewModal.item?.status === 'enabled' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-500'">
+                                <i class="fa-solid text-xl" :class="viewModal.item?.status === 'enabled' ? 'fa-check' : 'fa-ban'"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 基础信息 -->
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-building-columns text-blue-500"></i> 基础信息
+                        </h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">机构名称</span>
+                                <span class="font-medium text-slate-800" x-text="viewModal.item?.orgName"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">银行名称</span>
+                                <span class="font-medium text-slate-800" x-text="viewModal.item?.bankName"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">账户名称</span>
+                                <span class="font-medium text-slate-800" x-text="viewModal.item?.accountName"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">银行账号</span>
+                                <span class="font-mono font-medium text-slate-800" x-text="viewModal.item?.accountNo"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 账户属性 -->
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-indigo-500"></i> 账户属性
+                        </h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">账户类型</span>
+                                <span class="font-medium text-slate-800" x-text="viewModal.item?.accountType"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">细分类型</span>
+                                <span class="font-medium text-slate-800" x-text="viewModal.item?.subAccountType"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">账户用途</span>
+                                <span class="font-medium text-slate-800" x-text="viewModal.item?.accountUsage"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">币种</span>
+                                <span class="font-medium text-slate-800" x-text="viewModal.item?.currency"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">银企直联</span>
+                                <span class="font-medium" :class="viewModal.item?.isDirectLink === '是' ? 'text-emerald-600' : 'text-slate-600'" x-text="viewModal.item?.isDirectLink"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">NC查询</span>
+                                <span class="font-medium" :class="viewModal.item?.canQueryNC === '是' ? 'text-blue-600' : 'text-slate-600'" x-text="viewModal.item?.canQueryNC"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 联系信息 -->
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-address-book text-emerald-500"></i> 联系信息
+                        </h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">对接人</span>
+                                <span class="font-medium text-slate-800" x-text="viewModal.item?.contactPerson || '-'"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">联系电话</span>
+                                <span class="font-mono text-slate-800" x-text="viewModal.item?.contactPhone || '-'"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 时间信息 -->
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-clock text-amber-500"></i> 时间记录
+                        </h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">创建日期</span>
+                                <span class="text-slate-800" x-text="viewModal.item?.createDate"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">更新日期</span>
+                                <span class="text-slate-800" x-text="viewModal.item?.updateDate || '-'"></span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-slate-100">
+                                <span class="text-slate-500">操作人</span>
+                                <span class="text-slate-800" x-text="viewModal.item?.operator"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 备注 -->
+                    <div x-show="viewModal.item?.remark">
+                        <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">备注说明</h4>
+                        <p class="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-200" x-text="viewModal.item?.remark"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between">
+                <button @click="closeViewModal()" class="btn-secondary">关闭</button>
+                <div class="flex gap-2">
+                    <button @click="openEditModal(viewModal.item); closeViewModal()" class="btn-primary">
+                        <i class="fa-solid fa-pen"></i> 变更信息
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认弹窗 -->
+    <div x-show="confirmModal.open" class="fixed inset-0 z-[60] flex items-center justify-center modal-backdrop" x-cloak>
+        <div class="bg-white w-full max-w-md rounded-xl shadow-2xl p-6 text-center fade-in">
+            <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" :class="confirmModal.type === 'danger' ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-500'">
+                <i class="fa-solid text-2xl" :class="confirmModal.icon"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2" x-text="confirmModal.title"></h3>
+            <p class="text-sm text-slate-500 mb-6" x-text="confirmModal.message"></p>
+            <div class="flex justify-center gap-3">
+                <button @click="confirmModal.open = false" class="px-5 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 transition">取消</button>
+                <button @click="executeConfirm()" :class="confirmModal.type === 'danger' ? 'btn-danger' : 'btn-success'" class="px-5 py-2 rounded-lg text-sm font-medium">
+                    <span x-text="confirmModal.confirmText"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div class="toast" :class="[toast.type, {'show': toast.show}]">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid text-lg" :class="{
+                'fa-check-circle text-emerald-500': toast.type === 'success',
+                'fa-circle-exclamation text-red-500': toast.type === 'error'
+            }"></i>
+            <div>
+                <div class="font-medium text-slate-800" x-text="toast.title"></div>
+                <div class="text-xs text-slate-500 mt-0.5" x-text="toast.message" x-show="toast.message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function accountManageApp() {
+            return {
+                loading: false,
+                currentTab: 'all',
+                currentPage: 1,
+                pageSize: 10,
+                
+                filters: {
+                    orgName: '',
+                    bankName: '',
+                    accountNo: '',
+                    status: '',
+                    isDirectLink: ''
+                },
+                
+                orgList: [
+                    '中检计量有限公司',
+                    '中检集团溯源技术服务有限公司',
+                    '中检（江苏）计量测试有限公司',
+                    '中检华北计量有限公司',
+                    '中检世标（南通）计量检测有限公司',
+                    '中检（广东）计量检测技术服务有限公司'
+                ],
+                
+                dataList: [],
+                
+                editModal: {
+                    open: false,
+                    isEdit: false,
+                    form: {
+                        id: null,
+                        orgName: '',
+                        bankName: '',
+                        accountName: '',
+                        accountNo: '',
+                        accountType: '',
+                        subAccountType: '活期',
+                        isDirectLink: '否',
+                        canQueryNC: '否',
+                        contactPerson: '',
+                        contactPhone: '',
+                        accountUsage: '支出户',
+                        currency: '人民币',
+                        status: 'enabled',
+                        remark: ''
+                    }
+                },
+                
+                viewModal: {
+                    open: false,
+                    item: null
+                },
+                
+                confirmModal: {
+                    open: false,
+                    type: 'danger',
+                    title: '',
+                    message: '',
+                    confirmText: '确认',
+                    icon: 'fa-exclamation',
+                    onConfirm: null
+                },
+                
+                errors: {},
+                toast: { show: false, type: 'success', title: '', message: '', timer: null },
+
+                init() {
+                    this.generateMockData();
+                },
+
+                generateMockData() {
+                    const banks = ['中国工商银行', '中国建设银行', '中国银行', '中国农业银行', '招商银行', '交通银行'];
+                    const data = [
+                        {
+                            id: 1,
+                            orgName: '中检计量有限公司',
+                            bankName: '中国工商银行股份有限公司北京电信大楼支行',
+                            accountName: '中检计量有限公司',
+                            accountNo: '0200235219100040680',
+                            accountType: '基本户',
+                            subAccountType: '活期',
+                            isDirectLink: '是',
+                            canQueryNC: '是',
+                            contactPerson: '李晓佳',
+                            contactPhone: '13717954707',
+                            accountUsage: '支出户',
+                            currency: '人民币',
+                            status: 'enabled',
+                            operator: '张财务',
+                            createDate: '2024-01-15',
+                            updateDate: '2024-01-15',
+                            remark: '主账户'
+                        },
+                        {
+                            id: 2,
+                            orgName: '中检计量有限公司',
+                            bankName: '中国工商银行股份有限公司北京灯市口支行',
+                            accountName: '中检计量有限公司',
+                            accountNo: '0200209419200020807',
+                            accountType: '一般户',
+                            subAccountType: '活期',
+                            isDirectLink: '是',
+                            canQueryNC: '是',
+                            contactPerson: '李晓佳',
+                            contactPhone: '13717954707',
+                            accountUsage: '收入户',
+                            currency: '人民币',
+                            status: 'enabled',
+                            operator: '张财务',
+                            createDate: '2024-01-15',
+                            updateDate: '2024-01-20',
+                            remark: ''
+                        },
+                        {
+                            id: 3,
+                            orgName: '中检计量有限公司',
+                            bankName: '中检计量有限公司内部活期户',
+                            accountName: '中检计量有限公司',
+                            accountNo: '109-00-001',
+                            accountType: '集团内部存款户',
+                            subAccountType: '集团内部存款',
+                            isDirectLink: '否',
+                            canQueryNC: '是',
+                            contactPerson: '李晓佳',
+                            contactPhone: '13717954707',
+                            accountUsage: '内部户',
+                            currency: '人民币',
+                            status: 'enabled',
+                            operator: '系统同步',
+                            createDate: '2024-01-10',
+                            updateDate: '',
+                            remark: '内部户'
+                        },
+                        {
+                            id: 4,
+                            orgName: '中检（江苏）计量测试有限公司',
+                            bankName: '中国银行股份有限公司苏州木渎支行',
+                            accountName: '中检（江苏）计量测试有限公司',
+                            accountNo: '506676647371',
+                            accountType: '基本户',
+                            subAccountType: '活期',
+                            isDirectLink: '是',
+                            canQueryNC: '是',
+                            contactPerson: '王然',
+                            contactPhone: '18068284380',
+                            accountUsage: '支出户',
+                            currency: '人民币',
+                            status: 'enabled',
+                            operator: '李会计',
+                            createDate: '2024-01-12',
+                            updateDate: '',
+                            remark: ''
+                        },
+                        {
+                            id: 5,
+                            orgName: '中检西南计量有限公司',
+                            bankName: '中国银行股份有限公司昆明市滇池路支行',
+                            accountName: '中检西南计量有限公司',
+                            accountNo: '134035776833',
+                            accountType: '基本户',
+                            subAccountType: '活期',
+                            isDirectLink: '是',
+                            canQueryNC: '是',
+                            contactPerson: '李竹林',
+                            contactPhone: '18487166731',
+                            accountUsage: '付款户',
+                            currency: '人民币',
+                            status: 'disabled',
+                            operator: '王主管',
+                            createDate: '2024-01-08',
+                            updateDate: '2024-02-01',
+                            remark: '账户变更停用'
+                        }
+                    ];
+                    
+                    // 生成更多随机数据
+                    for (let i = 6; i <= 15; i++) {
+                        data.push({
+                            id: i,
+                            orgName: this.orgList[Math.floor(Math.random() * this.orgList.length)],
+                            bankName: banks[Math.floor(Math.random() * banks.length)] + '支行',
+                            accountName: '测试账户' + i,
+                            accountNo: Math.random().toString().slice(2, 20),
+                            accountType: ['基本户', '一般户', '活期户'][Math.floor(Math.random() * 3)],
+                            subAccountType: '活期',
+                            isDirectLink: Math.random() > 0.5 ? '是' : '否',
+                            canQueryNC: Math.random() > 0.3 ? '是' : '否',
+                            contactPerson: '联系人' + i,
+                            contactPhone: '1380013800' + i,
+                            accountUsage: ['支出户', '收入户', '内部户'][Math.floor(Math.random() * 3)],
+                            currency: '人民币',
+                            status: Math.random() > 0.2 ? 'enabled' : 'disabled',
+                            operator: '张财务',
+                            createDate: '2024-01-' + (10 + i),
+                            updateDate: '',
+                            remark: ''
+                        });
+                    }
+                    
+                    this.dataList = data;
+                },
+
+                get stats() {
+                    return {
+                        total: this.dataList.length,
+                        enabled: this.dataList.filter(d => d.status === 'enabled').length,
+                        disabled: this.dataList.filter(d => d.status === 'disabled').length,
+                        directLink: this.dataList.filter(d => d.isDirectLink === '是').length
+                    };
+                },
+
+                get filteredData() {
+                    let data = this.dataList.filter(item => {
+                        if (this.currentTab === 'enabled' && item.status !== 'enabled') return false;
+                        if (this.currentTab === 'disabled' && item.status !== 'disabled') return false;
+                        
+                        if (this.filters.orgName && !item.orgName.includes(this.filters.orgName)) return false;
+                        if (this.filters.bankName && !item.bankName.includes(this.filters.bankName)) return false;
+                        if (this.filters.accountNo && !item.accountNo.includes(this.filters.accountNo)) return false;
+                        if (this.filters.status && item.status !== this.filters.status) return false;
+                        if (this.filters.isDirectLink && item.isDirectLink !== this.filters.isDirectLink) return false;
+                        
+                        return true;
+                    });
+                    
+                    data.sort((a, b) => new Date(b.createDate) - new Date(a.createDate));
+                    return data;
+                },
+
+                get paginatedData() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    return this.filteredData.slice(start, start + this.pageSize);
+                },
+
+                get totalPages() {
+                    return Math.ceil(this.filteredData.length / this.pageSize) || 1;
+                },
+
+                get displayedPages() {
+                    const pages = [];
+                    const maxDisplay = 5;
+                    let start = Math.max(1, this.currentPage - 2);
+                    let end = Math.min(this.totalPages, start + maxDisplay - 1);
+                    if (end - start < maxDisplay - 1) start = Math.max(1, end - maxDisplay + 1);
+                    for (let i = start; i <= end; i++) pages.push(i);
+                    return pages;
+                },
+
+                resetFilters() {
+                    this.filters = {
+                        orgName: '',
+                        bankName: '',
+                        accountNo: '',
+                        status: '',
+                        isDirectLink: ''
+                    };
+                    this.currentPage = 1;
+                },
+
+                openEditModal(item = null) {
+                    this.errors = {};
+                    if (item) {
+                        this.editModal.isEdit = true;
+                        this.editModal.form = { ...item };
+                    } else {
+                        this.editModal.isEdit = false;
+                        this.editModal.form = {
+                            id: null,
+                            orgName: '',
+                            bankName: '',
+                            accountName: '',
+                            accountNo: '',
+                            accountType: '',
+                            subAccountType: '活期',
+                            isDirectLink: '否',
+                            canQueryNC: '否',
+                            contactPerson: '',
+                            contactPhone: '',
+                            accountUsage: '支出户',
+                            currency: '人民币',
+                            status: 'enabled',
+                            remark: ''
+                        };
+                    }
+                    this.editModal.open = true;
+                },
+
+                closeEditModal() {
+                    this.editModal.open = false;
+                    setTimeout(() => {
+                        this.editModal.isEdit = false;
+                        this.errors = {};
+                    }, 300);
+                },
+
+                validateField(field) {
+                    const value = this.editModal.form[field];
+                    if (!value || value.trim() === '') {
+                        const labels = {
+                            orgName: '机构名称',
+                            bankName: '银行名称',
+                            accountName: '账户名称',
+                            accountNo: '银行账号',
+                            accountType: '账户类型'
+                        };
+                        this.errors[field] = `请输入${labels[field]}`;
+                        return false;
+                    }
+                    this.errors[field] = '';
+                    return true;
+                },
+
+                validateForm() {
+                    const fields = ['orgName', 'bankName', 'accountName', 'accountNo', 'accountType'];
+                    let valid = true;
+                    fields.forEach(field => {
+                        if (!this.validateField(field)) valid = false;
+                    });
+                    return valid;
+                },
+
+                saveItem() {
+                    if (!this.validateForm()) {
+                        this.showToast('请完善必填项', 'error');
+                        return;
+                    }
+
+                    const today = new Date().toISOString().split('T')[0];
+                    const formData = { ...this.editModal.form };
+
+                    if (this.editModal.isEdit) {
+                        const index = this.dataList.findIndex(d => d.id === formData.id);
+                        if (index > -1) {
+                            this.dataList[index] = { 
+                                ...this.dataList[index], 
+                                ...formData,
+                                updateDate: today
+                            };
+                            this.showToast('变更成功', 'success', '账号信息已更新');
+                        }
+                    } else {
+                        // 检查账号重复
+                        const exists = this.dataList.some(d => d.accountNo === formData.accountNo);
+                        if (exists) {
+                            this.showToast('保存失败', 'error', '该银行账号已存在');
+                            return;
+                        }
+                        
+                        formData.id = Date.now();
+                        formData.operator = '当前用户';
+                        formData.createDate = today;
+                        formData.updateDate = '';
+                        this.dataList.unshift(formData);
+                        this.showToast('新增成功', 'success', '银行账号已添加');
+                    }
+                    
+                    this.closeEditModal();
+                },
+
+                viewDetail(item) {
+                    this.viewModal.item = item;
+                    this.viewModal.open = true;
+                },
+
+                closeViewModal() {
+                    this.viewModal.open = false;
+                    setTimeout(() => {
+                        this.viewModal.item = null;
+                    }, 300);
+                },
+
+                enableItem(item) {
+                    this.confirmModal = {
+                        open: true,
+                        type: 'success',
+                        title: '确认启用账号？',
+                        message: `启用后，${item.bankName} 的账号将可用于资金余额录入。`,
+                        confirmText: '确认启用',
+                        icon: 'fa-check',
+                        onConfirm: () => {
+                            item.status = 'enabled';
+                            item.updateDate = new Date().toISOString().split('T')[0];
+                            this.showToast('启用成功', 'success', '该账号已启用');
+                            this.confirmModal.open = false;
+                        }
+                    };
+                },
+
+                disableItem(item) {
+                    this.confirmModal = {
+                        open: true,
+                        type: 'danger',
+                        title: '确认停用账号？',
+                        message: `停用后，${item.bankName} 的账号将无法用于资金余额录入，已有数据不受影响。`,
+                        confirmText: '确认停用',
+                        icon: 'fa-ban',
+                        onConfirm: () => {
+                            item.status = 'disabled';
+                            item.updateDate = new Date().toISOString().split('T')[0];
+                            this.showToast('停用成功', 'success', '该账号已停用');
+                            this.confirmModal.open = false;
+                        }
+                    };
+                },
+
+                executeConfirm() {
+                    if (this.confirmModal.onConfirm) {
+                        this.confirmModal.onConfirm();
+                    }
+                },
+
+                refreshData() {
+                    this.loading = true;
+                    setTimeout(() => {
+                        this.loading = false;
+                        this.showToast('数据已刷新', 'success');
+                    }, 800);
+                },
+
+                showToast(title, type = 'success', message = '') {
+                    if (this.toast.timer) clearTimeout(this.toast.timer);
+                    this.toast = { show: true, type, title, message };
+                    this.toast.timer = setTimeout(() => {
+                        this.toast.show = false;
+                    }, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
