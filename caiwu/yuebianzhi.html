@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资金月计划编制</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background-color: #f2f3f5; }
+        
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th { 
+            background-color: #f5f5f5; 
+            border: 1px solid #d9d9d9; 
+            padding: 8px; 
+            text-align: center;
+            font-weight: 600;
+            color: #262626;
+        }
+        .data-table td { 
+            border: 1px solid #e8e8e8; 
+            padding: 6px 8px; 
+            text-align: center;
+        }
+        .data-table tr:hover td { background-color: #fafafa; }
+        
+        .summary-table .section-header { 
+            background-color: #fafafa; 
+            font-weight: 600; 
+            text-align: left; 
+            padding-left: 12px;
+        }
+        
+        .detail-table .dept-header { background-color: #fafafa; }
+        .detail-table .total-col { background-color: #e6f7ff; font-weight: 600; }
+        .detail-table .group-header { background-color: #f6ffed; font-weight: 600; text-align: left; }
+        .detail-table .sub-group { background-color: #fffbe6; font-weight: 600; text-align: left; }
+        .detail-table .item-row { text-align: left; }
+        .detail-table .item-row .item-name { padding-left: 32px; }
+        
+        .cell-input {
+            width: 100%;
+            border: 1px solid #d9d9d9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-align: right;
+            font-family: 'Menlo', monospace;
+            background: white;
+            transition: all 0.2s;
+        }
+        .cell-input:focus { 
+            border-color: #1890ff; 
+            box-shadow: 0 0 0 2px rgba(24,144,255,0.2);
+            outline: none;
+        }
+        .cell-input:disabled, .cell-input[readonly] { 
+            background-color: #f5f5f5; 
+            border-color: #d9d9d9;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .text-input { text-align: left; font-family: inherit; }
+        
+        .clickable-count {
+            color: #1890ff;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+        .clickable-count:hover {
+            color: #40a9ff;
+            background-color: #e6f7ff;
+            border-radius: 4px;
+            padding: 2px 8px;
+        }
+        
+        .tab-nav { display: flex; border-bottom: 1px solid #e8e8e8; background: white; }
+        .tab-item {
+            padding: 12px 24px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #595959;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-item:hover { color: #1890ff; }
+        .tab-item.active { color: #1890ff; border-bottom-color: #1890ff; font-weight: 600; }
+        
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-draft { background: #e6f4ff; color: #0958d9; border: 1px solid #91caff; }
+        .status-pending { background: #fff7e6; color: #d46b08; border: 1px solid #ffd591; }
+        .status-approved { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+        .status-rejected { background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; }
+        
+        .step-bar { display: flex; align-items: center; }
+        .step-item { display: flex; align-items: center; font-size: 13px; color: #8c8c8c; }
+        .step-item.active { color: #1890ff; font-weight: 600; }
+        .step-item.finish { color: #52c41a; }
+        .step-dot { 
+            width: 8px; height: 8px; border-radius: 50%; 
+            background: #d9d9d9; margin-right: 6px; 
+        }
+        .step-item.active .step-dot { background: #1890ff; }
+        .step-item.finish .step-dot { background: #52c41a; }
+        .step-line { width: 24px; height: 1px; background: #d9d9d9; margin: 0 8px; }
+        
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e8e8e8;
+            padding: 12px 24px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+        
+        .editable-cell { background-color: #fff !important; }
+        .auto-calc { background-color: #fff !important; color: #666; }
+        .amount { text-align: right; font-family: 'Menlo', monospace; }
+        
+        .table-scroll { overflow-x: auto; overflow-y: visible; max-width: 100%; }
+        .table-scroll::-webkit-scrollbar { height: 8px; }
+        .table-scroll::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 4px; }
+        
+        /* 弹窗样式 */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        .detail-modal-table th {
+            background: #f5f5f5;
+            padding: 10px;
+            font-size: 12px;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        .detail-modal-table td {
+            padding: 8px 10px;
+            font-size: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .detail-modal-table tr:hover {
+            background: #fafafa;
+        }
+    </style>
+</head>
+<body x-data="monthlyPlanApp()" x-cloak>
+    <div class="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div class="max-w-[1600px] mx-auto px-6 py-4">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <div class="flex items-center gap-3 mb-1">
+                        <h1 class="text-xl font-bold text-gray-900">资金月计划编制</h1>
+                        <span class="status-tag" :class="'status-' + currentStatus.type" x-text="currentStatus.text"></span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                        <span>当前期次：<span class="font-medium text-gray-900" x-text="currentPeriod.label"></span></span>
+                        <span class="mx-2">|</span>
+                        <span>填报单位：<span class="font-medium text-gray-900" x-text="formData.institution"></span></span>
+                        <span class="mx-2">|</span>
+                        <span>填报人：<span class="font-medium text-gray-900" x-text="formData.creator"></span></span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button @click="showList = true" class="px-4 py-2 border border-gray-300 rounded text-sm font-medium hover:border-blue-500 hover:text-blue-600 transition">
+                        <i class="fa-solid fa-list mr-2"></i>返回列表
+                    </button>
+                    <button @click="saveDraft()" class="px-4 py-2 border border-blue-300 text-blue-600 rounded text-sm font-medium hover:bg-blue-50 transition">
+                        <i class="fa-regular fa-floppy-disk mr-2"></i>保存草稿
+                    </button>
+                    <button @click="submitAudit()" class="px-6 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 shadow-sm transition">
+                        <i class="fa-solid fa-paper-plane mr-2"></i>提交审核
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4 text-sm border-t border-gray-100 pt-3">
+                <div class="step-bar">
+                    <div class="step-item finish">
+                        <div class="step-dot"></div>
+                        <span>填报保存</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step-item" :class="formData.status >= 2 ? 'finish' : (formData.status === 1 ? 'active' : '')">
+                        <div class="step-dot"></div>
+                        <span>部门领导审批</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step-item" :class="formData.status >= 3 ? 'finish' : (formData.status === 2 ? 'active' : '')">
+                        <div class="step-dot"></div>
+                        <span>财务审批</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step-item" :class="formData.status >= 4 ? 'finish' : (formData.status === 3 ? 'active' : '')">
+                        <div class="step-dot"></div>
+                        <span>财务主管审批</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step-item" :class="formData.status >= 5 ? 'finish' : (formData.status === 4 ? 'active' : '')">
+                        <div class="step-dot"></div>
+                        <span>财务总监审批</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-[1600px] mx-auto p-6 pb-24">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div class="tab-nav px-6">
+                <div class="tab-item" :class="activeTab === 'summary' ? 'active' : ''" @click="activeTab = 'summary'">
+                    <i class="fa-solid fa-table-list mr-2"></i>月计划汇总表
+                </div>
+                <div class="tab-item" :class="activeTab === 'detail' ? 'active' : ''" @click="activeTab = 'detail'">
+                    <i class="fa-solid fa-table-cells mr-2"></i>部门明细表
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- 月计划汇总表 -->
+                <div x-show="activeTab === 'summary'" x-transition>
+                    <div class="mb-4 flex justify-between items-center">
+                        <h3 class="text-base font-bold text-gray-800 border-l-4 border-blue-600 pl-3">资金收支及计划情况 - 月度</h3>
+                        <div class="text-sm text-gray-500">金额单位：人民币万元</div>
+                    </div>
+                    
+                    <div class="table-scroll">
+                        <table class="data-table summary-table">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" class="w-48">项 目</th>
+                                    <th colspan="4" class="bg-blue-50">本月<br><span class="text-xs font-normal text-gray-500" x-text="currentPeriod.monthLabel"></span></th>
+                                    <th colspan="2" class="bg-green-50">下月<br><span class="text-xs font-normal text-gray-500" x-text="currentPeriod.nextMonthLabel"></span></th>
+                                </tr>
+                                <tr>
+                                    <th class="w-32">计划金额</th>
+                                    <th class="w-32">实际金额</th>
+                                    <th class="w-24">差异额</th>
+                                    <th class="w-48">差异说明</th>
+                                    <th class="w-32">计划金额</th>
+                                    <th class="w-48">备注说明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="section-header">上月资金余额</td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.lastMonthBalance)"></td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.lastMonthBalance)"></td>
+                                    <td class="auto-calc amount">-</td>
+                                    <td class="editable-cell">
+                                        <input type="text" x-model="summaryData.lastMonthBalanceNote" class="cell-input text-input" placeholder="请输入说明">
+                                    </td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.nextMonthPlan)"></td>
+                                    <td class="editable-cell">
+                                        <input type="text" x-model="summaryData.nextMonthPlanNote" class="cell-input text-input" placeholder="请输入备注">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="section-header">本月回款</td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.monthReceipt.plan)"></td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.monthReceipt.actual)"></td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.monthReceipt.diff)"></td>
+                                    <td class="editable-cell">
+                                        <input type="text" x-model="summaryData.monthReceipt.diffNote" class="cell-input text-input" placeholder="差异原因">
+                                    </td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.nextMonthReceipt)"></td>
+                                    <td class="editable-cell">
+                                        <input type="text" x-model="summaryData.nextMonthReceiptNote" class="cell-input text-input" placeholder="回款计划说明">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="section-header">本月支出</td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.monthExpense.plan)"></td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.monthExpense.actual)"></td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.monthExpense.diff)"></td>
+                                    <td class="editable-cell">
+                                        <input type="text" x-model="summaryData.monthExpense.diffNote" class="cell-input text-input" placeholder="差异原因">
+                                    </td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.nextMonthExpense)"></td>
+                                    <td class="editable-cell">
+                                        <input type="text" x-model="summaryData.nextMonthExpenseNote" class="cell-input text-input" placeholder="支出计划说明">
+                                    </td>
+                                </tr>
+                                <tr class="bg-gray-50 font-bold">
+                                    <td class="section-header">本月资金余额</td>
+                                    <td class="auto-calc amount text-blue-600" x-text="formatMoney(summaryData.monthBalance.plan)"></td>
+                                    <td class="auto-calc amount text-blue-600" x-text="formatMoney(summaryData.monthBalance.actual)"></td>
+                                    <td class="auto-calc amount" x-text="formatMoney(summaryData.monthBalance.diff)"></td>
+                                    <td></td>
+                                    <td class="auto-calc amount text-blue-600" x-text="formatMoney(summaryData.nextMonthBalance)"></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-4 p-4 bg-gray-50 rounded border border-gray-200 text-sm text-gray-600 space-y-1">
+                        <div class="font-medium text-gray-700 mb-2">注：此表为每月上报总部的备案表。</div>
+                        <div>资金说明：</div>
+                        <div>1. 资金余额含集团内部存款额。</div>
+                        <div>2. 表格中<span class="bg-white px-2 py-0.5 border rounded mx-1">白色背景</span>为手工录入部分，<span class="bg-gray-100 px-2 py-0.5 border rounded mx-1">灰色背景</span>为自动计算部分。</div>
+                    </div>
+                </div>
+
+                <!-- 部门明细表 -->
+                <div x-show="activeTab === 'detail'" x-transition>
+                    <div class="mb-4 flex justify-between items-center">
+                        <h3 class="text-base font-bold text-gray-800 border-l-4 border-blue-600 pl-3">部门月资金计划编制表</h3>
+                        <div class="flex gap-2">
+                            <button @click="regenerateData()" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded text-sm border border-blue-200 hover:bg-blue-100 transition">
+                                <i class="fa-solid fa-rotate mr-1"></i>重新生成数据
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-scroll">
+                        <table class="data-table detail-table">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" class="w-48 text-left pl-4">项目</th>
+                                    <template x-for="dept in departments" :key="dept.id">
+                                        <th colspan="2" class="dept-header" x-text="dept.name"></th>
+                                    </template>
+                                    <th rowspan="2" class="total-col w-32">合计金额(元)</th>
+                                </tr>
+                                <tr>
+                                    <template x-for="dept in departments" :key="dept.id">
+                                        <template x-for="col in ['amount', 'count']" :key="col">
+                                            <th class="w-28" x-text="col === 'amount' ? '金额(元)' : '发生笔数'"></th>
+                                        </template>
+                                    </template>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(item, index) in projectTree" :key="item.code">
+                                    <tr :class="item.level === 0 ? 'group-header' : (item.level === 1 ? 'sub-group' : 'item-row')">
+                                        <td :class="item.level === 2 ? 'item-name' : 'pl-4'" 
+                                            :style="item.level === 2 ? 'padding-left: ' + (item.level * 20 + 12) + 'px' : ''"
+                                            x-text="item.name">
+                                        </td>
+                                        <template x-for="dept in departments" :key="dept.id">
+                                            <template x-for="col in ['amount', 'count']" :key="col">
+                                                <td :class="{
+                                                    'auto-calc': true
+                                                }">
+                                                    <template x-if="col === 'amount'">
+                                                        <span class="amount font-medium" x-text="formatMoney(detailData[item.code][dept.id].amount)"></span>
+                                                    </template>
+                                                    <template x-if="col === 'count'">
+                                                        <template x-if="item.level === 2 && detailData[item.code][dept.id].count > 0">
+                                                            <span class="clickable-count" 
+                                                                  @click="openDetailModal(dept, item, detailData[item.code][dept.id].count)"
+                                                                  x-text="detailData[item.code][dept.id].count + ' 笔'">
+                                                            </span>
+                                                        </template>
+                                                        <template x-if="item.level === 2 && detailData[item.code][dept.id].count === 0">
+                                                            <span class="text-gray-400">-</span>
+                                                        </template>
+                                                        <template x-if="item.level !== 2">
+                                                            <span class="font-bold text-gray-700" x-text="detailData[item.code][dept.id].count > 0 ? detailData[item.code][dept.id].count + ' 笔' : ''"></span>
+                                                        </template>
+                                                    </template>
+                                                </td>
+                                            </template>
+                                        </template>
+                                        <td class="total-col amount font-bold" x-text="formatMoney(detailTotals[item.code]?.amount || 0)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                        <i class="fa-solid fa-circle-info mr-2"></i>
+                        <span class="font-medium">数据说明：</span>
+                        预计回款小计、预计支出小计、成本支出、费用支出、税费支出、采购支出、工程支出、偿还贷款支出由子项汇总计算得出；
+                        销售回款、筹资回款、投资回款、其他回款及末级项目为实际发生数据。点击笔数可查看明细。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-base font-bold text-gray-800 border-l-4 border-gray-400 pl-3 mb-4">操作记录</h3>
+            <div class="space-y-3">
+                <template x-for="log in operationLogs" :key="log.id">
+                    <div class="flex items-start gap-3 text-sm pb-3 border-b border-gray-100 last:border-0">
+                        <div class="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>
+                        <div class="flex-1">
+                            <div class="flex justify-between mb-1">
+                                <span class="font-medium text-gray-900" x-text="log.operator"></span>
+                                <span class="text-gray-400 text-xs" x-text="log.time"></span>
+                            </div>
+                            <div class="text-gray-600" x-text="log.action"></div>
+                            <div x-show="log.comment" class="mt-1 p-2 bg-gray-50 rounded text-gray-500 text-xs" x-text="log.comment"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </main>
+
+    <!-- 明细弹窗 -->
+    <div x-show="detailModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak @click.self="closeDetailModal()">
+        <div class="bg-white w-full max-w-6xl rounded-lg shadow-2xl max-h-[90vh] flex flex-col" @click.stop>
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">
+                        <span x-text="detailModal.deptName"></span> - 
+                        <span x-text="detailModal.projectName"></span>
+                        <span class="text-sm font-normal text-gray-500 ml-2">明细列表</span>
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-1">
+                        计划周期：<span x-text="currentPeriod.label"></span> | 
+                        共 <span class="font-bold text-blue-600" x-text="detailModal.records.length"></span> 笔记录 | 
+                        合计金额：<span class="font-bold text-red-600" x-text="'¥' + formatMoney(detailModal.totalAmount)"></span>
+                    </p>
+                </div>
+                <button @click="closeDetailModal()" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-auto p-4 bg-gray-50">
+                <table class="w-full detail-modal-table bg-white rounded-lg shadow-sm">
+                    <thead class="sticky top-0">
+                        <tr>
+                            <th class="text-center w-12">序号</th>
+                            <th class="text-left">明细类型</th>
+                            <th class="text-left">资金类型</th>
+                            <th class="text-right">发生金额</th>
+                            <th class="text-center">发生日期</th>
+                            <th class="text-left">摘要</th>
+                            <th class="text-left">相对方名称</th>
+                            <th class="text-left">关联合同</th>
+                            <th class="text-center">状态</th>
+                            <th class="text-left">填报人</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(record, idx) in detailModal.records" :key="record.id">
+                            <tr class="border-b border-gray-100 hover:bg-blue-50">
+                                <td class="text-center text-gray-500" x-text="idx + 1"></td>
+                                <td>
+                                    <span class="px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                                        计划
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="px-2 py-1 rounded text-xs" 
+                                          :class="record.fundType === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'"
+                                          x-text="record.fundType === 'income' ? '回款' : '支出'">
+                                    </span>
+                                </td>
+                                <td class="text-right font-mono font-bold" :class="record.fundType === 'income' ? 'text-emerald-600' : 'text-rose-600'" x-text="'¥' + formatMoney(record.amount)"></td>
+                                <td class="text-center text-gray-600" x-text="record.date"></td>
+                                <td class="text-gray-800 max-w-xs truncate" :title="record.summary" x-text="record.summary || '-'"></td>
+                                <td class="text-gray-600" x-text="record.counterparty || '-'"></td>
+                                <td class="text-gray-500 text-xs" x-text="record.contract || '-'"></td>
+                                <td class="text-center">
+                                    <span class="px-2 py-0.5 rounded text-xs border" 
+                                          :class="{
+                                              'bg-gray-100 text-gray-600 border-gray-300': record.status === 'draft',
+                                              'bg-amber-50 text-amber-600 border-amber-200': record.status === 'pending',
+                                              'bg-emerald-50 text-emerald-600 border-emerald-200': record.status === 'approved',
+                                              'bg-red-50 text-red-600 border-red-200': record.status === 'rejected'
+                                          }"
+                                          x-text="getStatusText(record.status)">
+                                    </span>
+                                </td>
+                                <td class="text-gray-600 text-xs" x-text="record.operator"></td>
+                            </tr>
+                        </template>
+                        <tr x-show="detailModal.records.length === 0">
+                            <td colspan="10" class="text-center py-8 text-gray-400">
+                                <i class="fa-solid fa-inbox text-3xl mb-2"></i>
+                                <div>暂无明细记录</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                <button @click="closeDetailModal()" class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-white transition">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-bar">
+        <div class="max-w-[1600px] mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-6 text-sm">
+                <div>
+                    <span class="text-gray-500">本月计划资金额：</span>
+                    <span class="font-bold text-blue-600 text-lg" x-text="'¥ ' + formatMoney(summaryData.monthBalance.plan)"></span>
+                </div>
+                <div class="h-4 w-px bg-gray-300"></div>
+                <div>
+                    <span class="text-gray-500">下月计划资金额：</span>
+                    <span class="font-bold text-green-600 text-lg" x-text="'¥ ' + formatMoney(summaryData.nextMonthBalance)"></span>
+                </div>
+                <div class="h-4 w-px bg-gray-300"></div>
+                <div>
+                    <span class="text-gray-500">差异总额：</span>
+                    <span class="font-bold" :class="summaryData.monthBalance.diff >= 0 ? 'text-green-600' : 'text-red-600'" x-text="formatMoney(summaryData.monthBalance.diff)"></span>
+                </div>
+            </div>
+            <!-- <div class="flex gap-3">
+                <button @click="withdraw()" x-show="formData.status >= 2" class="px-4 py-2 border border-orange-300 text-orange-600 rounded text-sm font-medium hover:bg-orange-50 transition">
+                    <i class="fa-solid fa-rotate-left mr-2"></i>撤回
+                </button>
+                <button @click="validateAndSave()" class="px-6 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 shadow-sm transition">
+                    保存并提交
+                </button>
+            </div> -->
+        </div>
+    </div>
+
+    <div x-show="toast.show" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed top-20 right-6 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
+        <i class="fa-solid" :class="toast.type === 'success' ? 'fa-check-circle text-green-400' : 'fa-circle-exclamation text-red-400'"></i>
+        <span x-text="toast.message"></span>
+    </div>
+
+    <script>
+        function monthlyPlanApp() {
+            return {
+                activeTab: 'summary',
+                showList: false,
+                formData: {
+                    institution: '河南计量公司',
+                    department: '财务部',
+                    creator: '张三',
+                    createDate: '2026-01-31',
+                    status: 1,
+                    period: '2026年1月'
+                },
+                currentPeriod: {
+                    label: '2026年1月',
+                    monthLabel: '2026年1月',
+                    nextMonthLabel: '2026年2月'
+                },
+                currentStatus: { type: 'draft', text: '草稿' },
+                
+                departments: [
+                    { id: 'dept1', name: '温度实验室' },
+                    { id: 'dept2', name: '化学实验室' },
+                    { id: 'dept3', name: '长度实验室' }
+                ],
+
+                // 汇总数据
+                summaryData: {
+                    lastMonthBalance: 500.00,
+                    lastMonthBalanceNote: '',
+                    monthReceipt: { plan: 0, actual: 0, diff: 0, diffNote: '' },
+                    monthExpense: { plan: 0, actual: 0, diff: 0, diffNote: '' },
+                    monthBalance: { plan: 0, actual: 0, diff: 0 },
+                    nextMonthPlan: 320.00,
+                    nextMonthPlanNote: '',
+                    nextMonthReceipt: 110.00,
+                    nextMonthReceiptNote: '',
+                    nextMonthExpense: 290.00,
+                    nextMonthExpenseNote: '',
+                    nextMonthBalance: 0
+                },
+
+                // 项目层级结构
+                projectTree: [
+                    { code: 'A00', name: '预计回款小计', level: 0, auto: true },
+                    { code: 'A01', name: '1、销售回款', level: 1, auto: false, parent: 'A00' },
+                    { code: 'A02', name: '2、筹资回款', level: 1, auto: false, parent: 'A00' },
+                    { code: 'A03', name: '3、投资回款', level: 1, auto: false, parent: 'A00' },
+                    { code: 'A04', name: '4、其他回款', level: 1, auto: false, parent: 'A00' },
+                    { code: 'B00', name: '预计支出小计', level: 0, auto: true },
+                    { code: 'B10', name: '1、成本支出', level: 1, auto: true, parent: 'B00' },
+                    { code: 'B11', name: '人工成本支出', level: 2, auto: false, parent: 'B10' },
+                    { code: 'B12', name: '业务协作费支出', level: 2, auto: false, parent: 'B10' },
+                    { code: 'B13', name: '检验检测费支出', level: 2, auto: false, parent: 'B10' },
+                    { code: 'B14', name: '其他成本支出', level: 2, auto: false, parent: 'B10' },
+                    { code: 'B20', name: '2、费用支出', level: 1, auto: true, parent: 'B00' },
+                    { code: 'B21', name: '销售费用支出', level: 2, auto: false, parent: 'B20' },
+                    { code: 'B22', name: '管理费用支出', level: 2, auto: false, parent: 'B20' },
+                    { code: 'B23', name: '研发费用支出', level: 2, auto: false, parent: 'B20' },
+                    { code: 'B24', name: '财务费用支出', level: 2, auto: false, parent: 'B20' },
+                    { code: 'B30', name: '3、税费支出', level: 1, auto: true, parent: 'B00' },
+                    { code: 'B31', name: '企业所得税支出', level: 2, auto: false, parent: 'B30' },
+                    { code: 'B32', name: '增值税支出', level: 2, auto: false, parent: 'B30' },
+                    { code: 'B33', name: '其他税费支出', level: 2, auto: false, parent: 'B30' },
+                    { code: 'B40', name: '4、采购支出', level: 1, auto: true, parent: 'B00' },
+                    { code: 'B41', name: '物料采购支出', level: 2, auto: false, parent: 'B40' },
+                    { code: 'B42', name: '资产采购支出', level: 2, auto: false, parent: 'B40' },
+                    { code: 'B50', name: '5、工程支出', level: 1, auto: true, parent: 'B00' },
+                    { code: 'B51', name: '建筑工程', level: 2, auto: false, parent: 'B50' },
+                    { code: 'B52', name: '设备安装工程', level: 2, auto: false, parent: 'B50' },
+                    { code: 'B53', name: '其他工程支出', level: 2, auto: false, parent: 'B50' },
+                    { code: 'B60', name: '6、偿还贷款支出', level: 1, auto: true, parent: 'B00' },
+                    { code: 'B61', name: '偿还本金', level: 2, auto: false, parent: 'B60' },
+                    { code: 'B62', name: '偿还利息', level: 2, auto: false, parent: 'B60' },
+                    { code: 'B70', name: '7、股权投资支出', level: 2, auto: false, parent: 'B00' },
+                    { code: 'B80', name: '8、资本性研发支出', level: 2, auto: false, parent: 'B00' },
+                    { code: 'B90', name: '9、利润分配支出', level: 2, auto: false, parent: 'B00' },
+                    { code: 'Ba0', name: '10、其他支出', level: 2, auto: false, parent: 'B00' }
+                ],
+
+                detailData: {},
+                detailTotals: {},
+                
+                // 模拟明细记录数据
+                mockDetailRecords: [],
+
+                // 弹窗数据
+                detailModal: {
+                    open: false,
+                    deptName: '',
+                    projectName: '',
+                    projectCode: '',
+                    records: [],
+                    totalAmount: 0
+                },
+
+                operationLogs: [
+                    { id: 1, operator: '张三', action: '创建月计划草稿', time: '2026-01-31 10:30:00', comment: '' }
+                ],
+
+                toast: { show: false, message: '', type: 'success' },
+
+                init() {
+                    this.initDetailData();
+                    this.generateMockDetailRecords();
+                    this.loadMockDetailData();
+                    this.updateStatus();
+                },
+
+                initDetailData() {
+                    this.projectTree.forEach(item => {
+                        if (!this.detailData[item.code]) {
+                            this.detailData[item.code] = {};
+                            this.detailTotals[item.code] = { amount: 0, count: 0 };
+                        }
+                        this.departments.forEach(dept => {
+                            if (!this.detailData[item.code][dept.id]) {
+                                this.detailData[item.code][dept.id] = { amount: 0, count: 0 };
+                            }
+                        });
+                    });
+                },
+
+                // 判断项目是否应该生成明细（非自动计算项）
+                shouldGenerateDetail(itemCode) {
+                    const item = this.projectTree.find(p => p.code === itemCode);
+                    // 只有非auto项且是末级或特定一级项目才生成明细
+                    return item && !item.auto;
+                },
+
+                // 生成模拟明细记录
+                generateMockDetailRecords() {
+                    const summaries = [
+                        'Q1实验耗材采购款项', '色谱柱采购预付款', '设备维护费用', 
+                        '客户检测服务费回款', '实验室装修尾款', '培训费用支出',
+                        '软件授权费', '试剂采购款', '设备校准费用', '月度资金计划',
+                        '办公用品采购', '水电费支出', '差旅费报销', '业务招待费',
+                        '设备折旧费', '人员工资发放', '社保公积金缴纳', '税费缴纳',
+                        '贷款利息支付', '本金偿还', '股权投资款', '研发设备采购'
+                    ];
+                    const counterparties = [
+                        '西安化学试剂有限公司', '赛默飞世尔科技', '国药集团化学试剂', 
+                        '阿拉丁试剂(上海)有限公司', '某检测科技公司', '某制药企业', 
+                        '某医疗器械公司', '某科研院所', '某仪器厂商', '某耗材供应商',
+                        '某建筑公司', '某设备安装公司', '某软件公司', '某咨询公司'
+                    ];
+                    const contracts = ['HT2024001', 'HT2024002', 'HT2024003', 'HT2024004', 'HT2024005', ''];
+                    const operators = ['张三', '李四', '王五', '赵六', '钱七'];
+                    
+                    let id = 1;
+                    const daysInMonth = 28; // 1-28号，避免月份天数问题
+                    
+                    // 只为非auto项生成明细（A01-A04, B11-B14, B21-B24, B31-B33, B41-B42, B51-B53, B61-B62, B70, B80, B90, Ba0）
+                    this.departments.forEach(dept => {
+                        this.projectTree.forEach(item => {
+                            // 只给非auto项目生成明细数据
+                            if (!item.auto) {
+                                // 生成2-8笔不等的记录
+                                const count = Math.floor(Math.random() * 7) + 2;
+                                
+                                for (let i = 0; i < count; i++) {
+                                    const fundType = item.code.startsWith('A') ? 'income' : 'expense';
+                                    
+                                    // 根据项目类型调整金额范围
+                                    let minAmount = 5000;
+                                    let maxAmount = 50000;
+                                    
+                                    if (item.code === 'B11') { // 人工成本
+                                        minAmount = 20000; maxAmount = 80000;
+                                    } else if (item.code.startsWith('B41') || item.code.startsWith('B42')) { // 采购
+                                        minAmount = 10000; maxAmount = 100000;
+                                    } else if (item.code.startsWith('B51') || item.code.startsWith('B52') || item.code.startsWith('B53')) { // 工程
+                                        minAmount = 30000; maxAmount = 150000;
+                                    } else if (item.code.startsWith('B61') || item.code.startsWith('B62')) { // 贷款
+                                        minAmount = 15000; maxAmount = 60000;
+                                    } else if (item.code === 'B70' || item.code === 'B80') { // 股权、资本性研发
+                                        minAmount = 50000; maxAmount = 200000;
+                                    }
+                                    
+                                    const amount = Math.floor(Math.random() * (maxAmount - minAmount)) + minAmount;
+                                    const day = String(Math.floor(Math.random() * daysInMonth) + 1).padStart(2, '0');
+                                    
+                                    this.mockDetailRecords.push({
+                                        id: id++,
+                                        deptId: dept.id,
+                                        projectCode: item.code,
+                                        projectName: item.name,
+                                        recordType: 'plan', // 全部为计划类型
+                                        fundType: fundType,
+                                        amount: amount,
+                                        date: '2026-01-' + day,
+                                        counterparty: counterparties[Math.floor(Math.random() * counterparties.length)],
+                                        contract: contracts[Math.floor(Math.random() * contracts.length)],
+                                        summary: summaries[Math.floor(Math.random() * summaries.length)],
+                                        operator: operators[Math.floor(Math.random() * operators.length)],
+                                        status: ['approved', 'approved', 'approved', 'pending', 'draft'][Math.floor(Math.random() * 5)]
+                                    });
+                                }
+                            }
+                        });
+                    });
+                },
+
+                // 重新生成数据
+                regenerateData() {
+                    this.mockDetailRecords = [];
+                    this.generateMockDetailRecords();
+                    this.loadMockDetailData();
+                    this.showToast('数据已重新生成', 'success');
+                },
+
+                // 加载数据并计算汇总
+                loadMockDetailData() {
+                    // 重置所有数据
+                    this.projectTree.forEach(item => {
+                        this.detailTotals[item.code] = { amount: 0, count: 0 };
+                        this.departments.forEach(dept => {
+                            this.detailData[item.code][dept.id] = { amount: 0, count: 0 };
+                        });
+                    });
+                    
+                    // 1. 先统计末级项目（非auto项）的金额和笔数
+                    this.mockDetailRecords.forEach(record => {
+                        if (this.detailData[record.projectCode] && this.detailData[record.projectCode][record.deptId]) {
+                            this.detailData[record.projectCode][record.deptId].amount += record.amount;
+                            this.detailData[record.projectCode][record.deptId].count += 1;
+                        }
+                    });
+                    
+                    // 2. 计算auto项（由子项汇总）
+                    // 先计算一级auto项（B10, B20, B30, B40, B50, B60）
+                    this.calcAutoItem('B10', ['B11', 'B12', 'B13', 'B14']);
+                    this.calcAutoItem('B20', ['B21', 'B22', 'B23', 'B24']);
+                    this.calcAutoItem('B30', ['B31', 'B32', 'B33']);
+                    this.calcAutoItem('B40', ['B41', 'B42']);
+                    this.calcAutoItem('B50', ['B51', 'B52', 'B53']);
+                    this.calcAutoItem('B60', ['B61', 'B62']);
+                    
+                    // 再计算顶级auto项（A00, B00）
+                    this.calcAutoItem('A00', ['A01', 'A02', 'A03', 'A04']);
+                    this.calcAutoItem('B00', ['B10', 'B20', 'B30', 'B40', 'B50', 'B60', 'B70', 'B80', 'B90', 'Ba0']);
+                    
+                    // 3. 计算合计行（所有部门合计）
+                    this.projectTree.forEach(item => {
+                        this.calcTotal(item.code);
+                    });
+                    
+                    // 4. 更新汇总表数据
+                    this.calcSummaryFromDetails();
+                },
+
+                // 计算auto项目的金额（由子项汇总）
+                calcAutoItem(itemCode, childrenCodes) {
+                    this.departments.forEach(dept => {
+                        let totalAmount = 0;
+                        let totalCount = 0;
+                        
+                        childrenCodes.forEach(childCode => {
+                            if (this.detailData[childCode] && this.detailData[childCode][dept.id]) {
+                                totalAmount += this.detailData[childCode][dept.id].amount;
+                                totalCount += this.detailData[childCode][dept.id].count;
+                            }
+                        });
+                        
+                        this.detailData[itemCode][dept.id].amount = totalAmount;
+                        this.detailData[itemCode][dept.id].count = totalCount;
+                    });
+                },
+
+                // 计算所有部门的合计
+                calcTotal(itemCode) {
+                    let totalAmount = 0;
+                    let totalCount = 0;
+                    
+                    this.departments.forEach(dept => {
+                        totalAmount += this.detailData[itemCode][dept.id].amount;
+                        totalCount += this.detailData[itemCode][dept.id].count;
+                    });
+                    
+                    this.detailTotals[itemCode].amount = totalAmount;
+                    this.detailTotals[itemCode].count = totalCount;
+                },
+
+                // 根据明细计算汇总表数据
+                calcSummaryFromDetails() {
+                    let receiptPlan = 0;
+                    let receiptActual = 0;
+                    let expensePlan = 0;
+                    let expenseActual = 0;
+                    
+                    this.mockDetailRecords.forEach(record => {
+                        const amountWan = record.amount / 10000;
+                        
+                        if (record.fundType === 'income') {
+                            if (record.recordType === 'plan') {
+                                receiptPlan += amountWan;
+                            } else {
+                                receiptActual += amountWan;
+                            }
+                        } else {
+                            if (record.recordType === 'plan') {
+                                expensePlan += amountWan;
+                            } else {
+                                expenseActual += amountWan;
+                            }
+                        }
+                    });
+                    
+                    this.summaryData.monthReceipt.plan = Math.round(receiptPlan * 100) / 100;
+                    this.summaryData.monthReceipt.actual = Math.round(receiptActual * 100) / 100;
+                    this.summaryData.monthReceipt.diff = Math.round((receiptActual - receiptPlan) * 100) / 100;
+                    
+                    this.summaryData.monthExpense.plan = Math.round(expensePlan * 100) / 100;
+                    this.summaryData.monthExpense.actual = Math.round(expenseActual * 100) / 100;
+                    this.summaryData.monthExpense.diff = Math.round((expenseActual - expensePlan) * 100) / 100;
+                    
+                    this.summaryData.monthBalance.plan = Math.round((this.summaryData.lastMonthBalance + receiptPlan - expensePlan) * 100) / 100;
+                    this.summaryData.monthBalance.actual = Math.round((this.summaryData.lastMonthBalance + receiptActual - expenseActual) * 100) / 100;
+                    this.summaryData.monthBalance.diff = Math.round((this.summaryData.monthBalance.actual - this.summaryData.monthBalance.plan) * 100) / 100;
+                    
+                    this.summaryData.nextMonthBalance = Math.round((this.summaryData.monthBalance.actual + this.summaryData.nextMonthReceipt - this.summaryData.nextMonthExpense) * 100) / 100;
+                },
+
+                // 打开明细弹窗（只有末级项目且count>0才能打开）
+                openDetailModal(dept, item, count) {
+                    if (count === 0 || item.auto) return;
+                    
+                    const records = this.mockDetailRecords.filter(r => 
+                        r.deptId === dept.id && r.projectCode === item.code
+                    );
+                    
+                    const totalAmount = records.reduce((sum, r) => sum + r.amount, 0);
+                    
+                    this.detailModal = {
+                        open: true,
+                        deptName: dept.name,
+                        projectName: item.name,
+                        projectCode: item.code,
+                        records: records,
+                        totalAmount: totalAmount
+                    };
+                },
+
+                closeDetailModal() {
+                    this.detailModal.open = false;
+                    setTimeout(() => {
+                        this.detailModal.records = [];
+                    }, 200);
+                },
+
+                getStatusText(status) {
+                    const map = {
+                        'draft': '草稿',
+                        'pending': '审批中',
+                        'approved': '已审核',
+                        'rejected': '已驳回'
+                    };
+                    return map[status] || status;
+                },
+
+                updateStatus() {
+                    const statusMap = {
+                        1: { type: 'draft', text: '草稿' },
+                        2: { type: 'pending', text: '待部门领导审批' },
+                        3: { type: 'pending', text: '待财务审批' },
+                        4: { type: 'pending', text: '待财务主管审批' },
+                        5: { type: 'pending', text: '待财务总监审批' },
+                        6: { type: 'approved', text: '已审核' }
+                    };
+                    this.currentStatus = statusMap[this.formData.status] || statusMap[1];
+                },
+
+                saveDraft() {
+                    this.showToast('草稿已保存', 'success');
+                    this.addLog('保存草稿', '数据已暂存');
+                },
+
+                submitAudit() {
+                    if (!this.validateData()) return;
+                    
+                    if (confirm('确定提交审核吗？提交后将进入部门领导审批流程。')) {
+                        this.formData.status = 2;
+                        this.updateStatus();
+                        this.showToast('已提交部门领导审批', 'success');
+                        this.addLog('提交审核', '提交至部门领导审批');
+                    }
+                },
+
+                withdraw() {
+                    if (confirm('确定撤回吗？撤回后将回到草稿状态。')) {
+                        this.formData.status = 1;
+                        this.updateStatus();
+                        this.showToast('已撤回至草稿状态', 'success');
+                        this.addLog('撤回', '从审批流程撤回至草稿');
+                    }
+                },
+
+                validateData() {
+                    if (this.summaryData.monthReceipt.diff !== 0 && !this.summaryData.monthReceipt.diffNote) {
+                        this.showToast('请填写本月回款差异说明', 'error');
+                        this.activeTab = 'summary';
+                        return false;
+                    }
+                    if (this.summaryData.monthExpense.diff !== 0 && !this.summaryData.monthExpense.diffNote) {
+                        this.showToast('请填写本月支出差异说明', 'error');
+                        this.activeTab = 'summary';
+                        return false;
+                    }
+                    return true;
+                },
+
+                validateAndSave() {
+                    if (this.validateData()) {
+                        this.saveDraft();
+                    }
+                },
+
+                addLog(action, comment) {
+                    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+                    this.operationLogs.unshift({
+                        id: Date.now(),
+                        operator: this.formData.creator,
+                        action: action,
+                        time: now,
+                        comment: comment
+                    });
+                },
+
+                formatMoney(amount) {
+                    if (amount === undefined || amount === null) return '0.00';
+                    return Number(amount).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+
+                showToast(message, type = 'success') {
+                    this.toast = { show: true, message, type };
+                    setTimeout(() => this.toast.show = false, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
