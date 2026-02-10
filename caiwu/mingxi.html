@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资金明细录入 - 资金预算管理系统</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        body { 
+            font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; 
+            background-color: #f1f5f9; 
+            color: #334155; 
+        }
+        
+        .text-num { font-family: 'Menlo', 'Monaco', 'JetBrains Mono', monospace; font-weight: 600; }
+        .text-min { font-size: 13px; line-height: 1.5; }
+        
+        /* 滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        
+        /* 统计卡片 */
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
+        .stat-card.active { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .data-table th {
+            background: #f8fafc;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .data-table tbody tr:hover td { background: #f8fafc; }
+        
+        /* 输入框 */
+        .smart-input {
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            outline: none;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .smart-input:hover { border-color: #94a3b8; }
+        .smart-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        .smart-input:disabled { background-color: #f1f5f9; cursor: not-allowed; color: #64748b; }
+        .smart-input.error { border-color: #ef4444; }
+        
+        /* 状态标签 */
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .status-draft { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+        .status-pending { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .status-approved { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .status-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        
+        /* 操作按钮 */
+        .action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: nowrap;
+        }
+        .action-link {
+            color: #3b82f6;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        .action-link:hover { color: #2563eb; background: #eff6ff; text-decoration: underline; }
+        .action-link.danger { color: #dc2626; }
+        .action-link.danger:hover { color: #b91c1c; background: #fee2e2; }
+        .action-link.success { color: #059669; }
+        .action-link.success:hover { color: #047857; background: #d1fae5; }
+        .action-link.disabled { color: #cbd5e1; cursor: not-allowed; text-decoration: none; }
+        .action-link.disabled:hover { background: transparent; }
+        .action-divider { color: #e2e8f0; user-select: none; }
+        
+        /* 弹窗 */
+        .modal-backdrop {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        
+        /* 步骤条 */
+        .step-item { position: relative; flex: 1; text-align: center; }
+        .step-item::before { content: ''; position: absolute; top: 14px; left: -50%; width: 100%; height: 2px; background: #e2e8f0; z-index: 0; }
+        .step-item:first-child::before { display: none; }
+        .step-item.completed::before { background: #10b981; }
+        .step-item.active::before { background: #3b82f6; }
+        .step-icon { width: 28px; height: 28px; background: #e2e8f0; color: #64748b; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; position: relative; z-index: 1; font-size: 12px; font-weight: 600; }
+        .step-item.completed .step-icon { background: #10b981; color: white; }
+        .step-item.active .step-icon { background: #3b82f6; color: white; }
+        .step-item.rejected .step-icon { background: #ef4444; color: white; }
+        
+        /* 批量操作栏 */
+        .batch-bar {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        /* 分页 */
+        .pagination-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+            font-size: 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pagination-btn:hover:not(:disabled) { border-color: #3b82f6; color: #3b82f6; }
+        .pagination-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 类型Tab样式 */
+        .type-tab {
+            position: relative;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+            background: transparent;
+        }
+        .type-tab:hover { color: #334155; background: rgba(59,130,246,0.05); }
+        .type-tab.active { 
+            color: #3b82f6; 
+            border-bottom-color: #3b82f6;
+            background: rgba(59,130,246,0.08);
+        }
+        .type-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #3b82f6;
+        }
+        
+        /* 类型徽章 */
+        .type-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .type-badge-actual {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        .type-badge-plan {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+        
+        /* 项目名称分组样式 */
+        .project-group-label {
+            font-weight: 600;
+            color: #ea580c;
+            background-color: #fff7ed;
+        }
+        .project-item {
+            color: #334155;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden" x-data="fundDetailApp()">
+
+    <!-- 顶部Header -->
+    <header class="bg-white border-b border-slate-200 h-16 px-6 flex justify-between items-center shadow-sm z-30 flex-shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
+                <i class="fa-solid fa-money-bill-transfer text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800">资金明细录入</h1>
+                <div class="text-min text-slate-500 mt-0.5">实际发生与计划明细管理 · 回款与支出记录</div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <button @click="refreshData()" class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="刷新">
+                <i class="fa-solid fa-rotate-right" :class="loading ? 'animate-spin' : ''"></i>
+            </button>
+            <button @click="exportData()" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition flex items-center gap-2">
+                <i class="fa-solid fa-download"></i> 导出
+            </button>
+            <button @click="openImportModal()" class="px-4 py-2 border border-blue-300 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50 transition flex items-center gap-2">
+                <i class="fa-solid fa-file-import"></i> 批量导入
+            </button>
+            <button @click="openEditModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> 新增明细
+            </button>
+        </div>
+    </header>
+
+    <!-- 主类型Tab切换栏 -->
+    <div class="bg-white border-b border-slate-200 flex-shrink-0 px-6">
+        <div class="flex gap-1">
+            <button @click="switchRecordType('actual')" class="type-tab flex items-center gap-2" :class="{'active': recordTypeTab === 'actual'}">
+                <i class="fa-solid fa-receipt" :class="recordTypeTab === 'actual' ? 'text-blue-600' : 'text-slate-400'"></i>
+                <span>实际发生明细</span>
+                <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold" 
+                      :class="recordTypeTab === 'actual' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'"
+                      x-text="stats.actualCount">0</span>
+            </button>
+            <button @click="switchRecordType('plan')" class="type-tab flex items-center gap-2" :class="{'active': recordTypeTab === 'plan'}">
+                <i class="fa-solid fa-calendar-check" :class="recordTypeTab === 'plan' ? 'text-amber-600' : 'text-slate-400'"></i>
+                <span>计划明细</span>
+                <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold"
+                      :class="recordTypeTab === 'plan' ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-600'"
+                      x-text="stats.planCount">0</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 统计卡片区域 -->
+    <div class="bg-white border-b border-slate-200 px-6 py-4 grid grid-cols-2 md:grid-cols-5 gap-4 flex-shrink-0 overflow-x-auto">
+        <div class="stat-card flex items-center justify-between" :class="{'active': currentTab === 'all'}" @click="currentTab = 'all'">
+            <div>
+                <div class="text-min text-slate-500 mb-1">全部记录</div>
+                <div class="text-2xl font-bold text-slate-800" x-text="filteredStats.total">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between" :class="{'active': currentTab === 'draft'}" @click="currentTab = 'draft'">
+            <div>
+                <div class="text-min text-slate-500 mb-1">草稿/待提交</div>
+                <div class="text-2xl font-bold text-indigo-600" x-text="filteredStats.draft">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between" :class="{'active': currentTab === 'pending'}" @click="currentTab = 'pending'">
+            <div>
+                <div class="text-min text-slate-500 mb-1">审批中</div>
+                <div class="text-2xl font-bold text-amber-500" x-text="filteredStats.pending">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between" :class="{'active': currentTab === 'approved'}" @click="currentTab = 'approved'">
+            <div>
+                <div class="text-min text-slate-500 mb-1">已审核</div>
+                <div class="text-2xl font-bold text-emerald-600" x-text="filteredStats.approved">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <i class="fa-solid fa-check-circle"></i>
+            </div>
+        </div>
+        
+        <div class="stat-card flex items-center justify-between border-red-200 bg-red-50" :class="{'active': currentTab === 'rejected'}" @click="currentTab = 'rejected'">
+            <div>
+                <div class="text-min text-red-600 mb-1 font-medium">已驳回</div>
+                <div class="text-2xl font-bold text-red-600" x-text="filteredStats.rejected">0</div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主体内容区 -->
+    <main class="flex-1 overflow-hidden flex flex-col bg-slate-50 p-6">
+        
+        <!-- 筛选栏 -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 mb-4 shadow-sm flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-min text-slate-500 mb-1">关键词搜索</label>
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                    <input type="text" x-model="filters.keyword" placeholder="摘要/合同名称/对方名称" 
+                           class="smart-input pl-9" @input.debounce.500="applyFilters()">
+                </div>
+            </div>
+            
+            <div class="w-48">
+                <label class="block text-min text-slate-500 mb-1">机构名称</label>
+                <select x-model="filters.orgName" class="smart-input" @change="applyFilters()">
+                    <option value="">全部机构</option>
+                    <template x-for="org in orgList" :key="org">
+                        <option :value="org" x-text="org"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <div class="w-40">
+                <label class="block text-min text-slate-500 mb-1">部门名称</label>
+                <select x-model="filters.deptName" class="smart-input" @change="applyFilters()">
+                    <option value="">全部部门</option>
+                    <template x-for="dept in deptList" :key="dept">
+                        <option :value="dept" x-text="dept"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <div class="w-32">
+                <label class="block text-min text-slate-500 mb-1">资金类型</label>
+                <select x-model="filters.fundType" class="smart-input" @change="applyFilters()">
+                    <option value="">全部</option>
+                    <option value="income">回款</option>
+                    <option value="expense">支出</option>
+                </select>
+            </div>
+            
+            <div class="w-40">
+                <label class="block text-min text-slate-500 mb-1">项目名称</label>
+                <select x-model="filters.projectName" class="smart-input" @change="applyFilters()">
+                    <option value="">全部项目</option>
+                    <template x-for="project in projectTypes" :key="project.code">
+                        <option :value="project.code" x-text="project.name" :class="project.auto ? 'project-group-label' : 'project-item'"></option>
+                    </template>
+                </select>
+            </div>
+            
+            <div class="w-40">
+                <label class="block text-min text-slate-500 mb-1">发生日期</label>
+                <input type="date" x-model="filters.date" class="smart-input" @change="applyFilters()">
+            </div>
+            
+            <button @click="resetFilters()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm font-medium transition mb-0.5">
+                <i class="fa-solid fa-rotate-left mr-1"></i> 重置
+            </button>
+        </div>
+
+        <!-- 批量操作栏 -->
+        <div x-show="selectedIds.length > 0" class="batch-bar" x-cloak>
+            <div class="flex items-center gap-3">
+                <span class="text-min font-medium text-blue-900">
+                    已选择 <span x-text="selectedIds.length" class="font-bold"></span> 项
+                </span>
+                <span class="text-slate-300">|</span>
+                <button @click="batchSubmit()" class="text-sm text-blue-700 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-100 transition">
+                    批量提交
+                </button>
+                <button @click="batchDelete()" class="text-sm text-red-700 hover:text-red-800 font-medium px-2 py-1 rounded hover:bg-red-100 transition">
+                    批量删除
+                </button>
+            </div>
+            <button @click="selectedIds = []" class="text-min text-slate-500 hover:text-slate-700">
+                取消选择
+            </button>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div class="overflow-auto custom-scroll flex-1">
+                <table class="data-table">
+                    <thead class="sticky top-0 z-10">
+                        <tr>
+                            <th class="w-10 text-center cursor-default">
+                                <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            </th>
+                            <th class="w-32">类型</th>
+                            <th class="w-36">机构名称</th>
+                            <th class="w-32">部门名称</th>
+                            <th class="w-24 text-center">资金类型</th>
+                            <th class="w-32">项目名称</th>
+                            <th class="w-28 text-right">发生金额</th>
+                            <th class="w-28">发生日期</th>
+                            <th class="min-w-[150px]">摘要</th>
+                            <th class="w-32">相对方名称</th>
+                            <th class="w-36">关联合同</th>
+                            <th class="w-24 text-center">状态</th>
+                            <th class="w-24">填报人</th>
+                            <th class="text-center w-48">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(item, index) in paginatedData" :key="item.id">
+                            <tr class="fade-in">
+                                <td class="text-center" @click.stop>
+                                    <input type="checkbox" :value="item.id" x-model="selectedIds" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                </td>
+                                <td>
+                                    <span class="type-badge" :class="item.recordType === 'actual' ? 'type-badge-actual' : 'type-badge-plan'">
+                                        <i class="fa-solid mr-1" :class="item.recordType === 'actual' ? 'fa-receipt' : 'fa-calendar-check'"></i>
+                                        <span x-text="item.recordType === 'actual' ? '实际发生' : '计划'"></span>
+                                    </span>
+                                </td>
+                                <td class="font-medium text-slate-800" x-text="item.orgName"></td>
+                                <td class="text-slate-600" x-text="item.deptName"></td>
+                                <td class="text-center">
+                                    <span class="px-2 py-1 rounded text-xs font-medium" 
+                                          :class="item.fundType === 'income' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'"
+                                          x-text="item.fundType === 'income' ? '回款' : '支出'">
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="text-sm text-slate-700" x-text="getProjectName(item.projectCode)"></div>
+                                    <div class="text-min text-slate-400" x-text="item.projectCode"></div>
+                                </td>
+                                <td class="text-right font-medium text-num" 
+                                    :class="item.fundType === 'income' ? 'text-emerald-600' : 'text-rose-600'"
+                                    x-text="(item.fundType === 'income' ? '+' : '-') + '¥' + formatMoney(item.amount)">
+                                </td>
+                                <td class="text-min text-slate-600" x-text="item.date"></td>
+                                <td class="text-slate-700 max-w-[200px] truncate" :title="item.summary" x-text="item.summary || '-'"></td>
+                                <td class="text-slate-600" x-text="item.counterparty || '-'"></td>
+                                <td class="text-min text-slate-500" x-text="item.contract || '-'"></td>
+                                <td class="text-center">
+                                    <span class="status-tag" :class="'status-' + item.status">
+                                        <i class="fa-solid fa-circle text-[8px]"></i>
+                                        <span x-text="getStatusText(item.status)"></span>
+                                    </span>
+                                </td>
+                                <td class="text-min text-slate-600" x-text="item.operator"></td>
+                                <td class="text-center">
+                                    <div class="action-bar">
+                                        <span class="action-link" @click="viewDetail(item)">
+                                            <i class="fa-solid fa-eye mr-1"></i>查看
+                                        </span>
+                                        <span class="action-divider">|</span>
+                                        
+                                        <template x-if="item.status === 'draft' || item.status === 'rejected'">
+                                            <span class="action-link" @click="openEditModal(item)">
+                                                <i class="fa-solid fa-pen mr-1"></i>编辑
+                                            </span>
+                                        </template>
+                                        <template x-if="item.status !== 'draft' && item.status !== 'rejected'">
+                                            <span class="action-link disabled">编辑</span>
+                                        </template>
+                                        
+                                        <span class="action-divider">|</span>
+                                        
+                                        <template x-if="item.status === 'draft' || item.status === 'rejected'">
+                                            <span class="action-link success" @click="submitItem(item)">
+                                                <i class="fa-solid fa-paper-plane mr-1"></i>提交
+                                            </span>
+                                        </template>
+                                        <template x-if="item.status !== 'draft' && item.status !== 'rejected'">
+                                            <span class="action-link disabled">提交</span>
+                                        </template>
+                                        
+                                        <span class="action-divider">|</span>
+                                        
+                                        <template x-if="item.status === 'pending'">
+                                            <span class="action-link" @click="recallItem(item)" style="color: #f59e0b;">
+                                                <i class="fa-solid fa-rotate-left mr-1"></i>撤回
+                                            </span>
+                                        </template>
+                                        <template x-if="item.status !== 'pending'">
+                                            <span class="action-link disabled">撤回</span>
+                                        </template>
+                                        
+                                        <span class="action-divider">|</span>
+                                        
+                                        <template x-if="item.status === 'pending'">
+                                            <span class="action-link" @click="openApproveModal(item)">
+                                                <i class="fa-solid fa-gavel mr-1"></i>审批
+                                            </span>
+                                        </template>
+                                        <template x-if="item.status !== 'pending'">
+                                            <span class="action-link disabled">审批</span>
+                                        </template>
+                                        
+                                        <span class="action-divider">|</span>
+                                        
+                                        <template x-if="item.status !== 'pending'">
+                                            <span class="action-link danger" @click="deleteItem(item)">
+                                                <i class="fa-solid fa-trash mr-1"></i>删除
+                                            </span>
+                                        </template>
+                                        <template x-if="item.status === 'pending'">
+                                            <span class="action-link disabled">删除</span>
+                                        </template>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                        
+                        <!-- 空状态 -->
+                        <tr x-show="paginatedData.length === 0">
+                            <td colspan="14" class="text-center py-16 text-slate-400">
+                                <div class="mb-3 text-4xl">📭</div>
+                                <div class="text-min">暂无符合条件的资金明细记录</div>
+                                <button @click="openEditModal()" class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition">
+                                    <i class="fa-solid fa-plus mr-1"></i> 新增明细
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="border-t border-slate-200 px-6 py-4 flex items-center justify-between bg-slate-50">
+                <div class="text-min text-slate-500">
+                    显示 <span x-text="(currentPage - 1) * pageSize + 1" class="font-medium"></span> - 
+                    <span x-text="Math.min(currentPage * pageSize, filteredData.length)" class="font-medium"></span> 条，
+                    共 <span x-text="filteredData.length" class="font-medium"></span> 条
+                </div>
+                <div class="flex gap-2">
+                    <button @click="currentPage = 1" :disabled="currentPage === 1" class="pagination-btn">
+                        <i class="fa-solid fa-angles-left"></i>
+                    </button>
+                    <button @click="currentPage--" :disabled="currentPage === 1" class="pagination-btn">
+                        <i class="fa-solid fa-angle-left"></i>
+                    </button>
+                    
+                    <template x-for="page in displayedPages" :key="page">
+                        <button @click="currentPage = page" 
+                                class="pagination-btn" 
+                                :class="page === currentPage ? 'active' : ''"
+                                x-text="page"></button>
+                    </template>
+                    
+                    <button @click="currentPage++" :disabled="currentPage === totalPages" class="pagination-btn">
+                        <i class="fa-solid fa-angle-right"></i>
+                    </button>
+                    <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="pagination-btn">
+                        <i class="fa-solid fa-angles-right"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-2 text-min text-slate-500">
+                    <span>每页</span>
+                    <select x-model.number="pageSize" @change="currentPage = 1" class="smart-input py-1 px-2 w-16 text-center">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                    <span>条</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 新增/编辑弹窗 -->
+    <div x-show="editModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak @click.self="closeEditModal()">
+        <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl max-h-[90vh] flex flex-col fade-in">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center gap-3">
+                    <h3 class="text-lg font-bold text-slate-800" x-text="editModal.isEdit ? '编辑资金明细' : '新增资金明细'"></h3>
+                    <span class="type-badge" :class="editModal.form.recordType === 'actual' ? 'type-badge-actual' : 'type-badge-plan'">
+                        <i class="fa-solid mr-1" :class="editModal.form.recordType === 'actual' ? 'fa-receipt' : 'fa-calendar-check'"></i>
+                        <span x-text="editModal.form.recordType === 'actual' ? '实际发生' : '计划'"></span>
+                    </span>
+                </div>
+                <button @click="closeEditModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- 明细类型（仅编辑时显示，新增时根据当前Tab自动设置） -->
+                    <div x-show="editModal.isEdit" class="col-span-2 mb-2">
+                        <label class="block text-min font-medium text-slate-700 mb-2">明细类型 <span class="text-red-500">*</span></label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition flex-1"
+                                   :class="editModal.form.recordType === 'actual' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-300'">
+                                <input type="radio" x-model="editModal.form.recordType" value="actual" class="w-4 h-4 text-blue-600">
+                                <div>
+                                    <div class="font-medium text-slate-800">实际发生明细</div>
+                                    <div class="text-min text-slate-500">已实际发生的资金收付记录</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition flex-1"
+                                   :class="editModal.form.recordType === 'plan' ? 'border-amber-500 bg-amber-50' : 'border-slate-200 hover:border-amber-300'">
+                                <input type="radio" x-model="editModal.form.recordType" value="plan" class="w-4 h-4 text-amber-600">
+                                <div>
+                                    <div class="font-medium text-slate-800">计划明细</div>
+                                    <div class="text-min text-slate-500">预计发生的资金计划安排</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 机构名称 -->
+                    <div>
+                        <label class="block text-min font-medium text-slate-700 mb-1">机构名称 <span class="text-red-500">*</span></label>
+                        <select x-model="editModal.form.orgName" class="smart-input" :class="errors.orgName ? 'error' : ''" @change="validateField('orgName'); calculateAutoAmount()">
+                            <option value="">请选择</option>
+                            <template x-for="org in orgList" :key="org">
+                                <option :value="org" x-text="org"></option>
+                            </template>
+                        </select>
+                        <p x-show="errors.orgName" class="text-min text-red-500 mt-1" x-text="errors.orgName"></p>
+                    </div>
+                    
+                    <!-- 部门名称 -->
+                    <div>
+                        <label class="block text-min font-medium text-slate-700 mb-1">部门名称 <span class="text-red-500">*</span></label>
+                        <select x-model="editModal.form.deptName" class="smart-input" :class="errors.deptName ? 'error' : ''" @change="validateField('deptName'); calculateAutoAmount()">
+                            <option value="">请选择</option>
+                            <template x-for="dept in deptList" :key="dept">
+                                <option :value="dept" x-text="dept"></option>
+                            </template>
+                        </select>
+                        <p x-show="errors.deptName" class="text-min text-red-500 mt-1" x-text="errors.deptName"></p>
+                    </div>
+                    
+                    <!-- 资金类型 -->
+                    <div>
+                        <label class="block text-min font-medium text-slate-700 mb-1">资金类型 <span class="text-red-500">*</span></label>
+                        <div class="flex gap-3 mt-1">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" x-model="editModal.form.fundType" value="income" @change="onFundTypeChange()" class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500">
+                                <span class="text-sm text-slate-700">回款</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" x-model="editModal.form.fundType" value="expense" @change="onFundTypeChange()" class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500">
+                                <span class="text-sm text-slate-700">支出</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 项目名称 -->
+                    <div>
+                        <label class="block text-min font-medium text-slate-700 mb-1">项目名称 <span class="text-red-500">*</span></label>
+                        <select x-model="editModal.form.projectCode" class="smart-input" :class="errors.projectCode ? 'error' : ''" @change="onProjectChange()">
+                            <option value="">请选择</option>
+                            <optgroup label="—— 回款项目 ——">
+                                <template x-for="project in projectTypes.filter(p => p.type === 'income')" :key="project.code">
+                                    <option :value="project.code" x-text="project.name + (project.auto ? ' [自动计算]' : '')" :style="project.auto ? 'color: #ea580c; background: #fff7ed;' : ''"></option>
+                                </template>
+                            </optgroup>
+                            <optgroup label="—— 支出项目 ——">
+                                <template x-for="project in projectTypes.filter(p => p.type === 'expense')" :key="project.code">
+                                    <option :value="project.code" x-text="project.name + (project.auto ? ' [自动计算]' : '')" :style="project.auto ? 'color: #ea580c; background: #fff7ed;' : ''"></option>
+                                </template>
+                            </optgroup>
+                        </select>
+                        <p x-show="errors.projectCode" class="text-min text-red-500 mt-1" x-text="errors.projectCode"></p>
+                        <p x-show="isAutoCalculatedProject" class="text-min text-amber-600 mt-1">
+                            <i class="fa-solid fa-circle-info mr-1"></i>此项目为自动计算项，金额将根据子项目自动汇总
+                        </p>
+                    </div>
+                    
+                    <!-- 发生日期 -->
+                    <div>
+                        <label class="block text-min font-medium text-slate-700 mb-1">发生日期 <span class="text-red-500">*</span></label>
+                        <input type="date" x-model="editModal.form.date" class="smart-input" :class="errors.date ? 'error' : ''" @blur="validateField('date'); calculateAutoAmount()">
+                        <p x-show="errors.date" class="text-min text-red-500 mt-1" x-text="errors.date"></p>
+                    </div>
+                    
+                    <!-- 发生金额 -->
+                    <div>
+                        <label class="block text-min font-medium text-slate-700 mb-1">
+                            发生金额 <span class="text-red-500">*</span>
+                            <span x-show="isAutoCalculatedProject" class="text-min text-amber-600 font-normal ml-1">(自动计算)</span>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2 text-slate-400">¥</span>
+                            <input type="number" x-model.number="editModal.form.amount" 
+                                   class="smart-input pl-7 text-num" 
+                                   :class="[errors.amount ? 'error' : '', isAutoCalculatedProject ? 'bg-amber-50 text-amber-700 cursor-not-allowed' : '']" 
+                                   @blur="validateField('amount')" 
+                                   placeholder="0.00" 
+                                   step="0.01" 
+                                   min="0"
+                                   :disabled="isAutoCalculatedProject"
+                                   :readonly="isAutoCalculatedProject">
+                        </div>
+                        <p x-show="errors.amount" class="text-min text-red-500 mt-1" x-text="errors.amount"></p>
+                    </div>
+                    
+                    <!-- 相对方名称 - 改为点击选择 -->
+                    <div>
+                        <label class="block text-min font-medium text-slate-700 mb-1">
+                            相对方名称 <span class="text-red-500">*</span>
+                            <span class="text-min text-slate-400 font-normal" x-text="editModal.form.fundType === 'income' ? '(客户)' : '(供应商)'"></span>
+                        </label>
+                        <div class="relative cursor-pointer" @click="openCounterpartyModal()">
+                            <input type="text" x-model="editModal.form.counterparty" 
+                                   class="smart-input cursor-pointer bg-slate-50 pr-10" :class="errors.counterparty ? 'error' : ''" 
+                                   readonly
+                                   placeholder="点击选择...">
+                            <i class="fa-solid fa-list absolute right-3 top-2.5 text-slate-400 text-sm"></i>
+                        </div>
+                        <p x-show="errors.counterparty" class="text-min text-red-500 mt-1" x-text="errors.counterparty"></p>
+                    </div>
+                    
+                    <!-- 关联合同 -->
+                    <div>
+                        <label class="block text-min font-medium text-slate-700 mb-1">关联合同</label>
+                        <input type="text" x-model="editModal.form.contract" class="smart-input" placeholder="选填，输入合同名称或编号">
+                    </div>
+                    
+                    <!-- 摘要 -->
+                    <div class="col-span-2">
+                        <label class="block text-min font-medium text-slate-700 mb-1">摘要 <span class="text-red-500">*</span></label>
+                        <textarea x-model="editModal.form.summary" rows="2" class="smart-input resize-none" :class="errors.summary ? 'error' : ''" @blur="validateField('summary')" placeholder="请简要说明资金用途或来源..."></textarea>
+                        <p x-show="errors.summary" class="text-min text-red-500 mt-1" x-text="errors.summary"></p>
+                    </div>
+                </div>
+                
+                <!-- 提示信息 -->
+                <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-min text-blue-700">
+                    <i class="fa-solid fa-circle-info mr-1"></i>
+                    保存后可在列表中查看，提交后将进入审批流程（部门领导→财务→财务主管→财务总监）
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+                <button @click="closeEditModal()" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-white transition">取消</button>
+                <button @click="saveDraft()" class="px-5 py-2 border border-blue-300 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50 transition flex items-center gap-2">
+                    <i class="fa-regular fa-floppy-disk"></i> 保存草稿
+                </button>
+                <button @click="submitForm()" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-md shadow-blue-200 transition flex items-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> 提交审核
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 相对方选择弹窗 -->
+    <div x-show="counterpartyModal.open" class="fixed inset-0 z-[60] flex items-center justify-center modal-backdrop p-4" x-cloak @click.self="closeCounterpartyModal()">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl max-h-[80vh] flex flex-col fade-in">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800" x-text="editModal.form.fundType === 'income' ? '选择客户' : '选择供应商'"></h3>
+                    <p class="text-min text-slate-500 mt-1" x-text="'从列表中选择' + (editModal.form.fundType === 'income' ? '客户' : '供应商')"></p>
+                </div>
+                <button @click="closeCounterpartyModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 border-b border-slate-200">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+                    <input type="text" x-model="counterpartyModal.search" 
+                           @input="searchCounterpartyModal()"
+                           class="smart-input pl-9" 
+                           placeholder="搜索关键词...">
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-2">
+                <div x-show="counterpartyModal.filteredList.length === 0" class="text-center py-8 text-slate-400 text-min">
+                    暂无匹配数据
+                </div>
+                <template x-for="(item, index) in counterpartyModal.filteredList" :key="index">
+                    <div @click="selectCounterpartyFromModal(item)" 
+                         class="p-3 hover:bg-blue-50 cursor-pointer rounded-lg border border-transparent hover:border-blue-200 transition mb-1 flex items-center justify-between group"
+                         :class="editModal.form.counterparty === item ? 'bg-blue-50 border-blue-200' : ''">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-sm group-hover:bg-blue-100 group-hover:text-blue-600 transition">
+                                <i class="fa-solid" :class="editModal.form.fundType === 'income' ? 'fa-user' : 'fa-truck'"></i>
+                            </div>
+                            <span class="font-medium text-slate-700" x-text="item"></span>
+                        </div>
+                        <i x-show="editModal.form.counterparty === item" class="fa-solid fa-check text-blue-600"></i>
+                    </div>
+                </template>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                <span class="text-min text-slate-500" x-text="'共 ' + counterpartyModal.filteredList.length + ' 条'"></span>
+                <div class="flex gap-3">
+                    <button @click="editModal.form.counterparty = ''; closeCounterpartyModal()" class="px-4 py-2 text-slate-600 hover:text-slate-800 text-sm font-medium transition">
+                        清空选择
+                    </button>
+                    <button @click="closeCounterpartyModal()" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                        确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情弹窗 -->
+    <div x-show="detailModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak @click.self="closeDetailModal()">
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl max-h-[90vh] flex flex-col fade-in">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center gap-3">
+                    <h3 class="text-lg font-bold text-slate-800">资金明细详情</h3>
+                    <span class="type-badge" :class="detailModal.item?.recordType === 'actual' ? 'type-badge-actual' : 'type-badge-plan'">
+                        <i class="fa-solid mr-1" :class="detailModal.item?.recordType === 'actual' ? 'fa-receipt' : 'fa-calendar-check'"></i>
+                        <span x-text="detailModal.item?.recordType === 'actual' ? '实际发生' : '计划'"></span>
+                    </span>
+                </div>
+                <button @click="closeDetailModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-6" x-show="detailModal.item">
+                <!-- 审批进度 -->
+                <div x-show="detailModal.item?.status !== 'draft'" class="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm font-bold text-slate-700">审批进度</span>
+                        <span class="text-min text-slate-500" x-text="'当前状态：' + getStatusText(detailModal.item?.status)"></span>
+                    </div>
+                    <div class="flex justify-between px-2">
+                        <template x-for="(step, idx) in approvalSteps" :key="idx">
+                            <div class="step-item" :class="getStepClass(idx, detailModal.item?.approvalStep, detailModal.item?.status)">
+                                <div class="step-icon">
+                                    <i class="fa-solid fa-check" x-show="idx < (detailModal.item?.approvalStep || 0) && detailModal.item?.status !== 'rejected'"></i>
+                                    <i class="fa-solid fa-xmark" x-show="detailModal.item?.status === 'rejected' && idx === detailModal.item?.approvalStep"></i>
+                                    <span x-show="(detailModal.item?.status !== 'rejected' && idx >= (detailModal.item?.approvalStep || 0)) || (detailModal.item?.status === 'rejected' && idx !== detailModal.item?.approvalStep)" x-text="idx + 1"></span>
+                                </div>
+                                <div class="text-xs mt-2 font-medium" x-text="step"></div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 驳回原因 -->
+                <div x-show="detailModal.item?.status === 'rejected' && detailModal.item?.rejectReason" class="mb-6 p-4 bg-red-50 rounded-lg border border-red-200">
+                    <div class="flex items-start gap-3">
+                        <i class="fa-solid fa-circle-exclamation text-red-500 mt-0.5"></i>
+                        <div>
+                            <div class="text-sm font-bold text-red-700 mb-1">驳回原因</div>
+                            <div class="text-sm text-red-600" x-text="detailModal.item?.rejectReason"></div>
+                            <div class="text-min text-red-500 mt-2" x-text="'驳回人：' + detailModal.item?.rejectBy + ' · ' + detailModal.item?.rejectTime"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 基本信息 -->
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="text-min text-slate-500 mb-1">资金类型</div>
+                        <div class="font-bold text-lg" :class="detailModal.item?.fundType === 'income' ? 'text-emerald-600' : 'text-rose-600'" x-text="detailModal.item?.fundType === 'income' ? '回款' : '支出'"></div>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="text-min text-slate-500 mb-1">发生金额</div>
+                        <div class="font-bold text-lg text-num text-slate-800" x-text="'¥' + formatMoney(detailModal.item?.amount || 0)"></div>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div class="text-min text-slate-500 mb-1">发生日期</div>
+                        <div class="font-bold text-lg text-slate-800" x-text="detailModal.item?.date"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">基本信息</h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex">
+                                <span class="w-24 text-slate-500">机构名称：</span>
+                                <span class="flex-1 font-medium text-slate-800" x-text="detailModal.item?.orgName"></span>
+                            </div>
+                            <div class="flex">
+                                <span class="w-24 text-slate-500">部门名称：</span>
+                                <span class="flex-1 font-medium text-slate-800" x-text="detailModal.item?.deptName"></span>
+                            </div>
+                            <div class="flex">
+                                <span class="w-24 text-slate-500">项目名称：</span>
+                                <span class="flex-1 font-medium text-slate-800" x-text="getProjectName(detailModal.item?.projectCode)"></span>
+                            </div>
+                            <div class="flex">
+                                <span class="w-24 text-slate-500">项目代码：</span>
+                                <span class="flex-1 font-mono text-slate-600" x-text="detailModal.item?.projectCode"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">关联信息</h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex">
+                                <span class="w-24 text-slate-500">相对方：</span>
+                                <span class="flex-1 font-medium text-slate-800" x-text="detailModal.item?.counterparty || '-'"></span>
+                            </div>
+                            <div class="flex">
+                                <span class="w-24 text-slate-500">关联合同：</span>
+                                <span class="flex-1 font-medium text-slate-800" x-text="detailModal.item?.contract || '-'"></span>
+                            </div>
+                            <div class="flex">
+                                <span class="w-24 text-slate-500">填报人：</span>
+                                <span class="flex-1 text-slate-700" x-text="detailModal.item?.operator"></span>
+                            </div>
+                            <div class="flex">
+                                <span class="w-24 text-slate-500">创建时间：</span>
+                                <span class="flex-1 text-slate-600 text-min" x-text="detailModal.item?.createTime"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">摘要说明</h4>
+                    <p class="text-sm text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-200" x-text="detailModal.item?.summary || '无'"></p>
+                </div>
+
+                <!-- 操作记录 -->
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-200 pb-2">操作记录</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3 text-sm">
+                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <div class="text-min text-slate-500 w-32" x-text="detailModal.item?.createTime"></div>
+                            <div class="font-medium text-slate-800">创建记录</div>
+                            <div class="text-min text-slate-500 ml-auto" x-text="detailModal.item?.operator"></div>
+                        </div>
+                        <div class="flex items-center gap-3 text-sm" x-show="detailModal.item?.status !== 'draft'">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                            <div class="text-min text-slate-500 w-32" x-text="detailModal.item?.submitTime"></div>
+                            <div class="font-medium text-slate-800">提交审核</div>
+                            <div class="text-min text-slate-500 ml-auto" x-text="detailModal.item?.operator"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+                <button @click="closeDetailModal()" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-white transition">关闭</button>
+                <button x-show="detailModal.item?.status === 'draft' || detailModal.item?.status === 'rejected'" 
+                        @click="openEditModal(detailModal.item); closeDetailModal()" 
+                        class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">编辑</button>
+                <button x-show="detailModal.item?.status === 'pending'" 
+                        @click="openApproveModal(detailModal.item); closeDetailModal()" 
+                        class="px-5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition">去审批</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 审批弹窗 - 显示详细信息版 -->
+    <div x-show="approveModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak @click.self="closeApproveModal()">
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl max-h-[90vh] flex flex-col fade-in">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center gap-3">
+                    <h3 class="text-lg font-bold text-slate-800">资金明细审批</h3>
+                    <span class="type-badge" :class="approveModal.item?.recordType === 'actual' ? 'type-badge-actual' : 'type-badge-plan'">
+                        <i class="fa-solid mr-1" :class="approveModal.item?.recordType === 'actual' ? 'fa-receipt' : 'fa-calendar-check'"></i>
+                        <span x-text="approveModal.item?.recordType === 'actual' ? '实际发生' : '计划'"></span>
+                    </span>
+                </div>
+                <button @click="closeApproveModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-6">
+                <!-- 审批进度 -->
+                <div class="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-sm font-bold text-slate-700">审批进度</span>
+                        <span class="status-tag" :class="'status-' + approveModal.item?.status">
+                            <i class="fa-solid fa-circle text-[8px]"></i>
+                            <span x-text="getStatusText(approveModal.item?.status)"></span>
+                        </span>
+                    </div>
+                    <div class="flex justify-between px-2">
+                        <template x-for="(step, idx) in approvalSteps" :key="idx">
+                            <div class="step-item" :class="getStepClass(idx, approveModal.item?.approvalStep, approveModal.item?.status)">
+                                <div class="step-icon">
+                                    <i class="fa-solid fa-check" x-show="idx < (approveModal.item?.approvalStep || 0) && approveModal.item?.status !== 'rejected'"></i>
+                                    <i class="fa-solid fa-xmark" x-show="approveModal.item?.status === 'rejected' && idx === approveModal.item?.approvalStep"></i>
+                                    <span x-show="(approveModal.item?.status !== 'rejected' && idx >= (approveModal.item?.approvalStep || 0)) || (approveModal.item?.status === 'rejected' && idx !== approveModal.item?.approvalStep)" x-text="idx + 1"></span>
+                                </div>
+                                <div class="text-xs mt-2 font-medium" x-text="step"></div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 详细信息卡片 -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="col-span-2 md:col-span-1 p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                        <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-building text-blue-500"></i> 基本信息
+                        </h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">明细类型：</span>
+                                <span class="font-medium" :class="approveModal.item?.recordType === 'actual' ? 'text-blue-600' : 'text-amber-600'" x-text="approveModal.item?.recordType === 'actual' ? '实际发生' : '计划'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">机构名称：</span>
+                                <span class="font-medium text-slate-800" x-text="approveModal.item?.orgName"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">部门名称：</span>
+                                <span class="font-medium text-slate-800" x-text="approveModal.item?.deptName"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">资金类型：</span>
+                                <span class="font-medium" :class="approveModal.item?.fundType === 'income' ? 'text-emerald-600' : 'text-rose-600'" x-text="approveModal.item?.fundType === 'income' ? '回款' : '支出'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">项目名称：</span>
+                                <span class="font-medium text-slate-800" x-text="getProjectName(approveModal.item?.projectCode)"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-span-2 md:col-span-1 p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                        <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-money-bill text-emerald-500"></i> 金额信息
+                        </h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-500">发生金额：</span>
+                                <span class="text-xl font-bold text-num" :class="approveModal.item?.fundType === 'income' ? 'text-emerald-600' : 'text-rose-600'" x-text="'¥' + formatMoney(approveModal.item?.amount || 0)"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">发生日期：</span>
+                                <span class="font-medium text-slate-800" x-text="approveModal.item?.date"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">填报人：</span>
+                                <span class="font-medium text-slate-800" x-text="approveModal.item?.operator"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">创建时间：</span>
+                                <span class="text-min text-slate-600" x-text="approveModal.item?.createTime"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 关联信息 -->
+                <div class="p-4 bg-white rounded-lg border border-slate-200 shadow-sm mb-6">
+                    <h4 class="text-sm font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-link text-indigo-500"></i> 关联信息
+                    </h4>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="flex">
+                            <span class="w-24 text-slate-500">相对方：</span>
+                            <span class="flex-1 font-medium text-slate-800" x-text="approveModal.item?.counterparty || '-'"></span>
+                        </div>
+                        <div class="flex">
+                            <span class="w-24 text-slate-500">关联合同：</span>
+                            <span class="flex-1 font-medium text-slate-800" x-text="approveModal.item?.contract || '-'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 摘要 -->
+                <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 mb-6">
+                    <h4 class="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-file-lines text-amber-500"></i> 摘要说明
+                    </h4>
+                    <p class="text-sm text-slate-700 leading-relaxed" x-text="approveModal.item?.summary || '无摘要说明'"></p>
+                </div>
+
+                <!-- 驳回原因（如果是驳回状态） -->
+                <div x-show="approveModal.item?.status === 'rejected' && approveModal.item?.rejectReason" class="p-4 bg-red-50 rounded-lg border border-red-200 mb-6">
+                    <h4 class="text-sm font-bold text-red-700 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation"></i> 上次驳回原因
+                    </h4>
+                    <p class="text-sm text-red-600" x-text="approveModal.item?.rejectReason"></p>
+                    <div class="text-min text-red-500 mt-2" x-text="'驳回人：' + approveModal.item?.rejectBy + ' · ' + approveModal.item?.rejectTime"></div>
+                </div>
+
+                <!-- 审批操作区 -->
+                <div class="border-t border-slate-200 pt-6">
+                    <label class="block text-min font-bold text-slate-700 mb-3">审批决策 <span class="text-red-500">*</span></label>
+                    <div class="flex gap-4 mb-4">
+                        <button @click="approveModal.action = 'approve'" 
+                                class="flex-1 py-3 border-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+                                :class="approveModal.action === 'approve' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'border-slate-200 text-slate-600 hover:border-emerald-300'">
+                            <i class="fa-solid fa-check-circle text-lg"></i> 
+                            <div class="text-left">
+                                <div class="font-bold">批准通过</div>
+                                <div class="text-xs opacity-75">进入下一审批环节</div>
+                            </div>
+                        </button>
+                        <button @click="approveModal.action = 'reject'" 
+                                class="flex-1 py-3 border-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+                                :class="approveModal.action === 'reject' ? 'bg-red-50 border-red-500 text-red-700' : 'border-slate-200 text-slate-600 hover:border-red-300'">
+                            <i class="fa-solid fa-times-circle text-lg"></i>
+                            <div class="text-left">
+                                <div class="font-bold">驳回申请</div>
+                                <div class="text-xs opacity-75">返回申请人修改</div>
+                            </div>
+                        </button>
+                    </div>
+                    
+                    <label class="block text-min font-medium text-slate-700 mb-2">
+                        审批意见 <span x-show="approveModal.action === 'reject'" class="text-red-500">*</span>
+                        <span x-show="approveModal.action === 'approve'" class="text-slate-400 font-normal">（选填）</span>
+                    </label>
+                    <textarea x-model="approveModal.comment" rows="3" class="smart-input resize-none" 
+                              :placeholder="approveModal.action === 'approve' ? '请输入审批意见（选填）...' : '请输入驳回原因（必填）...'"></textarea>
+                    <p x-show="approveModal.action === 'reject' && !approveModal.comment" class="text-min text-amber-600 mt-1">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i>驳回时必须填写审批意见
+                    </p>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
+                <button @click="closeApproveModal()" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-white transition">取消</button>
+                <button @click="confirmApprove()" 
+                        class="px-5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
+                        :class="approveModal.action === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'"
+                        :disabled="approveModal.action === 'reject' && !approveModal.comment">
+                    <i class="fa-solid" :class="approveModal.action === 'approve' ? 'fa-check' : 'fa-xmark'"></i>
+                    <span x-text="approveModal.action === 'approve' ? '确认批准' : '确认驳回'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量导入弹窗 -->
+    <div x-show="importModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop p-4" x-cloak @click.self="closeImportModal()">
+        <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl max-h-[90vh] flex flex-col fade-in">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800">批量导入资金明细</h3>
+                <button @click="closeImportModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto custom-scroll p-6">
+                <!-- 步骤指示 -->
+                <div class="flex items-center justify-center mb-6">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">1</div>
+                        <div class="w-20 h-0.5 bg-blue-600"></div>
+                        <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">2</div>
+                        <div class="w-20 h-0.5" :class="importModal.step >= 2 ? 'bg-blue-600' : 'bg-slate-300'"></div>
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" :class="importModal.step >= 2 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'">3</div>
+                    </div>
+                </div>
+
+                <!-- 步骤1：下载模板 -->
+                <div x-show="importModal.step === 1" class="text-center py-8">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-file-excel text-2xl"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-slate-800 mb-2">下载导入模板</h4>
+                    <p class="text-min text-slate-500 mb-6">请使用标准模板填写数据，确保格式正确</p>
+                    <button @click="downloadTemplate()" class="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2 mx-auto">
+                        <i class="fa-solid fa-download"></i> 下载Excel模板
+                    </button>
+                    <div class="mt-6 text-left bg-slate-50 p-4 rounded-lg border border-slate-200 max-w-md mx-auto">
+                        <div class="text-min font-medium text-slate-700 mb-2">模板字段说明：</div>
+                        <ul class="text-min text-slate-500 space-y-1 list-disc list-inside">
+                            <li>明细类型（实际发生/计划）</li>
+                            <li>机构名称、部门名称（必填）</li>
+                            <li>资金类型（回款/支出）</li>
+                            <li>项目名称（见DM01代码）</li>
+                            <li>发生日期、发生金额</li>
+                            <li>相对方名称、关联合同</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 步骤2：上传文件 -->
+                <div x-show="importModal.step === 2">
+                    <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-400 hover:bg-blue-50 transition cursor-pointer" @click="$refs.fileInput.click()">
+                        <input type="file" x-ref="fileInput" class="hidden" accept=".xlsx,.xls" @change="handleFileUpload($event)">
+                        <i class="fa-solid fa-cloud-arrow-up text-4xl text-slate-400 mb-3"></i>
+                        <h4 class="text-lg font-bold text-slate-800 mb-1">点击上传或拖拽文件到此处</h4>
+                        <p class="text-min text-slate-500">支持 .xlsx, .xls 格式，文件大小不超过 5MB</p>
+                    </div>
+                    
+                    <div x-show="importModal.fileName" class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-file-excel text-blue-600"></i>
+                            <span class="text-sm font-medium text-slate-700" x-text="importModal.fileName"></span>
+                        </div>
+                        <button @click="importModal.fileName = ''; importModal.data = []" class="text-slate-400 hover:text-red-600">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 步骤3：数据校验 -->
+                <div x-show="importModal.step === 3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-sm font-bold text-slate-800">数据预览与校验</h4>
+                        <span class="text-min" :class="importModal.errors.length > 0 ? 'text-amber-600' : 'text-emerald-600'" x-text="'共 ' + importModal.data.length + ' 条，' + (importModal.errors.length > 0 ? '发现 ' + importModal.errors.length + ' 处错误' : '校验通过')"></span>
+                    </div>
+                    
+                    <div class="overflow-x-auto border border-slate-200 rounded-lg max-h-60">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-50 sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-2 text-left border-b">行号</th>
+                                    <th class="px-3 py-2 text-left border-b">类型</th>
+                                    <th class="px-3 py-2 text-left border-b">机构</th>
+                                    <th class="px-3 py-2 text-left border-b">类型</th>
+                                    <th class="px-3 py-2 text-left border-b">项目</th>
+                                    <th class="px-3 py-2 text-right border-b">金额</th>
+                                    <th class="px-3 py-2 text-center border-b">状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(row, idx) in importModal.data" :key="idx">
+                                    <tr class="border-b" :class="row.error ? 'bg-red-50' : ''">
+                                        <td class="px-3 py-2" x-text="row.lineNo"></td>
+                                        <td class="px-3 py-2">
+                                            <span class="text-min" :class="row.recordType === 'actual' ? 'text-blue-600' : 'text-amber-600'" x-text="row.recordType === 'actual' ? '实际' : '计划'"></span>
+                                        </td>
+                                        <td class="px-3 py-2" x-text="row.orgName"></td>
+                                        <td class="px-3 py-2">
+                                            <span :class="row.fundType === 'income' ? 'text-emerald-600' : 'text-rose-600'" x-text="row.fundType === 'income' ? '回款' : '支出'"></span>
+                                        </td>
+                                        <td class="px-3 py-2 text-min" x-text="getProjectName(row.projectCode)"></td>
+                                        <td class="px-3 py-2 text-right text-num" x-text="'¥' + formatMoney(row.amount)"></td>
+                                        <td class="px-3 py-2 text-center">
+                                            <i x-show="!row.error" class="fa-solid fa-check-circle text-emerald-500"></i>
+                                            <i x-show="row.error" class="fa-solid fa-circle-exclamation text-red-500" :title="row.errorMsg"></i>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div x-show="importModal.errors.length > 0" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-min text-amber-700">
+                        <div class="font-bold mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>发现错误（将跳过以下错误数据）：</span>
+                        </div>
+                        <ul class="space-y-1 list-disc list-inside">
+                            <template x-for="error in importModal.errors.slice(0, 5)" :key="error">
+                                <li x-text="error"></li>
+                            </template>
+                            <li x-show="importModal.errors.length > 5" x-text="'还有 ' + (importModal.errors.length - 5) + ' 处错误...'"></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                <button x-show="importModal.step > 1" @click="importModal.step--" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-white transition">上一步</button>
+                
+                <!-- 步骤3的错误提示和导入按钮 -->
+                <div x-show="importModal.step === 3" class="flex items-center gap-3">
+                    <span x-show="importModal.errors.length > 0" class="text-min text-amber-600 flex items-center gap-1">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span x-text="'将导入 ' + (importModal.data.length - importModal.errors.length) + ' 条有效数据'"></span>
+                    </span>
+                </div>
+                
+                <div class="flex gap-3 ml-auto">
+                    <button @click="closeImportModal()" class="px-5 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-white transition">取消</button>
+                    <button x-show="importModal.step === 1" @click="importModal.step = 2" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">下一步</button>
+                    <button x-show="importModal.step === 2 && importModal.fileName" @click="validateImportData()" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">开始校验</button>
+                    <!-- 修改这里：无论是否有错误都显示确认导入按钮 -->
+                    <button x-show="importModal.step === 3" @click="confirmImport()" 
+                            class="px-5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
+                            :class="importModal.errors.length > 0 ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'">
+                        <i class="fa-solid" :class="importModal.errors.length > 0 ? 'fa-exclamation-circle' : 'fa-check'"></i>
+                        <span x-text="importModal.errors.length > 0 ? '忽略错误并导入' : '确认导入'"></span>
+                        <span x-show="importModal.data.length - importModal.errors.length > 0" x-text="'(' + (importModal.data.length - importModal.errors.length) + '条)'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div x-show="deleteModal.open" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop" x-cloak>
+        <div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 text-center fade-in">
+            <div class="w-14 h-14 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-exclamation text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">确认删除?</h3>
+            <p class="text-min text-slate-500 mb-6">
+                该资金明细记录将被永久删除<br>
+                <span class="text-red-500 text-xs">此操作不可恢复</span>
+            </p>
+            <div class="flex justify-center gap-3">
+                <button @click="deleteModal.open = false" class="px-5 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm font-medium hover:bg-slate-50 transition">取消</button>
+                <button @click="executeDelete()" class="px-5 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 shadow-md shadow-red-200 transition">确认删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div x-show="toast.show" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed top-20 right-6 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-2xl z-[100] flex items-center gap-3">
+        <i class="fa-solid" :class="toast.type === 'success' ? 'fa-check-circle text-emerald-400' : 'fa-circle-exclamation text-rose-400'"></i>
+        <span class="text-sm font-medium" x-text="toast.message"></span>
+    </div>
+
+    <script>
+        function fundDetailApp() {
+            return {
+                loading: false,
+                selectedIds: [],
+                currentPage: 1,
+                pageSize: 10,
+                currentTab: 'all',
+                recordTypeTab: 'actual', // 'actual' 或 'plan'
+                
+                filters: {
+                    keyword: '',
+                    orgName: '',
+                    deptName: '',
+                    fundType: '',
+                    projectName: '',
+                    date: ''
+                },
+                
+                // 机构与部门数据
+                orgList: ['中检计量有限公司', '中检集团溯源技术服务有限公司', '中检（江苏）计量测试有限公司', '中检华北计量有限公司'],
+                deptList: ['有机分析实验室', '无机分析实验室', '微生物检测部', '质控部', '研发部', '财务部'],
+                
+                // 项目类型DM01 - 按截图更新，橙色标记为auto（自动计算）
+                projectTypes: [
+                    // 回款类 A
+                    { code: 'A00', name: '预计回款小计', type: 'income', auto: true },
+                    { code: 'A01', name: '销售回款', type: 'income', auto: false },
+                    { code: 'A02', name: '筹资回款', type: 'income', auto: false },
+                    { code: 'A03', name: '投资回款', type: 'income', auto: false },
+                    { code: 'A04', name: '其他回款', type: 'income', auto: false },
+                    // 支出类 B
+                    { code: 'B00', name: '预计支出小计', type: 'expense', auto: true },
+                    { code: 'B10', name: '成本支出', type: 'expense', auto: true },
+                    { code: 'B11', name: '人工成本支出', type: 'expense', auto: false },
+                    { code: 'B12', name: '业务协作费支出', type: 'expense', auto: false },
+                    { code: 'B13', name: '检验检测费支出', type: 'expense', auto: false },
+                    { code: 'B14', name: '其他成本支出', type: 'expense', auto: false },
+                    { code: 'B20', name: '费用支出', type: 'expense', auto: true },
+                    { code: 'B21', name: '销售费用支出', type: 'expense', auto: false },
+                    { code: 'B22', name: '管理费用支出', type: 'expense', auto: false },
+                    { code: 'B23', name: '研发费用支出', type: 'expense', auto: false },
+                    { code: 'B24', name: '财务费用支出', type: 'expense', auto: false },
+                    { code: 'B30', name: '税费支出', type: 'expense', auto: true },
+                    { code: 'B31', name: '企业所得税支出', type: 'expense', auto: false },
+                    { code: 'B32', name: '增值税支出', type: 'expense', auto: false },
+                    { code: 'B33', name: '其他税费支出', type: 'expense', auto: false },
+                    { code: 'B40', name: '采购支出', type: 'expense', auto: true },
+                    { code: 'B41', name: '物料采购支出', type: 'expense', auto: false },
+                    { code: 'B42', name: '资产采购支出', type: 'expense', auto: false },
+                    { code: 'B50', name: '工程支出', type: 'expense', auto: true },
+                    { code: 'B51', name: '建筑工程', type: 'expense', auto: false },
+                    { code: 'B52', name: '设备安装工程', type: 'expense', auto: false },
+                    { code: 'B53', name: '其他工程支出', type: 'expense', auto: false },
+                    { code: 'B60', name: '偿还贷款支出', type: 'expense', auto: true },
+                    { code: 'B61', name: '偿还本金', type: 'expense', auto: false },
+                    { code: 'B62', name: '偿还利息', type: 'expense', auto: false },
+                    { code: 'B70', name: '股权投资支出', type: 'expense', auto: false },
+                    { code: 'B80', name: '资本性研发支出', type: 'expense', auto: false },
+                    { code: 'B90', name: '利润分配支出', type: 'expense', auto: false },
+                    { code: 'Ba0', name: '其他支出', type: 'expense', auto: false }
+                ],
+                
+                // 相对方数据（客户/供应商）
+                customers: ['西安化学试剂有限公司', '赛默飞世尔科技', '国药集团化学试剂', '阿拉丁试剂(上海)有限公司', '某检测科技公司', '某制药企业', '某医疗器械公司', '某科研院所'],
+                suppliers: ['西安化学试剂有限公司', '赛默飞世尔科技', '国药集团化学试剂', '阿拉丁试剂(上海)有限公司', '某设备供应商', '某工程公司', '某仪器厂商', '某耗材供应商'],
+                
+                // 主数据
+                dataList: [],
+                
+                // 弹窗状态
+                editModal: {
+                    open: false,
+                    isEdit: false,
+                    form: {
+                        id: null,
+                        recordType: 'actual',
+                        orgName: '',
+                        deptName: '',
+                        fundType: 'expense',
+                        projectCode: '',
+                        date: '',
+                        amount: 0,
+                        counterparty: '',
+                        contract: '',
+                        summary: '',
+                        status: 'draft'
+                    }
+                },
+                
+                // 相对方选择弹窗
+                counterpartyModal: { 
+                    open: false, 
+                    search: '', 
+                    filteredList: [] 
+                },
+                
+                detailModal: { open: false, item: null },
+                approveModal: { open: false, item: null, action: 'approve', comment: '' },
+                deleteModal: { open: false, item: null },
+                importModal: { open: false, step: 1, fileName: '', data: [], errors: [] },
+                
+                errors: {},
+                
+                toast: { show: false, message: '', type: 'success' },
+                
+                approvalSteps: ['部门领导', '财务审核', '财务主管', '财务总监'],
+                
+                init() {
+                    this.generateMockData();
+                },
+                
+                // 切换明细类型Tab
+                switchRecordType(type) {
+                    this.recordTypeTab = type;
+                    this.currentTab = 'all';
+                    this.currentPage = 1;
+                    this.selectedIds = [];
+                },
+                
+                // 生成模拟数据
+                generateMockData() {
+                    const summaries = [
+                        'Q1实验耗材采购款项', '色谱柱采购预付款', '设备维护费用', 
+                        '客户检测服务费回款', '实验室装修尾款', '培训费用支出',
+                        '软件授权费', '试剂采购款', '设备校准费用', '月度资金计划', '季度预算安排'
+                    ];
+                    
+                    for (let i = 1; i <= 35; i++) {
+                        const fundType = Math.random() > 0.3 ? 'expense' : 'income';
+                        const projects = this.projectTypes.filter(p => p.type === fundType && !p.auto);
+                        const project = projects[Math.floor(Math.random() * projects.length)];
+                        const status = ['draft', 'pending', 'approved', 'rejected'][Math.floor(Math.random() * 4)];
+                        const recordType = i <= 20 ? 'actual' : 'plan'; // 前20条实际，后15条计划
+                        
+                        this.dataList.push({
+                            id: i,
+                            recordType: recordType,
+                            orgName: this.orgList[Math.floor(Math.random() * this.orgList.length)],
+                            deptName: this.deptList[Math.floor(Math.random() * this.deptList.length)],
+                            fundType: fundType,
+                            projectCode: project?.code || 'A01',
+                            date: '2024-01-' + String(Math.floor(Math.random() * 28) + 1).padStart(2, '0'),
+                            amount: Math.floor(Math.random() * 50000) + 1000,
+                            counterparty: Math.random() > 0.5 ? '西安化学试剂有限公司' : '赛默飞世尔科技',
+                            contract: Math.random() > 0.5 ? 'HT202400' + i : '',
+                            summary: summaries[Math.floor(Math.random() * summaries.length)],
+                            operator: ['张三', '李四', '王五'][Math.floor(Math.random() * 3)],
+                            createTime: '2024-01-' + String(Math.floor(Math.random() * 28) + 1).padStart(2, '0') + ' 10:30:00',
+                            submitTime: status !== 'draft' ? '2024-01-' + String(Math.floor(Math.random() * 28) + 1).padStart(2, '0') + ' 14:20:00' : '',
+                            status: status,
+                            approvalStep: status === 'pending' ? Math.floor(Math.random() * 3) : (status === 'approved' ? 4 : 0),
+                            rejectReason: status === 'rejected' ? '金额超出预算，请重新核对。' : '',
+                            rejectBy: status === 'rejected' ? '部门领导' : '',
+                            rejectTime: status === 'rejected' ? '2024-01-15 16:30:00' : ''
+                        });
+                    }
+                },
+                
+                // 总统计（不受Tab影响）
+                get stats() {
+                    return {
+                        total: this.dataList.length,
+                        actualCount: this.dataList.filter(d => d.recordType === 'actual').length,
+                        planCount: this.dataList.filter(d => d.recordType === 'plan').length,
+                        draft: this.dataList.filter(d => d.status === 'draft').length,
+                        pending: this.dataList.filter(d => d.status === 'pending').length,
+                        approved: this.dataList.filter(d => d.status === 'approved').length,
+                        rejected: this.dataList.filter(d => d.status === 'rejected').length
+                    };
+                },
+                
+                // 当前Tab过滤后的统计
+                get filteredStats() {
+                    const filtered = this.dataList.filter(item => item.recordType === this.recordTypeTab);
+                    return {
+                        total: filtered.length,
+                        draft: filtered.filter(d => d.status === 'draft').length,
+                        pending: filtered.filter(d => d.status === 'pending').length,
+                        approved: filtered.filter(d => d.status === 'approved').length,
+                        rejected: filtered.filter(d => d.status === 'rejected').length
+                    };
+                },
+                
+                get filteredData() {
+                    let data = this.dataList.filter(item => {
+                        // 首先按明细类型过滤
+                        if (item.recordType !== this.recordTypeTab) return false;
+                        
+                        // Tab筛选（状态）
+                        if (this.currentTab === 'draft' && item.status !== 'draft') return false;
+                        if (this.currentTab === 'pending' && item.status !== 'pending') return false;
+                        if (this.currentTab === 'approved' && item.status !== 'approved') return false;
+                        if (this.currentTab === 'rejected' && item.status !== 'rejected') return false;
+                        
+                        // 关键词搜索
+                        if (this.filters.keyword) {
+                            const keyword = this.filters.keyword.toLowerCase();
+                            const match = item.summary?.toLowerCase().includes(keyword) ||
+                                         item.contract?.toLowerCase().includes(keyword) ||
+                                         item.counterparty?.toLowerCase().includes(keyword);
+                            if (!match) return false;
+                        }
+                        
+                        if (this.filters.orgName && item.orgName !== this.filters.orgName) return false;
+                        if (this.filters.deptName && item.deptName !== this.filters.deptName) return false;
+                        if (this.filters.fundType && item.fundType !== this.filters.fundType) return false;
+                        if (this.filters.projectName && item.projectCode !== this.filters.projectName) return false;
+                        if (this.filters.date && item.date !== this.filters.date) return false;
+                        
+                        return true;
+                    });
+                    
+                    // 按日期降序
+                    data.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    return data;
+                },
+                
+                get paginatedData() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    return this.filteredData.slice(start, start + this.pageSize);
+                },
+                
+                get totalPages() {
+                    return Math.ceil(this.filteredData.length / this.pageSize) || 1;
+                },
+                
+                get displayedPages() {
+                    const pages = [];
+                    const maxDisplay = 5;
+                    let start = Math.max(1, this.currentPage - 2);
+                    let end = Math.min(this.totalPages, start + maxDisplay - 1);
+                    if (end - start < maxDisplay - 1) start = Math.max(1, end - maxDisplay + 1);
+                    for (let i = start; i <= end; i++) pages.push(i);
+                    return pages;
+                },
+                
+                get isAllSelected() {
+                    return this.paginatedData.length > 0 && this.paginatedData.every(item => this.selectedIds.includes(item.id));
+                },
+                
+                get filteredProjects() {
+                    return this.projectTypes.filter(p => p.type === this.editModal.form.fundType && !p.auto);
+                },
+                
+                // 判断当前选择的项目是否为自动计算项
+                get isAutoCalculatedProject() {
+                    const project = this.projectTypes.find(p => p.code === this.editModal.form.projectCode);
+                    return project ? project.auto : false;
+                },
+                
+                toggleSelectAll() {
+                    if (this.isAllSelected) {
+                        this.selectedIds = [];
+                    } else {
+                        this.selectedIds = this.paginatedData.map(item => item.id);
+                    }
+                },
+                
+                getStatusText(status) {
+                    const map = {
+                        'draft': '草稿',
+                        'pending': '审批中',
+                        'approved': '已审核',
+                        'rejected': '已驳回'
+                    };
+                    return map[status] || status;
+                },
+                
+                getProjectName(code) {
+                    const project = this.projectTypes.find(p => p.code === code);
+                    return project ? project.name : code;
+                },
+                
+                getStepClass(idx, currentStep, status) {
+                    if (status === 'rejected' && idx === currentStep) return 'rejected';
+                    if (idx < currentStep) return 'completed';
+                    if (idx === currentStep) return 'active';
+                    return '';
+                },
+                
+                formatMoney(amount) {
+                    return amount?.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00';
+                },
+                
+                applyFilters() {
+                    this.currentPage = 1;
+                    this.selectedIds = [];
+                },
+                
+                resetFilters() {
+                    this.filters = {
+                        keyword: '',
+                        orgName: '',
+                        deptName: '',
+                        fundType: '',
+                        projectName: '',
+                        date: ''
+                    };
+                    this.applyFilters();
+                },
+                
+                // 计算自动计算项目的金额
+                calculateAutoAmount() {
+                    if (!this.isAutoCalculatedProject) return;
+                    
+                    const code = this.editModal.form.projectCode;
+                    const orgName = this.editModal.form.orgName;
+                    const deptName = this.editModal.form.deptName;
+                    const date = this.editModal.form.date;
+                    
+                    let childrenCodes = [];
+                    
+                    // 根据code确定子项范围
+                    if (code === 'A00') {
+                        // A00 = A01+A02+A03+A04
+                        childrenCodes = ['A01', 'A02', 'A03', 'A04'];
+                    } else if (code === 'B00') {
+                        // B00 = 所有支出项（除B00本身）
+                        childrenCodes = this.projectTypes.filter(p => p.type === 'expense' && p.code !== 'B00').map(p => p.code);
+                    } else if (code === 'B10') {
+                        childrenCodes = ['B11', 'B12', 'B13', 'B14'];
+                    } else if (code === 'B20') {
+                        childrenCodes = ['B21', 'B22', 'B23', 'B24'];
+                    } else if (code === 'B30') {
+                        childrenCodes = ['B31', 'B32', 'B33'];
+                    } else if (code === 'B40') {
+                        childrenCodes = ['B41', 'B42'];
+                    } else if (code === 'B50') {
+                        childrenCodes = ['B51', 'B52', 'B53'];
+                    } else if (code === 'B60') {
+                        childrenCodes = ['B61', 'B62'];
+                    }
+                    
+                    // 计算子项目金额总和（同一机构、部门、日期）
+                    let total = 0;
+                    this.dataList.forEach(item => {
+                        if (childrenCodes.includes(item.projectCode) && 
+                            item.orgName === orgName && 
+                            item.deptName === deptName && 
+                            item.date === date &&
+                            item.status !== 'rejected' &&
+                            item.id !== this.editModal.form.id) { // 排除当前编辑的项
+                            total += Number(item.amount) || 0;
+                        }
+                    });
+                    
+                    this.editModal.form.amount = total;
+                },
+                
+                // 项目名称改变时触发
+                onProjectChange() {
+                    this.validateField('projectCode');
+                    this.calculateAutoAmount();
+                },
+                
+                // 相对方选择弹窗操作
+                openCounterpartyModal() {
+                    this.counterpartyModal.open = true;
+                    this.counterpartyModal.search = '';
+                    this.searchCounterpartyModal();
+                },
+
+                closeCounterpartyModal() {
+                    this.counterpartyModal.open = false;
+                    this.counterpartyModal.search = '';
+                },
+
+                searchCounterpartyModal() {
+                    const list = this.editModal.form.fundType === 'income' ? this.customers : this.suppliers;
+                    const keyword = this.counterpartyModal.search.toLowerCase();
+                    this.counterpartyModal.filteredList = list.filter(item => 
+                        item.toLowerCase().includes(keyword)
+                    );
+                },
+
+                selectCounterpartyFromModal(name) {
+                    this.editModal.form.counterparty = name;
+                    this.validateField('counterparty');
+                    this.closeCounterpartyModal();
+                },
+                
+                // 编辑弹窗操作
+                openEditModal(item = null) {
+                    this.errors = {};
+                    
+                    if (item) {
+                        this.editModal.isEdit = true;
+                        this.editModal.form = { ...item };
+                    } else {
+                        this.editModal.isEdit = false;
+                        this.editModal.form = {
+                            id: null,
+                            recordType: this.recordTypeTab, // 根据当前Tab自动设置类型
+                            orgName: '',
+                            deptName: '',
+                            fundType: 'expense',
+                            projectCode: '',
+                            date: new Date().toISOString().split('T')[0],
+                            amount: 0,
+                            counterparty: '',
+                            contract: '',
+                            summary: '',
+                            status: 'draft'
+                        };
+                    }
+                    this.editModal.open = true;
+                    
+                    // 如果是自动计算项目，立即计算金额
+                    if (this.isAutoCalculatedProject) {
+                        this.calculateAutoAmount();
+                    }
+                },
+                
+                closeEditModal() {
+                    this.editModal.open = false;
+                    setTimeout(() => {
+                        this.editModal.isEdit = false;
+                        this.errors = {};
+                    }, 200);
+                },
+                
+                onFundTypeChange() {
+                    this.editModal.form.projectCode = '';
+                    this.editModal.form.counterparty = '';
+                    this.editModal.form.amount = 0;
+                },
+                
+                validateField(field) {
+                    const value = this.editModal.form[field];
+                    switch(field) {
+                        case 'orgName':
+                            this.errors.orgName = !value ? '请选择机构名称' : '';
+                            break;
+                        case 'deptName':
+                            this.errors.deptName = !value ? '请选择部门名称' : '';
+                            break;
+                        case 'projectCode':
+                            this.errors.projectCode = !value ? '请选择项目名称' : '';
+                            break;
+                        case 'date':
+                            this.errors.date = !value ? '请选择发生日期' : '';
+                            break;
+                        case 'amount':
+                            // 自动计算项不验证金额是否>0（可能为0）
+                            if (this.isAutoCalculatedProject) {
+                                this.errors.amount = '';
+                            } else {
+                                this.errors.amount = !value || value <= 0 ? '请输入有效的发生金额' : '';
+                            }
+                            break;
+                        case 'counterparty':
+                            this.errors.counterparty = !value ? '请选择相对方名称' : '';
+                            break;
+                        case 'summary':
+                            this.errors.summary = !value ? '请输入摘要说明' : '';
+                            break;
+                    }
+                    return !this.errors[field];
+                },
+                
+                validateForm() {
+                    const fields = ['orgName', 'deptName', 'projectCode', 'date', 'amount', 'counterparty', 'summary'];
+                    let valid = true;
+                    fields.forEach(field => {
+                        if (!this.validateField(field)) valid = false;
+                    });
+                    return valid;
+                },
+                
+                saveDraft() {
+                    if (!this.validateForm()) {
+                        this.showToast('请完善必填项', 'error');
+                        return;
+                    }
+                    
+                    const formData = { ...this.editModal.form };
+                    
+                    if (this.editModal.isEdit) {
+                        const index = this.dataList.findIndex(d => d.id === formData.id);
+                        if (index > -1) {
+                            this.dataList[index] = { ...this.dataList[index], ...formData, status: 'draft' };
+                        }
+                    } else {
+                        formData.id = Date.now();
+                        formData.status = 'draft';
+                        formData.operator = '当前用户';
+                        formData.createTime = new Date().toLocaleString();
+                        this.dataList.unshift(formData);
+                    }
+                    
+                    this.showToast('保存草稿成功', 'success');
+                    this.closeEditModal();
+                },
+                
+                submitForm() {
+                    if (!this.validateForm()) {
+                        this.showToast('请完善必填项', 'error');
+                        return;
+                    }
+                    
+                    const formData = { ...this.editModal.form };
+                    
+                    if (this.editModal.isEdit) {
+                        const index = this.dataList.findIndex(d => d.id === formData.id);
+                        if (index > -1) {
+                            this.dataList[index] = { 
+                                ...this.dataList[index], 
+                                ...formData, 
+                                status: 'pending',
+                                approvalStep: 0,
+                                submitTime: new Date().toLocaleString()
+                            };
+                        }
+                    } else {
+                        formData.id = Date.now();
+                        formData.status = 'pending';
+                        formData.approvalStep = 0;
+                        formData.operator = '当前用户';
+                        formData.createTime = new Date().toLocaleString();
+                        formData.submitTime = new Date().toLocaleString();
+                        this.dataList.unshift(formData);
+                    }
+                    
+                    this.showToast('提交审核成功', 'success');
+                    this.closeEditModal();
+                },
+                
+                // 行操作
+                submitItem(item) {
+                    if (confirm(`确定提交该${item.fundType === 'income' ? '回款' : '支出'}记录进行审批吗？`)) {
+                        item.status = 'pending';
+                        item.approvalStep = 0;
+                        item.submitTime = new Date().toLocaleString();
+                        this.showToast('已提交审批', 'success');
+                    }
+                },
+                
+                recallItem(item) {
+                    if (confirm('确定撤回该记录吗？撤回后将返回草稿状态。')) {
+                        item.status = 'draft';
+                        item.approvalStep = 0;
+                        this.showToast('已撤回', 'success');
+                    }
+                },
+                
+                deleteItem(item) {
+                    this.deleteModal.item = item;
+                    this.deleteModal.open = true;
+                },
+                
+                executeDelete() {
+                    if (this.deleteModal.item) {
+                        const index = this.dataList.findIndex(d => d.id === this.deleteModal.item.id);
+                        if (index > -1) {
+                            this.dataList.splice(index, 1);
+                            this.showToast('删除成功', 'success');
+                        }
+                    }
+                    this.deleteModal.open = false;
+                    this.deleteModal.item = null;
+                },
+                
+                // 详情弹窗
+                viewDetail(item) {
+                    this.detailModal.item = item;
+                    this.detailModal.open = true;
+                },
+                
+                closeDetailModal() {
+                    this.detailModal.open = false;
+                    setTimeout(() => this.detailModal.item = null, 200);
+                },
+                
+                // 审批弹窗
+                openApproveModal(item) {
+                    this.approveModal.item = item;
+                    this.approveModal.action = 'approve';
+                    this.approveModal.comment = '';
+                    this.approveModal.open = true;
+                },
+                
+                closeApproveModal() {
+                    this.approveModal.open = false;
+                    setTimeout(() => {
+                        this.approveModal.item = null;
+                        this.approveModal.comment = '';
+                    }, 200);
+                },
+                
+                confirmApprove() {
+                    // 驳回时必须填写意见，批准时不需要
+                    if (this.approveModal.action === 'reject' && !this.approveModal.comment) {
+                        this.showToast('驳回时必须填写审批意见', 'error');
+                        return;
+                    }
+                    
+                    const item = this.approveModal.item;
+                    if (this.approveModal.action === 'approve') {
+                        item.approvalStep = (item.approvalStep || 0) + 1;
+                        if (item.approvalStep >= 4) {
+                            item.status = 'approved';
+                        }
+                        this.showToast('审批通过', 'success');
+                    } else {
+                        item.status = 'rejected';
+                        item.rejectReason = this.approveModal.comment;
+                        item.rejectBy = '当前审批人';
+                        item.rejectTime = new Date().toLocaleString();
+                        this.showToast('已驳回', 'error');
+                    }
+                    
+                    this.closeApproveModal();
+                },
+                
+                // 批量导入
+                openImportModal() {
+                    this.importModal = { open: true, step: 1, fileName: '', data: [], errors: [] };
+                },
+                
+                closeImportModal() {
+                    this.importModal.open = false;
+                },
+                
+                downloadTemplate() {
+                    this.showToast('模板下载成功', 'success');
+                    setTimeout(() => this.importModal.step = 2, 500);
+                },
+                
+                handleFileUpload(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.importModal.fileName = file.name;
+                        this.showToast('文件已选择', 'success');
+                    }
+                },
+                
+                validateImportData() {
+                    // 模拟校验数据
+                    const mockData = [
+                        { lineNo: 1, recordType: 'actual', orgName: '中检计量有限公司', fundType: 'expense', projectCode: 'B12', amount: 15000, error: false },
+                        { lineNo: 2, recordType: 'plan', orgName: '中检华北计量有限公司', fundType: 'income', projectCode: 'A01', amount: 25000, error: false },
+                        { lineNo: 3, recordType: 'actual', orgName: '某错误机构', fundType: 'expense', projectCode: 'B99', amount: -1000, error: true, errorMsg: '机构不存在，项目代码不存在' },
+                        { lineNo: 4, recordType: 'plan', orgName: '中检（江苏）计量测试有限公司', fundType: 'expense', projectCode: 'B21', amount: 8000, error: false },
+                        { lineNo: 5, recordType: 'actual', orgName: '', fundType: 'income', projectCode: 'A02', amount: 5000, error: true, errorMsg: '机构名称不能为空' }
+                    ];
+                    
+                    this.importModal.data = mockData;
+                    this.importModal.errors = mockData.filter(d => d.error);
+                    this.importModal.step = 3;
+                },
+                
+                // 修改确认导入方法，过滤错误数据
+                confirmImport() {
+                    const validData = this.importModal.data.filter(d => !d.error);
+                    if (validData.length === 0) {
+                        this.showToast('没有可导入的有效数据', 'error');
+                        return;
+                    }
+                    
+                    // 执行导入（这里只模拟添加到列表）
+                    validData.forEach(row => {
+                        this.dataList.unshift({
+                            id: Date.now() + Math.random(),
+                            recordType: row.recordType || 'actual',
+                            orgName: row.orgName || this.orgList[0],
+                            deptName: this.deptList[0],
+                            fundType: row.fundType,
+                            projectCode: row.projectCode,
+                            date: new Date().toISOString().split('T')[0],
+                            amount: row.amount,
+                            counterparty: '批量导入',
+                            contract: '',
+                            summary: '批量导入数据',
+                            operator: '当前用户',
+                            createTime: new Date().toLocaleString(),
+                            status: 'draft'
+                        });
+                    });
+                    
+                    this.showToast(`成功导入 ${validData.length} 条有效数据${this.importModal.errors.length > 0 ? '，已跳过 ' + this.importModal.errors.length + ' 条错误数据' : ''}`, 'success');
+                    this.closeImportModal();
+                },
+                
+                // 批量操作
+                batchSubmit() {
+                    const count = this.selectedIds.length;
+                    if (!confirm(`确定批量提交选中的 ${count} 个记录吗？`)) return;
+                    
+                    let successCount = 0;
+                    this.selectedIds.forEach(id => {
+                        const item = this.dataList.find(d => d.id === id);
+                        if (item && item.status === 'draft') {
+                            item.status = 'pending';
+                            item.approvalStep = 0;
+                            successCount++;
+                        }
+                    });
+                    
+                    this.selectedIds = [];
+                    this.showToast(`成功提交 ${successCount} 个记录`, 'success');
+                },
+                
+                batchDelete() {
+                    const count = this.selectedIds.length;
+                    if (!confirm(`确定删除选中的 ${count} 个记录吗？此操作不可恢复！`)) return;
+                    
+                    this.dataList = this.dataList.filter(d => !this.selectedIds.includes(d.id) || d.status === 'pending');
+                    this.selectedIds = [];
+                    this.showToast('批量删除成功', 'success');
+                },
+                
+                // 通用
+                refreshData() {
+                    this.loading = true;
+                    setTimeout(() => {
+                        this.loading = false;
+                        this.showToast('数据已刷新', 'success');
+                    }, 500);
+                },
+                
+                exportData() {
+                    this.showToast('正在导出数据...', 'success');
+                },
+                
+                showToast(message, type = 'success') {
+                    this.toast = { show: true, message, type };
+                    setTimeout(() => this.toast.show = false, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
