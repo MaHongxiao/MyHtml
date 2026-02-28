@@ -171,9 +171,9 @@
         </div>
     </header>
 
-    <!-- 步骤进度条 -->
+    <!-- 步骤进度条 - 简化为3步 -->
     <div class="bg-white border-b border-slate-200 px-6 py-4">
-        <div class="flex justify-between max-w-3xl mx-auto">
+        <div class="flex justify-between max-w-2xl mx-auto">
             <template x-for="(step, index) in steps" :key="index">
                 <div class="step-item flex-1 flex flex-col items-center" 
                      :class="{ 'active': currentStep === index, 'completed': currentStep > index }">
@@ -236,10 +236,9 @@
                     <div class="mt-8">
                         <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
                             <i class="fa-solid fa-table-list text-blue-600"></i>
-                            模板字段说明（基于图2表单结构）
+                            模板字段说明
                         </h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <!-- 必填字段 -->
                             <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
                                 <div class="flex items-center gap-2 mb-1">
                                     <span class="field-badge badge-required">必填</span>
@@ -275,8 +274,6 @@
                                 </div>
                                 <p class="text-min text-slate-500">格式：YYYY-MM-DD</p>
                             </div>
-
-                            <!-- 选填字段 -->
                             <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
                                 <div class="flex items-center gap-2 mb-1">
                                     <span class="field-badge badge-optional">选填</span>
@@ -294,23 +291,9 @@
                             <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
                                 <div class="flex items-center gap-2 mb-1">
                                     <span class="field-badge badge-optional">选填</span>
-                                    <span class="font-semibold text-slate-800 text-sm">关联集团客户证件代码</span>
-                                </div>
-                                <p class="text-min text-slate-500">集团证件代码</p>
-                            </div>
-                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="field-badge badge-optional">选填</span>
                                     <span class="font-semibold text-slate-800 text-sm">客户联系人</span>
                                 </div>
-                                <p class="text-min text-slate-500">联系人姓名</p>
-                            </div>
-                            <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="field-badge badge-optional">选填</span>
-                                    <span class="font-semibold text-slate-800 text-sm">客户联系方式</span>
-                                </div>
-                                <p class="text-min text-slate-500">电话/邮箱</p>
+                                <p class="text-min text-slate-500">联系人姓名/电话</p>
                             </div>
                         </div>
 
@@ -318,7 +301,7 @@
                             <div class="text-min text-blue-700 flex items-start gap-2">
                                 <i class="fa-solid fa-circle-info mt-0.5"></i>
                                 <div>
-                                    <span class="font-semibold">提示：</span>线索批次号和线索编号将由系统自动生成，无需在模板中填写。上传后将自动校验客户标识有效性及必填字段完整性。
+                                    <span class="font-semibold">提示：</span>线索批次号和线索编号将由系统自动生成。系统将自动校验客户标识有效性、创建跟进计划。
                                 </div>
                             </div>
                         </div>
@@ -326,43 +309,63 @@
                 </div>
             </div>
 
-            <!-- 第二步：数据验证 -->
+            <!-- 第二步：数据验证与确认（合并原第二步和第三步） -->
             <div x-show="currentStep === 1" class="fade-in space-y-6">
+                <!-- 验证统计卡片 -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-white rounded-lg border border-slate-200 p-4 flex items-center justify-between">
+                        <div>
+                            <div class="text-min text-slate-500 mb-1">总数据条数</div>
+                            <div class="text-2xl font-bold text-slate-800" x-text="previewData.length"></div>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center">
+                            <i class="fa-solid fa-list text-slate-400"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg border border-slate-200 p-4 flex items-center justify-between">
+                        <div>
+                            <div class="text-min text-slate-500 mb-1">有效数据</div>
+                            <div class="text-2xl font-bold text-emerald-600" x-text="validationResult.valid"></div>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center">
+                            <i class="fa-solid fa-check text-emerald-600"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg border border-slate-200 p-4 flex items-center justify-between"
+                         :class="validationResult.errors.length > 0 ? 'border-rose-200 bg-rose-50/30' : ''">
+                        <div>
+                            <div class="text-min mb-1" :class="validationResult.errors.length > 0 ? 'text-rose-600' : 'text-slate-500'">错误数据</div>
+                            <div class="text-2xl font-bold" :class="validationResult.errors.length > 0 ? 'text-rose-600' : 'text-slate-400'" x-text="validationResult.errors.length"></div>
+                        </div>
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center"
+                             :class="validationResult.errors.length > 0 ? 'bg-rose-50' : 'bg-slate-50'">
+                            <i class="fa-solid fa-triangle-exclamation" :class="validationResult.errors.length > 0 ? 'text-rose-600' : 'text-slate-400'"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 错误提示（简洁版） -->
+                <div x-show="validationResult.errors.length > 0" class="bg-rose-50 border border-rose-200 rounded-lg px-4 py-3 flex items-start gap-3">
+                    <i class="fa-solid fa-circle-exclamation text-rose-500 mt-0.5"></i>
+                    <div class="flex-1">
+                        <div class="text-sm text-rose-800 font-medium mb-1">检测到 <span x-text="validationResult.errors.length"></span> 条数据存在错误</div>
+                        <div class="text-min text-rose-600">错误数据将被自动跳过不导入。您可直接导入有效数据，或返回修改后重新上传。</div>
+                    </div>
+                </div>
+
+                <!-- 数据预览表格 -->
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                         <div class="flex items-center gap-3">
                             <i class="fa-solid fa-table text-blue-600"></i>
-                            <h3 class="font-bold text-slate-800">数据预览与验证</h3>
+                            <h3 class="font-bold text-slate-800">数据预览</h3>
                         </div>
-                        <div class="flex items-center gap-4 text-min">
-                            <span class="text-slate-500">共 <b class="text-slate-800" x-text="previewData.length"></b> 条数据</span>
-                            <span x-show="validationResult.errors.length > 0" class="text-rose-600">
-                                <i class="fa-solid fa-circle-exclamation mr-1"></i>
-                                <b x-text="validationResult.errors.length"></b> 条错误
-                            </span>
+                        <div class="text-min text-slate-500">
+                            仅显示前 <span x-text="Math.min(previewData.length, 5)"></span> 条预览
                         </div>
                     </div>
 
-                    <!-- 错误提示 -->
-                    <div x-show="validationResult.errors.length > 0" class="bg-rose-50 border-b border-rose-200 px-6 py-3">
-                        <div class="flex items-start gap-3">
-                            <i class="fa-solid fa-circle-xmark text-rose-500 mt-0.5"></i>
-                            <div class="flex-1">
-                                <div class="font-semibold text-rose-800 text-sm mb-1">发现数据错误，建议修正后重新上传</div>
-                                <div class="text-min text-rose-600 space-y-1">
-                                    <template x-for="error in validationResult.errors" :key="error.row">
-                                        <div>第 <b x-text="error.row"></b> 行：<span x-text="error.message"></span></div>
-                                    </template>
-                                </div>
-                                <div class="mt-2 text-min text-rose-700 bg-rose-100/50 p-2 rounded border border-rose-200/50">
-                                    <i class="fa-solid fa-info-circle mr-1"></i> 您可以选择忽略错误继续导入，错误数据将被自动跳过
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 数据预览表格 -->
-                    <div class="overflow-x-auto max-h-[500px] custom-scroll">
+                    <div class="overflow-x-auto max-h-[400px] custom-scroll">
                         <table class="preview-table">
                             <thead>
                                 <tr>
@@ -373,7 +376,6 @@
                                     <th class="w-32">客户名称</th>
                                     <th class="w-32">客户证件代码</th>
                                     <th class="w-28">关联集团客户</th>
-                                    <th class="w-28">集团证件代码</th>
                                     <th class="w-20">联系人</th>
                                     <th class="w-28">联系方式</th>
                                     <th class="w-24 text-center">有效期</th>
@@ -381,7 +383,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <template x-for="(row, index) in previewData" :key="index">
+                                <template x-for="(row, index) in previewData.slice(0, 5)" :key="index">
                                     <tr :class="{ 'error-row': row.hasError }">
                                         <td class="text-center text-slate-400 sticky left-0 bg-white z-10" 
                                             :class="{ 'bg-rose-50': row.hasError }" 
@@ -395,13 +397,9 @@
                                         <td class="truncate font-medium" x-text="row.customerName || '-'"></td>
                                         <td class="text-num text-slate-500" x-text="row.customerCertCode || '-'"></td>
                                         <td class="truncate text-slate-600" x-text="row.groupCustomer || '-'"></td>
-                                        <td class="text-num text-slate-500" x-text="row.groupCertCode || '-'"></td>
                                         <td x-text="row.contactPerson || '-'"></td>
                                         <td x-text="row.contactInfo || '-'"></td>
-                                        <td class="text-center">
-                                            <span x-text="row.validityDate || '-'" 
-                                                  :class="row.validityDate ? 'text-slate-700' : 'text-slate-400'"></span>
-                                        </td>
+                                        <td class="text-center" x-text="row.validityDate || '-'"></td>
                                         <td class="text-center">
                                             <span class="px-2 py-1 rounded-full text-xs font-medium"
                                                   :class="row.hasError ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'"
@@ -412,70 +410,23 @@
                             </tbody>
                         </table>
                     </div>
+                    <div x-show="previewData.length > 5" class="px-6 py-3 bg-slate-50 border-t border-slate-200 text-center text-min text-slate-500">
+                        还有 <span x-text="previewData.length - 5"></span> 条数据未显示...
+                    </div>
+                </div>
+
+                <!-- 导入确认信息 -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+                    <i class="fa-solid fa-circle-info text-blue-600 mt-0.5"></i>
+                    <div class="flex-1 text-sm text-blue-800">
+                        <p class="font-medium mb-1">即将导入 <span x-text="validationResult.valid"></span> 条线索数据</p>
+                        <p class="text-min text-blue-600">导入后将自动创建跟进计划，并校验关联客户信息。错误数据将被自动跳过。</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- 第三步：确认导入 -->
+            <!-- 第三步：导入进度与结果（合并原第四步） -->
             <div x-show="currentStep === 2" class="fade-in space-y-6">
-                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center">
-                    <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <i class="fa-solid fa-upload text-4xl text-blue-600"></i>
-                    </div>
-                    <h2 class="text-xl font-bold text-slate-800 mb-2">确认导入数据</h2>
-                    <p class="text-slate-500">即将导入 <b class="text-slate-800" x-text="validationResult.valid"></b> 条线索数据到系统中</p>
-
-                    <!-- 错误数据警告 -->
-                    <div x-show="validationResult.errors.length > 0" class="bg-rose-50 border border-rose-200 rounded-lg p-4 mb-6 max-w-2xl mx-auto text-left">
-                        <div class="flex items-start gap-3">
-                            <i class="fa-solid fa-circle-exclamation text-rose-500 mt-0.5 text-lg"></i>
-                            <div>
-                                <div class="font-semibold text-rose-800 mb-1">注意：将跳过错误数据</div>
-                                <div class="text-min text-rose-700">
-                                    检测到 <b class="text-rose-900" x-text="validationResult.errors.length"></b> 条数据存在格式错误或必填项缺失，这些数据将被跳过不导入。
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 确认信息 -->
-                    <div class="bg-slate-50 rounded-lg p-6 max-w-lg mx-auto text-left space-y-3 mb-8">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-slate-500">导入文件</span>
-                            <span class="text-slate-800 font-medium" x-text="selectedFile?.name"></span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-slate-500">总数据条数</span>
-                            <span class="text-slate-800 font-medium" x-text="previewData.length + ' 条'"></span>
-                        </div>
-                        <div class="flex justify-between text-sm">
-                            <span class="text-slate-500">有效数据</span>
-                            <span class="text-emerald-600 font-medium" x-text="validationResult.valid + ' 条'"></span>
-                        </div>
-                        <div x-show="validationResult.errors.length > 0" class="flex justify-between text-sm">
-                            <span class="text-slate-500">将跳过错误</span>
-                            <span class="text-rose-600 font-medium" x-text="validationResult.errors.length + ' 条'"></span>
-                        </div>
-                        <div class="border-t border-slate-200 pt-3 mt-3">
-                            <div class="text-min text-slate-500 italic">
-                                <i class="fa-solid fa-robot mr-1"></i>
-                                导入后将自动创建跟进计划，并校验关联客户信息
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-center gap-4">
-                        <button @click="currentStep = 1" class="px-6 py-2.5 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-slate-50 transition">
-                            返回修改
-                        </button>
-                        <button @click="startImport()" class="px-8 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 shadow-lg shadow-blue-200 transition flex items-center gap-2">
-                            <i class="fa-solid fa-check"></i> 确认导入
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 第四步：导入进度与结果 -->
-            <div x-show="currentStep === 3" class="fade-in space-y-6">
                 <!-- 导入中 -->
                 <div x-show="importStatus === 'processing'" class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
                     <div class="mb-8">
@@ -483,7 +434,7 @@
                             <i class="fa-solid fa-circle-notch fa-spin text-3xl text-blue-600"></i>
                         </div>
                         <h2 class="text-xl font-bold text-slate-800 mb-2">正在导入数据...</h2>
-                        <p class="text-slate-500">请勿关闭窗口，正在处理第 <b x-text="currentProgress"></b> / <b x-text="validationResult.valid"></b> 条</p>
+                        <p class="text-slate-500">正在处理第 <b x-text="currentProgress"></b> / <b x-text="validationResult.valid"></b> 条</p>
                     </div>
 
                     <div class="max-w-md mx-auto mb-4">
@@ -530,13 +481,13 @@
                             </div>
                             <div class="bg-white rounded-lg p-4 text-center border border-slate-200">
                                 <div class="text-3xl font-bold text-rose-600 mb-1" x-text="importResult.failed"></div>
-                                <div class="text-min text-slate-500">导入失败</div>
+                                <div class="text-min text-slate-500">错误跳过</div>
                             </div>
                         </div>
 
                         <div x-show="importResult.failed > 0" class="bg-rose-50 border border-rose-200 rounded-lg p-4 mb-6">
                             <h4 class="font-semibold text-rose-800 mb-2 flex items-center gap-2">
-                                <i class="fa-solid fa-circle-exclamation"></i> 失败详情
+                                <i class="fa-solid fa-circle-exclamation"></i> 已跳过的错误数据
                             </h4>
                             <ul class="text-min text-rose-600 space-y-1">
                                 <template x-for="error in importResult.errorDetails" :key="error">
@@ -563,31 +514,32 @@
         </div>
     </main>
 
-    <!-- 底部操作栏 -->
+    <!-- 底部操作栏 - 仅在第0步和第1步显示 -->
     <div x-show="currentStep < 2" class="bg-white border-t border-slate-200 px-6 py-4 flex justify-between items-center">
-        <button @click="closeModal()" class="px-5 py-2 text-slate-500 hover:text-slate-700 font-medium transition">
-            取消
+        <button @click="currentStep === 0 ? closeModal() : (currentStep = 0)" class="px-5 py-2 text-slate-500 hover:text-slate-700 font-medium transition">
+            <span x-text="currentStep === 0 ? '取消' : '返回上传'"></span>
         </button>
         <div class="flex gap-3">
-            <button x-show="currentStep > 0" @click="currentStep--" class="px-5 py-2 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-slate-50 transition">
-                上一步
-            </button>
             <button x-show="currentStep === 0" @click="validateFile()" 
                     :disabled="!selectedFile"
                     :class="{'opacity-50 cursor-not-allowed': !selectedFile}"
                     class="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
                 开始验证
             </button>
-            <button x-show="currentStep === 1" @click="handleNextStep()" 
+
+            <!-- 第1步按钮：直接导入，无需二次确认 -->
+            <button x-show="currentStep === 1" @click="startImport()" 
                     class="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2"
-                    :class="{'bg-amber-600 hover:bg-amber-700': validationResult.errors.length > 0}">
+                    :class="validationResult.errors.length > 0 ? 'bg-amber-600 hover:bg-amber-700' : ''">
                 <template x-if="validationResult.errors.length > 0">
                     <span class="flex items-center gap-2">
-                        <i class="fa-solid fa-triangle-exclamation"></i> 忽略错误并继续
+                        <i class="fa-solid fa-forward"></i> 忽略错误并直接导入
                     </span>
                 </template>
                 <template x-if="validationResult.errors.length === 0">
-                    <span>下一步</span>
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-check"></i> 确认导入
+                    </span>
                 </template>
             </button>
         </div>
@@ -596,8 +548,9 @@
     <script>
         function batchImportApp() {
             return {
+                // 简化为3步：上传、验证、完成
                 currentStep: 0,
-                steps: ['上传文件', '数据验证', '确认导入', '完成'],
+                steps: ['上传文件', '数据验证', '导入完成'],
                 isDragging: false,
                 selectedFile: null,
                 previewData: [],
@@ -647,7 +600,7 @@
                 validateFile() {
                     this.currentStep = 1;
 
-                    // 生成模拟预览数据 - 基于图2的线索字段结构
+                    // 生成模拟预览数据
                     const mockData = [
                         { 
                             source: '展会', 
@@ -730,17 +683,10 @@
                     }, 800);
                 },
 
-                handleNextStep() {
-                    if (this.validationResult.errors.length > 0) {
-                        if (!confirm(`检测到 ${this.validationResult.errors.length} 条数据存在错误，这些错误数据将被跳过不导入。\n\n确定要继续导入其他有效数据吗？`)) {
-                            return;
-                        }
-                    }
-                    this.currentStep++;
-                },
-
+                // 修改：直接开始导入，不再弹出确认框
                 startImport() {
-                    this.currentStep = 3;
+                    // 直接跳到第2步（导入结果页）
+                    this.currentStep = 2;
                     this.importStatus = 'processing';
                     this.currentProgress = 0;
 
@@ -775,7 +721,6 @@
                 },
 
                 downloadTemplate() {
-                    // 基于图2的字段结构生成模板
                     const headers = [
                         '线索来源', '线索名称', '线索描述', '客户名称', 
                         '客户证件代码', '关联集团客户', '关联集团客户证件代码',
