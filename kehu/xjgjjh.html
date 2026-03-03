@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建跟进计划</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        
+        /* 弹窗动画 */
+        .modal-enter {
+            animation: modalEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalEnter {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        
+        /* 自定义滚动条 */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+            background: #cbd5e1; 
+            border-radius: 4px; 
+            border: 2px solid white;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* 表单聚焦效果 */
+        .form-input:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* 响应式字体大小 */
+        @media (max-width: 640px) {
+            .responsive-text { font-size: 0.875rem; }
+            .responsive-label { font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+
+    <!-- 弹窗容器 - 尺寸自适应窗口宽高 -->
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 pointer-events-none">
+        
+        <!-- 弹窗主体 -->
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-[900px] max-h-[92vh] sm:max-h-[90vh] flex flex-col pointer-events-auto modal-enter overflow-hidden border border-white/20">
+            
+            <!-- 头部 -->
+            <div class="flex items-center justify-between px-6 py-4 sm:px-8 sm:py-5 border-b border-gray-100 bg-white shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                        <i class="fas fa-clipboard-check text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 tracking-tight">创建跟进计划</h2>
+                        <p class="text-xs sm:text-sm text-gray-500 mt-0.5">为线索制定详细的跟进策略与时间安排</p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <!-- 可滚动内容区 -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-6 lg:p-8 bg-gray-50/30">
+                <form id="followUpForm" class="space-y-5 sm:space-y-6">
+                    
+                    <!-- 基础信息区（只读） -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-semibold text-gray-700 flex items-center gap-1">
+                                <span class="text-red-500">*</span> 客户名称
+                                <span class="text-xs font-normal text-gray-400 ml-auto">系统自动关联</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text" readonly value="华润新能源集团有限公司" 
+                                    class="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium cursor-not-allowed select-all">
+                                <i class="fas fa-building absolute left-3.5 top-3 text-gray-400"></i>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-semibold text-gray-700 flex items-center gap-1">
+                                <span class="text-red-500">*</span> 关联线索
+                            </label>
+                            <div class="relative">
+                                <input type="text" readonly value="官网表单-新能源咨询-华润集团-20240115" 
+                                    class="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-700 font-medium cursor-not-allowed select-all text-sm">
+                                <i class="fas fa-link absolute left-3.5 top-3 text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 主要配置区 -->
+                    <div class="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 shadow-sm space-y-4 sm:space-y-5">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="w-1 h-5 bg-blue-500 rounded-full"></div>
+                            <h3 class="font-semibold text-gray-900">计划配置</h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                            <!-- 联系人 -->
+                            <div class="space-y-1.5">
+                                <label class="block text-sm font-semibold text-gray-700">
+                                    <span class="text-red-500 mr-1">*</span>联系人
+                                </label>
+                                <div class="relative">
+                                    <select class="form-input w-full pl-10 pr-10 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-sm transition-all">
+                                        <option value="">请选择联系人</option>
+                                        <option value="1">张经理 (采购部)</option>
+                                        <option value="2">李总 (总经理)</option>
+                                        <option value="3">王工 (技术部)</option>
+                                    </select>
+                                    <i class="fas fa-user absolute left-3.5 top-3 text-gray-400"></i>
+                                    <i class="fas fa-chevron-down absolute right-3.5 top-3 text-gray-400 text-xs pointer-events-none"></i>
+                                </div>
+                            </div>
+
+                            <!-- 计划联系日期 -->
+                            <div class="space-y-1.5">
+                                <label class="block text-sm font-semibold text-gray-700">
+                                    <span class="text-red-500 mr-1">*</span>计划联系日期
+                                </label>
+                                <div class="relative">
+                                    <input type="datetime-local" 
+                                        class="form-input w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all">
+                                    <i class="fas fa-calendar-alt absolute left-3.5 top-3 text-gray-400"></i>
+                                </div>
+                            </div>
+
+                            <!-- 计划截止日期 -->
+                            <div class="space-y-1.5">
+                                <label class="block text-sm font-semibold text-gray-700">
+                                    <span class="text-red-500 mr-1">*</span>计划截止日期
+                                </label>
+                                <div class="relative">
+                                    <input type="datetime-local" 
+                                        class="form-input w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all">
+                                    <i class="fas fa-calendar-check absolute left-3.5 top-3 text-gray-400"></i>
+                                </div>
+                            </div>
+
+                            <!-- 访问方式 -->
+                            <div class="space-y-1.5">
+                                <label class="block text-sm font-semibold text-gray-700">
+                                    <span class="text-red-500 mr-1">*</span>访问方式
+                                </label>
+                                <div class="relative">
+                                    <select class="form-input w-full pl-10 pr-10 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-sm transition-all">
+                                        <option value="">请选择访问方式</option>
+                                        <option value="phone">电话沟通</option>
+                                        <option value="visit" selected>上门拜访</option>
+                                        <option value="online">视频会议</option>
+                                        <option value="email">邮件往来</option>
+                                    </select>
+                                    <i class="fas fa-walking absolute left-3.5 top-3 text-gray-400"></i>
+                                    <i class="fas fa-chevron-down absolute right-3.5 top-3 text-gray-400 text-xs pointer-events-none"></i>
+                                </div>
+                            </div>
+
+                            <!-- 跟进人 -->
+                            <div class="space-y-1.5">
+                                <label class="block text-sm font-semibold text-gray-700">
+                                    <span class="text-red-500 mr-1">*</span>跟进人
+                                </label>
+                                <div class="relative">
+                                    <select class="form-input w-full pl-10 pr-10 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-sm transition-all">
+                                        <option value="">请选择跟进人</option>
+                                        <option value="zhangming" selected>张明 (营销总监)</option>
+                                        <option value="lihua">李华 (高级经理)</option>
+                                        <option value="wangtao">王涛 (客户经理)</option>
+                                    </select>
+                                    <i class="fas fa-user-tie absolute left-3.5 top-3 text-gray-400"></i>
+                                    <i class="fas fa-chevron-down absolute right-3.5 top-3 text-gray-400 text-xs pointer-events-none"></i>
+                                </div>
+                            </div>
+
+                            <!-- 重要程度 -->
+                            <div class="space-y-1.5">
+                                <label class="block text-sm font-semibold text-gray-700">
+                                    <span class="text-red-500 mr-1">*</span>重要程度
+                                </label>
+                                <div class="relative">
+                                    <select id="prioritySelect" onchange="updatePriorityColor(this)" 
+                                        class="form-input w-full pl-10 pr-10 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-sm transition-all">
+                                        <option value="">请选择重要程度</option>
+                                        <option value="high" class="text-red-600">🔴 高 - 战略客户</option>
+                                        <option value="medium" class="text-yellow-600" selected>🟡 中 - 重点跟进</option>
+                                        <option value="low" class="text-green-600">🟢 低 - 常规维护</option>
+                                    </select>
+                                    <i class="fas fa-flag absolute left-3.5 top-3 text-gray-400"></i>
+                                    <i class="fas fa-chevron-down absolute right-3.5 top-3 text-gray-400 text-xs pointer-events-none"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 访问目的 -->
+                        <div class="space-y-1.5 sm:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700">
+                                <span class="text-red-500 mr-1">*</span>访问目的
+                            </label>
+                            <div class="relative">
+                                <textarea rows="3" placeholder="请详细描述本次跟进的具体目标、需要了解的信息以及预期达成的结果..." 
+                                    class="form-input w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm transition-all"></textarea>
+                                <div class="absolute bottom-2 right-2 text-xs text-gray-400">0/500</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 提醒设置区 -->
+                    <div class="bg-blue-50/50 rounded-xl p-4 sm:p-5 border border-blue-100">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 items-end">
+                            <div class="space-y-3">
+                                <label class="block text-sm font-semibold text-gray-700">
+                                    <span class="text-red-500 mr-1">*</span>是否提醒
+                                </label>
+                                <div class="flex gap-6">
+                                    <label class="flex items-center gap-2 cursor-pointer group">
+                                        <input type="radio" name="remind" value="yes" onchange="toggleRemindTime(true)" 
+                                            class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer">
+                                        <span class="text-sm text-gray-700 group-hover:text-blue-600 transition-colors">是，提前提醒</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer group">
+                                        <input type="radio" name="remind" value="no" checked onchange="toggleRemindTime(false)" 
+                                            class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer">
+                                        <span class="text-sm text-gray-700 group-hover:text-blue-600 transition-colors">否，暂不提醒</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="remindTimeWrapper" class="space-y-1.5 opacity-50 pointer-events-none transition-all duration-300">
+                                <label class="block text-sm font-semibold text-gray-700">
+                                    <span class="text-red-500 mr-1">*</span>设置提醒时间
+                                </label>
+                                <div class="relative">
+                                    <input type="datetime-local" id="remindTime" disabled
+                                        class="form-input w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all">
+                                    <i class="fas fa-bell absolute left-3.5 top-3 text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- 底部按钮区 -->
+            <div class="px-6 py-4 sm:px-8 sm:py-5 border-t border-gray-200 bg-white shrink-0 flex flex-col-reverse sm:flex-row justify-between items-center gap-3">
+                <button onclick="closeModal()" 
+                    class="w-full sm:w-auto px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-all text-sm focus:ring-2 focus:ring-gray-200">
+                    取消
+                </button>
+                <div class="flex gap-3 w-full sm:w-auto">
+                    <button onclick="saveDraft()" 
+                        class="flex-1 sm:flex-none px-6 py-2.5 border border-blue-300 text-blue-600 bg-blue-50 rounded-lg font-medium hover:bg-blue-100 transition-all text-sm focus:ring-2 focus:ring-blue-200">
+                        存为草稿
+                    </button>
+                    <button onclick="submitForm()" 
+                        class="flex-1 sm:flex-none px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm flex items-center justify-center gap-2 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <i class="fas fa-check"></i>
+                        创建计划
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 切换提醒时间输入框状态
+        function toggleRemindTime(enabled) {
+            const wrapper = document.getElementById('remindTimeWrapper');
+            const input = document.getElementById('remindTime');
+            
+            if (enabled) {
+                wrapper.classList.remove('opacity-50', 'pointer-events-none');
+                input.disabled = false;
+                // 设置默认提醒时间为当前时间+1天
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+                input.value = tomorrow.toISOString().slice(0, 16);
+                input.focus();
+            } else {
+                wrapper.classList.add('opacity-50', 'pointer-events-none');
+                input.disabled = true;
+                input.value = '';
+            }
+        }
+
+        // 更新重要程度颜色提示
+        function updatePriorityColor(select) {
+            const colors = {
+                'high': 'text-red-600',
+                'medium': 'text-yellow-600',
+                'low': 'text-green-600'
+            };
+            select.className = select.className.replace(/text-\w+-600/g, '') + ' ' + (colors[select.value] || '');
+        }
+
+        // 提交表单
+        function submitForm() {
+            const form = document.getElementById('followUpForm');
+            const requiredFields = form.querySelectorAll('input[required], select[required], textarea[required]');
+            let isValid = true;
+            let firstError = null;
+
+            // 简单验证
+            form.querySelectorAll('select, input[type="datetime-local"], textarea').forEach(field => {
+                if (!field.value && !field.disabled && field.type !== 'radio') {
+                    isValid = false;
+                    field.classList.add('border-red-500', 'ring-1', 'ring-red-200');
+                    if (!firstError) firstError = field;
+                } else {
+                    field.classList.remove('border-red-500', 'ring-1', 'ring-red-200');
+                }
+            });
+
+            if (!isValid) {
+                firstError?.focus();
+                firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // 模拟提交
+            const btn = event.target;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 创建中...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                alert('✅ 跟进计划创建成功！\n\n系统将在设定时间提醒您执行跟进任务。');
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+                closeModal();
+            }, 1000);
+        }
+
+        // 保存草稿
+        function saveDraft() {
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = '已保存';
+            btn.classList.add('bg-blue-100');
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.remove('bg-blue-100');
+            }, 2000);
+        }
+
+        // 关闭弹窗（演示用）
+        function closeModal() {
+            const modal = document.querySelector('.modal-enter');
+            modal.style.animation = 'modalEnter 0.2s ease-out reverse';
+            setTimeout(() => {
+                document.body.innerHTML = '<div class="flex items-center justify-center h-screen text-white"><div class="text-center"><i class="fas fa-check-circle text-5xl mb-4 text-green-400"></i><p class="text-xl">弹窗已关闭</p><button onclick="location.reload()" class="mt-4 px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition-all">重新打开</button></div></div>';
+            }, 200);
+        }
+
+        // 初始化：设置默认日期为明天
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInputs = document.querySelectorAll('input[type="datetime-local"]:not(#remindTime)');
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+            const dateStr = tomorrow.toISOString().slice(0, 16);
+            
+            dateInputs.forEach((input, index) => {
+                if (index === 0) input.value = dateStr; // 开始时间
+                if (index === 1) {
+                    // 截止时间设为后天
+                    const dayAfter = new Date(tomorrow);
+                    dayAfter.setDate(dayAfter.getDate() + 1);
+                    input.value = dayAfter.toISOString().slice(0, 16);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
