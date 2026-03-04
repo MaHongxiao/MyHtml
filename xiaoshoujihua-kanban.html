@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>西南区域营销进度监控台 (增强版)</title>
+    <title>西南区域营销进度监控台 - 行业下钻版</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,19 +12,23 @@
         [x-cloak] { display: none !important; }
         body { font-family: 'Inter', 'Microsoft YaHei', sans-serif; background-color: #f8fafc; }
         
-        /* 滚动条美化 */
         .custom-scroll::-webkit-scrollbar { height: 10px; width: 8px; }
         .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        /* 表格固定列逻辑 */
+        
         .sticky-col { position: sticky; left: 0; z-index: 20; background-color: #fff; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
         .sticky-header { position: sticky; top: 0; z-index: 30; background-color: #f1f5f9; }
-        .sticky-corner { position: sticky; left: 0; top: 0; z-index: 40; background-color: #f1f5f9; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
-
-        /* 进度条动画 */
+        .sticky-corner { position: sticky; left: 0; top: 0; z-index: 40; background-color: #f1f5f9; }
+        
         .progress-fill { transition: width 0.6s ease-out; }
+        
+        .industry-card {
+            transition: all 0.2s ease;
+        }
+        .industry-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 
@@ -42,20 +46,18 @@
             </div>
             
             <div class="ml-6 relative group">
-                <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400 group-focus-within:text-blue-500 transition-colors"></i>
+                <i class="fa-solid fa-search absolute left-3 top-2.5 text-slate-400"></i>
                 <input type="text" x-model="searchQuery" placeholder="搜索机构名称..." 
-                       class="pl-9 pr-4 py-1.5 bg-slate-100 border border-transparent rounded-full text-sm w-64 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
-                <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
-                    <i class="fa-solid fa-times-circle"></i>
-                </button>
+                       class="pl-9 pr-4 py-1.5 bg-slate-100 border border-transparent rounded-full text-sm w-56 focus:bg-white focus:border-blue-500 outline-none transition-all">
             </div>
 
             <div class="h-6 w-px bg-slate-200 mx-2"></div>
 
+            <!-- 时间维度选择 -->
             <div class="flex items-center bg-slate-100 rounded-md p-1 border border-slate-200">
                 <template x-for="mode in viewModes" :key="mode.id">
-                    <button @click="viewMode = mode.id" 
-                            class="px-3 py-1 text-xs font-medium rounded transition-all duration-200"
+                    <button @click="changeViewMode(mode.id)" 
+                            class="px-3 py-1 text-xs font-medium rounded transition-all"
                             :class="viewMode === mode.id ? 'bg-white text-blue-700 shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700'"
                             x-text="mode.label">
                     </button>
@@ -63,16 +65,13 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-5 text-sm">
+        <div class="flex items-center gap-4 text-sm">
             <div class="flex items-center gap-3 text-xs bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                <span class="flex items-center gap-1.5" title="完成率 > 100%"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> 超额</span>
-                <span class="flex items-center gap-1.5" title="完成率 80%-100%"><span class="w-2 h-2 rounded-full bg-blue-500"></span> 正常</span>
-                <span class="flex items-center gap-1.5" title="完成率 50%-80%"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> 预警</span>
-                <span class="flex items-center gap-1.5" title="完成率 < 50%"><span class="w-2 h-2 rounded-full bg-red-500"></span> 滞后</span>
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> 超额</span>
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span> 正常</span>
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> 预警</span>
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> 滞后</span>
             </div>
-            //<button class="text-slate-500 hover:text-blue-600 font-medium text-xs flex items-center gap-1 transition-colors">
-                //<i class="fa-solid fa-download"></i> 导出数据
-            //</button>
         </div>
     </header>
 
@@ -80,9 +79,9 @@
         <table class="w-full border-collapse text-sm">
             <thead class="bg-slate-50 text-slate-600 font-semibold sticky-header">
                 <tr>
-                    <th class="sticky-corner border-b border-r border-slate-200 p-0 min-w-[300px] cursor-pointer hover:bg-slate-100 transition-colors group"
+                    <th class="sticky-corner border-b border-r border-slate-200 p-0 min-w-[280px] cursor-pointer hover:bg-slate-100"
                         @click="toggleSort()">
-                        <div class="h-14 flex items-center justify-between px-5 bg-slate-50 group-hover:bg-slate-100">
+                        <div class="h-14 flex items-center justify-between px-5">
                             <div class="flex items-center gap-2">
                                 <span>区域公司 / 年度概览</span>
                                 <div class="flex flex-col text-[10px] leading-none text-slate-400">
@@ -93,10 +92,9 @@
                             <span class="text-xs font-normal text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100" x-text="currentModeLabel"></span>
                         </div>
                     </th>
-                    <template x-for="col in currentColumns" :key="col">
-                        <th class="border-b border-r border-slate-200 min-w-[140px] h-14 text-center bg-slate-50">
-                            <span x-text="col"></span>
-                        </th>
+                    
+                    <template x-for="col in timeColumns" :key="col.key">
+                        <th class="border-b border-r border-slate-200 min-w-[130px] h-14 text-center bg-slate-50 text-xs" x-text="col.label"></th>
                     </template>
                 </tr>
             </thead>
@@ -105,53 +103,44 @@
                 <template x-for="company in filteredCompanies" :key="company.id">
                     <tr class="hover:bg-slate-50 transition-colors">
                         
-                        <td class="sticky-col border-r border-slate-200 p-5 align-top bg-white group-hover:bg-slate-50">
-                            <div class="flex flex-col gap-3">
+                        <!-- 机构信息列 -->
+                        <td class="sticky-col border-r border-slate-200 p-4 align-top bg-white">
+                            <div class="flex flex-col gap-2">
                                 <div class="flex justify-between items-center">
                                     <div class="flex items-center gap-2">
                                         <div class="w-2 h-8 rounded-sm" :class="getYearProgressColor(company.yearPercent)"></div>
                                         <span class="font-bold text-slate-800 text-sm" x-text="company.name"></span>
                                     </div>
-                                    <span class="text-xs font-bold px-2 py-0.5 rounded-md font-mono border" 
+                                    <span class="text-xs font-bold px-2 py-0.5 rounded font-mono border" 
                                           :class="getYearBadgeStyle(company.yearPercent)"
                                           x-text="company.yearPercent + '%'"></span>
                                 </div>
                                 
-                                <div class="grid grid-cols-2 gap-4 text-xs text-slate-500 mt-1">
+                                <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-500 mt-1">
                                     <div>
-                                        <div class="scale-90 origin-left opacity-70 mb-0.5">目标 (Target)</div>
+                                        <div class="opacity-70 mb-0.5">年度目标</div>
                                         <div class="font-mono font-medium text-slate-700" x-text="formatMoney(company.yearTarget)"></div>
                                     </div>
                                     <div class="text-right">
-                                        <div class="scale-90 origin-right opacity-70 mb-0.5">达成 (Actual)</div>
+                                        <div class="opacity-70 mb-0.5">年度达成</div>
                                         <div class="font-mono font-bold" :class="getYearTextColor(company.yearPercent)" x-text="formatMoney(company.yearActual)"></div>
                                     </div>
-                                </div>
-
-                                <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-1">
-                                    <div class="h-full rounded-full transition-all duration-1000" 
-                                         :class="getYearProgressColor(company.yearPercent)"
-                                         :style="`width: ${Math.min(company.yearPercent, 100)}%`"></div>
                                 </div>
                             </div>
                         </td>
 
-                        <template x-for="(data, index) in getCompanyViewData(company)" :key="index">
-                            <td class="border-r border-slate-200 p-3 align-middle cursor-pointer group relative transition-colors"
-                                :class="data.isFuture ? 'bg-slate-50/30' : 'hover:bg-blue-50/30'"
-                                @click="!data.isFuture && openDetail(company.name, data.label)">
+                        <!-- 时间维度数据列 -->
+                        <template x-for="(data, index) in getTimelineData(company)" :key="index">
+                            <td class="border-r border-slate-200 p-3 align-middle cursor-pointer hover:bg-blue-50/50 transition-colors relative group"
+                                :class="data.isFuture ? 'bg-slate-50/30' : ''"
+                                @click="!data.isFuture && openIndustryBreakdown(company, data)">
                                 
                                 <div class="flex flex-col gap-2" :class="{'opacity-40 grayscale': data.isFuture}">
                                     <div class="flex justify-between items-end text-xs">
-                                        <span class="text-slate-400 scale-90 origin-left flex flex-col">
-                                            <span class="text-[10px] uppercase opacity-70">计</span>
-                                            <span x-text="formatWan(data.target)"></span>
-                                        </span>
-                                        <span class="font-mono font-bold text-right flex flex-col items-end" 
-                                              :class="data.actual >= data.target ? 'text-green-600' : (data.actual > 0 ? 'text-slate-700' : 'text-slate-300')">
-                                            <span class="text-[10px] font-normal uppercase opacity-70">实</span>
-                                            <span x-text="data.isFuture ? '-' : formatWan(data.actual)"></span>
-                                        </span>
+                                        <span class="text-slate-400 text-[10px]">目标: <span x-text="formatWan(data.target)"></span></span>
+                                        <span class="font-mono font-bold text-sm" 
+                                              :class="data.actual >= data.target ? 'text-green-600' : 'text-slate-700'"
+                                              x-text="data.isFuture ? '-' : formatWan(data.actual)"></span>
                                     </div>
                                     
                                     <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
@@ -162,11 +151,18 @@
                                     </div>
 
                                     <div class="flex justify-between items-center text-[10px]">
-                                        <span class="text-slate-400 font-medium" x-text="data.label"></span>
+                                        <span class="text-slate-400">完成率</span>
                                         <span class="font-mono font-medium" 
                                               :class="getRateColor(data.actual, data.target, data.isFuture)"
                                               x-text="data.isFuture ? '-' : Math.round((data.actual / (data.target || 1)) * 100) + '%'"></span>
                                     </div>
+                                </div>
+                                
+                                <!-- 悬停提示 -->
+                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-blue-600/5 pointer-events-none">
+                                    <span class="text-[10px] text-blue-600 font-medium bg-white/90 px-2 py-1 rounded shadow-sm">
+                                        <i class="fa-solid fa-sitemap mr-1"></i>查看行业分布
+                                    </span>
                                 </div>
                             </td>
                         </template>
@@ -184,17 +180,21 @@
         </table>
     </div>
 
-    <div x-show="isDrawerOpen" class="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px] transition-opacity" x-transition.opacity></div>
+    <!-- 行业下钻抽屉 -->
+    <div x-show="isDrawerOpen" class="fixed inset-0 z-[60] bg-black/20 backdrop-blur-[1px]" x-transition.opacity></div>
     
-    <div class="fixed top-0 right-0 h-full w-[800px] bg-white z-[70] shadow-2xl flex flex-col transform transition-transform duration-300"
+    <div class="fixed top-0 right-0 h-full w-[900px] bg-white z-[70] shadow-2xl flex flex-col transform transition-transform duration-300"
          :class="isDrawerOpen ? 'translate-x-0' : 'translate-x-full'">
         
+        <!-- 抽屉头部 -->
         <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
             <div>
                 <h2 class="text-lg font-bold text-slate-800" x-text="drawerTitle"></h2>
-                <div class="text-xs text-slate-500 mt-1 flex gap-4">
-                    <span>统计周期: <b class="text-slate-700" x-text="currentPeriodLabel"></b></span>
-                    <span>状态: <span class="bg-blue-100 text-blue-700 px-1.5 rounded">进行中</span></span>
+                <div class="text-xs text-slate-500 mt-1 flex gap-4 items-center">
+                    <span>时间维度: <b class="text-slate-700" x-text="currentPeriodLabel"></b></span>
+                    <span class="text-slate-400">|</span>
+                    <span>该时段目标: <b class="text-blue-600 font-mono" x-text="formatMoney(currentPeriodData.target)"></b></span>
+                    <span>达成: <b class="font-mono" :class="getYearTextColor(Math.round((currentPeriodData.actual/currentPeriodData.target)*100))" x-text="formatMoney(currentPeriodData.actual)"></b></span>
                 </div>
             </div>
             <button @click="isDrawerOpen = false" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500 transition">
@@ -202,42 +202,126 @@
             </button>
         </div>
 
-        <div class="flex-1 overflow-auto p-0 bg-white">
-            <table class="w-full text-left text-sm border-collapse">
-                <thead class="bg-white sticky top-0 z-10 shadow-sm text-slate-500">
-                    <tr>
-                        <th class="p-4 border-b font-medium w-40">委托单号</th>
-                        <th class="p-4 border-b font-medium">客户名称</th>
-                        <th class="p-4 border-b font-medium">服务类型</th>
-                        <th class="p-4 border-b font-medium text-right">金额</th>
-                        <th class="p-4 border-b font-medium text-center w-24">状态</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    <template x-for="order in orderList" :key="order.id">
-                        <tr class="hover:bg-blue-50/50 transition-colors">
-                            <td class="p-4 font-mono text-slate-600 text-xs" x-text="order.no"></td>
-                            <td class="p-4">
-                                <div class="font-bold text-slate-700 truncate w-48" x-text="order.customer"></div>
-                                <div class="text-xs text-slate-400" x-text="order.contact"></div>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-xs" x-text="order.type"></span>
-                            </td>
-                            <td class="p-4 text-right font-mono font-medium text-slate-700" x-text="'¥' + order.amount.toLocaleString()"></td>
-                            <td class="p-4 text-center">
-                                <span class="px-2 py-1 rounded text-xs border"
-                                      :class="{
-                                          'bg-green-50 text-green-600 border-green-200': order.status === '已完工',
-                                          'bg-blue-50 text-blue-600 border-blue-200': order.status === '进行中',
-                                          'bg-yellow-50 text-yellow-600 border-yellow-200': order.status === '待受理'
-                                      }"
-                                      x-text="order.status"></span>
-                            </td>
-                        </tr>
+        <!-- 抽屉内容 -->
+        <div class="flex-1 overflow-auto bg-slate-50/50">
+            
+            <!-- 行业分布网格 -->
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-industry text-indigo-500"></i>
+                        行业维度拆解
+                        <span class="text-xs font-normal text-slate-400 ml-2">点击行业查看详细订单</span>
+                    </h3>
+                    <div class="flex gap-2 text-xs">
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-500"></span> 主营业务</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-300"></span> 次要业务</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3 mb-6">
+                    <template x-for="ind in currentIndustryBreakdown" :key="ind.value">
+                        <div class="industry-card bg-white border border-slate-200 rounded-lg p-4 cursor-pointer hover:border-indigo-300"
+                             :class="{'ring-1 ring-indigo-500 bg-indigo-50/30': selectedIndustry === ind.value}"
+                             @click="selectIndustry(ind)">
+                            
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs"
+                                         :class="ind.target > 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'">
+                                        <i class="fa-solid" :class="getIndustryIcon(ind.value)"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-bold text-slate-700" x-text="ind.label"></div>
+                                        <div class="text-[10px] text-slate-400">占比 <span x-text="currentPeriodData.target > 0 ? ((ind.target/currentPeriodData.target)*100).toFixed(1) : '0'"></span>%</div>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-mono font-bold" 
+                                      :class="ind.actual >= ind.target ? 'text-green-600' : 'text-slate-600'"
+                                      x-text="Math.round((ind.actual/(ind.target||1))*100) + '%'"></span>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-400">目标</span>
+                                    <span class="font-mono text-slate-600" x-text="formatWan(ind.target)"></span>
+                                </div>
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-400">达成</span>
+                                    <span class="font-mono font-bold" :class="ind.actual > 0 ? 'text-indigo-600' : 'text-slate-300'" x-text="formatWan(ind.actual)"></span>
+                                </div>
+                                
+                                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-2">
+                                    <div class="h-full rounded-full transition-all duration-500"
+                                         :class="getBarColor(ind.actual, ind.target)"
+                                         :style="`width: ${Math.min((ind.actual/(ind.target||1))*100, 100)}%`"></div>
+                                </div>
+                            </div>
+                        </div>
                     </template>
-                </tbody>
-            </table>
+                </div>
+
+                <!-- 订单明细列表 -->
+                <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                    <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-slate-700">
+                            订单明细
+                            <span x-show="selectedIndustry" class="ml-2 text-xs font-normal text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                                已筛选: <span x-text="industries.find(i=>i.value===selectedIndustry)?.label"></span>
+                            </span>
+                        </h3>
+                        <span class="text-xs text-slate-400" x-text="`共 ${filteredOrders.length} 笔订单`"></span>
+                    </div>
+                    
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-white text-slate-500 text-xs border-b border-slate-100">
+                            <tr>
+                                <th class="p-3 font-medium w-32">委托单号</th>
+                                <th class="p-3 font-medium">客户名称</th>
+                                <th class="p-3 font-medium w-24">行业分类</th>
+                                <th class="p-3 font-medium w-20">服务类型</th>
+                                <th class="p-3 font-medium text-right w-24">金额</th>
+                                <th class="p-3 font-medium text-center w-16">状态</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <template x-for="order in filteredOrders" :key="order.id">
+                                <tr class="hover:bg-blue-50/30 transition-colors">
+                                    <td class="p-3 font-mono text-slate-600 text-xs" x-text="order.no"></td>
+                                    <td class="p-3">
+                                        <div class="font-bold text-slate-700 text-xs" x-text="order.customer"></div>
+                                        <div class="text-[10px] text-slate-400" x-text="order.contact"></div>
+                                    </td>
+                                    <td class="p-3">
+                                        <span class="px-2 py-0.5 rounded text-[10px] border"
+                                              :class="{
+                                                  'bg-indigo-50 text-indigo-600 border-indigo-100': order.industryValue === selectedIndustry,
+                                                  'bg-slate-50 text-slate-600 border-slate-200': order.industryValue !== selectedIndustry
+                                              }"
+                                              x-text="order.industry"></span>
+                                    </td>
+                                    <td class="p-3 text-xs text-slate-600" x-text="order.type"></td>
+                                    <td class="p-3 text-right font-mono font-medium text-slate-700 text-xs" x-text="'¥' + order.amount.toLocaleString()"></td>
+                                    <td class="p-3 text-center">
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] border"
+                                              :class="{
+                                                  'bg-green-50 text-green-600 border-green-200': order.status === '已完工',
+                                                  'bg-blue-50 text-blue-600 border-blue-200': order.status === '进行中',
+                                                  'bg-yellow-50 text-yellow-600 border-yellow-200': order.status === '待受理'
+                                              }"
+                                              x-text="order.status"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                    
+                    <div x-show="filteredOrders.length === 0" class="p-8 text-center text-slate-400 text-sm">
+                        <i class="fa-solid fa-inbox text-2xl mb-2"></i>
+                        <p>暂无订单数据</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -246,60 +330,101 @@
             return {
                 viewMode: 'month',
                 searchQuery: '',
-                sortOrder: 'desc', // 'default', 'asc', 'desc'
+                sortOrder: 'desc',
                 isDrawerOpen: false,
                 drawerTitle: '',
                 currentPeriodLabel: '',
+                currentPeriodData: { target: 0, actual: 0 },
+                currentIndustryBreakdown: [],
+                selectedIndustry: null,
+                
                 companies: [],
                 orderList: [],
 
+                // 移除了累半，保留5个时间维度
                 viewModes: [
                     { id: 'month', label: '月度' },
                     { id: 'cumMonth', label: '累月' },
                     { id: 'quarter', label: '季度' },
                     { id: 'cumQuarter', label: '累季' },
-                    { id: 'half', label: '半年度' },
-                    { id: 'cumHalf', label: '累半' }
+                    { id: 'half', label: '半年度' }
+                ],
+
+                industries: [
+                    { value: 'energy', label: '能源电力产业' },
+                    { value: 'newenergy', label: '新能源产业' },
+                    { value: 'pv', label: '光伏产业' },
+                    { value: 'hydrogen', label: '氢能产业' },
+                    { value: 'medical', label: '医学健康产业' },
+                    { value: 'pharma', label: '生物制药产业' },
+                    { value: 'radiation', label: '电离辐射/核产业' },
+                    { value: 'traffic', label: '交通建筑产业' },
+                    { value: 'petro', label: '石油化工产业' },
+                    { value: 'aviation', label: '民航航空产业' },
+                    { value: 'tic', label: 'TIC技术服务产业' },
+                    { value: 'manufacturing', label: '制造业' },
+                    { value: 'other', label: '其他产业' }
                 ],
 
                 get currentModeLabel() {
-                    return this.viewModes.find(m => m.id === this.viewMode).label + '视图';
+                    return this.viewModes.find(m => m.id === this.viewMode)?.label + '视图';
                 },
 
-                get currentColumns() {
+                get timeColumns() {
                     switch(this.viewMode) {
-                        case 'month': return Array.from({length: 12}, (_, i) => `${i+1}月`);
-                        case 'cumMonth': return Array.from({length: 12}, (_, i) => `1-${i+1}月`);
-                        case 'quarter': return ['Q1', 'Q2', 'Q3', 'Q4'];
-                        case 'cumQuarter': return ['Q1', 'Q1-Q2', 'Q1-Q3', '全年'];
-                        case 'half': return ['上半年', '下半年'];
-                        case 'cumHalf': return ['上半年', '全年'];
-                        default: return [];
+                        case 'month': 
+                            return Array.from({length: 12}, (_, i) => ({ key: i+1, label: `${i+1}月` }));
+                        case 'cumMonth': 
+                            return Array.from({length: 12}, (_, i) => ({ key: `1-${i+1}`, label: `1-${i+1}月` }));
+                        case 'quarter': 
+                            return [
+                                { key: 'q1', label: 'Q1' }, 
+                                { key: 'q2', label: 'Q2' }, 
+                                { key: 'q3', label: 'Q3' }, 
+                                { key: 'q4', label: 'Q4' }
+                            ];
+                        case 'cumQuarter': 
+                            return [
+                                { key: 'cumq1', label: 'Q1' }, 
+                                { key: 'cumq2', label: 'Q1-Q2' }, 
+                                { key: 'cumq3', label: 'Q1-Q3' }, 
+                                { key: 'cumq4', label: '全年' }
+                            ];
+                        case 'half': 
+                            return [
+                                { key: 'h1', label: '上半年' }, 
+                                { key: 'h2', label: '下半年' }
+                            ];
+                        default: 
+                            return [];
                     }
                 },
 
-                // 核心计算属性：过滤 + 排序
                 get filteredCompanies() {
                     let result = this.companies;
-                    
-                    // 1. 过滤
                     if (this.searchQuery) {
                         const lowerQ = this.searchQuery.toLowerCase();
                         result = result.filter(c => c.name.toLowerCase().includes(lowerQ));
                     }
-
-                    // 2. 排序
                     if (this.sortOrder === 'asc') {
                         result = [...result].sort((a, b) => a.yearPercent - b.yearPercent);
                     } else if (this.sortOrder === 'desc') {
                         result = [...result].sort((a, b) => b.yearPercent - a.yearPercent);
                     }
-                    
                     return result;
+                },
+
+                get filteredOrders() {
+                    if (!this.selectedIndustry) return this.orderList;
+                    return this.orderList.filter(o => o.industryValue === this.selectedIndustry);
                 },
 
                 init() {
                     this.generateData();
+                },
+
+                changeViewMode(mode) {
+                    this.viewMode = mode;
                 },
 
                 toggleSort() {
@@ -308,78 +433,158 @@
                     else this.sortOrder = 'desc';
                 },
 
-                getCompanyViewData(company) {
+                // 获取时间序列展示数据
+                getTimelineData(company) {
                     const raw = company.rawMonthlyData;
                     
-                    if (this.viewMode === 'month') {
-                        return raw.map(d => ({ ...d, label: `${d.month}月` }));
-                    }
-                    if (this.viewMode === 'cumMonth') {
-                        let tAcc = 0, aAcc = 0;
-                        return raw.map(d => {
-                            tAcc += d.target;
-                            aAcc += d.actual;
-                            return { target: tAcc, actual: aAcc, label: `1-${d.month}月`, isFuture: d.isFuture };
-                        });
-                    }
-                    // 简化处理其他聚合逻辑，实际项目中需处理 isFuture 逻辑
-                    if (this.viewMode === 'quarter') {
-                        const quarters = [];
-                        for (let i = 0; i < 4; i++) {
-                            const subset = raw.slice(i*3, (i+1)*3);
-                            quarters.push({
-                                target: subset.reduce((sum, item) => sum + item.target, 0),
-                                actual: subset.reduce((sum, item) => sum + item.actual, 0),
-                                label: `Q${i+1}`,
-                                isFuture: subset.every(x => x.isFuture)
+                    switch(this.viewMode) {
+                        case 'month':
+                            return raw.map(d => ({ 
+                                ...d, 
+                                label: `${d.month}月`,
+                                monthRange: [d.month, d.month]
+                            }));
+                        case 'cumMonth':
+                            let tAcc = 0, aAcc = 0;
+                            return raw.map(d => {
+                                tAcc += d.target;
+                                aAcc += d.actual;
+                                return { 
+                                    target: tAcc, 
+                                    actual: aAcc, 
+                                    label: `1-${d.month}月`, 
+                                    isFuture: d.isFuture,
+                                    monthRange: [1, d.month]
+                                };
                             });
-                        }
-                        return quarters;
+                        case 'quarter':
+                            return [0,1,2,3].map(i => {
+                                const subset = raw.slice(i*3, (i+1)*3);
+                                return {
+                                    target: subset.reduce((s, item) => s + item.target, 0),
+                                    actual: subset.reduce((s, item) => s + item.actual, 0),
+                                    label: `Q${i+1}`,
+                                    isFuture: subset.every(x => x.isFuture),
+                                    monthRange: [i*3+1, (i+1)*3]
+                                };
+                            });
+                        case 'cumQuarter':
+                            let qtAcc = 0, qaAcc = 0;
+                            return [0,1,2,3].map(i => {
+                                const subset = raw.slice(i*3, (i+1)*3);
+                                qtAcc += subset.reduce((s, item) => s + item.target, 0);
+                                qaAcc += subset.reduce((s, item) => s + item.actual, 0);
+                                return {
+                                    target: qtAcc,
+                                    actual: qaAcc,
+                                    label: i === 0 ? 'Q1' : `Q1-Q${i+1}`,
+                                    isFuture: subset.every(x => x.isFuture),
+                                    monthRange: [1, (i+1)*3]
+                                };
+                            });
+                        case 'half':
+                            const firstHalf = raw.slice(0, 6);
+                            const secondHalf = raw.slice(6, 12);
+                            return [
+                                {
+                                    target: firstHalf.reduce((s, item) => s + item.target, 0),
+                                    actual: firstHalf.reduce((s, item) => s + item.actual, 0),
+                                    label: '上半年',
+                                    isFuture: firstHalf.every(x => x.isFuture),
+                                    monthRange: [1, 6]
+                                },
+                                {
+                                    target: secondHalf.reduce((s, item) => s + item.target, 0),
+                                    actual: secondHalf.reduce((s, item) => s + item.actual, 0),
+                                    label: '下半年',
+                                    isFuture: secondHalf.every(x => x.isFuture),
+                                    monthRange: [7, 12]
+                                }
+                            ];
+                        default:
+                            return [];
                     }
-                    // ... 类似逻辑补充完整 ...
-                    return []; // 为节省篇幅，这里暂略其他视图的完全逻辑实现，实际使用可参考上一版补充
                 },
 
-                // 生成多元化数据
+                // 打开行业下钻视图
+                openIndustryBreakdown(company, periodData) {
+                    this.drawerTitle = company.name;
+                    this.currentPeriodLabel = periodData.label;
+                    this.currentPeriodData = { target: periodData.target, actual: periodData.actual };
+                    this.selectedIndustry = null;
+                    
+                    // 计算该时间段的行业分布
+                    const [startMonth, endMonth] = periodData.monthRange;
+                    const indData = this.calculateIndustryData(company, startMonth, endMonth);
+                    this.currentIndustryBreakdown = indData;
+                    
+                    // 生成模拟订单
+                    this.generateMockOrders(company.name, startMonth, endMonth);
+                    
+                    this.isDrawerOpen = true;
+                },
+
+                // 计算指定月份范围的行业聚合数据
+                calculateIndustryData(company, startMonth, endMonth) {
+                    return this.industries.map(ind => {
+                        const indMonthly = company.industryData.find(d => d.industryValue === ind.value);
+                        let target = 0, actual = 0;
+                        
+                        if (indMonthly) {
+                            for (let m = startMonth; m <= endMonth; m++) {
+                                const monthData = indMonthly.monthly.find(mm => mm.month === m);
+                                if (monthData) {
+                                    target += monthData.target;
+                                    actual += monthData.actual;
+                                }
+                            }
+                        }
+                        
+                        return {
+                            ...ind,
+                            target,
+                            actual
+                        };
+                    }).sort((a, b) => b.target - a.target); // 按目标大小排序
+                },
+
+                selectIndustry(ind) {
+                    this.selectedIndustry = this.selectedIndustry === ind.value ? null : ind.value;
+                },
+
                 generateData() {
-                    // 定义不同类型的机构名称和特征
                     const seeds = [
-                        { name: '中检计量（陕西）有限公司', type: 'star' }, // 明星：完成度极高
-                        { name: '中检计量（重庆）有限公司', type: 'good' }, // 优秀
-                        { name: '中检计量（四川）有限公司', type: 'normal' }, // 正常
+                        { name: '中检计量（陕西）有限公司', type: 'star' },
+                        { name: '中检计量（重庆）有限公司', type: 'good' },
+                        { name: '中检计量（四川）有限公司', type: 'normal' },
                         { name: '中检计量（云南）有限公司', type: 'normal' },
-                        { name: '中检计量（贵州）有限公司', type: 'lagging' }, // 滞后
-                        { name: '中检计量（西藏）办事处', type: 'bad' }, // 严重滞后
-                        { name: '中检计量（甘肃）分公司', type: 'start' }, // 刚起步
-                        { name: '中检计量（青海）办事处', type: 'variable' } // 波动大
+                        { name: '中检计量（贵州）有限公司', type: 'lagging' },
+                        { name: '中检计量（西藏）办事处', type: 'bad' },
+                        { name: '中检计量（甘肃）分公司', type: 'start' },
+                        { name: '中检计量（青海）办事处', type: 'variable' }
                     ];
                     
-                    const currentMonth = 8; // 假设当前是8月
+                    const currentMonth = 8;
 
                     this.companies = seeds.map((seed, idx) => {
                         const monthlyData = [];
                         let yearTarget = 0;
                         let yearActual = 0;
-
-                        // 设定基础目标值 (100万 - 800万)
                         const baseTarget = (Math.floor(Math.random() * 70) + 10) * 10000;
 
                         for (let m = 1; m <= 12; m++) {
                             const isFuture = m > currentMonth;
-                            
-                            // 目标值波动
                             let target = Math.floor(baseTarget * (0.8 + Math.random() * 0.4));
-                            if (m === 2) target *= 0.6; // 春节淡季
-                            if (m === 6 || m === 12) target *= 1.2; // 冲刺季
+                            if (m === 2) target *= 0.6;
+                            if (m === 6 || m === 12) target *= 1.2;
 
                             let factor = 1.0;
-                            // 根据类型调整完成率因子
-                            if (seed.type === 'star') factor = 1.3 + Math.random() * 0.3; // >130%
-                            else if (seed.type === 'good') factor = 1.0 + Math.random() * 0.1; // 100-110%
-                            else if (seed.type === 'normal') factor = 0.85 + Math.random() * 0.15; // 85-100%
-                            else if (seed.type === 'lagging') factor = 0.6 + Math.random() * 0.2; // 60-80%
-                            else if (seed.type === 'bad') factor = 0.2 + Math.random() * 0.2; // 20-40%
-                            else if (seed.type === 'start') factor = m < 6 ? 0.1 : 0.9; // 前期低后期高
+                            if (seed.type === 'star') factor = 1.3 + Math.random() * 0.3;
+                            else if (seed.type === 'good') factor = 1.0 + Math.random() * 0.1;
+                            else if (seed.type === 'normal') factor = 0.85 + Math.random() * 0.15;
+                            else if (seed.type === 'lagging') factor = 0.6 + Math.random() * 0.2;
+                            else if (seed.type === 'bad') factor = 0.2 + Math.random() * 0.2;
+                            else if (seed.type === 'start') factor = m < 6 ? 0.1 : 0.9;
                             
                             let actual = isFuture ? 0 : Math.floor(target * factor);
                             
@@ -388,20 +593,84 @@
                             yearActual += actual;
                         }
 
-                        // 对于 viewMode quarter 等聚合逻辑，简单处理一下，实际应复用上方逻辑
-                        // 这里仅作为数据源
+                        // 生成行业月度数据
+                        const industryData = this.industries.map(ind => {
+                            // 分配行业权重（各机构侧重不同）
+                            let weight = 0.03 + Math.random() * 0.08;
+                            if (seed.name.includes('陕西') && ['energy', 'petro'].includes(ind.value)) weight += 0.25;
+                            if (seed.name.includes('四川') && ['medical', 'pharma'].includes(ind.value)) weight += 0.20;
+                            if (seed.name.includes('重庆') && ['manufacturing', 'traffic', 'aviation'].includes(ind.value)) weight += 0.18;
+                            if (seed.name.includes('云南') && ['pv', 'newenergy'].includes(ind.value)) weight += 0.15;
+                            if (seed.name.includes('贵州') && ['energy', 'traffic'].includes(ind.value)) weight += 0.12;
+                            
+                            const monthly = [];
+                            for (let m = 1; m <= 12; m++) {
+                                const seasonFactor = (m === 6 || m === 12) ? 1.3 : (m === 2 ? 0.5 : 1);
+                                const mTarget = Math.floor(yearTarget * weight * seasonFactor / 12);
+                                const mActual = m > currentMonth ? 0 : Math.floor(mTarget * (0.6 + Math.random() * 0.8));
+                                monthly.push({ month: m, target: mTarget, actual: mActual });
+                            }
+                            
+                            return {
+                                industryValue: ind.value,
+                                industryName: ind.label,
+                                monthly: monthly
+                            };
+                        });
+
                         return {
                             id: idx,
                             name: seed.name,
                             yearTarget: yearTarget,
                             yearActual: yearActual,
                             yearPercent: Math.round((yearActual / yearTarget) * 100),
-                            rawMonthlyData: monthlyData
+                            rawMonthlyData: monthlyData,
+                            industryData: industryData
                         };
                     });
                 },
 
-                // --- 样式逻辑 ---
+                generateMockOrders(companyName, startMonth, endMonth) {
+                    const types = ['校准', '检定', '检测', '测试'];
+                    const statuses = ['已完工', '进行中', '待受理'];
+                    
+                    // 为每个行业生成一些订单
+                    this.orderList = [];
+                    let id = 0;
+                    
+                    this.industries.forEach(ind => {
+                        const count = 2 + Math.floor(Math.random() * 4); // 每个行业2-5笔订单
+                        for (let i = 0; i < count; i++) {
+                            const month = startMonth + Math.floor(Math.random() * (endMonth - startMonth + 1));
+                            this.orderList.push({
+                                id: id++,
+                                no: `WT2026${String(month).padStart(2,'0')}${String(Math.floor(Math.random()*10000)).padStart(5,'0')}`,
+                                customer: ['国家电网', '中石油西南', '四川长虹', '重庆医药', '云南电网', '贵州航空'][Math.floor(Math.random()*6)] + (Math.floor(Math.random()*10) > 5 ? '分公司' : '有限公司'),
+                                contact: ['张经理', '李主任', '王工', '赵部长'][Math.floor(Math.random()*4)] + ' / 138' + Math.floor(Math.random()*100000000),
+                                industry: ind.label,
+                                industryValue: ind.value,
+                                type: types[Math.floor(Math.random()*types.length)],
+                                amount: Math.floor(Math.random() * 60000) + 2000,
+                                status: statuses[Math.floor(Math.random()*statuses.length)]
+                            });
+                        }
+                    });
+                    
+                    // 随机打乱
+                    this.orderList.sort(() => Math.random() - 0.5);
+                },
+
+                getIndustryIcon(value) {
+                    const icons = {
+                        energy: 'fa-bolt', newenergy: 'fa-solar-panel', pv: 'fa-sun', 
+                        hydrogen: 'fa-atom', medical: 'fa-hospital', pharma: 'fa-pills',
+                        radiation: 'fa-radiation', traffic: 'fa-road', petro: 'fa-oil-well',
+                        aviation: 'fa-plane', tic: 'fa-microscope', manufacturing: 'fa-industry',
+                        other: 'fa-ellipsis'
+                    };
+                    return icons[value] || 'fa-circle';
+                },
+
                 getYearProgressColor(percent) {
                     if (percent >= 120) return 'bg-emerald-500';
                     if (percent >= 100) return 'bg-green-500';
@@ -426,8 +695,7 @@
                 },
 
                 getBarColor(actual, target) {
-                    if (actual === 0 && target > 0) return 'bg-slate-300';
-                    if (target === 0) return 'bg-slate-300';
+                    if (target === 0) return 'bg-slate-200';
                     const rate = actual / target;
                     if (rate >= 1.2) return 'bg-emerald-500';
                     if (rate >= 1.0) return 'bg-green-500';
@@ -438,36 +706,20 @@
                 
                 getRateColor(actual, target, isFuture) {
                     if (isFuture) return 'text-slate-300';
-                    const rate = actual / (target || 1);
+                    if (target === 0) return 'text-slate-400';
+                    const rate = actual / target;
                     if (rate >= 1.0) return 'text-green-600 font-bold';
                     if (rate < 0.5) return 'text-red-500';
-                    return 'text-slate-500';
+                    return 'text-slate-600';
                 },
 
                 formatWan(num) {
-                    if (num === 0) return '-';
+                    if (!num || num === 0) return '0w';
                     return (num / 10000).toFixed(0) + 'w';
                 },
 
                 formatMoney(num) {
                     return '¥ ' + (num / 10000).toFixed(2) + '万';
-                },
-
-                // Mock detail function
-                openDetail(companyName, periodLabel) {
-                    this.drawerTitle = `${companyName} - 营销明细`;
-                    this.currentPeriodLabel = periodLabel;
-                    this.isDrawerOpen = true;
-                    // Generate random mock orders
-                    this.orderList = Array.from({length: 8}, (_, i) => ({
-                        id: i,
-                        no: `WT2026${String(Math.floor(Math.random()*12)+1).padStart(2,'0')}${String(Math.floor(Math.random()*1000)).padStart(4,'0')}`,
-                        customer: ['大连船舶', '恒力石化', '成都飞机', '长安汽车', '茅台'][Math.floor(Math.random()*5)],
-                        contact: '李经理',
-                        type: ['校准', '检定', '检测'][Math.floor(Math.random()*3)],
-                        amount: Math.floor(Math.random() * 50000) + 1000,
-                        status: ['已完工', '进行中'][Math.floor(Math.random()*2)]
-                    }));
                 }
             }
         }
