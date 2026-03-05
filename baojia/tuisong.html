@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>器具推送</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        html, body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: #f8fafc;
+            font-size: 13px;
+        }
+
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* 头部 48px */
+        .page-header {
+            height: 48px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+        }
+
+        /* 工具栏 40px */
+        .toolbar {
+            height: 60px;
+            background: #fafafa;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+            gap: 12px;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .filter-group::-webkit-scrollbar { display: none; }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #475569;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-left: 12px;
+        }
+
+        .filter-select {
+            height: 28px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 0 8px;
+            font-size: 12px;
+            color: #374151;
+            background: white;
+            outline: none;
+            cursor: pointer;
+            min-width: 100px;
+        }
+        .filter-select:focus { border-color: #3b82f6; }
+
+        .search-box {
+            position: relative;
+            flex-shrink: 0;
+        }
+        .search-box input {
+            height: 28px;
+            width: 200px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 0 8px 0 28px;
+            font-size: 12px;
+            outline: none;
+        }
+        .search-box i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 11px;
+        }
+
+        /* 内容区 */
+        .page-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* 左侧面板 */
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background: white;
+        }
+
+        /* 表格容器 */
+        .table-container {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+        }
+
+        /* 表格样式 - 行高32px */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 1600px;
+        }
+
+        .data-table th {
+            /* position: sticky; */
+            top: 0;
+            background: #f8fafc;
+            z-index: 20;
+            font-weight: 600;
+            color: #475569;
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            white-space: nowrap;
+            height: 36px;
+            font-size: 12px;
+        }
+
+        /* 行高32px */
+        .data-table td {
+            padding: 4px 12px;
+            height: 32px;
+            line-height: 32px;
+            border-bottom: 1px solid #f1f5f9;
+            border-right: 1px solid #f8fafc;
+            color: #334155;
+            background: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 220px;
+        }
+
+        .data-table tbody tr:hover td { background-color: #f8fafc; }
+        .data-table tbody tr.selected td { background-color: #eff6ff; }
+
+        /* 固定列 */
+        .col-fixed {
+            position: sticky;
+            left: 0;
+            background: white !important;
+            z-index: 30;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+            width: 40px;
+            text-align: center;
+            padding: 0;
+        }
+        .col-fixed-2 {
+            position: sticky;
+            left: 40px;
+            background: white !important;
+            z-index: 30;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+            min-width: 140px;
+            max-width: 200px;
+        }
+
+        /* 滚动条 */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        /* 右侧面板 280px */
+        .right-panel {
+            width: 320px;
+            min-width: 280px;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #e2e8f0;
+        }
+
+        .right-header {
+            height: 40px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .right-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .selected-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .selected-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+        }
+        .selected-card .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.15s;
+        }
+        .selected-card .remove-btn:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .selected-card .title {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 4px;
+            padding-right: 24px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 13px;
+        }
+        .selected-card .meta {
+            color: #6b7280;
+            font-size: 11px;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .selected-card .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 8px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        /* 汇总区 */
+        .summary-box {
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            color: #4b5563;
+        }
+        .summary-row:last-child { margin-bottom: 0; }
+        .summary-row.total {
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        /* 底部操作栏 56px */
+        .page-footer {
+            height: 56px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.02);
+        }
+
+        /* 标签 */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            height: 20px;
+            line-height: 20px;
+        }
+        .tag-blue { background: #dbeafe; color: #1e40af; }
+        .tag-green { background: #dcfce7; color: #166534; }
+        .tag-orange { background: #ffedd5; color: #9a3412; }
+        .tag-purple { background: #f3e8ff; color: #7c3aed; }
+
+        /* 历史推送次数 */
+        .history-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #6b7280;
+            padding: 2px 8px;
+            /* background: #f3f4f6; */
+            border-radius: 4px;
+        }
+        .history-badge.high {
+            color: #dc2626;
+            /* background: #fee2e2; */
+            font-weight: 600;
+        }
+
+        /* 复选框 */
+        .custom-checkbox {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+
+        /* 按钮 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            outline: none;
+            height: 36px;
+        }
+        .btn-default {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .btn-default:hover { background: #e5e7eb; }
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #1d4ed8;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-sm {
+            padding: 4px 12px;
+            height: 28px;
+            font-size: 12px;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #9ca3af;
+        }
+
+        .required::after {
+            content: '*';
+            color: #dc2626;
+            margin-left: 2px;
+        }
+    </style>
+</head>
+<body x-data="pushInstrumentApp()">
+
+    <div class="page-container">
+        
+        <!-- 头部 -->
+        <header class="page-header">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-clipboard-list text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800 text-base">器具推送</h1>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4 text-sm">
+                <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100 text-xs font-medium">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span>已选 <b x-text="selectedIds.length"></b> 项</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="filter-group">
+                <!-- <label class="flex items-center gap-2 cursor-pointer shrink-0">
+                    <input type="checkbox" 
+                           :checked="isAllSelected" 
+                           @change="toggleSelectAll"
+                           class="custom-checkbox">
+                    <span class="text-xs font-medium text-slate-700">全选</span>
+                </label> -->
+
+                <!-- <div class="h-4 w-px bg-slate-300"></div> -->
+
+                <div class="filter-item">
+                    <span>检测部门:</span>
+                    <select x-model="filterDepartment" class="filter-select">
+                        <option value="">全部部门</option>
+                        <template x-for="dept in departmentOptions" :key="dept">
+                            <option :value="dept" x-text="dept"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <span>服务类型:</span>
+                    <select x-model="filterServiceType" class="filter-select">
+                        <option value="">全部</option>
+                        <option value="检定">检定</option>
+                        <option value="校准">校准</option>
+                        <option value="检测">检测</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <span>分包方式:</span>
+                    <select x-model="filterSubcontract" class="filter-select">
+                        <option value="">全部</option>
+                        <option value="不分包">不分包</option>
+                        <option value="内包">内包</option>
+                        <option value="外包">外包</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <span>是否强检:</span>
+                    <select x-model="filterMandatory" class="filter-select">
+                        <option value="">全部</option>
+                        <option value="true">是</option>
+                        <option value="false">否</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <span>推送频次:</span>
+                    <select x-model="filterHistoryPush" class="filter-select">
+                        <option value="">全部</option>
+                        <option value="high">高频(≥5次)</option>
+                        <option value="low">低频(<5次)</option>
+                    </select>
+                </div>
+
+                <button x-show="hasActiveFilters" 
+                        @click="clearFilters"
+                        class="btn-sm btn-default text-slate-600 shrink-0">
+                    <i class="fa-solid fa-filter-circle-xmark"></i>
+                    清空
+                </button>
+            </div>
+
+            <div class="search-box">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" 
+                       x-model="searchQuery" 
+                       placeholder="搜索器具名称、型号..."
+                       @keyup.escape="searchQuery = ''">
+            </div>
+        </div>
+
+        <!-- 内容区 -->
+        <div class="page-content">
+            
+            <!-- 左侧表格 -->
+            <div class="left-panel">
+                <div class="table-container custom-scroll">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-fixed">
+                                    <input type="checkbox" 
+                                           :checked="isAllSelected" 
+                                           @change="toggleSelectAll"
+                                           class="custom-checkbox">
+                                </th>
+                                <th class="col-fixed-2 required">器具名称</th>
+                                <th class="required min-w-[140px]">实际器具名称</th>
+                                <th class="min-w-[120px]">测量范围</th>
+                                <th class="required w-[90px]">分包方式</th>
+                                <th class="required min-w-[160px]">内包区域/外包供应商</th>
+                                <th class="required w-[100px] text-right">基准价</th>
+                                <th class="required w-[100px] text-right">指导价</th>
+                                <th class="required w-[100px] text-right">实际报价</th>
+                                <th class="required w-[80px] text-center">参与折扣</th>
+                                <th class="required w-[60px] text-center">数量</th>
+                                <th class="required w-[60px]">单位</th>
+                                <th class="required w-[80px]">服务类型</th>
+                                <th class="required w-[80px] text-center">是否强检</th>
+                                <th class="required w-[90px]">检测方式</th>
+                                <th class="required min-w-[120px]">检测部门</th>
+                                <th class="required w-[90px]">检测岗位</th>
+                                <th class="w-[80px]">类型</th>
+                                <th class="min-w-[120px]">规格型号</th>
+                                <th class="min-w-[120px]">备注信息</th>
+                                <th class="w-[100px] text-center bg-slate-50">历史推送次数</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="item in filteredInstruments" :key="item.id">
+                                <tr :class="{ 'selected': isSelected(item.id) }" 
+                                    @click="toggleSelect(item)"
+                                    style="cursor: pointer;">
+                                    
+                                    <td class="col-fixed" @click.stop>
+                                        <input type="checkbox" 
+                                               :checked="isSelected(item.id)" 
+                                               @change="toggleSelect(item)"
+                                               class="custom-checkbox">
+                                    </td>
+                                    
+                                    <td class="col-fixed-2 font-semibold text-slate-900" x-text="item.name"></td>
+                                    
+                                    <td x-text="item.actualName || '-'"></td>
+                                    
+                                    <td class="text-slate-600" x-text="item.range || '-'"></td>
+                                    
+                                    <td>
+                                        <span class="tag" :class="{
+                                            'tag-blue': item.subcontract === '不分包',
+                                            'tag-green': item.subcontract === '内包',
+                                            'tag-orange': item.subcontract === '外包'
+                                        }" x-text="item.subcontract"></span>
+                                    </td>
+                                    
+                                    <td class="text-slate-600" x-text="item.supplier || '-'"></td>
+                                    
+                                    <td class="text-right font-mono text-slate-600" x-text="'¥' + item.basePrice.toLocaleString()"></td>
+                                    
+                                    <td class="text-right font-mono text-slate-600" x-text="'¥' + item.guidePrice.toLocaleString()"></td>
+                                    
+                                    <td class="text-right font-mono font-semibold text-slate-900" x-text="'¥' + item.actualPrice.toLocaleString()"></td>
+                                    
+                                    <td class="text-center">
+                                        <i class="fa-solid fa-check text-blue-500" x-show="item.hasDiscount"></i>
+                                        <span x-show="!item.hasDiscount" class="text-slate-300">-</span>
+                                    </td>
+                                    
+                                    <td class="text-center font-mono font-medium" x-text="item.quantity"></td>
+                                    
+                                    <td class="text-slate-500" x-text="item.unit"></td>
+                                    
+                                    <td>
+                                        <span class="tag" :class="{
+                                            'tag-blue': item.serviceType === '检定',
+                                            'tag-green': item.serviceType === '校准',
+                                            'tag-purple': item.serviceType === '检测'
+                                        }" x-text="item.serviceType"></span>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        <i class="fa-solid fa-circle-check text-blue-500" x-show="item.isMandatory"></i>
+                                        <span x-show="!item.isMandatory" class="text-slate-300">-</span>
+                                    </td>
+                                    
+                                    <td x-text="item.testMethod"></td>
+                                    
+                                    <td x-text="item.department"></td>
+                                    
+                                    <td x-text="item.position"></td>
+                                    
+                                    <td class="text-slate-500" x-text="item.type || '-'"></td>
+                                    
+                                    <td class="text-slate-600 font-mono text-xs" x-text="item.model || '-'"></td>
+                                    
+                                    <td class="text-slate-500 text-xs" x-text="item.remark || '-'"></td>
+                                    
+                                    <td class="text-center bg-slate-50/50">
+                                        <div class="history-badge" :class="{ 'high': item.historyPushCount >= 5 }">
+                                            <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                                            <span x-text="item.historyPushCount"></span>
+                                            <span class="text-[10px]">次</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                    
+                    <div x-show="filteredInstruments.length === 0" class="empty-state">
+                        <i class="fa-solid fa-inbox text-4xl mb-3 text-slate-200"></i>
+                        <p class="text-sm">暂无符合条件的器具</p>
+                        <button x-show="hasActiveFilters" @click="clearFilters" class="mt-2 text-blue-600 text-xs hover:underline">
+                            清空筛选条件
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧已选栏 -->
+            <div class="right-panel">
+                <div class="right-header">
+                    <div class="flex items-center gap-2 font-semibold text-slate-700">
+                        <i class="fa-solid fa-check-double text-blue-600 text-xs"></i>
+                        已选器具
+                        <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-bold" x-text="selectedItems.length"></span>
+                    </div>
+                    <button x-show="selectedIds.length > 0" 
+                            @click="clearAll"
+                            class="text-xs text-red-600 hover:text-red-700 hover:underline font-medium">
+                        清空
+                    </button>
+                </div>
+
+                <div class="right-content custom-scroll">
+                    <template x-for="item in selectedItems" :key="item.id">
+                        <div class="selected-card">
+                            <div class="remove-btn" @click.stop="removeSelected(item.id)">
+                                <i class="fa-solid fa-times text-xs"></i>
+                            </div>
+                            <div class="title" x-text="item.name"></div>
+                            <div class="meta">
+                                <span x-text="item.department"></span>
+                                <span>·</span>
+                                <span x-text="item.serviceType"></span>
+                                <span>·</span>
+                                <span x-text="item.quantity + item.unit"></span>
+                            </div>
+                            <div class="info-row">
+                                <span class="text-xs text-slate-500">
+                                    历史推送: 
+                                    <span :class="item.historyPushCount >= 5 ? 'text-red-600 font-bold' : 'text-slate-600'" x-text="item.historyPushCount + '次'"></span>
+                                </span>
+                                <span class="font-mono font-bold text-blue-600">
+                                    ¥<span x-text="(item.actualPrice * item.quantity).toLocaleString()"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="selectedItems.length === 0" class="empty-state" style="height: auto; margin-top: 60px;">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                            <i class="fa-regular fa-clipboard text-2xl text-slate-300"></i>
+                        </div>
+                        <p class="text-sm font-medium text-slate-600">暂无已选器具</p>
+                        <p class="text-xs text-slate-400 mt-1">请从左侧列表勾选</p>
+                    </div>
+                </div>
+
+                <!-- 汇总 -->
+                <div class="summary-box" x-show="selectedItems.length > 0">
+                    <div class="summary-row">
+                        <span class="text-slate-500">器具种数</span>
+                        <span class="font-semibold text-slate-800" x-text="selectedItems.length + ' 种'"></span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-slate-500">总数量</span>
+                        <span class="font-semibold text-slate-800" x-text="selectedItems.reduce((sum, i) => sum + i.quantity, 0) + ' 件'"></span>
+                    </div>
+                    <!-- <div class="summary-row">
+                        <span class="text-slate-500">高频器具(≥5次)</span>
+                        <span class="font-semibold" :class="selectedItems.filter(i => i.historyPushCount >= 5).length > 0 ? 'text-red-600' : 'text-slate-600'" x-text="selectedItems.filter(i => i.historyPushCount >= 5).length + ' 种'"></span>
+                    </div> -->
+                    <div class="summary-row total">
+                        <span>预计金额</span>
+                        <span class="font-mono text-blue-700 text-lg">
+                            ¥<span x-text="selectedItems.reduce((sum, i) => sum + (i.actualPrice * i.quantity), 0).toLocaleString()"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部固定操作栏 -->
+        <div class="page-footer">
+            <div class="flex items-center gap-6 text-sm">
+                <div class="flex items-center gap-2 text-slate-600">
+                    <i class="fa-solid fa-circle-info text-slate-400 text-xs"></i>
+                    <span>已选 <b class="text-slate-900" x-text="selectedIds.length"></b> 种器具</span>
+                </div>
+                <!-- <div x-show="selectedItems.length > 0" class="hidden sm:flex items-center gap-2 text-xs text-slate-500">
+                    <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                    <span>其中高频推送 <b :class="selectedItems.filter(i => i.historyPushCount >= 5).length > 0 ? 'text-red-600' : 'text-slate-600'" x-text="selectedItems.filter(i => i.historyPushCount >= 5).length"></b> 种</span>
+                </div> -->
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button @click="cancel" class="btn btn-default">
+                    <i class="fa-solid fa-times"></i>
+                    取消
+                </button>
+                <button @click="push" 
+                        :disabled="selectedItems.length === 0"
+                        class="btn btn-primary">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    确认推送
+                    <span x-show="selectedItems.length > 0" class="bg-white/20 px-1.5 py-0.5 rounded text-xs ml-1" x-text="selectedItems.length"></span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function pushInstrumentApp() {
+            return {
+                searchQuery: '',
+                selectedIds: [],
+                
+                // 筛选项
+                filterDepartment: '',
+                filterServiceType: '',
+                filterSubcontract: '',
+                filterMandatory: '',
+                filterHistoryPush: '',
+                
+                // 完整数据
+                instruments: [
+                    { id: 'INST-001', name: '智能压力变送器', actualName: '智能压力变送器', range: '压力量程 0-1.6MPa', subcontract: '不分包', supplier: '-', basePrice: 1200, guidePrice: 1284, actualPrice: 1284, hasDiscount: true, quantity: 1, unit: '套', serviceType: '检定', isMandatory: false, testMethod: '现场', department: '压力检测部', position: '现场', type: '', model: 'Rosemount', remark: '客户要求加急', historyPushCount: 12 },
+                    { id: 'INST-002', name: '高精度多功能万用表', actualName: '高精度多功能万用表', range: '', subcontract: '内包', supplier: '中检计量XXXX公司', basePrice: 2000, guidePrice: 2600, actualPrice: 0, hasDiscount: true, quantity: 8, unit: '件', serviceType: '检定', isMandatory: true, testMethod: '送检', department: '电学检测部', position: '实验室', type: '', model: '', remark: '', historyPushCount: 3 },
+                    { id: 'INST-003', name: '钢卷尺', actualName: '钢卷尺', range: '范围A', subcontract: '外包', supplier: '广电计量公司', basePrice: 1600, guidePrice: 1600, actualPrice: 0, hasDiscount: false, quantity: 10, unit: '件', serviceType: '校准', isMandatory: false, testMethod: '送检', department: '长度检测部', position: '实验室', type: '', model: '', remark: '', historyPushCount: 8 },
+                    { id: 'INST-004', name: '数字温度计', actualName: '工业数字温度计', range: '-50~300°C', subcontract: '不分包', supplier: '-', basePrice: 800, guidePrice: 856, actualPrice: 800, hasDiscount: false, quantity: 2, unit: '支', serviceType: '校准', isMandatory: true, testMethod: '现场', department: '热工检测部', position: '现场', type: '', model: 'TES-1310', remark: '', historyPushCount: 2 },
+                    { id: 'INST-005', name: '压力校验仪', actualName: '智能压力校验仪', range: '0-60MPa', subcontract: '内包', supplier: '中检计量XXXX公司', basePrice: 3500, guidePrice: 3750, actualPrice: 3500, hasDiscount: true, quantity: 1, unit: '台', serviceType: '检定', isMandatory: false, testMethod: '实验室', department: '压力检测部', position: '实验室', type: '', model: 'ConST811', remark: '需提前预约', historyPushCount: 15 },
+                    { id: 'INST-006', name: '绝缘电阻测试仪', actualName: '数字绝缘电阻表', range: '0-2000MΩ', subcontract: '不分包', supplier: '-', basePrice: 1200, guidePrice: 1284, actualPrice: 1200, hasDiscount: false, quantity: 3, unit: '台', serviceType: '检定', isMandatory: true, testMethod: '送检', department: '电学检测部', position: '实验室', type: '', model: 'UT513', remark: '', historyPushCount: 4 },
+                    { id: 'INST-007', name: '钳形电流表', actualName: '数字钳形表', range: 'AC 0-1000A', subcontract: '外包', supplier: '第三方实验室', basePrice: 900, guidePrice: 965, actualPrice: 900, hasDiscount: true, quantity: 2, unit: '只', serviceType: '校准', isMandatory: false, testMethod: '现场', department: '电学检测部', position: '现场', type: '', model: 'HIOKI 3280', remark: '', historyPushCount: 6 },
+                    { id: 'INST-008', name: '接地电阻测试仪', actualName: '数字接地电阻仪', range: '0-2000Ω', subcontract: '内包', supplier: '中检计量XXXX公司', basePrice: 1600, guidePrice: 1720, actualPrice: 1600, hasDiscount: false, quantity: 1, unit: '台', serviceType: '检定', isMandatory: true, testMethod: '现场', department: '电学检测部', position: '现场', type: '', model: 'ETCR2000', remark: '紧急', historyPushCount: 1 }
+                ],
+
+                get departmentOptions() {
+                    return [...new Set(this.instruments.map(i => i.department))].sort();
+                },
+
+                get hasActiveFilters() {
+                    return this.filterDepartment || this.filterServiceType || this.filterSubcontract || 
+                           this.filterMandatory || this.filterHistoryPush || this.searchQuery;
+                },
+
+                get filteredInstruments() {
+                    let result = this.instruments;
+
+                    if (this.searchQuery) {
+                        const q = this.searchQuery.toLowerCase();
+                        result = result.filter(i => 
+                            i.name.toLowerCase().includes(q) || 
+                            i.actualName.toLowerCase().includes(q) ||
+                            i.model.toLowerCase().includes(q)
+                        );
+                    }
+
+                    if (this.filterDepartment) {
+                        result = result.filter(i => i.department === this.filterDepartment);
+                    }
+
+                    if (this.filterServiceType) {
+                        result = result.filter(i => i.serviceType === this.filterServiceType);
+                    }
+
+                    if (this.filterSubcontract) {
+                        result = result.filter(i => i.subcontract === this.filterSubcontract);
+                    }
+
+                    if (this.filterMandatory !== '') {
+                        const isMandatory = this.filterMandatory === 'true';
+                        result = result.filter(i => i.isMandatory === isMandatory);
+                    }
+
+                    if (this.filterHistoryPush) {
+                        if (this.filterHistoryPush === 'high') {
+                            result = result.filter(i => i.historyPushCount >= 5);
+                        } else {
+                            result = result.filter(i => i.historyPushCount < 5);
+                        }
+                    }
+
+                    return result;
+                },
+
+                get selectedItems() {
+                    return this.instruments.filter(i => this.selectedIds.includes(i.id));
+                },
+
+                get isAllSelected() {
+                    return this.filteredInstruments.length > 0 && 
+                           this.filteredInstruments.every(i => this.selectedIds.includes(i.id));
+                },
+
+                isSelected(id) {
+                    return this.selectedIds.includes(id);
+                },
+
+                toggleSelect(item) {
+                    if (this.isSelected(item.id)) {
+                        this.selectedIds = this.selectedIds.filter(id => id !== item.id);
+                    } else {
+                        this.selectedIds.push(item.id);
+                    }
+                },
+
+                toggleSelectAll() {
+                    if (this.isAllSelected) {
+                        this.filteredInstruments.forEach(i => {
+                            this.selectedIds = this.selectedIds.filter(id => id !== i.id);
+                        });
+                    } else {
+                        this.filteredInstruments.forEach(i => {
+                            if (!this.isSelected(i.id)) this.selectedIds.push(i.id);
+                        });
+                    }
+                },
+
+                removeSelected(id) {
+                    this.selectedIds = this.selectedIds.filter(itemId => itemId !== id);
+                },
+
+                clearAll() {
+                    this.selectedIds = [];
+                },
+
+                clearFilters() {
+                    this.filterDepartment = '';
+                    this.filterServiceType = '';
+                    this.filterSubcontract = '';
+                    this.filterMandatory = '';
+                    this.filterHistoryPush = '';
+                    this.searchQuery = '';
+                },
+
+                cancel() {
+                    if (this.selectedIds.length > 0 && !confirm('确定取消？已选数据将丢失。')) return;
+                    console.log('取消操作');
+                },
+
+                push() {
+                    if (this.selectedItems.length === 0) return;
+                    const data = this.selectedItems.map(i => ({
+                        id: i.id,
+                        name: i.name,
+                        historyPushCount: i.historyPushCount
+                    }));
+                    console.log('推送:', data);
+                    alert(`成功推送 ${data.length} 个器具`);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
