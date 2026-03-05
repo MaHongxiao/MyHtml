@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>保证金回款登记</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: rgba(0, 0, 0, 0.45);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .modal-container {
+            width: 560px;
+            height: 500px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 16px;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 500;
+            width: 120px;
+            flex-shrink: 0;
+        }
+
+        .form-label .required {
+            color: #dc2626;
+            margin-right: 4px;
+        }
+
+        .form-input {
+            flex: 1;
+            height: 40px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 0 12px;
+            font-size: 14px;
+            color: #111827;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-input:hover { border-color: #9ca3af; }
+        .form-input:focus { 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); 
+        }
+        .form-input::placeholder { color: #9ca3af; }
+
+        .form-textarea {
+            flex: 1;
+            height: 100px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #111827;
+            outline: none;
+            resize: none;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-textarea:focus { 
+            border-color: #3b82f6; 
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); 
+        }
+        .form-textarea::placeholder { color: #9ca3af; }
+
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 20px;
+            height: 40px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-btn:hover { background: #1d4ed8; }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+
+        .file-remove {
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .file-remove:hover {
+            color: #dc2626;
+            background: #fee2e2;
+        }
+
+        .hint-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+
+        /* 动画 */
+        .field-enter {
+            animation: slideDown 0.25s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="modal-container" x-data="refundModal()" x-init="init()">
+        
+        <!-- 头部 -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
+            <h2 class="text-lg font-bold text-gray-900">保证金回款登记</h2>
+            <button @click="cancel" class="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded hover:bg-gray-100">
+                <i class="fa-solid fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- 表单内容 -->
+        <div class="flex-1 overflow-y-auto px-8 py-6 space-y-5">
+            
+            <!-- 回款日期 -->
+            <div class="flex items-center">
+                <label class="form-label">
+                    <span class="required">*</span>
+                    <span>回款日期:</span>
+                </label>
+                <div class="flex-1 relative">
+                    <input type="date" 
+                           x-model="form.refundDate" 
+                           class="form-input w-full cursor-pointer">
+                    <i class="fa-regular fa-calendar absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                </div>
+            </div>
+
+            <!-- 回款金额 -->
+            <div class="flex items-start">
+                <label class="form-label mt-2">
+                    <span class="required">*</span>
+                    <span>回款金额:</span>
+                </label>
+                <div class="flex-1">
+                    <input type="number" 
+                           x-model.number="form.refundAmount" 
+                           @input="validateAmount"
+                           class="form-input w-full"
+                           placeholder="请输入回款金额">
+                    
+                    <!-- 保证金金额提示 -->
+                    <div class="mt-2 text-sm flex items-center gap-2">
+                        <span class="text-gray-500">保证金金额:</span>
+                        <span class="text-blue-600 font-semibold" x-text="'¥ ' + formatMoney(depositAmount)"></span>
+                    </div>
+
+                    <!-- 金额差异提示（仅在填写了金额且不符时显示） -->
+                    <div x-show="showDifferenceWarning" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         class="mt-2 flex items-center gap-2 text-amber-600 text-xs bg-amber-50 px-3 py-2 rounded border border-amber-200">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span>回款金额与保证金金额不符，请填写原因</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 金额不符原因（条件显示：金额不符时展示） -->
+            <div x-show="showReasonField" 
+                 x-transition:enter="field-enter"
+                 class="flex items-start field-enter">
+                <label class="form-label mt-2">
+                    <span class="required">*</span>
+                    <span>金额不符原因:</span>
+                </label>
+                <div class="flex-1 relative">
+                    <textarea x-model="form.reason" 
+                              class="form-textarea w-full"
+                              maxlength="100"
+                              placeholder="请输入未中标原因（如价格、资质、技术方案）"></textarea>
+                    <div class="absolute bottom-2 right-3 text-xs text-gray-400">
+                        <span x-text="form.reason ? form.reason.length : 0"></span>/100
+                    </div>
+                </div>
+            </div>
+
+            <!-- 回款凭证 -->
+            <div class="flex items-start">
+                <label class="form-label mt-2">
+                    <span class="required">*</span>
+                    <span>回款凭证:</span>
+                </label>
+                <div class="flex-1">
+                    <button @click="triggerUpload" class="upload-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>上传文件</span>
+                    </button>
+                    <input type="file" 
+                           x-ref="fileInput" 
+                           @change="handleFileChange" 
+                           multiple 
+                           accept=".doc,.docx,.pdf,.jpg,.jpeg,.png"
+                           class="hidden">
+                    
+                    <div class="hint-text">
+                        支持扩展名：.doc .docx .pdf .jpg .jpeg .png
+                    </div>
+
+                    <!-- 文件列表（默认空） -->
+                    <div class="space-y-2 mt-3">
+                        <template x-for="(file, index) in uploadedFiles" :key="index">
+                            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <i class="fa-solid fa-file-lines text-gray-400 text-lg"></i>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm text-gray-700 truncate font-medium" x-text="file.name"></div>
+                                    <div class="mt-1.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                        <div class="h-full bg-blue-500 rounded-full transition-all duration-300"
+                                             :style="'width: ' + file.progress + '%'"></div>
+                                    </div>
+                                </div>
+                                <button @click="removeFile(index)" class="file-remove">
+                                    <i class="fa-solid fa-times"></i>
+                                </button>
+                            </div>
+                        </template>
+                        
+                        <!-- 空状态提示 -->
+                        <div x-show="uploadedFiles.length === 0" class="text-gray-400 text-xs py-2">
+                            暂未上传文件，请点击上方按钮上传
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 底部按钮 -->
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 flex-shrink-0">
+            <button @click="cancel" class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-md hover:bg-white hover:border-gray-400 transition-all text-sm font-medium bg-white">
+                取消
+            </button>
+            <button @click="submit" 
+                    :disabled="!isValid"
+                    :class="isValid ? 'bg-blue-500 hover:bg-blue-600 shadow-md shadow-blue-200' : 'bg-gray-300 cursor-not-allowed'"
+                    class="px-6 py-2.5 text-white rounded-md transition-all text-sm font-medium min-w-[90px]">
+                确定
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        function refundModal() {
+            return {
+                // 保证金金额（从外部传入）
+                depositAmount: 1000,
+                
+                // 表单数据（默认空）
+                form: {
+                    refundDate: '',
+                    refundAmount: '',  // 默认为空，不预填
+                    reason: ''
+                },
+                
+                // 上传文件列表（默认空数组）
+                uploadedFiles: [],
+
+                init() {
+                    // 设置默认日期为今天
+                    this.form.refundDate = new Date().toISOString().split('T')[0];
+                },
+
+                formatMoney(amount) {
+                    return amount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+
+                // 是否显示原因字段：填写了金额 且 金额 ≠ 保证金金额
+                get showReasonField() {
+                    return this.form.refundAmount !== '' && 
+                           this.form.refundAmount !== null && 
+                           parseFloat(this.form.refundAmount) !== parseFloat(this.depositAmount);
+                },
+
+                // 是否显示差异警告
+                get showDifferenceWarning() {
+                    return this.showReasonField;
+                },
+
+                // 表单验证
+                get isValid() {
+                    // 基础字段必填
+                    if (!this.form.refundDate || this.form.refundAmount === '' || this.form.refundAmount === null) {
+                        return false;
+                    }
+                    
+                    // 金额不符时原因必填
+                    if (this.showReasonField && (!this.form.reason || !this.form.reason.trim())) {
+                        return false;
+                    }
+                    
+                    // 必须上传凭证（至少一个）
+                    if (this.uploadedFiles.length === 0) {
+                        return false;
+                    }
+                    
+                    return true;
+                },
+
+                validateAmount() {
+                    // 确保金额为数字或空
+                    if (this.form.refundAmount !== '' && isNaN(this.form.refundAmount)) {
+                        this.form.refundAmount = '';
+                    }
+                    // 金额变化时如果相符，清空原因
+                    if (!this.showReasonField) {
+                        this.form.reason = '';
+                    }
+                },
+
+                triggerUpload() {
+                    this.$refs.fileInput.click();
+                },
+
+                handleFileChange(e) {
+                    const files = Array.from(e.target.files);
+                    files.forEach(file => {
+                        this.uploadedFiles.push({
+                            name: file.name,
+                            progress: 0,
+                            file: file
+                        });
+                        this.simulateUpload(this.uploadedFiles.length - 1);
+                    });
+                    e.target.value = '';
+                },
+
+                simulateUpload(index) {
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += Math.random() * 25;
+                        if (progress >= 100) {
+                            progress = 100;
+                            clearInterval(interval);
+                        }
+                        this.uploadedFiles[index].progress = Math.min(progress, 100);
+                    }, 200);
+                },
+
+                removeFile(index) {
+                    this.uploadedFiles.splice(index, 1);
+                },
+
+                cancel() {
+                    if (this.hasUnsavedData() && !confirm('确定取消登记？已填写的内容将丢失。')) {
+                        return;
+                    }
+                    console.log('取消');
+                    // 实际项目中关闭弹窗
+                },
+
+                hasUnsavedData() {
+                    return this.form.refundAmount !== '' || 
+                           this.form.reason !== '' || 
+                           this.uploadedFiles.length > 0;
+                },
+
+                submit() {
+                    if (!this.isValid) return;
+                    
+                    const data = {
+                        refundDate: this.form.refundDate,
+                        refundAmount: parseFloat(this.form.refundAmount),
+                        depositAmount: this.depositAmount,
+                        difference: parseFloat(this.form.refundAmount) - this.depositAmount,
+                        reason: this.showReasonField ? this.form.reason : null,
+                        files: this.uploadedFiles.map(f => f.name)
+                    };
+                    
+                    console.log('提交数据:', data);
+                    
+                    const diff = data.difference;
+                    let msg = `回款金额：¥${data.refundAmount.toFixed(2)}\n`;
+                    if (diff !== 0) {
+                        msg += `差异金额：¥${diff > 0 ? '+' : ''}${diff.toFixed(2)}\n`;
+                        msg += `不符原因：${data.reason}`;
+                    } else {
+                        msg += '金额核对无误，全额回款';
+                    }
+                    
+                    alert('保证金回款登记成功！\n\n' + msg);
+                }
+            }
+        }
+    </script>
+
+</body>
+</html>
