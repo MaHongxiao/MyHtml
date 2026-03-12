@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能报价器</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', 'Microsoft YaHei', system-ui, sans-serif; background-color: #f8fafc; padding-bottom: 140px; }
+        
+        /* 字体强制≥13px */
+        .text-base { font-size: 14px !important; }
+        .text-label { font-size: 13px !important; }
+        .text-value { font-size: 20px !important; }
+        .text-price { font-size: 24px !important; }
+        
+        .calc-input {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s;
+            outline: none;
+            height: 40px;
+            font-size: 16px;
+            color: #374151;
+        }
+        .calc-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .calc-input.red {
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+        .py-4{
+            padding: 0 1.5rem!important;
+        }
+        .py-3 {
+            padding-top: 0.35rem!important;
+            padding-bottom: 0.35rem!important;
+        }
+        
+        .formula-box {
+            border-radius: 8px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .operator {
+            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 500;
+            user-select: none;
+        }
+        
+        .amount-display {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-weight: 600;
+            color: #4b5563;
+            font-size: 16px;
+            min-width: 100px;
+            text-align: center;
+        }
+        
+        .amount-display.blue {
+            background: #eff6ff;
+            border-color: #dbeafe;
+            color: #2563eb;
+        }
+        
+        /* 服务费提示框 */
+        .service-tips {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 8px;
+            background: #1f2937;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .service-tips::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #1f2937;
+        }
+        .service-wrapper:focus-within .service-tips {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .remark-input {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 4px 12px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+            background: #fff;
+            width: 100%;
+        }
+        .remark-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div x-data="smartQuoter()" x-cloak 
+         class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg">
+        
+        <!-- 顶部规则栏 -->
+        <div class="bg-gray-50 border-b border-gray-200 px-6 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-label text-gray-600">
+                <i class="fa-solid fa-circle-info text-blue-500 text-base"></i>
+                <span class="font-medium">计算规则：</span>
+                <span class="font-mono py-1 rounded text-gray-700">
+                    器具报价合计 + 服务费 = 最终报价
+                </span>
+            </div>
+            <div class="flex items-center gap-2 text-label text-gray-500">
+                <i class="fa-solid fa-pen-to-square text-blue-400"></i>
+                <span>修改最终报价时自动反算服务费</span>
+            </div>
+        </div>
+
+        <!-- 主计算区 -->
+        <div class="px-6 py-4 flex items-center justify-between gap-6">
+            
+            <!-- 左侧：器具报价合计 -->
+            <div class="min-w-[180px] border-r border-gray-200 pr-6">
+                <div class="text-label text-gray-500 mb-1">器具报价合计</div>
+                <div class="text-price font-bold text-gray-900 font-mono tracking-tight">
+                    ¥<span x-text="formatNumber(totalAmount)"></span>
+                </div>
+                <!-- 明细展示 -->
+                <div class="mt-1 text-xs text-gray-400 flex flex-col gap-0.5">
+                    <!-- <span>参与折扣金额: ¥<span x-text="formatNumber(discountedAmount)"></span></span>
+                    <span>不参与折扣: ¥<span x-text="formatNumber(nonDiscountedAmount)"></span></span> -->
+                </div>
+            </div>
+
+            <!-- 中间：计算公式链 -->
+            <div class="flex-1 flex justify-center">
+                <div class="formula-box">
+                    
+                    <!-- 器具报价合计（只读） -->
+                    <div class="flex flex-col items-center gap-1">
+                        <label class="text-label font-medium text-gray-600">器具报价合计</label>
+                        <div class="amount-display blue" x-text="'¥' + formatNumber(totalAmount)"></div>
+                    </div>
+
+                    <span class="operator">+</span>
+
+                    <!-- 服务费（带提示） -->
+                    <div class="flex flex-col items-center gap-1 service-wrapper relative">
+                        <label class="text-label font-medium text-gray-600">服务费</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">¥</span>
+                            <input type="number" step="0.01" 
+                                   x-model.number="serviceFee" 
+                                   @input="calcForward()"
+                                   class="calc-input w-24 pl-6" placeholder="0">
+                        </div>
+                        <!-- 聚焦提示 -->
+                        <div class="service-tips">
+                            <i class="fa-solid fa-circle-info mr-1"></i>
+                            填写额外的服务费用
+                        </div>
+                    </div>
+
+                    <span class="operator">=</span>
+
+                    <!-- 最终报价 -->
+                    <div class="flex flex-col items-center gap-1 relative">
+                        <label class="text-label font-bold text-red-500 flex items-center gap-1">
+                            最终报价
+                            <i class="fa-solid fa-pen-to-square text-xs opacity-50"></i>
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-red-400 font-bold">¥</span>
+                            <input type="number" step="0.01" 
+                                   x-model.number="finalTotal" 
+                                   @input="calcReverse()"
+                                   class="calc-input red w-28 pl-6" placeholder="0.00">
+                        </div>
+                        <!-- 反算提示 -->
+                        <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-label text-blue-600 bg-blue-50 px-2 py-0.5 rounded whitespace-nowrap transition-opacity"
+                             :class="isReverseCalculating ? 'opacity-100' : 'opacity-0'">
+                            <i class="fa-solid fa-rotate fa-spin mr-1"></i>
+                            自动反算服务费
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 右侧：应收合计 -->
+            <div class="min-w-[160px] pl-6 border-l border-gray-200 text-right">
+                <div class="text-label text-gray-500 mb-1">应收合计</div>
+                <div class="text-price font-bold text-red-600 font-mono tracking-tight">
+                    ¥<span x-text="formatNumber(finalTotal)"></span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 费用备注 -->
+        <div class="bg-gray-50 border-t border-gray-200 px-6 py-3 flex items-center gap-3">
+            <label class="text-label font-medium text-gray-600 whitespace-nowrap flex items-center gap-2">
+                <i class="fa-regular fa-comment-dots text-gray-400"></i>
+                费用备注
+            </label>
+            <input type="text" 
+                   x-model="remark" 
+                   placeholder="请输入关于费用的备注说明..." 
+                   class="remark-input text-gray-700 placeholder:text-gray-400">
+        </div>
+
+    </div>
+
+    <script>
+        function smartQuoter() {
+            return {
+                // 数据
+                discountedAmount: 20000,      // 参与折扣金额（仅作为明细展示）
+                nonDiscountedAmount: 4000,    // 不参与折扣金额（仅作为明细展示）
+                serviceFee: 0,                // 服务费
+                finalTotal: 24000,            // 最终报价
+                remark: '',                   // 备注
+                
+                isReverseCalculating: false,
+
+                init() {
+                    this.calcForward();
+                },
+
+                get totalAmount() {
+                    return Number(this.discountedAmount) + Number(this.nonDiscountedAmount);
+                },
+
+                formatNumber(val) {
+                    return Number(val || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+
+                // 正向计算：器具报价合计 + 服务费 = 最终报价
+                calcForward() {
+                    const total = this.totalAmount;
+                    const fee = Number(this.serviceFee) || 0;
+                    
+                    this.finalTotal = Number((total + fee).toFixed(2));
+                    this.isReverseCalculating = false;
+                },
+
+                // 反向计算：修改最终报价时，反算服务费
+                calcReverse() {
+                    this.isReverseCalculating = true;
+                    const final = Number(this.finalTotal) || 0;
+                    const total = this.totalAmount;
+                    
+                    // 服务费 = 最终报价 - 器具报价合计
+                    this.serviceFee = Number((final - total).toFixed(2));
+                    
+                    // 防止服务费为负数（可选：你也可以选择允许负数表示减免）
+                    if (this.serviceFee < 0) {
+                        this.serviceFee = 0;
+                        this.finalTotal = total;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
