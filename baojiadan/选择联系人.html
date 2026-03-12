@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择联系人</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        
+        /* 固定宽高容器 */
+        .contact-modal {
+            width: 640px;
+            height: 720px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* 内容滚动区域 */
+        .contact-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 24px;
+            background-color: #fafafa;
+        }
+        
+        /* 自定义滚动条 */
+        .contact-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .contact-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .contact-list::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        .contact-list::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+        
+        /* 联系人卡片基础样式 */
+        .contact-item {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .contact-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+        
+        /* 优化后的选中样式 */
+        .contact-item.selected {
+            border: 1px solid #3b82f6;
+            background-color: #f0f9ff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+        
+        .contact-item.selected::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #3b82f6;
+            border-radius: 8px 0 0 8px;
+        }
+        
+        /* 勾选标记 */
+        .check-mark {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 24px;
+            height: 24px;
+            background: #3b82f6;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+        }
+        
+        .contact-item.selected .check-mark {
+            display: flex;
+        }
+        
+        /* 主联系人标签 */
+        .primary-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+        }
+        
+        /* 性别标签 */
+        .gender-tag {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 10px;
+            margin-left: 6px;
+            font-weight: 600;
+        }
+        .gender-male {
+            background-color: #dbeafe;
+            color: #1d4ed8;
+        }
+        .gender-female {
+            background-color: #fce7f3;
+            color: #be185d;
+        }
+        
+        /* 头像 */
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        /* 信息网格 */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 16px;
+            margin-top: 12px;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: #4b5563;
+        }
+        
+        .info-item svg {
+            width: 14px;
+            height: 14px;
+            margin-right: 6px;
+            color: #9ca3af;
+            flex-shrink: 0;
+        }
+        
+        /* 备注区域 */
+        .remark-box {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background-color: #f9fafb;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.5;
+            border-left: 3px solid #e5e7eb;
+        }
+        
+        .contact-item.selected .remark-box {
+            background-color: #e0f2fe;
+            border-left-color: #3b82f6;
+        }
+        
+        /* 搜索框 */
+        .search-box {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+            background: #f9fafb;
+        }
+        
+        .search-input:focus {
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* 头部 */
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+        }
+        
+        /* 底部 */
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+        }
+        
+        .btn {
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            outline: none;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-default {
+            background: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-default:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+        
+        .selected-text {
+            font-size: 14px;
+            color: #374151;
+            font-weight: 500;
+        }
+        
+        .selected-text span {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 固定宽高弹窗 -->
+    <div class="contact-modal">
+        <!-- 头部 -->
+        <div class="modal-header">
+            <div>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #111827;">选择联系人</h3>
+                <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">请选择关联的联系人，已自动选中主联系人</p>
+            </div>
+            <button onclick="alert('关闭弹窗')" style="background: none; border: none; cursor: pointer; padding: 4px; color: #9ca3af; hover: color: #6b7280;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- 搜索 -->
+        <div class="search-box">
+            <div style="position: relative;">
+                <svg style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" class="search-input" placeholder="搜索姓名、部门、职位或手机号..." oninput="filterContacts(this.value)">
+            </div>
+        </div>
+        
+        <!-- 联系人列表（固定高度，超出滚动） -->
+        <div class="contact-list" id="contactList">
+            
+            <!-- 联系人1：张欢欢（主联系人） -->
+            <div class="contact-item selected" onclick="selectContact(this, 1)" data-id="1" data-name="张欢欢" data-primary="true">
+                <div class="check-mark">✓</div>
+                
+                <div style="display: flex; gap: 16px;">
+                    <div class="avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        张
+                    </div>
+                    
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">张欢欢</h4>
+                            <span class="gender-tag gender-female">女</span>
+                            <span class="primary-tag">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                </svg>
+                                主联系人
+                            </span>
+                        </div>
+                        
+                        <div style="font-size: 13px; color: #3b82f6; font-weight: 500; margin-bottom: 8px;">企业高管 · 事业部</div>
+                        
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                </svg>
+                                <span style="color: #111827; font-weight: 500;">13309450965</span>
+                            </div>
+                            <div class="info-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                    <polyline points="22,6 12,13 2,6"/>
+                                </svg>
+                                <span class="truncate">352762737823@qq.com</span>
+                            </div>
+
+                        </div>
+                        
+                        <div class="remark-box">
+                            <strong style="color: #374151;">备注：</strong>这是一段备注说明这是一段备注说明这是一段备注说明这是一段备注说明这是一段备注说明这是一段备注说明
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 联系人2：李明 -->
+            <div class="contact-item" onclick="selectContact(this, 2)" data-id="2" data-name="李明" data-primary="false">
+                <div class="check-mark">✓</div>
+                
+                <div style="display: flex; gap: 16px;">
+                    <div class="avatar" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white;">
+                        李
+                    </div>
+                    
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">李明</h4>
+                            <span class="gender-tag gender-male">男</span>
+                        </div>
+                        
+                        <div style="font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 8px;">技术经理 · 技术部</div>
+                        
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                </svg>
+                                <span style="color: #111827; font-weight: 500;">18054482631</span>
+                            </div>
+                            <div class="info-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                    <polyline points="22,6 12,13 2,6"/>
+                                </svg>
+                                <span class="truncate">liming@company.com</span>
+                            </div>
+                        </div>
+                        
+                        <div class="remark-box">
+                            <strong style="color: #374151;">备注：</strong>技术对接人，负责项目技术方案制定与实施，建议优先联系
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 联系人3：王芳 -->
+            <div class="contact-item" onclick="selectContact(this, 3)" data-id="3" data-name="王芳" data-primary="false">
+                <div class="check-mark">✓</div>
+                
+                <div style="display: flex; gap: 16px;">
+                    <div class="avatar" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%); color: white;">
+                        王
+                    </div>
+                    
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; margin-bottom: 4px;">
+                            <h4 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">王芳</h4>
+                            <span class="gender-tag gender-female">女</span>
+                        </div>
+                        
+                        <div style="font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 8px;">销售主管 · 销售部</div>
+                        
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                </svg>
+                                <span style="color: #111827; font-weight: 500;">13800138000</span>
+                            </div>
+                            <div class="info-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                    <polyline points="22,6 12,13 2,6"/>
+                                </svg>
+                                <span class="truncate">wangfang@company.com</span>
+                            </div>
+                        </div>
+                        
+                        <div class="remark-box">
+                            <strong style="color: #374151;">备注：</strong>商务事宜联系人，负责合同洽谈与订单跟进，工作日上午9-11点最方便接听电话
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- 底部 -->
+        <div class="modal-footer">
+            <div class="selected-text">
+                已选择：<span id="selectedName">张欢欢（主联系人）</span>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn btn-default" onclick="alert('取消选择')">取消</button>
+                <button class="btn btn-primary" onclick="confirmSelection()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedId = 1;
+        
+        function selectContact(element, id) {
+            // 移除所有选中状态
+            document.querySelectorAll('.contact-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // 添加选中状态
+            element.classList.add('selected');
+            selectedId = id;
+            
+            // 更新底部文字
+            const name = element.getAttribute('data-name');
+            const isPrimary = element.getAttribute('data-primary') === 'true';
+            const displayText = isPrimary ? name + '（主联系人）' : name;
+            document.getElementById('selectedName').textContent = displayText;
+        }
+        
+        function filterContacts(keyword) {
+            const items = document.querySelectorAll('.contact-item');
+            const lowerKeyword = keyword.toLowerCase();
+            
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(lowerKeyword)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        function confirmSelection() {
+            const selectedElement = document.querySelector(`[data-id="${selectedId}"]`);
+            const name = selectedElement.getAttribute('data-name');
+            const isPrimary = selectedElement.getAttribute('data-primary') === 'true';
+            
+            alert(`已确认选择：${name}${isPrimary ? '（主联系人）' : ''}`);
+        }
+    </script>
+
+</body>
+</html>
