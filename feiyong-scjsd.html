@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>结算单生成 - 多维筛选版</title>
+    <title>结算单生成 - 分层查询版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,29 +12,98 @@
         [x-cloak] { display: none !important; }
         body { font-family: 'Inter', -apple-system, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; color: #334155; font-size: 13px; }
         
-        /* === 字体规范严格执行 === */
         .text-13 { font-size: 13px !important; line-height: 1.5; }
-        .text-12 { font-size: 12px !important; } /* 仅用于极其次要的标签 */
+        .text-12 { font-size: 12px !important; }
         
-        /* 数字字体优化：最小14px，加粗，等宽 */
         .font-num { font-family: 'Menlo', 'Monaco', 'Consolas', monospace; font-weight: 600; font-size: 14px; letter-spacing: -0.02em; }
         .font-num-lg { font-size: 15px; }
         .font-num-xl { font-size: 18px; }
-        .font-num-2xl { font-size: 26px; }
+        .font-num-2xl { font-size: 24px; }
 
-        /* === 滚动条美化 === */
         .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
 
-        /* === 表格数字对齐 === */
-        .num-cell { text-align: right; font-family: 'Menlo', monospace; font-size: 14px; }
+        .num-cell { text-align: right; font-family: 'Menlo', monospace; font-size: 13px; }
         
-        /* === 底部阴影 === */
         .footer-shadow { box-shadow: 0 -4px 10px -2px rgba(0, 0, 0, 0.05); }
 
-        /* === 输入框聚焦效果 === */
         .input-focus:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1); }
+
+        /* 标签样式 */
+        .tag-refund-full { background-color: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
+        .tag-refund-partial { background-color: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
+        .tag-new { background-color: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+        .tag-normal { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .tag-outsource { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        
+        .row-refund-full { background-color: #fafafa; }
+        .row-refund-partial { background-color: #fffbeb; }
+        .row-matched { background-color: #ffffff; }
+        .row-weak { opacity: 0.4; background-color: #f8fafc; }
+        
+        /* 搜索下拉 */
+        .search-dropdown {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .sample-item { transition: all 0.15s; }
+        .sample-item:hover { background-color: #f8fafc; }
+        .sample-item.disabled { opacity: 0.5; pointer-events: none; background-color: #f1f5f9; }
+        
+        /* 路径样式 */
+        .group-path {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #64748b;
+            flex-wrap: wrap;
+        }
+        .path-segment {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 1px 5px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 3px;
+            font-family: 'Menlo', monospace;
+            font-size: 10px;
+        }
+        .path-divider { color: #cbd5e1; font-size: 10px; margin: 0 2px; }
+        
+        .filter-btn {
+            transition: all 0.2s;
+        }
+        .filter-btn.active {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border-color: #bfdbfe;
+        }
+
+        /* 搜索类型选择器样式 */
+        .search-type-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            appearance: none;
+            padding-right: 2.5rem;
+        }
+
+        /* 高亮动画 */
+        @keyframes highlight-pulse {
+            0% { background-color: #eff6ff; }
+            50% { background-color: #dbeafe; }
+            100% { background-color: #ffffff; }
+        }
+        .highlight-row {
+            animation: highlight-pulse 2s ease-in-out;
+            border-left: 3px solid #6366f1;
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden" x-data="settlementApp()">
@@ -52,267 +121,427 @@
             <div class="text-13 text-slate-500 bg-slate-50 px-3 py-1 rounded-full border border-slate-200 flex items-center gap-2 transition-all"
                  :class="{'bg-indigo-50 border-indigo-100': currentContract}">
                 <span class="w-1.5 h-1.5 rounded-full" :class="currentContract ? 'bg-indigo-500 animate-pulse' : 'bg-slate-300'"></span>
-                <span>当前锁定：</span>
-                <span class="font-bold text-indigo-700 font-num" x-text="currentContract ? currentContract.code : '无'"></span>
+                <span>当前锁定合同：</span>
+                <span class="font-bold text-indigo-700 font-num" x-text="currentContract || '无'"></span>
+                <button x-show="currentContract" @click="resetSelection" class="ml-1 text-rose-500 hover:text-rose-700">
+                    <i class="fa-solid fa-unlock text-xs"></i>
+                </button>
             </div>
-            
-            <button @click="resetSelection" x-show="selectedIds.length > 0" class="text-13 text-slate-500 hover:text-rose-600 transition flex items-center gap-1">
-                <i class="fa-solid fa-trash-can"></i> 清空已选
-            </button>
         </div>
     </header>
 
     <main class="flex-1 flex overflow-hidden">
         
-        <aside class="w-[400px] bg-white border-r border-slate-200 flex flex-col shrink-0 overflow-hidden z-10">
+        <!-- 左侧侧边栏 -->
+        <aside class="w-[420px] bg-white border-r border-slate-200 flex flex-col shrink-0 overflow-hidden z-10">
             
+            <!-- 搜索区域 -->
             <div class="p-4 border-b border-slate-200 bg-slate-50/50 shrink-0 space-y-3">
                 <div class="flex justify-between items-center">
-                    <span class="font-bold text-slate-700 text-13"><i class="fa-solid fa-filter text-indigo-500 mr-1.5"></i>筛选条件</span>
-                    <button @click="resetFilters" class="text-xs text-slate-400 hover:text-indigo-600 transition">重置条件</button>
+                    <span class="font-bold text-slate-700 text-13"><i class="fa-solid fa-magnifying-glass text-indigo-500 mr-1.5"></i>查询单据</span>
+                    <button x-show="selectedEntity" @click="clearLeftSearch" class="text-xs text-rose-500 hover:text-rose-700 flex items-center gap-1 transition">
+                        <i class="fa-solid fa-rotate-left"></i> 清空查询
+                    </button>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="col-span-2 relative">
-                        <i class="fa-regular fa-building absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
-                        <input type="text" x-model="filters.customer" placeholder="输入客户名称..." 
-                               class="w-full bg-white border border-slate-300 rounded pl-8 pr-2 py-2 text-13 input-focus outline-none transition">
+                <!-- 查询类型选择 + 输入框 -->
+                <div class="space-y-2">
+                    <div class="flex gap-2">
+                        <select x-model="searchType" @change="handleSearch" 
+                                class="search-type-select bg-white border border-slate-300 rounded-lg px-3 py-2 text-13 outline-none focus:border-indigo-500 w-28 shrink-0 cursor-pointer hover:border-indigo-300 transition">
+                            <option value="all">全部类型</option>
+                            <option value="contractCode">合同号</option>
+                            <option value="quoteCode">报价单号</option>
+                            <option value="orderCode">委托单号</option>
+                            <option value="regCode">登记号</option>
+                            <option value="customer">客户名称</option>
+                        </select>
+                        <div class="relative flex-1">
+                            <input 
+                                type="text" 
+                                x-model="searchKeyword" 
+                                @input="handleSearch"
+                                @focus="showDropdown = searchResults.length > 0"
+                                @blur="setTimeout(() => showDropdown = false, 200)"
+                                :placeholder="getSearchPlaceholder()" 
+                                class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-13 input-focus outline-none transition pr-10"
+                            >
+                            <button x-show="searchKeyword" @click="clearSearch" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+                                <i class="fa-solid fa-times-circle"></i>
+                            </button>
+                        </div>
                     </div>
-                    
-                    <div class="relative">
-                        <input type="text" x-model="filters.contractCode" placeholder="合同号" 
-                               class="w-full bg-white border border-slate-300 rounded px-2 py-2 text-13 input-focus outline-none transition font-num text-xs">
+                    <div class="text-[11px] text-slate-400 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-info text-[10px]"></i>
+                        <span x-text="getSearchHint()"></span>
                     </div>
-                    <div class="relative">
-                        <input type="text" x-model="filters.quoteCode" placeholder="报价单号" 
-                               class="w-full bg-white border border-slate-300 rounded px-2 py-2 text-13 input-focus outline-none transition font-num text-xs">
+                </div>
+                
+                <!-- 搜索结果下拉 -->
+                <div x-show="showDropdown && searchResults.length > 0" x-cloak class="absolute left-4 right-4 top-[110px] bg-white border border-slate-200 rounded-lg search-dropdown z-50 max-h-[300px] overflow-y-auto shadow-lg">
+                    <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 text-[11px] text-slate-500 flex justify-between items-center">
+                        <span>找到 <span class="font-num font-bold text-slate-700" x-text="searchResults.length"></span> 个结果</span>
+                        <span x-text="getSearchTypeLabel()"></span>
                     </div>
-                    <div class="relative">
-                        <input type="text" x-model="filters.orderCode" placeholder="委托单号" 
-                               class="w-full bg-white border border-slate-300 rounded px-2 py-2 text-13 input-focus outline-none transition font-num text-xs">
+                    <template x-for="result in searchResults" :key="result.id">
+                        <div @click="selectSearchResult(result)" class="px-4 py-3 hover:bg-indigo-50 cursor-pointer border-b border-slate-100 last:border-0 transition-colors">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-bold text-slate-800 text-13" x-text="result.code"></span>
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-medium" x-text="result.typeLabel"></span>
+                            </div>
+                            <div class="text-12 text-slate-500 truncate" x-text="result.customer || result.name"></div>
+                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                <span class="text-[11px] text-slate-400 font-num bg-slate-50 px-1.5 py-0.5 rounded" x-text="result.contractCode || result.code"></span>
+                                <span x-show="result.matchedField" class="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded" x-text="'匹配: ' + result.matchedField"></span>
+                                <span x-show="result.sampleCount" class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded" x-text="result.sampleCount + '个样品'"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- 当前选中的单据信息 -->
+                <div x-show="selectedEntity" class="bg-indigo-50 border border-indigo-200 rounded-lg p-3 flex items-center justify-between">
+                    <div>
+                        <div class="text-[11px] text-indigo-600 mb-0.5">当前查看</div>
+                        <div class="font-bold text-13 text-indigo-900" x-text="selectedEntity.code"></div>
+                        <div class="text-[11px] text-indigo-700 mt-0.5" x-text="selectedEntity.typeLabel"></div>
                     </div>
-                    <div class="relative">
-                        <input type="text" x-model="filters.regCode" placeholder="登记号(样品)" 
-                               class="w-full bg-white border border-slate-300 rounded px-2 py-2 text-13 input-focus outline-none transition font-num text-xs">
-                    </div>
+                    <button @click="clearLeftSearch" class="w-8 h-8 rounded-full bg-white text-indigo-600 hover:bg-indigo-100 flex items-center justify-center transition">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- 筛选标签 -->
+                <div x-show="currentSamples.length > 0" class="flex gap-2 pt-2">
+                    <button @click="sampleFilter = 'all'" :class="{'active': sampleFilter === 'all'}" class="filter-btn flex-1 py-1.5 px-3 rounded border border-slate-200 text-12 text-slate-600 bg-white hover:border-indigo-300">
+                        全部
+                    </button>
+                    <button @click="sampleFilter = 'refund'" :class="{'active': sampleFilter === 'refund'}" class="filter-btn flex-1 py-1.5 px-3 rounded border border-slate-200 text-12 text-slate-600 bg-white hover:border-indigo-300 flex items-center justify-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>只看退检
+                    </button>
+                    <button @click="sampleFilter = 'new'" :class="{'active': sampleFilter === 'new'}" class="filter-btn flex-1 py-1.5 px-3 rounded border border-slate-200 text-12 text-slate-600 bg-white hover:border-indigo-300 flex items-center justify-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>只看新增
+                    </button>
+                </div>
+
+                <!-- 全选按钮 -->
+                <div x-show="filteredSamples.length > 0" class="flex justify-between items-center pt-2 border-t border-slate-200">
+                    <span class="text-12 text-slate-500">共 <span class="font-num font-bold" x-text="filteredSamples.length"></span> 个样品</span>
+                    <button @click="toggleSelectAllVisible" class="text-13 text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+                        <i class="fa-solid" :class="isAllVisibleSelected ? 'fa-check-square' : 'fa-square'"></i>
+                        <span x-text="isAllVisibleSelected ? '取消全选' : '全选可见'"></span>
+                    </button>
                 </div>
             </div>
             
-            <div class="flex-1 overflow-y-auto custom-scroll p-3 space-y-3 bg-slate-50/30">
-                <template x-for="contract in filteredData" :key="contract.id">
-                    <div class="bg-white border border-slate-200 rounded-lg shadow-sm transition-all duration-200 group"
-                         :class="{'opacity-50 grayscale pointer-events-none bg-slate-100': isContractDisabled(contract.id), 'ring-1 ring-indigo-500': currentContract?.id === contract.id}">
-                        
-                        <div class="px-3 py-3 border-b border-slate-100 flex items-start gap-2 cursor-pointer hover:bg-slate-50"
-                             @click="toggleExpand(contract.id)">
-                            <div class="mt-0.5 text-slate-400">
-                                <i class="fa-solid text-xs transition-transform duration-200" 
-                                   :class="expandedIds.includes(contract.id) ? 'fa-caret-down' : 'fa-caret-right'"></i>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-bold text-slate-700 text-13 truncate" x-text="contract.name"></span>
-                                    <span class="text-[10px] px-1.5 rounded border border-indigo-100 bg-indigo-50 text-indigo-600">合同</span>
-                                </div>
-                                <div class="text-13 text-slate-500 mt-1 truncate flex items-center gap-1">
-                                    <i class="fa-regular fa-building text-xs scale-90"></i>
-                                    <span x-text="contract.customer"></span>
-                                </div>
-                                <div class="text-13 text-slate-400 mt-0.5 font-num" x-text="contract.code"></div>
-                            </div>
-                        </div>
-
-                        <div x-show="expandedIds.includes(contract.id)" x-collapse>
-                            <template x-for="quote in contract.quotes" :key="quote.id">
-                                <div class="border-l-2 border-indigo-100 ml-3 pl-2 py-2">
-                                    <div class="flex items-center gap-2 mb-2 cursor-pointer hover:text-indigo-600 transition" @click="toggleExpand(quote.id)">
-                                        <i class="fa-solid fa-file-invoice text-slate-400 text-xs"></i>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="text-13 font-bold text-slate-600 truncate" x-text="quote.subject"></div>
-                                            <div class="text-[11px] text-slate-400 font-num" x-text="quote.code"></div>
-                                        </div>
-                                        <i class="fa-solid text-[10px] text-slate-300 mr-2" :class="expandedIds.includes(quote.id) ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-                                    </div>
-
-                                    <div x-show="expandedIds.includes(quote.id)" x-collapse class="ml-2 space-y-2">
-                                        <template x-for="order in quote.orders" :key="order.id">
-                                            <div class="bg-slate-50 rounded p-2 border border-slate-100">
-                                                <div class="flex items-center gap-2 mb-2 text-slate-500 pb-1 border-b border-slate-200/50">
-                                                    <i class="fa-solid fa-list-ol text-xs"></i>
-                                                    <span class="text-13 font-num font-bold" x-text="order.code"></span>
-                                                </div>
-
-                                                <div class="space-y-1">
-                                                    <template x-for="sample in order.samples" :key="sample.id">
-                                                        <div @click="toggleSample(sample, contract)"
-                                                             class="flex items-center gap-3 px-2 py-1.5 rounded cursor-pointer transition select-none border border-transparent"
-                                                             :class="isSelected(sample.id) ? 'bg-indigo-50 border-indigo-200' : 'hover:bg-white hover:shadow-sm hover:border-slate-200'">
-                                                            
-                                                            <div class="w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors shrink-0"
-                                                                 :class="isSelected(sample.id) ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white'">
-                                                                <i class="fa-solid fa-check text-white text-[10px]" x-show="isSelected(sample.id)"></i>
-                                                            </div>
-                                                            
-                                                            <div class="flex-1 min-w-0">
-                                                                <div class="text-13 font-medium truncate" 
-                                                                     :class="isSelected(sample.id) ? 'text-indigo-700' : 'text-slate-700'" 
-                                                                     x-text="sample.name"></div>
-                                                                <div class="text-13 text-slate-400 font-num mt-0.5" x-text="sample.regCode"></div>
-                                                            </div>
-                                                            
-                                                            <div class="font-num text-slate-400 text-13">¥<span x-text="sample.testFee"></span></div>
-                                                        </div>
-                                                    </template>
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
+            <!-- 样品列表区域 -->
+            <div class="flex-1 overflow-y-auto custom-scroll bg-slate-50/30 relative">
+                <!-- 空状态 -->
+                <div x-show="!selectedEntity" class="flex flex-col items-center justify-center h-full text-slate-400 p-8">
+                    <div class="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-magnifying-glass text-3xl text-slate-300"></i>
                     </div>
-                </template>
-                
-                <div x-show="filteredData.length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400">
-                    <i class="fa-solid fa-magnifying-glass-minus text-2xl mb-2 text-slate-300"></i>
-                    <p class="text-13">未匹配到任何数据</p>
+                    <p class="text-13 font-medium mb-1">请选择查询类型并输入关键字</p>
+                    <p class="text-12 text-slate-400 text-center">支持按合同号、报价单号、委托单号<br>登记号、客户名称精确或模糊查询</p>
+                </div>
+
+                <!-- 样品列表 -->
+                <div x-show="currentSamples.length > 0" class="p-3 space-y-2">
+                    <template x-for="sample in filteredSamples" :key="sample.id">
+                        <div @click="toggleSample(sample)"
+                             class="sample-item flex items-start gap-3 px-3 py-3 rounded-lg cursor-pointer select-none border bg-white"
+                             :class="{
+                                 'border-indigo-500 bg-indigo-50 shadow-sm': isSelected(sample.id), 
+                                 'border-slate-200 hover:border-indigo-300': !isSelected(sample.id),
+                                 'opacity-50 pointer-events-none bg-slate-100': isContractLocked(sample.contractId) && !isSelected(sample.id),
+                                 'border-rose-200 bg-rose-50/30': sample.status === 'full_refund',
+                                 'border-orange-200 bg-orange-50/30': sample.status === 'partial_refund',
+                                 'border-emerald-200 bg-emerald-50/30': sample.status === 'new'
+                             }">
+                            
+                            <div class="w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0 mt-0.5"
+                                 :class="isSelected(sample.id) ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white'">
+                                <i class="fa-solid fa-check text-white text-[10px]" x-show="isSelected(sample.id)"></i>
+                            </div>
+                            
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between gap-2 mb-2">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+                                            <span class="font-medium text-13 text-slate-800" x-text="sample.name"></span>
+                                            <span x-show="sample.status === 'full_refund'" class="text-[10px] px-1.5 py-0.5 rounded tag-refund-full font-medium">全部退检</span>
+                                            <span x-show="sample.status === 'partial_refund'" class="text-[10px] px-1.5 py-0.5 rounded tag-refund-partial font-medium">部分退检</span>
+                                            <span x-show="sample.status === 'new'" class="text-[10px] px-1.5 py-0.5 rounded tag-new font-medium">新增</span>
+                                            <span x-show="sample.isOutsourced" class="text-[10px] px-1.5 py-0.5 rounded tag-outsource font-medium">外包</span>
+                                        </div>
+                                        <div class="text-12 text-slate-500 font-num" x-text="sample.regCode"></div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-num text-13 font-bold text-slate-700">
+                                            ¥<span x-text="sample.testFee"></span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-400">单价</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 数量信息 -->
+                                <div class="flex items-center gap-3 mt-2 text-12">
+                                    <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded">
+                                        <span class="text-slate-500">数量:</span>
+                                        <span class="font-num font-bold text-slate-700" x-text="sample.quantity"></span>
+                                    </div>
+                                    <div x-show="sample.refundQty > 0" class="flex items-center gap-1 bg-rose-50 px-2 py-1 rounded text-rose-600">
+                                        <span>退检:</span>
+                                        <span class="font-num font-bold" x-text="sample.refundQty"></span>
+                                    </div>
+                                    <div class="flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded text-emerald-600 ml-auto">
+                                        <span>计费:</span>
+                                        <span class="font-num font-bold" x-text="sample.chargeQty"></span>
+                                    </div>
+                                </div>
+
+                                <!-- 层级路径 -->
+                                <div class="mt-2 pt-2 border-t border-slate-100 group-path">
+                                    <span class="path-segment" x-text="sample.contractCode"></span>
+                                    <span class="path-divider">›</span>
+                                    <span class="path-segment" x-text="sample.quoteCode"></span>
+                                    <span class="path-divider">›</span>
+                                    <span class="path-segment" x-text="sample.orderCode"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    <div x-show="filteredSamples.length === 0" class="py-8 text-center text-slate-400 text-13">
+                        <i class="fa-solid fa-filter-circle-xmark text-2xl mb-2 text-slate-300"></i>
+                        <p>当前筛选条件下无样品</p>
+                    </div>
                 </div>
             </div>
         </aside>
 
+        <!-- 右侧内容区 -->
         <section class="flex-1 flex flex-col min-w-0 bg-slate-50 relative">
             
-            <div class="px-6 py-3 bg-white border-b border-slate-200 shrink-0 flex justify-between items-center h-14">
-                <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    费用明细列表
-                    <span class="text-13 font-normal text-white bg-slate-400 px-2 py-0.5 rounded-full font-num" x-show="selectedIds.length > 0" x-text="selectedIds.length"></span>
-                </h2>
-                <div class="text-13 text-slate-400 flex items-center gap-1">
-                    <i class="fa-regular fa-lightbulb text-yellow-500"></i> 折扣仅对检测费生效
+            <!-- 工具栏 -->
+            <div class="px-6 py-3 bg-white border-b border-slate-200 shrink-0 flex justify-between items-center gap-4">
+                <div class="flex items-center gap-2 flex-1">
+                    <h2 class="text-sm font-bold text-slate-800 whitespace-nowrap">已选样品</h2>
+                    <span class="text-13 font-normal text-white bg-indigo-500 px-2 py-0.5 rounded-full font-num" x-show="selectedIds.length > 0" x-text="selectedIds.length"></span>
+                    <span x-show="rightFilter.quoteCode || rightFilter.orderCode" class="text-[11px] text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full flex items-center gap-1">
+                        <i class="fa-solid fa-filter"></i>
+                        <span>筛选中</span>
+                        <button @click="clearRightFilter" class="hover:text-indigo-800 ml-1">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </span>
+                </div>
+                
+                <!-- 查询栏 -->
+                <div x-show="selectedIds.length > 0" class="flex items-center gap-3 flex-1 justify-end">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            x-model="rightFilter.quoteCode" 
+                            @input="applyRightFilter"
+                            placeholder="报价单号..." 
+                            class="w-36 bg-slate-50 border border-slate-200 rounded px-3 py-1.5 text-12 outline-none focus:border-indigo-500 focus:bg-white transition"
+                        >
+                        <i class="fa-solid fa-tag absolute right-2 top-2 text-slate-400 text-xs"></i>
+                    </div>
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            x-model="rightFilter.orderCode" 
+                            @input="applyRightFilter"
+                            placeholder="LIMS委托单号..." 
+                            class="w-40 bg-slate-50 border border-slate-200 rounded px-3 py-1.5 text-12 outline-none focus:border-indigo-500 focus:bg-white transition"
+                        >
+                        <i class="fa-solid fa-list-ol absolute right-2 top-2 text-slate-400 text-xs"></i>
+                    </div>
+                    <button @click="clearRightFilter" class="text-slate-400 hover:text-slate-600 text-12 px-2 py-1 rounded hover:bg-slate-100 transition" title="清空筛选">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <div class="h-4 w-px bg-slate-300 mx-1"></div>
+                    <button 
+                        @click="batchDelete" 
+                        :disabled="selectedIds.length === 0"
+                        class="px-3 py-1.5 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 transition text-12 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-trash-can"></i>
+                        批量删除
+                    </button>
                 </div>
             </div>
 
-            <div class="flex-1 overflow-auto p-5 custom-scroll pb-44"> 
+            <div class="flex-1 overflow-auto p-5 custom-scroll pb-48"> 
                 <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden min-h-[300px]">
                     <table class="w-full text-left text-13">
                         <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 whitespace-nowrap">
                             <tr>
-                                <th class="px-4 py-3 w-12 text-center font-num">#</th>
-                                <th class="px-4 py-3 min-w-[200px]">样品信息 (登记号/名称)</th>
-                                <th class="px-3 py-3 num-cell bg-indigo-50/30 text-indigo-600 border-l border-indigo-50">检测费</th>
-                                <th class="px-3 py-3 num-cell text-slate-400">加急</th>
-                                <th class="px-3 py-3 num-cell text-slate-400">交通</th>
-                                <th class="px-3 py-3 num-cell text-slate-400">修理</th>
-                                <th class="px-3 py-3 num-cell text-slate-400">材料</th>
-                                <th class="px-3 py-3 num-cell text-slate-400">其它</th>
-                                <th class="px-4 py-3 num-cell font-bold text-slate-700 bg-slate-50 border-l border-slate-100">应收合计</th>
-                                <th class="px-4 py-3 num-cell font-bold text-emerald-600 bg-emerald-50/30 border-l border-emerald-100 w-32">实收合计</th>
-                                <th class="px-3 py-3 w-12 text-center"></th>
+                                <th class="px-3 py-3 w-8 text-center">
+                                    <input type="checkbox" @change="toggleSelectAllFiltered" :checked="isAllFilteredSelected" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" title="全选筛选条件下的样品">
+                                </th>
+                                <th class="px-3 py-3 w-10 text-center font-num">#</th>
+                                <th class="px-3 py-3 min-w-[280px]">样品信息及层级</th>
+                                <th class="px-3 py-3 text-center w-20">总数量</th>
+                                <th class="px-3 py-3 text-center w-20 text-rose-600">退检数</th>
+                                <th class="px-3 py-3 text-center w-20 text-emerald-600">计费数</th>
+                                <th class="px-3 py-3 text-center w-24">状态</th>
+                                <th class="px-3 py-3 num-cell bg-indigo-50/30 text-indigo-600 border-l border-indigo-50 w-24">检测费</th>
+                                <th class="px-3 py-3 num-cell text-slate-400 w-16">杂费</th>
+                                <th class="px-3 py-3 num-cell font-bold text-slate-700 bg-slate-50 border-l border-slate-100 w-28">应收合计</th>
+                                <th class="px-3 py-3 num-cell font-bold text-emerald-600 bg-emerald-50/30 border-l border-emerald-100 w-28">实收合计</th>
                             </tr>
                         </thead>
+                        
                         <tbody class="divide-y divide-slate-100">
-                            <template x-for="(item, index) in selectedRows" :key="item.id">
-                                <tr class="hover:bg-slate-50 group transition">
-                                    <td class="px-4 py-3 text-center text-slate-300 font-num" x-text="index + 1"></td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-slate-700 truncate w-56 text-13" :title="item.name" x-text="item.name"></span>
-                                            <span class="text-13 text-slate-400 font-num" x-text="item.regCode"></span>
+                            <template x-for="(row, index) in rightFilteredRows" :key="row.id">
+                                <tr 
+                                    :class="[
+                                        row.data.status === 'full_refund' ? 'row-refund-full' : '',
+                                        row.data.status === 'partial_refund' ? 'row-refund-partial' : '',
+                                        row.isMatched === false ? 'row-weak' : 'row-matched hover:bg-slate-50',
+                                        row.isMatched && (rightFilter.quoteCode || rightFilter.orderCode) ? 'highlight-row' : '',
+                                        'transition-colors'
+                                    ]"
+                                >
+                                    <td class="px-3 py-3 text-center">
+                                        <input type="checkbox" :checked="isSelected(row.id)" @change="toggleSampleById(row.id)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    </td>
+                                    <td class="px-3 py-3 text-slate-400 font-num text-center" x-text="index + 1"></td>
+
+                                    <td class="px-3 py-3">
+                                        <div class="flex flex-col gap-1.5">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span class="font-medium text-13 text-slate-800" x-text="row.data.name"></span>
+                                                <span x-show="row.data.isOutsourced" class="text-[10px] px-1.5 py-0.5 rounded tag-outsource font-medium">外包</span>
+                                                <span x-show="row.isMatched === false" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 text-slate-500 font-medium">未匹配</span>
+                                            </div>
+                                            <div class="text-12 text-slate-500 font-num" x-text="row.data.regCode"></div>
+                                            <div class="group-path mt-1">
+                                                <span class="path-segment bg-indigo-50 text-indigo-700 border-indigo-200" x-text="row.contractCode"></span>
+                                                <span class="path-divider">›</span>
+                                                <span class="path-segment" :class="rightFilter.quoteCode && row.quoteCode.toLowerCase().includes(rightFilter.quoteCode.toLowerCase()) ? 'bg-amber-100 text-amber-700 border-amber-300 font-bold' : ''" x-text="row.quoteCode"></span>
+                                                <span class="path-divider">›</span>
+                                                <span class="path-segment" :class="rightFilter.orderCode && row.orderCode.toLowerCase().includes(rightFilter.orderCode.toLowerCase()) ? 'bg-amber-100 text-amber-700 border-amber-300 font-bold' : ''" x-text="row.orderCode"></span>
+                                            </div>
                                         </div>
                                     </td>
-                                    
-                                    <td class="px-3 py-3 num-cell font-medium text-indigo-600 bg-indigo-50/10 border-l border-indigo-50 font-num" x-text="formatMoney(item.testFee)"></td>
-                                    <td class="px-3 py-3 num-cell text-slate-500 font-num" x-text="item.expediteFee || '-'"></td>
-                                    <td class="px-3 py-3 num-cell text-slate-500 font-num" x-text="item.transportFee || '-'"></td>
-                                    <td class="px-3 py-3 num-cell text-slate-500 font-num" x-text="item.repairFee || '-'"></td>
-                                    <td class="px-3 py-3 num-cell text-slate-500 font-num" x-text="item.materialFee || '-'"></td>
-                                    <td class="px-3 py-3 num-cell text-slate-500 font-num" x-text="item.otherFee || '-'"></td>
-                                    
-                                    <td class="px-4 py-3 num-cell font-bold text-slate-600 bg-slate-50 border-l border-slate-100 font-num" x-text="formatMoney(calculateRowReceivable(item))"></td>
-                                    <td class="px-4 py-3 num-cell font-bold text-emerald-600 bg-emerald-50/30 border-l border-emerald-100 font-num" x-text="formatMoney(calculateRowActual(item))"></td>
+
+                                    <td class="px-3 py-3 text-center">
+                                        <span class="font-num font-bold text-slate-700" x-text="row.data.quantity"></span>
+                                    </td>
                                     
                                     <td class="px-3 py-3 text-center">
-                                        <button @click="toggleSample(item, currentContract)" class="text-slate-300 hover:text-rose-500 transition w-6 h-6 rounded hover:bg-rose-50 flex items-center justify-center">
-                                            <i class="fa-solid fa-xmark"></i>
-                                        </button>
+                                        <span x-show="row.data.refundQty > 0" class="font-num font-bold text-rose-600" x-text="row.data.refundQty"></span>
+                                        <span x-show="row.data.refundQty === 0" class="text-slate-300">-</span>
+                                    </td>
+                                    
+                                    <td class="px-3 py-3 text-center bg-emerald-50/30">
+                                        <span class="font-num font-bold text-emerald-600" x-text="row.data.chargeQty"></span>
+                                    </td>
+
+                                    <td class="px-3 py-3 text-center">
+                                        <span x-show="row.data.status === 'full_refund'" class="text-[10px] px-2 py-1 rounded tag-refund-full font-medium block w-fit mx-auto">全部退检</span>
+                                        <span x-show="row.data.status === 'partial_refund'" class="text-[10px] px-2 py-1 rounded tag-refund-partial font-medium block w-fit mx-auto">部分退检</span>
+                                        <span x-show="row.data.status === 'new'" class="text-[10px] px-2 py-1 rounded tag-new font-medium block w-fit mx-auto">新增</span>
+                                        <span x-show="row.data.status === 'normal'" class="text-[10px] px-2 py-1 rounded tag-normal font-medium block w-fit mx-auto">常规</span>
+                                    </td>
+
+                                    <td class="px-3 py-3 num-cell font-medium bg-indigo-50/10 border-l border-indigo-50 font-num text-indigo-600">
+                                        <div x-text="formatMoney(row.data.testFee)"></div>
+                                        <div class="text-[10px] text-slate-400 font-normal">×<span x-text="row.data.quantity"></span></div>
+                                    </td>
+
+                                    <td class="px-3 py-3 num-cell text-slate-500 font-num">
+                                        <div x-text="formatMoney(row.data.expediteFee + row.data.transportFee + row.data.otherFee)"></div>
+                                        <div class="text-[10px] text-slate-400 font-normal">×<span x-text="row.data.quantity"></span></div>
+                                    </td>
+
+                                    <td class="px-3 py-3 num-cell font-bold bg-slate-50 border-l border-slate-100 font-num text-slate-700">
+                                        <div x-text="formatMoney(calculateRowReceivable(row.data))"></div>
+                                        <div class="text-[10px] text-slate-400 font-normal">单价×<span x-text="row.data.quantity"></span></div>
+                                    </td>
+                                    
+                                    <td class="px-3 py-3 num-cell font-bold bg-emerald-50/30 border-l border-emerald-100 font-num text-emerald-600">
+                                        <div x-text="formatMoney(calculateRowActual(row.data))"></div>
+                                        <div class="text-[10px] text-slate-400 font-normal">单价×<span x-text="row.data.chargeQty"></span></div>
                                     </td>
                                 </tr>
                             </template>
                             
-                            <tr x-show="selectedRows.length === 0">
+                            <tr x-show="rightFilteredRows.length === 0">
                                 <td colspan="11" class="py-24 text-center text-slate-400 bg-slate-50/30">
                                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
                                         <i class="fa-solid fa-calculator text-2xl text-slate-300"></i>
                                     </div>
-                                    <p class="text-13 font-medium">请从左侧选择需要结算的样品</p>
+                                    <p class="text-13 font-medium" x-text="selectedIds.length === 0 ? '请从左侧选择需要结算的样品' : '没有匹配当前筛选条件的样品'"></p>
                                 </td>
                             </tr>
                         </tbody>
                         
-                        <tfoot class="bg-slate-50 font-bold border-t border-slate-200 shadow-inner" x-show="selectedRows.length > 0">
+                        <tfoot class="bg-slate-50 font-bold border-t border-slate-200 shadow-inner" x-show="selectedIds.length > 0">
                             <tr>
-                                <td colspan="2" class="px-4 py-3 text-right text-13 text-slate-500">本页合计：</td>
-                                <td class="px-3 py-3 num-cell font-num text-slate-600 border-l border-slate-200" x-text="formatMoney(totalTestFee)"></td>
-                                <td class="px-3 py-3 num-cell font-num text-slate-500" x-text="formatMoney(totalExpediteFee)"></td>
-                                <td class="px-3 py-3 num-cell font-num text-slate-500" x-text="formatMoney(totalTransportFee)"></td>
-                                <td class="px-3 py-3 num-cell font-num text-slate-500" x-text="formatMoney(totalRepairFee)"></td>
-                                <td class="px-3 py-3 num-cell font-num text-slate-500" x-text="formatMoney(totalMaterialFee)"></td>
-                                <td class="px-3 py-3 num-cell font-num text-slate-500" x-text="formatMoney(totalOtherFee)"></td>
-                                <td class="px-4 py-3 num-cell text-slate-800 font-num-lg border-l border-slate-200" x-text="formatMoney(totalReceivable)"></td>
-                                <td class="px-4 py-3 num-cell text-emerald-600 font-num-lg bg-emerald-50/50 border-l border-emerald-100" x-text="formatMoney(finalTotalAmount)"></td>
+                                <td colspan="3" class="px-3 py-3 text-right text-13 text-slate-500">本页合计：</td>
+                                <td class="px-3 py-3 text-center font-num text-slate-700" x-text="totalQuantity"></td>
+                                <td class="px-3 py-3 text-center font-num text-rose-600" x-text="totalRefundQty"></td>
+                                <td class="px-3 py-3 text-center font-num text-emerald-600 bg-emerald-50/50" x-text="totalChargeQty"></td>
                                 <td></td>
+                                <td class="px-3 py-3 num-cell font-num text-indigo-600 border-l border-slate-200" x-text="formatMoney(totalTestFee)"></td>
+                                <td class="px-3 py-3 num-cell font-num text-slate-500" x-text="formatMoney(totalMiscFee)"></td>
+                                <td class="px-3 py-3 num-cell text-slate-800 font-num-lg border-l border-slate-200" x-text="formatMoney(totalReceivable)"></td>
+                                <td class="px-3 py-3 num-cell text-emerald-600 font-num-lg bg-emerald-50/50 border-l border-emerald-100" x-text="formatMoney(finalTotalAmount)"></td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
             </div>
 
+            <!-- 底部结算栏 -->
             <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-200 footer-shadow z-30 transition-transform duration-300"
                  :class="selectedIds.length === 0 ? 'translate-y-full' : 'translate-y-0'">
                 
-                <div class="px-6 py-2.5 bg-slate-50 border-b border-slate-100 flex gap-8 text-13 text-slate-500 overflow-x-auto whitespace-nowrap">
-                    <span class="flex items-center gap-2">检测费：<b class="font-num text-indigo-600" x-text="formatMoney(totalTestFee)"></b></span>
+                <div class="px-6 py-2.5 bg-slate-50 border-b border-slate-100 flex gap-6 text-13 text-slate-500 overflow-x-auto whitespace-nowrap">
+                    <span class="flex items-center gap-2">总数量：<b class="font-num text-slate-700" x-text="totalQuantity"></b></span>
+                    <span class="flex items-center gap-2 text-rose-600">退检数：<b class="font-num" x-text="totalRefundQty"></b></span>
                     <span class="w-px h-3 bg-slate-300"></span>
-                    <span>加急：<b class="font-num" x-text="formatMoney(totalExpediteFee)"></b></span>
-                    <span>交通：<b class="font-num" x-text="formatMoney(totalTransportFee)"></b></span>
-                    <span>修理：<b class="font-num" x-text="formatMoney(totalRepairFee)"></b></span>
-                    <span>材料：<b class="font-num" x-text="formatMoney(totalMaterialFee)"></b></span>
-                    <span>其它：<b class="font-num" x-text="formatMoney(totalOtherFee)"></b></span>
-                    <span class="ml-auto text-slate-400">应收总计：<b class="font-num text-slate-600 text-sm" x-text="formatMoney(totalReceivable)"></b></span>
+                    <span class="flex items-center gap-2">检测费：<b class="font-num text-indigo-600" x-text="formatMoney(totalTestFee)"></b></span>
+                    <span class="flex items-center gap-2">杂费：<b class="font-num" x-text="formatMoney(totalMiscFee)"></b></span>
+                    <span class="ml-auto text-slate-400">应收总计：<b class="font-num text-slate-600" x-text="formatMoney(totalReceivable)"></b></span>
                 </div>
 
-                <div class="px-8 py-5 flex items-center justify-between">
+                <div class="px-8 py-4 flex items-center justify-between">
                     
-                    <div class="flex items-center gap-8">
+                    <div class="flex items-center gap-6">
                         
                         <div class="flex flex-col">
-                            <label class="text-13 text-slate-400 font-bold uppercase mb-1">折扣率</label>
+                            <label class="text-12 text-slate-400 font-bold uppercase mb-1">折扣率</label>
                             <div class="relative flex items-center group">
                                 <input type="number" x-model="globalDiscount" @input="updateFromDiscount" 
-                                       class="font-num-xl font-bold text-indigo-600 border-b-2 border-indigo-200 focus:border-indigo-600 outline-none w-24 text-center bg-transparent transition py-1 group-hover:border-indigo-300"
+                                       class="font-num-xl font-bold text-indigo-600 border-b-2 border-indigo-200 focus:border-indigo-600 outline-none w-20 text-center bg-transparent transition py-1 group-hover:border-indigo-300"
                                        min="0" max="100" step="1">
                                 <span class="text-sm font-bold text-indigo-400 ml-1 mb-1">%</span>
                             </div>
-                            <div class="text-13 text-slate-400 mt-1">* 仅检测费</div>
+                            <div class="text-[11px] text-slate-400 mt-1">仅检测费折扣</div>
                         </div>
 
                         <div class="text-slate-300 text-xl pb-4"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
 
                         <div class="flex flex-col">
-                            <label class="text-13 text-slate-400 font-bold uppercase mb-1">实收总金额</label>
+                            <label class="text-12 text-slate-400 font-bold uppercase mb-1">实收总金额</label>
                             <div class="relative flex items-center group">
                                 <span class="text-xl font-bold text-emerald-600 mr-2 mb-1">¥</span>
                                 <input type="number" x-model="finalTotalAmount" @input="updateFromTotal"
-                                       class="font-num-2xl font-bold text-emerald-600 border-b-2 border-emerald-200 focus:border-emerald-600 outline-none w-48 text-left bg-transparent transition py-1 group-hover:border-emerald-300"
+                                       class="font-num-2xl font-bold text-emerald-600 border-b-2 border-emerald-200 focus:border-emerald-600 outline-none w-40 text-left bg-transparent transition py-1 group-hover:border-emerald-300"
                                        step="0.01">
                             </div>
-                            <div class="text-13 text-slate-400 mt-1">含杂费</div>
+                            <div class="text-[11px] text-slate-400 mt-1">按计费数量计算</div>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-4">
-                        <button class="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-50 transition text-13">取消</button>
-                        <button class="px-8 py-2.5 rounded-lg bg-indigo-600 text-white font-bold shadow-lg hover:bg-indigo-700 hover:shadow-xl transition transform active:scale-95 flex items-center gap-2 text-sm">
+                    <div class="flex items-center gap-3">
+                        <button class="px-5 py-2 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-50 transition text-13">取消</button>
+                        <button class="px-6 py-2 rounded-lg bg-indigo-600 text-white font-bold shadow-lg hover:bg-indigo-700 hover:shadow-xl transition transform active:scale-95 flex items-center gap-2 text-13">
                             <i class="fa-solid fa-file-invoice"></i> 生成结算单
                         </button>
                     </div>
@@ -324,18 +553,27 @@
     <script>
         function settlementApp() {
             return {
-                filters: {
-                    customer: '',
-                    contractCode: '',
+                // 搜索相关
+                searchType: 'all', // all, contractCode, quoteCode, orderCode, regCode, customer
+                searchKeyword: '',
+                searchResults: [],
+                showDropdown: false,
+                selectedEntity: null, // 当前选中的实体（合同/报价单/委托单）
+                currentSamples: [], // 当前展示的样品列表
+                
+                // 筛选
+                sampleFilter: 'all', // all, refund, new
+                
+                // 右侧筛选
+                rightFilter: {
                     quoteCode: '',
-                    orderCode: '',
-                    regCode: ''
+                    orderCode: ''
                 },
                 
-                contracts: [],
-                expandedIds: [],
+                // 数据
+                orders: [],
                 selectedIds: [],
-                currentContract: null,
+                currentContract: null, // 锁定的合同号
                 
                 globalDiscount: 100,
                 finalTotalAmount: 0,
@@ -344,127 +582,347 @@
                     this.generateMockData();
                 },
 
-                // 生成4级数据：合同 -> 报价 -> 委托 -> 样品
+                // 获取搜索提示文字
+                getSearchPlaceholder() {
+                    const map = {
+                        'all': '输入关键字搜索所有类型...',
+                        'contractCode': '输入合同号查询...',
+                        'quoteCode': '输入报价单号查询...',
+                        'orderCode': '输入委托单号查询...',
+                        'regCode': '输入登记号查询...',
+                        'customer': '输入客户名称查询...'
+                    };
+                    return map[this.searchType] || '输入关键字...';
+                },
+
+                getSearchHint() {
+                    const map = {
+                        'all': '在所有类型中模糊搜索，返回委托单',
+                        'contractCode': '搜索合同，展示该合同下所有样品',
+                        'quoteCode': '搜索报价单，展示该报价单下所有样品',
+                        'orderCode': '搜索委托单，展示该委托单下所有样品',
+                        'regCode': '搜索登记号，定位到样品所在委托单',
+                        'customer': '搜索客户，展示该客户相关委托单'
+                    };
+                    return map[this.searchType];
+                },
+
+                getSearchTypeLabel() {
+                    const map = {
+                        'all': '全部类型',
+                        'contractCode': '合同',
+                        'quoteCode': '报价单',
+                        'orderCode': '委托单',
+                        'regCode': '登记号',
+                        'customer': '客户'
+                    };
+                    return map[this.searchType];
+                },
+
+                // 生成模拟数据 - 包含数量字段
                 generateMockData() {
                     const customers = ['华为技术有限公司', '比亚迪汽车工业', '大疆创新科技', '迈瑞生物医疗', '中兴通讯'];
-                    const quoteSubjects = ['', '', ''];
+                    const sampleNames = ['数字示波器', '频谱分析仪', '高低温试验箱', '信号发生器', '万用表', '功率计', '网络分析仪'];
                     
-                    this.contracts = Array.from({ length: 5 }, (_, i) => {
-                        const contractId = `C${2023000 + i}`;
-                        const cust = customers[i % customers.length];
+                    customers.forEach((cust, custIdx) => {
+                        const contractId = `HT-2024-${String(custIdx + 1).padStart(3, '0')}`;
+                        const contractName = `${cust} - 2024年度服务合同`;
                         
-                        return {
-                            id: contractId,
-                            code: `HT-${contractId}`,
-                            name: `${cust} - 2024年度服务合同`,
-                            customer: cust,
-                            quotes: Array.from({ length: Math.floor(Math.random() * 2) + 1 }, (_, q) => {
-                                const quoteId = `Q${contractId}-${q+1}`;
-                                return {
-                                    id: quoteId,
-                                    code: `QUO-${quoteId}`,
-                                    subject: quoteSubjects[q % quoteSubjects.length],
-                                    orders: Array.from({ length: Math.floor(Math.random() * 2) + 1 }, (_, o) => {
-                                        const orderId = `WT-${quoteId}-${o+1}`;
-                                        return {
-                                            id: orderId,
-                                            code: orderId,
-                                            samples: Array.from({ length: Math.floor(Math.random() * 4) + 1 }, (_, k) => ({
-                                                id: `${orderId}-S${k+1}`,
-                                                regCode: `DJ${20230000 + (i*1000) + (q*100) + (o*10) + k}`,
-                                                name: ['数字示波器', '频谱分析仪', '高低温试验箱', '信号发生器', '万用表'][Math.floor(Math.random()*5)],
-                                                testFee: [1000, 2500, 800, 1500, 500][Math.floor(Math.random()*5)],
-                                                expediteFee: Math.random() > 0.8 ? 500 : 0,
-                                                transportFee: Math.random() > 0.7 ? 100 : 0,
-                                                repairFee: 0, 
-                                                materialFee: Math.random() > 0.9 ? 50 : 0,
-                                                otherFee: 0
-                                            }))
-                                        }
-                                    })
-                                }
-                            })
-                        };
-                    });
-                    
-                    // 默认展开
-                    if(this.contracts.length > 0) {
-                        this.expandedIds.push(this.contracts[0].id);
-                        if(this.contracts[0].quotes.length > 0) {
-                            this.expandedIds.push(this.contracts[0].quotes[0].id);
+                        for (let q = 0; q < 2; q++) {
+                            const quoteId = `QUO-${contractId}-${q + 1}`;
+                            
+                            for (let o = 0; o < 3; o++) {
+                                const orderId = `LIMS-${quoteId}-${o + 1}`;
+                                const samples = [];
+                                
+                                // 生成不同状态的样品
+                                const configs = [
+                                    { qty: 5, refund: 0, status: 'normal' },
+                                    { qty: 3, refund: 3, status: 'full_refund' },
+                                    { qty: 10, refund: 3, status: 'partial_refund' },
+                                    { qty: 2, refund: 0, status: 'new' },
+                                    { qty: 8, refund: 0, status: 'normal', outsource: true }
+                                ];
+                                
+                                configs.forEach((cfg, idx) => {
+                                    const baseFee = [1000, 2500, 800, 1500, 500][idx % 5];
+                                    const chargeQty = cfg.qty - cfg.refund;
+                                    
+                                    samples.push({
+                                        id: `${orderId}-S${idx + 1}`,
+                                        regCode: `DJ${20240000 + (custIdx * 1000) + (q * 100) + (o * 10) + idx}`,
+                                        name: sampleNames[Math.floor(Math.random() * sampleNames.length)],
+                                        quantity: cfg.qty,
+                                        refundQty: cfg.refund,
+                                        chargeQty: chargeQty,
+                                        status: cfg.status,
+                                        isOutsourced: cfg.outsource || false,
+                                        testFee: baseFee,
+                                        expediteFee: Math.random() > 0.7 ? 200 : 0,
+                                        transportFee: Math.random() > 0.6 ? 100 : 0,
+                                        otherFee: Math.random() > 0.8 ? 150 : 0,
+                                        orderId: orderId,
+                                        orderCode: orderId,
+                                        quoteId: quoteId,
+                                        quoteCode: quoteId,
+                                        contractId: contractId,
+                                        contractCode: contractId,
+                                        customer: cust,
+                                        contractName: contractName
+                                    });
+                                });
+                                
+                                this.orders.push({
+                                    id: orderId,
+                                    code: orderId,
+                                    customer: cust,
+                                    contractId: contractId,
+                                    contractCode: contractId,
+                                    contractName: contractName,
+                                    quoteId: quoteId,
+                                    quoteCode: quoteId,
+                                    samples: samples
+                                });
+                            }
                         }
-                    }
+                    });
                 },
 
-                // 多维组合筛选逻辑
-                get filteredData() {
-                    let result = this.contracts;
-                    const f = this.filters;
-
-                    // 1. 客户筛选
-                    if (f.customer) {
-                        result = result.filter(c => c.customer.includes(f.customer));
+                // 搜索处理 - 根据类型返回对应层级的单据
+                handleSearch() {
+                    if (!this.searchKeyword.trim()) {
+                        this.searchResults = [];
+                        this.showDropdown = false;
+                        return;
                     }
-                    // 2. 合同号筛选
-                    if (f.contractCode) {
-                        result = result.filter(c => c.code.toLowerCase().includes(f.contractCode.toLowerCase()));
-                    }
-
-                    // 3. 深层递归筛选 (报价单/委托单/登记号)
-                    // 只要子级有匹配，父级就保留。
-                    return result.map(contract => {
-                        const c = { ...contract };
-                        
-                        // 筛选报价单
-                        c.quotes = c.quotes.map(quote => {
-                            const q = { ...quote };
-                            
-                            // 筛选委托单
-                            q.orders = q.orders.map(order => {
-                                const o = { ...order };
-                                
-                                // 筛选样品 (登记号)
-                                if (f.regCode) {
-                                    o.samples = o.samples.filter(s => s.regCode.toLowerCase().includes(f.regCode.toLowerCase()));
+                    
+                    const keyword = this.searchKeyword.toLowerCase();
+                    const results = [];
+                    const searchType = this.searchType;
+                    
+                    switch(searchType) {
+                        case 'contractCode':
+                            // 搜索合同 - 返回合同列表，包含下属所有委托单
+                            const contractMap = new Map();
+                            this.orders.forEach(order => {
+                                if (order.contractCode.toLowerCase().includes(keyword)) {
+                                    if (!contractMap.has(order.contractId)) {
+                                        contractMap.set(order.contractId, {
+                                            id: order.contractId,
+                                            code: order.contractCode,
+                                            name: order.contractName,
+                                            customer: order.customer,
+                                            type: 'contract',
+                                            typeLabel: '合同',
+                                            orders: [],
+                                            sampleCount: 0
+                                        });
+                                    }
+                                    const contract = contractMap.get(order.contractId);
+                                    contract.orders.push(order);
+                                    contract.sampleCount += order.samples.length;
                                 }
-                                
-                                return o;
-                            }).filter(o => {
-                                // 委托单号匹配 && 还有样品
-                                const matchOrder = !f.orderCode || o.code.toLowerCase().includes(f.orderCode.toLowerCase());
-                                return o.samples.length > 0 && matchOrder;
                             });
+                            results.push(...contractMap.values());
+                            break;
                             
-                            return q;
-                        }).filter(q => {
-                            // 报价单号匹配 && 还有委托单
-                            const matchQuote = !f.quoteCode || q.code.toLowerCase().includes(f.quoteCode.toLowerCase());
-                            return q.orders.length > 0 && matchQuote;
-                        });
-                        
-                        return c;
-                    }).filter(c => c.quotes.length > 0);
+                        case 'quoteCode':
+                            // 搜索报价单 - 返回报价单列表，包含下属所有委托单
+                            const quoteMap = new Map();
+                            this.orders.forEach(order => {
+                                if (order.quoteCode.toLowerCase().includes(keyword)) {
+                                    if (!quoteMap.has(order.quoteId)) {
+                                        quoteMap.set(order.quoteId, {
+                                            id: order.quoteId,
+                                            code: order.quoteCode,
+                                            contractCode: order.contractCode,
+                                            customer: order.customer,
+                                            type: 'quote',
+                                            typeLabel: '报价单',
+                                            orders: [],
+                                            sampleCount: 0
+                                        });
+                                    }
+                                    const quote = quoteMap.get(order.quoteId);
+                                    quote.orders.push(order);
+                                    quote.sampleCount += order.samples.length;
+                                }
+                            });
+                            results.push(...quoteMap.values());
+                            break;
+                            
+                        case 'orderCode':
+                            // 搜索委托单 - 返回委托单列表
+                            this.orders.forEach(order => {
+                                if (order.code.toLowerCase().includes(keyword)) {
+                                    results.push({
+                                        id: order.id,
+                                        code: order.code,
+                                        customer: order.customer,
+                                        contractCode: order.contractCode,
+                                        type: 'order',
+                                        typeLabel: '委托单',
+                                        order: order,
+                                        sampleCount: order.samples.length
+                                    });
+                                }
+                            });
+                            break;
+                            
+                        case 'regCode':
+                            // 搜索登记号 - 返回包含匹配样品的委托单
+                            const orderMap = new Map();
+                            this.orders.forEach(order => {
+                                const matchedSamples = order.samples.filter(s => 
+                                    s.regCode.toLowerCase().includes(keyword)
+                                );
+                                if (matchedSamples.length > 0 && !orderMap.has(order.id)) {
+                                    orderMap.set(order.id, {
+                                        id: order.id,
+                                        code: order.code,
+                                        customer: order.customer,
+                                        contractCode: order.contractCode,
+                                        type: 'order',
+                                        typeLabel: '委托单(含匹配登记号)',
+                                        order: order,
+                                        sampleCount: order.samples.length,
+                                        matchedRegCodes: matchedSamples.map(s => s.regCode)
+                                    });
+                                }
+                            });
+                            results.push(...orderMap.values());
+                            break;
+
+                        case 'customer':
+                            // 搜索客户 - 按客户分组返回
+                            const customerMap = new Map();
+                            this.orders.forEach(order => {
+                                if (order.customer.toLowerCase().includes(keyword)) {
+                                    if (!customerMap.has(order.contractId)) {
+                                        customerMap.set(order.contractId, {
+                                            id: order.contractId,
+                                            code: order.contractCode,
+                                            name: order.contractName,
+                                            customer: order.customer,
+                                            type: 'contract',
+                                            typeLabel: '客户合同',
+                                            orders: [],
+                                            sampleCount: 0
+                                        });
+                                    }
+                                    const cust = customerMap.get(order.contractId);
+                                    cust.orders.push(order);
+                                    cust.sampleCount += order.samples.length;
+                                }
+                            });
+                            results.push(...customerMap.values());
+                            break;
+                            
+                        case 'all':
+                        default:
+                            // 全字段搜索 - 返回委托单级别
+                            this.orders.forEach(order => {
+                                if (order.contractCode.toLowerCase().includes(keyword) ||
+                                    order.quoteCode.toLowerCase().includes(keyword) ||
+                                    order.code.toLowerCase().includes(keyword) ||
+                                    order.customer.toLowerCase().includes(keyword) ||
+                                    order.samples.some(s => s.regCode.toLowerCase().includes(keyword))) {
+                                    
+                                    let matchedField = '';
+                                    if (order.contractCode.toLowerCase().includes(keyword)) matchedField = '合同号';
+                                    else if (order.quoteCode.toLowerCase().includes(keyword)) matchedField = '报价单号';
+                                    else if (order.code.toLowerCase().includes(keyword)) matchedField = '委托单号';
+                                    else if (order.customer.toLowerCase().includes(keyword)) matchedField = '客户名称';
+                                    else matchedField = '登记号';
+                                    
+                                    results.push({
+                                        id: order.id,
+                                        code: order.code,
+                                        customer: order.customer,
+                                        contractCode: order.contractCode,
+                                        type: 'order',
+                                        typeLabel: '委托单',
+                                        order: order,
+                                        sampleCount: order.samples.length,
+                                        matchedField: matchedField
+                                    });
+                                }
+                            });
+                            break;
+                    }
+                    
+                    this.searchResults = results.slice(0, 10);
+                    this.showDropdown = this.searchResults.length > 0;
                 },
 
-                resetFilters() {
-                    this.filters = { customer: '', contractCode: '', quoteCode: '', orderCode: '', regCode: '' };
+                clearSearch() {
+                    this.searchKeyword = '';
+                    this.searchResults = [];
+                    this.showDropdown = false;
                 },
 
-                isContractDisabled(contractId) {
-                    return this.currentContract && this.currentContract.id !== contractId;
-                },
-
-                toggleExpand(id) {
-                    if (this.expandedIds.includes(id)) {
-                        this.expandedIds = this.expandedIds.filter(x => x !== id);
-                    } else {
-                        this.expandedIds.push(id);
+                // 选择搜索结果 - 加载对应的所有样品
+                selectSearchResult(result) {
+                    this.selectedEntity = result;
+                    this.searchKeyword = result.code;
+                    this.showDropdown = false;
+                    this.sampleFilter = 'all';
+                    
+                    // 根据类型加载样品
+                    if (result.type === 'contract' || result.type === 'quote') {
+                        // 合同或报价单 - 加载所有下属的委托单的样品
+                        this.currentSamples = result.orders.flatMap(o => o.samples);
+                    } else if (result.type === 'order') {
+                        // 委托单 - 直接加载样品
+                        this.currentSamples = result.order.samples;
                     }
                 },
 
-                toggleSample(sample, contract) {
-                    if (this.currentContract && this.currentContract.id !== contract.id) {
-                        alert("锁定状态下无法跨合同选择！请先清空已选。");
+                // 清空左侧查询
+                clearLeftSearch() {
+                    this.searchKeyword = '';
+                    this.searchResults = [];
+                    this.showDropdown = false;
+                    this.selectedEntity = null;
+                    this.currentSamples = [];
+                    this.sampleFilter = 'all';
+                },
+
+                // 清空右侧筛选
+                clearRightFilter() {
+                    this.rightFilter.quoteCode = '';
+                    this.rightFilter.orderCode = '';
+                },
+
+                // 获取筛选后的样品列表（左侧）
+                get filteredSamples() {
+                    if (!this.currentSamples.length) return [];
+                    
+                    let samples = this.currentSamples;
+                    
+                    // 状态筛选
+                    if (this.sampleFilter === 'refund') {
+                        samples = samples.filter(s => s.status === 'full_refund' || s.status === 'partial_refund');
+                    } else if (this.sampleFilter === 'new') {
+                        samples = samples.filter(s => s.status === 'new');
+                    }
+                    
+                    return samples;
+                },
+
+                // 合同锁定检查
+                isContractLocked(contractId) {
+                    return this.currentContract && this.currentContract !== contractId;
+                },
+
+                isSelected(id) {
+                    return this.selectedIds.includes(id);
+                },
+
+                // 切换样品选择
+                toggleSample(sample) {
+                    if (this.currentContract && this.currentContract !== sample.contractId) {
+                        alert(`只能同时选择一个合同下的样品！\n当前已锁定合同：${this.currentContract}\n该样品所属合同：${sample.contractCode}`);
                         return;
                     }
 
@@ -475,83 +933,270 @@
                             this.currentContract = null;
                             this.globalDiscount = 100;
                             this.finalTotalAmount = 0;
-                        } else {
-                            this.recalcTotalByDiscount();
                         }
                     } else {
-                        if (this.selectedIds.length === 0) this.currentContract = contract;
+                        if (this.selectedIds.length === 0) {
+                            this.currentContract = sample.contractId;
+                        }
                         this.selectedIds.push(sample.id);
-                        this.recalcTotalByDiscount();
+                    }
+                    this.recalcTotalByDiscount();
+                },
+
+                toggleSampleById(id) {
+                    const order = this.orders.find(o => o.samples.some(s => s.id === id));
+                    if (order) {
+                        const sample = order.samples.find(s => s.id === id);
+                        this.toggleSample(sample);
                     }
                 },
 
-                isSelected(id) { return this.selectedIds.includes(id); },
+                // 全选当前可见（左侧）
+                get isAllVisibleSelected() {
+                    return this.filteredSamples.length > 0 && this.filteredSamples.every(s => this.isSelected(s.id));
+                },
 
-                // 扁平化获取选中行 (遍历4层)
-                get selectedRows() {
-                    const rows = [];
-                    if (!this.currentContract) return rows;
-                    this.currentContract.quotes.forEach(q => {
-                        q.orders.forEach(o => {
-                            o.samples.forEach(s => {
-                                if (this.selectedIds.includes(s.id)) rows.push(s);
-                            });
+                toggleSelectAllVisible() {
+                    if (this.isAllVisibleSelected) {
+                        this.filteredSamples.forEach(s => {
+                            const idx = this.selectedIds.indexOf(s.id);
+                            if (idx > -1) this.selectedIds.splice(idx, 1);
                         });
-                    });
+                        if (this.selectedIds.length === 0) this.currentContract = null;
+                    } else {
+                        const targetContract = this.currentContract || this.filteredSamples[0]?.contractId;
+                        
+                        const hasDifferentContract = this.filteredSamples.some(s => s.contractId !== targetContract);
+                        if (hasDifferentContract && this.currentContract) {
+                            alert('当前可见样品包含不同合同，无法全选');
+                            return;
+                        }
+                        
+                        if (!this.currentContract && this.filteredSamples.length > 0) {
+                            this.currentContract = targetContract;
+                        }
+                        
+                        this.filteredSamples.forEach(s => {
+                            if (s.contractId === this.currentContract && !this.isSelected(s.id)) {
+                                this.selectedIds.push(s.id);
+                            }
+                        });
+                    }
+                    this.recalcTotalByDiscount();
+                },
+
+                // 右侧筛选后的数据 - 排序：匹配的在前，非匹配的在后
+                get rightFilteredRows() {
+                    // 获取所有选中的样品详情
+                    let rows = this.selectedIds.map(id => {
+                        for (let order of this.orders) {
+                            const sample = order.samples.find(s => s.id === id);
+                            if (sample) {
+                                return {
+                                    id: sample.id,
+                                    data: sample,
+                                    contractCode: order.contractCode,
+                                    quoteCode: order.quoteCode,
+                                    orderCode: order.code,
+                                    isMatched: true // 默认匹配
+                                };
+                            }
+                        }
+                        return null;
+                    }).filter(r => r !== null);
+
+                    // 如果有筛选条件，计算匹配状态并排序
+                    const hasFilter = this.rightFilter.quoteCode || this.rightFilter.orderCode;
+                    
+                    if (hasFilter) {
+                        rows.forEach(row => {
+                            let matchQuote = true;
+                            let matchOrder = true;
+                            
+                            if (this.rightFilter.quoteCode) {
+                                matchQuote = row.quoteCode.toLowerCase().includes(this.rightFilter.quoteCode.toLowerCase());
+                            }
+                            if (this.rightFilter.orderCode) {
+                                matchOrder = row.orderCode.toLowerCase().includes(this.rightFilter.orderCode.toLowerCase());
+                            }
+                            
+                            row.isMatched = matchQuote && matchOrder;
+                        });
+                        
+                        // 排序：匹配的在前，非匹配的在后
+                        rows.sort((a, b) => {
+                            if (a.isMatched && !b.isMatched) return -1;
+                            if (!a.isMatched && b.isMatched) return 1;
+                            return 0;
+                        });
+                    }
+
                     return rows;
                 },
 
-                // ====== 费用计算 ======
-                get totalTestFee() { return this.selectedRows.reduce((sum, i) => sum + i.testFee, 0); },
-                get totalExpediteFee() { return this.selectedRows.reduce((sum, i) => sum + i.expediteFee, 0); },
-                get totalTransportFee() { return this.selectedRows.reduce((sum, i) => sum + i.transportFee, 0); },
-                get totalRepairFee() { return this.selectedRows.reduce((sum, i) => sum + i.repairFee, 0); },
-                get totalMaterialFee() { return this.selectedRows.reduce((sum, i) => sum + i.materialFee, 0); },
-                get totalOtherFee() { return this.selectedRows.reduce((sum, i) => sum + i.otherFee, 0); },
-                
-                get totalMiscFee() { 
-                    return this.totalExpediteFee + this.totalTransportFee + this.totalRepairFee + this.totalMaterialFee + this.totalOtherFee; 
-                },
-                get totalReceivable() { return this.totalTestFee + this.totalMiscFee; },
-
-                formatMoney(val) {
-                    return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                // 全选筛选条件下的样品（仅匹配的行）
+                get isAllFilteredSelected() {
+                    const matchedRows = this.rightFilteredRows.filter(r => r.isMatched !== false);
+                    if (matchedRows.length === 0) return false;
+                    return matchedRows.every(r => this.isSelected(r.id));
                 },
 
-                calculateRowReceivable(item) {
-                    return item.testFee + item.expediteFee + item.transportFee + item.repairFee + item.materialFee + item.otherFee;
-                },
-                calculateRowActual(item) {
-                    return (item.testFee * (this.globalDiscount / 100)) + 
-                           (item.expediteFee + item.transportFee + item.repairFee + item.materialFee + item.otherFee);
-                },
-
-                // ====== 双向反算 ======
-                updateFromDiscount() {
-                    if (this.globalDiscount > 100) this.globalDiscount = 100;
+                toggleSelectAllFiltered() {
+                    const matchedRows = this.rightFilteredRows.filter(r => r.isMatched !== false);
+                    
+                    if (this.isAllFilteredSelected) {
+                        // 取消全选所有匹配的
+                        matchedRows.forEach(r => {
+                            const idx = this.selectedIds.indexOf(r.id);
+                            if (idx > -1) this.selectedIds.splice(idx, 1);
+                        });
+                    } else {
+                        // 全选所有匹配的
+                        matchedRows.forEach(r => {
+                            if (!this.isSelected(r.id)) this.selectedIds.push(r.id);
+                        });
+                    }
+                    
+                    if (this.selectedIds.length === 0) this.currentContract = null;
                     this.recalcTotalByDiscount();
                 },
-                recalcTotalByDiscount() {
-                    const discountRate = Number(this.globalDiscount) / 100;
-                    const val = (this.totalTestFee * discountRate) + this.totalMiscFee;
-                    this.finalTotalAmount = val.toFixed(2);
-                },
-                updateFromTotal() {
-                    const total = Number(this.finalTotalAmount);
-                    if (this.totalTestFee === 0) {
-                        this.globalDiscount = 100;
-                        return;
-                    }
-                    let calcDiscount = ((total - this.totalMiscFee) / this.totalTestFee) * 100;
-                    if (calcDiscount < 0) calcDiscount = 0;
-                    this.globalDiscount = calcDiscount.toFixed(2);
+
+                applyRightFilter() {
+                    // 自动触发
                 },
 
+                // 批量删除
+                batchDelete() {
+                    if (this.selectedIds.length === 0) return;
+                    if (!confirm(`确定要删除选中的 ${this.selectedIds.length} 个样品吗？`)) return;
+                    
+                    this.selectedIds = [];
+                    this.currentContract = null;
+                    this.globalDiscount = 100;
+                    this.finalTotalAmount = 0;
+                },
+
+                // 重置
                 resetSelection() {
                     this.selectedIds = [];
                     this.currentContract = null;
                     this.globalDiscount = 100;
                     this.finalTotalAmount = 0;
+                },
+
+                // 计算逻辑
+                calculateRowReceivable(item) {
+                    const unitTotal = item.testFee + item.expediteFee + item.transportFee + item.otherFee;
+                    return unitTotal * item.quantity;
+                },
+                
+                calculateRowActual(item) {
+                    const discountedTestFee = item.testFee * (this.globalDiscount / 100);
+                    const unitActual = discountedTestFee + item.expediteFee + item.transportFee + item.otherFee;
+                    return unitActual * item.chargeQty;
+                },
+
+                // 合计计算
+                get totalQuantity() {
+                    return this.selectedIds.reduce((sum, id) => {
+                        const s = this.findSample(id);
+                        return sum + (s ? s.quantity : 0);
+                    }, 0);
+                },
+                
+                get totalRefundQty() {
+                    return this.selectedIds.reduce((sum, id) => {
+                        const s = this.findSample(id);
+                        return sum + (s ? s.refundQty : 0);
+                    }, 0);
+                },
+                
+                get totalChargeQty() {
+                    return this.selectedIds.reduce((sum, id) => {
+                        const s = this.findSample(id);
+                        return sum + (s ? s.chargeQty : 0);
+                    }, 0);
+                },
+
+                get totalTestFee() {
+                    return this.selectedIds.reduce((sum, id) => {
+                        const s = this.findSample(id);
+                        return sum + (s ? s.testFee * s.quantity : 0);
+                    }, 0);
+                },
+
+                get totalMiscFee() {
+                    return this.selectedIds.reduce((sum, id) => {
+                        const s = this.findSample(id);
+                        return sum + (s ? (s.expediteFee + s.transportFee + s.otherFee) * s.quantity : 0);
+                    }, 0);
+                },
+
+                get totalReceivable() {
+                    return this.selectedIds.reduce((sum, id) => {
+                        const s = this.findSample(id);
+                        return sum + (s ? this.calculateRowReceivable(s) : 0);
+                    }, 0);
+                },
+
+                get finalTotalAmount() {
+                    return this.selectedIds.reduce((sum, id) => {
+                        const s = this.findSample(id);
+                        return sum + (s ? this.calculateRowActual(s) : 0);
+                    }, 0).toFixed(2);
+                },
+
+                findSample(id) {
+                    for (let order of this.orders) {
+                        const s = order.samples.find(sam => sam.id === id);
+                        if (s) return s;
+                    }
+                    return null;
+                },
+
+                formatMoney(val) {
+                    return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+
+                updateFromDiscount() {
+                    if (this.globalDiscount > 100) this.globalDiscount = 100;
+                    if (this.globalDiscount < 0) this.globalDiscount = 0;
+                    this.recalcTotalByDiscount();
+                },
+
+                recalcTotalByDiscount() {
+                    this.finalTotalAmount = this.selectedIds.reduce((sum, id) => {
+                        const s = this.findSample(id);
+                        return sum + (s ? this.calculateRowActual(s) : 0);
+                    }, 0).toFixed(2);
+                },
+
+                updateFromTotal() {
+                    const total = Number(this.finalTotalAmount);
+                    if (this.totalTestFee === 0 || this.totalChargeQty === 0) {
+                        this.globalDiscount = 100;
+                        return;
+                    }
+                    
+                    const totalMisc = this.selectedIds.reduce((sum, id) => {
+                        const s = this.findSample(id);
+                        return sum + (s ? (s.expediteFee + s.transportFee + s.otherFee) * s.chargeQty : 0);
+                    }, 0);
+                    
+                    const testFeeTotal = this.selectedIds.reduce((sum, id) => {
+                        const s = this.findSample(id);
+                        return sum + (s ? s.testFee * s.chargeQty : 0);
+                    }, 0);
+                    
+                    if (testFeeTotal === 0) {
+                        this.globalDiscount = 100;
+                        return;
+                    }
+                    
+                    let calcDiscount = ((total - totalMisc) / testFeeTotal) * 100;
+                    if (calcDiscount < 0) calcDiscount = 0;
+                    if (calcDiscount > 100) calcDiscount = 100;
+                    this.globalDiscount = calcDiscount.toFixed(2);
                 }
             }
         }
