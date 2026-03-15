@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIMS委托单管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* 紧凑列表样式 */
+        .compact-row {
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+        .compact-row:hover {
+            background-color: #f8fafc;
+            border-left-color: #3b82f6;
+            transform: translateX(2px);
+        }
+
+        /* 状态标签样式 */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* 时间轴样式 */
+        .timeline {
+            position: relative;
+            padding-left: 20px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #e2e8f0;
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 12px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -17px;
+            top: 4px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #3b82f6;
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px #bfdbfe;
+        }
+        .timeline-item.completed::before {
+            background: #10b981;
+            box-shadow: 0 0 0 2px #a7f3d0;
+        }
+        .timeline-item.pending::before {
+            background: #f59e0b;
+            box-shadow: 0 0 0 2px #fde68a;
+        }
+        .timeline-content {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-size: 12px;
+        }
+        .timeline-time {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 2px;
+        }
+        .timeline-action {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .timeline-user {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        /* Tooltip/Popover 样式 */
+        .info-popover {
+            display: none;
+            position: absolute;
+            z-index: 1000;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            width: 320px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .info-popover.active {
+            display: block;
+            animation: popoverIn 0.2s ease;
+        }
+        @keyframes popoverIn {
+            from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .popover-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: sticky;
+            top: 0;
+            background: white;
+            border-radius: 12px 12px 0 0;
+        }
+        .popover-body {
+            padding: 16px;
+        }
+
+        /* 动画 */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* 全量视图特殊样式 */
+        .all-orders-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* 委托单列表项 - 采用第二个HTML的样式 */
+        .order-item {
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+        }
+        .order-item:hover {
+            background-color: #f8fafc;
+            border-left-color: #3b82f6;
+        }
+        .order-item.active {
+            background-color: #eff6ff;
+            border-left-color: #2563eb;
+            box-shadow: inset 0 0 0 1px #bfdbfe;
+        }
+        
+        /* 状态标签基础样式（来自第二个HTML） */
+        .status-badge {
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .status-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        /* 左侧栏头部样式优化 */
+        .sidebar-header {
+            background: linear-gradient(to bottom, #f8fafc, #ffffff);
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden text-gray-800">
+
+    <div class="flex h-full">
+        <!-- 左侧：委托单列表（增加状态筛选） -->
+        <div class="w-80 bg-white border-r border-gray-200 flex flex-col shadow-sm z-20">
+            <div class="p-4 border-b border-gray-100 sidebar-header">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-file-contract text-blue-600"></i>
+                        委托单列表
+                    </h2>
+                </div>
+                
+                <!-- 搜索框 -->
+                <div class="relative mb-3">
+                    <input type="text" 
+                           id="orderSearch"
+                           placeholder="搜索委托号/客户/合同号" 
+                           class="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                </div>
+                
+                <!-- 状态筛选 -->
+                <div class="relative">
+                    <select id="orderStatusFilter" 
+                            class="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm appearance-none cursor-pointer">
+                        <option value="">全部状态</option>
+                        <option value="已完工">已完工</option>
+                        <option value="已开工">已开工</option>
+                        <option value="未结账">未结账</option>
+                        <option value="检测中">检测中</option>
+                    </select>
+                    <i class="fas fa-filter absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                    <i class="fas fa-chevron-down absolute right-3 top-2.5 text-gray-400 text-xs pointer-events-none"></i>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar" id="orderList">
+                <!-- 全部委托单选项 -->
+                <div class="order-item active cursor-pointer p-3 border-b border-gray-100" onclick="selectOrder('all')" id="allOrdersBtn">
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full all-orders-badge flex items-center justify-center text-xs">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            全部委托单
+                        </h3>
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">汇总</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-2">查看所有委托单样品数据</p>
+                    <div class="flex gap-3 text-xs text-gray-600">
+                        <span id="allOrdersSampleCount"><i class="fas fa-vial mr-1 text-gray-400"></i>0个样品</span>
+                        <span id="allOrdersAmount"><i class="fas fa-yen-sign mr-1 text-gray-400"></i>0</span>
+                    </div>
+                </div>
+                <!-- 委托单项将通过JS生成 -->
+            </div>
+        </div>
+
+        <!-- 右侧：详情区域 -->
+        <div class="flex-1 flex flex-col bg-gray-50 overflow-hidden relative">
+            <!-- 顶部信息区域 -->
+            <div id="headerArea" class="bg-white border-b border-gray-200 p-6 shadow-sm">
+                <!-- 动态内容 -->
+            </div>
+
+            <!-- 样品列表区域 -->
+            <div class="flex-1 overflow-hidden flex flex-col">
+                <!-- 筛选栏 -->
+                <div class="bg-white px-6 py-3 border-b border-gray-200 flex items-center gap-3">
+                    <div class="flex-1 flex items-center gap-3">
+                        <div class="relative flex-1 max-w-md">
+                            <input type="text" 
+                                   id="sampleSearch" 
+                                   placeholder="搜索样品名称/登记号..." 
+                                   class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                        </div>
+                        <select id="filterTestStatus" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">检测状态</option>
+                            <option value="未开始">未开始</option>
+                            <option value="检测中">检测中</option>
+                            <option value="已完成">已完成</option>
+                        </select>
+                        <select id="filterCertStatus" class="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">证书状态</option>
+                            <option value="待编制">待编制</option>
+                            <option value="待签发">待签发</option>
+                            <option value="待审核">待审核</option>
+                            <option value="待发放">待发放</option>
+                            <option value="已发放">已发放</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500" id="sampleStats">共 0 条样品</span>
+                        <button onclick="exportData()" class="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download mr-1"></i>导出
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 表头 -->
+                <div class="bg-gray-50 px-6 py-3 border-b border-gray-200 grid grid-cols-12 gap-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <div class="col-span-2">样品信息</div>
+                    <div class="col-span-2">检测状态</div>
+                    <div class="col-span-2">证书状态</div>
+                    <div class="col-span-2">费用概况</div>
+                    <div class="col-span-3">操作记录</div>
+                    <div class="col-span-1 text-center">操作</div>
+                </div>
+
+                <!-- 样品列表 -->
+                <div class="flex-1 overflow-y-auto custom-scrollbar bg-white" id="sampleListContainer">
+                    <!-- 样品数据将通过JS生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作记录 Popover -->
+    <div id="operationPopover" class="info-popover">
+        <div class="popover-header" id="popoverTitle">
+            <i class="fas fa-history text-blue-500"></i>
+            <span>操作记录</span>
+        </div>
+        <div class="popover-body" id="popoverContent">
+            <!-- 时间轴内容 -->
+        </div>
+    </div>
+
+    <script>
+        // 数据定义
+        const orders = [
+            {
+                id: 'WT20260126001',
+                customer: '华为技术有限公司',
+                quoteNo: 'KH2023001',
+                contractNo: 'CT20260115-001',
+                date: '2025-04-19',
+                status: '已完工',
+                statusColor: 'green',
+                totalAmount: 50000,
+                invoiceProgress: 70,
+                paymentProgress: 54,
+                samples: 3
+            },
+            {
+                id: 'WT20260126002',
+                customer: '中兴通讯股份有限公司',
+                quoteNo: 'KH2023002',
+                contractNo: 'CT20260116-002',
+                date: '2025-04-20',
+                status: '已开工',
+                statusColor: 'blue',
+                totalAmount: 32000,
+                invoiceProgress: 70,
+                paymentProgress: 54,
+                samples: 4
+            },
+            {
+                id: 'WT20260126003',
+                customer: '比亚迪汽车工业有限公司',
+                quoteNo: 'KH2023003',
+                contractNo: 'CT20260117-003',
+                date: '2025-04-21',
+                status: '未结账',
+                statusColor: 'orange',
+                totalAmount: 86000,
+                invoiceProgress: 0,
+                paymentProgress: 0,
+                samples: 5
+            },
+            {
+                id: 'WT20260126004',
+                customer: '腾讯云计算(北京)有限责任公司',
+                quoteNo: 'KH2023004',
+                contractNo: 'CT20260118-004',
+                date: '2025-04-22',
+                status: '已完工',
+                statusColor: 'green',
+                totalAmount: 45000,
+                invoiceProgress: 100,
+                paymentProgress: 100,
+                samples: 2
+            },
+            {
+                id: 'WT20260126005',
+                customer: '阿里巴巴集团',
+                quoteNo: 'KH2023005',
+                contractNo: 'CT20260119-005',
+                date: '2025-04-23',
+                status: '检测中',
+                statusColor: 'blue',
+                totalAmount: 128000,
+                invoiceProgress: 30,
+                paymentProgress: 20,
+                samples: 6
+            }
+        ];
+
+        // 样品数据
+        const samplesData = [
+            // 华为
+            {
+                id: 1,
+                orderId: 'WT20260126001',
+                orderCustomer: '华为技术有限公司',
+                name: '5G基站射频模块',
+                regNo: 'HW-RF-2025-001',
+                testInfo: {
+                    startDate: '2025-04-19',
+                    dept: '电磁兼容部',
+                    manager: '张工',
+                    status: '已完成',
+                    operationLog: [
+                        {time: '2025-04-19 09:00', action: '样品接收', operator: '李四'},
+                        {time: '2025-04-19 10:30', action: '分配检测任务', operator: '王主管'},
+                        {time: '2025-04-20 14:00', action: '开始检测', operator: '张工'},
+                        {time: '2025-04-22 16:00', action: '检测完成', operator: '张工'}
+                    ]
+                },
+                certInfo: {
+                    no: 'JS20231101001',
+                    unit: '华为技术有限公司',
+                    status: '已发放',
+                    operationLog: [
+                        {time: '2025-04-22 16:30', action: '证书编制', operator: '赵文'},
+                        {time: '2025-04-23 09:00', action: '证书签发', operator: '钱主任'},
+                        {time: '2025-04-23 14:00', action: '证书审核', operator: '孙经理'},
+                        {time: '2025-04-24 10:00', action: '证书发放', operator: '周秘书'}
+                    ]
+                },
+                feeInfo: {
+                    quote: 15000,
+                    entry: 15000,
+                    settlement: 15000,
+                    paymentStatus: '已到款',
+                    invoiceStatus: '已开票',
+                    accountStatus: '已结账'
+                }
+            },
+            {
+                id: 2,
+                orderId: 'WT20260126001',
+                orderCustomer: '华为技术有限公司',
+                name: '光传输设备OTN',
+                regNo: 'HW-OTN-2025-002',
+                testInfo: {
+                    startDate: '2025-04-19',
+                    dept: '光学检测部',
+                    manager: '李工',
+                    status: '已完成',
+                    operationLog: [
+                        {time: '2025-04-19 08:00', action: '样品接收', operator: '李四'},
+                        {time: '2025-04-20 09:00', action: '开始检测', operator: '李工'},
+                        {time: '2025-04-21 17:00', action: '检测完成', operator: '李工'}
+                    ]
+                },
+                certInfo: {
+                    no: 'JS20231101002',
+                    unit: '华为技术有限公司',
+                    status: '已发放',
+                    operationLog: [
+                        {time: '2025-04-22 08:00', action: '证书编制', operator: '赵文'},
+                        {time: '2025-04-22 12:00', action: '证书签发', operator: '钱主任'},
+                        {time: '2025-04-23 09:00', action: '证书发放', operator: '周秘书'}
+                    ]
+                },
+                feeInfo: {
+                    quote: 22000,
+                    entry: 22000,
+                    settlement: 22000,
+                    paymentStatus: '已到款',
+                    invoiceStatus: '已开票',
+                    accountStatus: '已结账'
+                }
+            },
+            {
+                id: 3,
+                orderId: 'WT20260126001',
+                orderCustomer: '华为技术有限公司',
+                name: '数据存储服务器',
+                regNo: 'HW-SRV-2025-003',
+                testInfo: {
+                    startDate: '2025-04-20',
+                    dept: '环境可靠性部',
+                    manager: '王工',
+                    status: '已完成',
+                    operationLog: [
+                        {time: '2025-04-20 10:00', action: '样品接收', operator: '李四'},
+                        {time: '2025-04-21 09:00', action: '开始检测', operator: '王工'},
+                        {time: '2025-04-23 15:00', action: '检测完成', operator: '王工'}
+                    ]
+                },
+                certInfo: {
+                    no: 'JS20231101003',
+                    unit: '华为技术有限公司',
+                    status: '已发放',
+                    operationLog: [
+                        {time: '2025-04-24 09:00', action: '证书编制', operator: '赵文'},
+                        {time: '2025-04-24 14:00', action: '证书签发', operator: '钱主任'},
+                        {time: '2025-04-25 10:00', action: '证书发放', operator: '周秘书'}
+                    ]
+                },
+                feeInfo: {
+                    quote: 13000,
+                    entry: 13000,
+                    settlement: 13000,
+                    paymentStatus: '已到款',
+                    invoiceStatus: '已开票',
+                    accountStatus: '已结账'
+                }
+            },
+            // 中兴
+            {
+                id: 4,
+                orderId: 'WT20260126002',
+                orderCustomer: '中兴通讯股份有限公司',
+                name: '5G基站电源模块',
+                regNo: 'CTPL583462190',
+                testInfo: {
+                    startDate: '2025-04-21',
+                    dept: '电磁兼容部',
+                    manager: '张三',
+                    status: '检测中',
+                    operationLog: [
+                        {time: '2025-04-21 09:00', action: '样品接收', operator: '李四'},
+                        {time: '2025-04-21 10:30', action: '分配检测任务', operator: '王主管'},
+                        {time: '2025-04-22 14:00', action: '开始检测', operator: '张三'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '中兴通讯股份有限公司',
+                    status: '待编制',
+                    operationLog: [
+                        {time: '2025-04-22 16:00', action: '证书任务创建', operator: '系统'}
+                    ]
+                },
+                feeInfo: {
+                    quote: 8000,
+                    entry: 8000,
+                    settlement: 8000,
+                    paymentStatus: '部分到款',
+                    invoiceStatus: '已开票',
+                    accountStatus: '未结账'
+                }
+            },
+            {
+                id: 5,
+                orderId: 'WT20260126002',
+                orderCustomer: '中兴通讯股份有限公司',
+                name: '光纤传输设备',
+                regNo: 'CTMP741928036',
+                testInfo: {
+                    startDate: '2025-04-20',
+                    dept: '光学检测部',
+                    manager: '李四',
+                    status: '已完成',
+                    operationLog: [
+                        {time: '2025-04-20 08:00', action: '样品接收', operator: '李四'},
+                        {time: '2025-04-20 09:00', action: '开始检测', operator: '李四'},
+                        {time: '2025-04-22 15:00', action: '检测完成', operator: '李四'}
+                    ]
+                },
+                certInfo: {
+                    no: 'JS20231102005',
+                    unit: '中兴通讯股份有限公司',
+                    status: '待签发',
+                    operationLog: [
+                        {time: '2025-04-22 16:00', action: '证书编制完成', operator: '赵文'},
+                        {time: '2025-04-23 09:00', action: '提交审核', operator: '赵文'}
+                    ]
+                },
+                feeInfo: {
+                    quote: 12000,
+                    entry: 12000,
+                    settlement: 12000,
+                    paymentStatus: '已到款',
+                    invoiceStatus: '已开票',
+                    accountStatus: '已结账'
+                }
+            },
+            {
+                id: 6,
+                orderId: 'WT20260126002',
+                orderCustomer: '中兴通讯股份有限公司',
+                name: '服务器散热模组',
+                regNo: 'CTSR982345671',
+                testInfo: {
+                    startDate: '2025-04-22',
+                    dept: '环境可靠性部',
+                    manager: '王五',
+                    status: '未开始',
+                    operationLog: [
+                        {time: '2025-04-22 10:00', action: '样品登记', operator: '系统'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '-',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 6500,
+                    entry: 0,
+                    settlement: 0,
+                    paymentStatus: '未到款',
+                    invoiceStatus: '未开票',
+                    accountStatus: '未结账'
+                }
+            },
+            {
+                id: 7,
+                orderId: 'WT20260126002',
+                orderCustomer: '中兴通讯股份有限公司',
+                name: '通信电源适配器',
+                regNo: 'CTPA773421098',
+                testInfo: {
+                    startDate: '2025-04-19',
+                    dept: '安规检测部',
+                    manager: '赵六',
+                    status: '已完成',
+                    operationLog: [
+                        {time: '2025-04-19 08:30', action: '样品接收', operator: '李四'},
+                        {time: '2025-04-19 09:00', action: '开始检测', operator: '赵六'},
+                        {time: '2025-04-20 17:00', action: '检测完成', operator: '赵六'}
+                    ]
+                },
+                certInfo: {
+                    no: 'JS20231028901',
+                    unit: '中兴通讯股份有限公司',
+                    status: '已发放',
+                    operationLog: [
+                        {time: '2025-04-21 10:00', action: '证书编制', operator: '赵文'},
+                        {time: '2025-04-21 14:00', action: '证书签发', operator: '钱主任'},
+                        {time: '2025-04-22 09:00', action: '证书审核', operator: '孙经理'},
+                        {time: '2025-04-23 10:00', action: '证书发放', operator: '周秘书'}
+                    ]
+                },
+                feeInfo: {
+                    quote: 5500,
+                    entry: 5500,
+                    settlement: 5500,
+                    paymentStatus: '已到款',
+                    invoiceStatus: '已开票',
+                    accountStatus: '已结账'
+                }
+            },
+            // 比亚迪
+            {
+                id: 8,
+                orderId: 'WT20260126003',
+                orderCustomer: '比亚迪汽车工业有限公司',
+                name: '动力电池组BMS',
+                regNo: 'BYD-BMS-2025-001',
+                testInfo: {
+                    startDate: '2025-04-21',
+                    dept: '电池检测部',
+                    manager: '陈工',
+                    status: '检测中',
+                    operationLog: [
+                        {time: '2025-04-21 08:00', action: '样品接收', operator: '刘收'},
+                        {time: '2025-04-21 10:00', action: '开始检测', operator: '陈工'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '比亚迪汽车工业有限公司',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 25000,
+                    entry: 25000,
+                    settlement: 0,
+                    paymentStatus: '未到款',
+                    invoiceStatus: '未开票',
+                    accountStatus: '未结账'
+                }
+            },
+            {
+                id: 9,
+                orderId: 'WT20260126003',
+                orderCustomer: '比亚迪汽车工业有限公司',
+                name: '车载充电机OBC',
+                regNo: 'BYD-OBC-2025-002',
+                testInfo: {
+                    startDate: '2025-04-22',
+                    dept: '安规检测部',
+                    manager: '林工',
+                    status: '未开始',
+                    operationLog: [
+                        {time: '2025-04-22 09:00', action: '样品登记', operator: '系统'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '-',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 18000,
+                    entry: 0,
+                    settlement: 0,
+                    paymentStatus: '未到款',
+                    invoiceStatus: '未开票',
+                    accountStatus: '未结账'
+                }
+            },
+            {
+                id: 10,
+                orderId: 'WT20260126003',
+                orderCustomer: '比亚迪汽车工业有限公司',
+                name: '电机控制器MCU',
+                regNo: 'BYD-MCU-2025-003',
+                testInfo: {
+                    startDate: '2025-04-23',
+                    dept: '电磁兼容部',
+                    manager: '黄工',
+                    status: '未开始',
+                    operationLog: [
+                        {time: '2025-04-23 08:30', action: '样品登记', operator: '系统'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '-',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 22000,
+                    entry: 0,
+                    settlement: 0,
+                    paymentStatus: '未到款',
+                    invoiceStatus: '未开票',
+                    accountStatus: '未结账'
+                }
+            },
+            {
+                id: 11,
+                orderId: 'WT20260126003',
+                orderCustomer: '比亚迪汽车工业有限公司',
+                name: 'DC-DC转换器',
+                regNo: 'BYD-DCDC-2025-004',
+                testInfo: {
+                    startDate: '2025-04-23',
+                    dept: '安规检测部',
+                    manager: '周工',
+                    status: '未开始',
+                    operationLog: [
+                        {time: '2025-04-23 09:00', action: '样品登记', operator: '系统'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '-',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 12000,
+                    entry: 0,
+                    settlement: 0,
+                    paymentStatus: '未到款',
+                    invoiceStatus: '未开票',
+                    accountStatus: '未结账'
+                }
+            },
+            {
+                id: 12,
+                orderId: 'WT20260126003',
+                orderCustomer: '比亚迪汽车工业有限公司',
+                name: '高压配电盒PDU',
+                regNo: 'BYD-PDU-2025-005',
+                testInfo: {
+                    startDate: '2025-04-24',
+                    dept: '环境可靠性部',
+                    manager: '吴工',
+                    status: '未开始',
+                    operationLog: [
+                        {time: '2025-04-24 08:00', action: '样品登记', operator: '系统'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '-',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 9000,
+                    entry: 0,
+                    settlement: 0,
+                    paymentStatus: '未到款',
+                    invoiceStatus: '未开票',
+                    accountStatus: '未结账'
+                }
+            },
+            // 腾讯
+            {
+                id: 13,
+                orderId: 'WT20260126004',
+                orderCustomer: '腾讯云计算(北京)有限责任公司',
+                name: '云服务器主板',
+                regNo: 'TX-MB-2025-001',
+                testInfo: {
+                    startDate: '2025-04-22',
+                    dept: '电磁兼容部',
+                    manager: '郑工',
+                    status: '已完成',
+                    operationLog: [
+                        {time: '2025-04-22 10:00', action: '样品接收', operator: '刘收'},
+                        {time: '2025-04-22 11:00', action: '开始检测', operator: '郑工'},
+                        {time: '2025-04-24 16:00', action: '检测完成', operator: '郑工'}
+                    ]
+                },
+                certInfo: {
+                    no: 'JS20231104001',
+                    unit: '腾讯云计算(北京)有限责任公司',
+                    status: '已发放',
+                    operationLog: [
+                        {time: '2025-04-25 09:00', action: '证书编制', operator: '赵文'},
+                        {time: '2025-04-25 11:00', action: '证书签发', operator: '钱主任'},
+                        {time: '2025-04-25 14:00', action: '证书发放', operator: '周秘书'}
+                    ]
+                },
+                feeInfo: {
+                    quote: 28000,
+                    entry: 28000,
+                    settlement: 28000,
+                    paymentStatus: '已到款',
+                    invoiceStatus: '已开票',
+                    accountStatus: '已结账'
+                }
+            },
+            {
+                id: 14,
+                orderId: 'WT20260126004',
+                orderCustomer: '腾讯云计算(北京)有限责任公司',
+                name: '网络交换机',
+                regNo: 'TX-SW-2025-002',
+                testInfo: {
+                    startDate: '2025-04-23',
+                    dept: '网络检测部',
+                    manager: '何工',
+                    status: '已完成',
+                    operationLog: [
+                        {time: '2025-04-23 09:00', action: '样品接收', operator: '刘收'},
+                        {time: '2025-04-23 10:00', action: '开始检测', operator: '何工'},
+                        {time: '2025-04-25 15:00', action: '检测完成', operator: '何工'}
+                    ]
+                },
+                certInfo: {
+                    no: 'JS20231104002',
+                    unit: '腾讯云计算(北京)有限责任公司',
+                    status: '已发放',
+                    operationLog: [
+                        {time: '2025-04-26 08:00', action: '证书编制', operator: '赵文'},
+                        {time: '2025-04-26 10:00', action: '证书签发', operator: '钱主任'},
+                        {time: '2025-04-26 16:00', action: '证书发放', operator: '周秘书'}
+                    ]
+                },
+                feeInfo: {
+                    quote: 17000,
+                    entry: 17000,
+                    settlement: 17000,
+                    paymentStatus: '已到款',
+                    invoiceStatus: '已开票',
+                    accountStatus: '已结账'
+                }
+            },
+            // 阿里
+            {
+                id: 15,
+                orderId: 'WT20260126005',
+                orderCustomer: '阿里巴巴集团',
+                name: 'AI训练服务器',
+                regNo: 'ALI-AI-2025-001',
+                testInfo: {
+                    startDate: '2025-04-24',
+                    dept: '高性能计算部',
+                    manager: '孙工',
+                    status: '检测中',
+                    operationLog: [
+                        {time: '2025-04-24 08:00', action: '样品接收', operator: '刘收'},
+                        {time: '2025-04-24 10:00', action: '开始检测', operator: '孙工'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '阿里巴巴集团',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 45000,
+                    entry: 45000,
+                    settlement: 0,
+                    paymentStatus: '部分到款',
+                    invoiceStatus: '已开票',
+                    accountStatus: '未结账'
+                }
+            },
+            {
+                id: 16,
+                orderId: 'WT20260126005',
+                orderCustomer: '阿里巴巴集团',
+                name: '液冷散热系统',
+                regNo: 'ALI-LQ-2025-002',
+                testInfo: {
+                    startDate: '2025-04-25',
+                    dept: '环境可靠性部',
+                    manager: '钱工',
+                    status: '检测中',
+                    operationLog: [
+                        {time: '2025-04-25 09:00', action: '样品接收', operator: '刘收'},
+                        {time: '2025-04-25 11:00', action: '开始检测', operator: '钱工'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '阿里巴巴集团',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 32000,
+                    entry: 32000,
+                    settlement: 0,
+                    paymentStatus: '部分到款',
+                    invoiceStatus: '已开票',
+                    accountStatus: '未结账'
+                }
+            },
+            {
+                id: 17,
+                orderId: 'WT20260126005',
+                orderCustomer: '阿里巴巴集团',
+                name: '智能网卡DPU',
+                regNo: 'ALI-DPU-2025-003',
+                testInfo: {
+                    startDate: '2025-04-25',
+                    dept: '网络检测部',
+                    manager: '冯工',
+                    status: '未开始',
+                    operationLog: [
+                        {time: '2025-04-25 14:00', action: '样品登记', operator: '系统'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '-',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 28000,
+                    entry: 0,
+                    settlement: 0,
+                    paymentStatus: '未到款',
+                    invoiceStatus: '未开票',
+                    accountStatus: '未结账'
+                }
+            },
+            {
+                id: 18,
+                orderId: 'WT20260126005',
+                orderCustomer: '阿里巴巴集团',
+                name: '存储阵列控制器',
+                regNo: 'ALI-ST-2025-004',
+                testInfo: {
+                    startDate: '2025-04-26',
+                    dept: '存储检测部',
+                    manager: '陈工',
+                    status: '未开始',
+                    operationLog: [
+                        {time: '2025-04-26 08:00', action: '样品登记', operator: '系统'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '-',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 15000,
+                    entry: 0,
+                    settlement: 0,
+                    paymentStatus: '未到款',
+                    invoiceStatus: '未开票',
+                    accountStatus: '未结账'
+                }
+            },
+            {
+                id: 19,
+                orderId: 'WT20260126005',
+                orderCustomer: '阿里巴巴集团',
+                name: '电源管理模块',
+                regNo: 'ALI-PM-2025-005',
+                testInfo: {
+                    startDate: '2025-04-26',
+                    dept: '安规检测部',
+                    manager: '褚工',
+                    status: '未开始',
+                    operationLog: [
+                        {time: '2025-04-26 09:00', action: '样品登记', operator: '系统'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '-',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 8000,
+                    entry: 0,
+                    settlement: 0,
+                    paymentStatus: '未到款',
+                    invoiceStatus: '未开票',
+                    accountStatus: '未结账'
+                }
+            },
+            {
+                id: 20,
+                orderId: 'WT20260126005',
+                orderCustomer: '阿里巴巴集团',
+                name: '机柜散热风扇',
+                regNo: 'ALI-FAN-2025-006',
+                testInfo: {
+                    startDate: '2025-04-27',
+                    dept: '环境可靠性部',
+                    manager: '卫工',
+                    status: '未开始',
+                    operationLog: [
+                        {time: '2025-04-27 08:00', action: '样品登记', operator: '系统'}
+                    ]
+                },
+                certInfo: {
+                    no: '-',
+                    unit: '-',
+                    status: '待编制',
+                    operationLog: []
+                },
+                feeInfo: {
+                    quote: 5000,
+                    entry: 0,
+                    settlement: 0,
+                    paymentStatus: '未到款',
+                    invoiceStatus: '未开票',
+                    accountStatus: '未结账'
+                }
+            }
+        ];
+
+        // 状态变量
+        let selectedOrderId = null;
+        let filteredSamples = [...samplesData];
+        let currentPopover = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderOrderList();
+            updateAllOrdersStats();
+            renderHeader();
+            renderSamples();
+            updateStats();
+            setupEventListeners();
+        });
+
+        // 更新全部委托单统计
+        function updateAllOrdersStats() {
+            const totalSamples = samplesData.length;
+            const totalAmount = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+            document.getElementById('allOrdersSampleCount').innerHTML = `<i class="fas fa-vial mr-1 text-gray-400"></i>${totalSamples}个样品`;
+            document.getElementById('allOrdersAmount').innerHTML = `<i class="fas fa-yen-sign mr-1 text-gray-400"></i>${(totalAmount/10000).toFixed(1)}万`;
+        }
+
+        // 辅助函数：获取状态样式
+        function getStatusClass(status, type) {
+            const classes = {
+                test: {
+                    '未开始': 'bg-gray-100 text-gray-600 border-gray-200',
+                    '检测中': 'bg-blue-100 text-blue-700 border-blue-200',
+                    '已完成': 'bg-green-100 text-green-700 border-green-200'
+                },
+                cert: {
+                    '待编制': 'bg-gray-100 text-gray-600 border-gray-200',
+                    '待签发': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+                    '待审核': 'bg-orange-100 text-orange-700 border-orange-200',
+                    '待发放': 'bg-blue-100 text-blue-700 border-blue-200',
+                    '已发放': 'bg-green-100 text-green-700 border-green-200'
+                },
+                fee: {
+                    '已到款': 'text-green-600 bg-green-50',
+                    '部分到款': 'text-yellow-600 bg-yellow-50',
+                    '未到款': 'text-gray-500 bg-gray-100',
+                    '已开票': 'text-blue-600 bg-blue-50',
+                    '未开票': 'text-gray-500 bg-gray-100',
+                    '已结账': 'text-green-600 bg-green-50',
+                    '未结账': 'text-orange-600 bg-orange-50'
+                }
+            };
+            return classes[type][status] || classes[type]['未开始'];
+        }
+
+        function getOrderStatusClass(color) {
+            const classes = {
+                green: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+                blue: 'bg-blue-100 text-blue-700 border border-blue-200',
+                orange: 'bg-amber-100 text-amber-700 border border-amber-200',
+                gray: 'bg-gray-100 text-gray-700 border border-gray-200'
+            };
+            return classes[color] || classes.gray;
+        }
+
+        // 渲染委托单列表（支持搜索+状态筛选）
+        function renderOrderList() {
+            const container = document.getElementById('orderList');
+            const searchTerm = document.getElementById('orderSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('orderStatusFilter').value;
+
+            // 筛选逻辑：同时满足搜索条件和状态条件
+            const filteredOrders = orders.filter(order => {
+                // 搜索条件匹配
+                const matchSearch = !searchTerm || 
+                    order.id.toLowerCase().includes(searchTerm) || 
+                    order.customer.toLowerCase().includes(searchTerm) ||
+                    order.contractNo.toLowerCase().includes(searchTerm);
+                
+                // 状态条件匹配
+                const matchStatus = !statusFilter || order.status === statusFilter;
+                
+                return matchSearch && matchStatus;
+            });
+
+            // 清空现有列表（除了"全部委托单"选项）
+            const allOrdersBtn = document.getElementById('allOrdersBtn');
+            while (container.lastChild && container.lastChild !== allOrdersBtn) {
+                container.removeChild(container.lastChild);
+            }
+
+            // 生成委托单列表HTML
+            let html = '';
+            filteredOrders.forEach(order => {
+                html += `
+                <div class="order-item cursor-pointer p-3 border-b border-gray-100 ${selectedOrderId === order.id ? 'active' : ''}" 
+                     onclick="selectOrder('${order.id}')">
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="font-semibold text-gray-900 text-xs font-mono">${order.id}</h3>
+                        <span class="px-1.5 py-0.5 ${getOrderStatusClass(order.statusColor)} text-[10px] font-medium rounded">
+                            ${order.status}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-2 line-clamp-1">${order.customer}</p>
+                    <div class="flex justify-between items-center text-[10px] text-gray-500">
+                        <span>合同: ${order.contractNo}</span>
+                        <span class="font-semibold text-gray-700">¥${order.totalAmount.toLocaleString()}</span>
+                    </div>
+                    <div class="mt-2 flex gap-2">
+                        <div class="flex-1 bg-gray-100 rounded-full h-1 overflow-hidden" title="开票进度 ${order.invoiceProgress}%">
+                            <div class="bg-blue-500 h-full rounded-full" style="width: ${order.invoiceProgress}%"></div>
+                        </div>
+                        <div class="flex-1 bg-gray-100 rounded-full h-1 overflow-hidden" title="回款进度 ${order.paymentProgress}%">
+                            <div class="bg-green-500 h-full rounded-full" style="width: ${order.paymentProgress}%"></div>
+                        </div>
+                    </div>
+                    <div class="mt-1 flex justify-between text-[10px] text-gray-400">
+                        <span>开票${order.invoiceProgress}%</span>
+                        <span>回款${order.paymentProgress}%</span>
+                    </div>
+                </div>
+                `;
+            });
+            
+            // 插入到"全部委托单"后面
+            allOrdersBtn.insertAdjacentHTML('afterend', html);
+            
+            // 如果没有搜索结果，显示提示
+            if (filteredOrders.length === 0 && (searchTerm || statusFilter)) {
+                allOrdersBtn.insertAdjacentHTML('afterend', `
+                    <div class="p-4 text-center text-gray-400 text-sm">
+                        <i class="fas fa-search mb-2 block"></i>
+                        未找到匹配的委托单
+                    </div>
+                `);
+            }
+        }
+
+        // 渲染头部区域
+        function renderHeader() {
+            const header = document.getElementById('headerArea');
+
+            if (selectedOrderId === null) {
+                // 全量视图
+                const totalSamples = samplesData.length;
+                const totalAmount = orders.reduce((sum, o) => sum + o.totalAmount, 0);
+                const completedTests = samplesData.filter(s => s.testInfo.status === '已完成').length;
+                const issuedCerts = samplesData.filter(s => s.certInfo.status === '已发放').length;
+
+                header.innerHTML = `
+                    <div class="slide-in">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full all-orders-badge flex items-center justify-center">
+                                        <i class="fas fa-layer-group text-white"></i>
+                                    </div>
+                                    全部委托单概览
+                                </h1>
+                                <p class="text-gray-500 text-sm mt-1">查看和管理所有委托单的样品数据</p>
+                            </div>
+                            <div class="flex gap-3">
+                                <button class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm">
+                                    <i class="fas fa-filter mr-2"></i>高级筛选
+                                </button>
+                                <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm shadow-sm">
+                                    <i class="fas fa-plus mr-2"></i>新建委托单
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-xs font-medium text-blue-600 mb-1">委托单总数</p>
+                                        <p class="text-2xl font-bold text-blue-900">${orders.length}</p>
+                                    </div>
+                                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-file-contract text-blue-500 text-lg"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-xs font-medium text-purple-600 mb-1">样品总数</p>
+                                        <p class="text-2xl font-bold text-purple-900">${totalSamples}</p>
+                                    </div>
+                                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-vial text-purple-500 text-lg"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-xs text-purple-700">
+                                    <span class="font-semibold">${completedTests}</span> 个已完成检测
+                                </div>
+                            </div>
+                            <div class="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-xs font-medium text-green-600 mb-1">证书已发放</p>
+                                        <p class="text-2xl font-bold text-green-900">${issuedCerts}</p>
+                                    </div>
+                                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-certificate text-green-500 text-lg"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-xs text-green-700">
+                                    占总数 ${Math.round(issuedCerts/totalSamples*100)}%
+                                </div>
+                            </div>
+                            <div class="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-xl p-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-xs font-medium text-orange-600 mb-1">合同总金额</p>
+                                        <p class="text-2xl font-bold text-orange-900">¥${(totalAmount/10000).toFixed(1)}万</p>
+                                    </div>
+                                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-coins text-orange-500 text-lg"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // 单委托单视图
+                const order = orders.find(o => o.id === selectedOrderId);
+                header.innerHTML = `
+                    <div class="slide-in">
+                        <div class="flex items-start justify-between mb-6">
+                            <div class="flex items-center gap-4">
+                                <button onclick="selectOrder('all')" class="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500">
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <div>
+                                    <div class="flex items-center gap-3 mb-1">
+                                        <h1 class="text-2xl font-bold text-gray-900">${order.id}</h1>
+                                        <span class="px-3 py-1 ${getOrderStatusClass(order.statusColor)} rounded-full text-xs font-semibold">
+                                            ${order.status}
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-500 text-sm">创建于 ${order.date} · ${order.customer}</p>
+                                </div>
+                            </div>
+                            <button class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+                                查看委托单详情 <i class="fas fa-external-link-alt text-xs"></i>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-5 gap-6 mb-6">
+                            <div class="space-y-1">
+                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">客户名称</label>
+                                <p class="text-sm font-semibold text-gray-900 truncate">${order.customer}</p>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">报价单号</label>
+                                <p class="text-sm font-medium text-gray-900 font-mono">${order.quoteNo}</p>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">合同号</label>
+                                <p class="text-sm font-medium text-gray-900 font-mono">${order.contractNo}</p>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">委托日期</label>
+                                <p class="text-sm font-medium text-gray-900">${order.date}</p>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">样品数量</label>
+                                <p class="text-sm font-medium text-gray-900">${order.samples} 个</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-1">总金额</p>
+                                    <p class="text-xl font-bold text-gray-900">¥${order.totalAmount.toLocaleString()}</p>
+                                </div>
+                                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                    <i class="fas fa-yen-sign text-gray-400"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-200">
+                                <div>
+                                    <p class="text-xs text-blue-600 mb-1">开票进度</p>
+                                    <p class="text-xl font-bold text-blue-700">${order.invoiceProgress}%</p>
+                                </div>
+                                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                    <i class="fas fa-file-invoice text-blue-500"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-green-50 rounded-xl border border-green-200">
+                                <div>
+                                    <p class="text-xs text-green-600 mb-1">回款进度</p>
+                                    <p class="text-xl font-bold text-green-700">${order.paymentProgress}%</p>
+                                </div>
+                                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                    <i class="fas fa-hand-holding-usd text-green-500"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染样品列表
+        function renderSamples() {
+            const container = document.getElementById('sampleListContainer');
+
+            if (filteredSamples.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-64 text-gray-400">
+                        <i class="fas fa-inbox text-4xl mb-4"></i>
+                        <p>暂无符合条件的样品</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredSamples.map((sample, index) => `
+                <div class="compact-row grid grid-cols-12 gap-4 px-6 py-3 border-b border-gray-100 items-center fade-in" 
+                     style="animation-delay: ${index * 0.02}s">
+
+                    <!-- 样品信息 -->
+                    <div class="col-span-2">
+                        <div class="font-semibold text-gray-900 text-sm truncate" title="${sample.name}">${sample.name}</div>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-xs text-gray-500 font-mono bg-gray-100 px-1.5 py-0.5 rounded">${sample.regNo}</span>
+                        </div>
+                        ${selectedOrderId === null ? `
+                            <div class="text-xs text-gray-400 mt-1 truncate">${sample.orderCustomer}</div>
+                        ` : ''}
+                    </div>
+
+                    <!-- 检测状态 -->
+                    <div class="col-span-2">
+                        <div class="flex items-center gap-2">
+                            <span class="status-pill border ${getStatusClass(sample.testInfo.status, 'test')}">
+                                <i class="fas fa-circle text-[6px]"></i>
+                                ${sample.testInfo.status}
+                            </span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                            <i class="fas fa-user-circle text-gray-400"></i>
+                            ${sample.testInfo.manager}
+                            <span class="text-gray-300">|</span>
+                            <i class="fas fa-building text-gray-400"></i>
+                            ${sample.testInfo.dept}
+                        </div>
+                    </div>
+
+                    <!-- 证书状态 -->
+                    <div class="col-span-2">
+                        <div class="flex items-center gap-2">
+                            <span class="status-pill border ${getStatusClass(sample.certInfo.status, 'cert')}">
+                                <i class="fas fa-circle text-[6px]"></i>
+                                ${sample.certInfo.status}
+                            </span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1.5 truncate" title="${sample.certInfo.unit}">
+                            ${sample.certInfo.no !== '-' ? `<span class="font-mono text-gray-600">${sample.certInfo.no}</span>` : '暂无证书号'}
+                        </div>
+                    </div>
+
+                    <!-- 费用概况 -->
+                    <div class="col-span-2">
+                        <div class="text-sm font-semibold text-gray-900">¥${sample.feeInfo.quote.toLocaleString()}</div>
+                        <div class="flex flex-wrap gap-1 mt-1.5">
+                            <span class="text-[10px] px-1.5 py-0.5 rounded ${getStatusClass(sample.feeInfo.paymentStatus, 'fee')}">${sample.feeInfo.paymentStatus}</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded ${getStatusClass(sample.feeInfo.invoiceStatus, 'fee')}">${sample.feeInfo.invoiceStatus}</span>
+                        </div>
+                    </div>
+
+                    <!-- 操作记录预览 -->
+                    <div class="col-span-3">
+                        <div class="flex items-center gap-2">
+                            <button onclick="showTestLog(event, ${sample.id})" 
+                                    class="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs transition-colors"
+                                    title="查看检测记录">
+                                <i class="fas fa-flask"></i>
+                                <span>检测(${sample.testInfo.operationLog.length})</span>
+                            </button>
+                            <button onclick="showCertLog(event, ${sample.id})" 
+                                    class="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs transition-colors"
+                                    title="查看证书记录">
+                                <i class="fas fa-certificate"></i>
+                                <span>证书(${sample.certInfo.operationLog.length})</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 操作 -->
+                    <div class="col-span-1 text-center">
+                        <button class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="查看详情">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染时间轴
+        function renderTimeline(logs, title) {
+            if (!logs || logs.length === 0) {
+                return '<div class="text-center text-gray-400 py-8"><i class="fas fa-inbox mb-2"></i><p class="text-sm">暂无操作记录</p></div>';
+            }
+
+            return `
+                <div class="timeline">
+                    ${logs.map((log, index) => {
+                        let statusClass = 'completed';
+                        if (index === logs.length - 1 && log.action.includes('待')) statusClass = 'pending';
+
+                        return `
+                            <div class="timeline-item ${statusClass}">
+                                <div class="timeline-content">
+                                    <div class="timeline-time">
+                                        <i class="far fa-clock mr-1"></i>${log.time}
+                                    </div>
+                                    <div class="timeline-action">${log.action}</div>
+                                    ${log.operator ? `<div class="timeline-user"><i class="far fa-user mr-1"></i>${log.operator}</div>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // 显示检测记录Popover
+        function showTestLog(event, sampleId) {
+            event.stopPropagation();
+            const sample = samplesData.find(s => s.id === sampleId);
+            if (!sample) return;
+
+            const popover = document.getElementById('operationPopover');
+            const title = document.getElementById('popoverTitle');
+            const content = document.getElementById('popoverContent');
+
+            title.innerHTML = `<i class="fas fa-flask text-blue-500"></i><span>检测操作记录 - ${sample.name}</span>`;
+            content.innerHTML = renderTimeline(sample.testInfo.operationLog);
+
+            positionPopover(event.target, popover);
+        }
+
+        // 显示证书记录Popover
+        function showCertLog(event, sampleId) {
+            event.stopPropagation();
+            const sample = samplesData.find(s => s.id === sampleId);
+            if (!sample) return;
+
+            const popover = document.getElementById('operationPopover');
+            const title = document.getElementById('popoverTitle');
+            const content = document.getElementById('popoverContent');
+
+            title.innerHTML = `<i class="fas fa-certificate text-purple-500"></i><span>证书操作记录 - ${sample.name}</span>`;
+            content.innerHTML = renderTimeline(sample.certInfo.operationLog);
+
+            positionPopover(event.target, popover);
+        }
+
+        // 定位Popover
+        function positionPopover(target, popover) {
+            if (currentPopover && currentPopover !== popover) {
+                currentPopover.classList.remove('active');
+            }
+
+            const rect = target.getBoundingClientRect();
+            const popoverRect = popover.getBoundingClientRect();
+
+            let top = rect.bottom + 10;
+            let left = rect.left;
+
+            if (left + 320 > window.innerWidth) {
+                left = rect.right - 320;
+            }
+
+            if (top + 400 > window.innerHeight) {
+                top = rect.top - 400 - 10;
+            }
+
+            popover.style.top = top + 'px';
+            popover.style.left = left + 'px';
+            popover.classList.add('active');
+            currentPopover = popover;
+        }
+
+        // 点击外部关闭Popover
+        document.addEventListener('click', function(e) {
+            if (currentPopover && !currentPopover.contains(e.target)) {
+                currentPopover.classList.remove('active');
+                currentPopover = null;
+            }
+        });
+
+        // 选择委托单
+        function selectOrder(orderId) {
+            if (orderId === 'all') {
+                selectedOrderId = null;
+            } else {
+                selectedOrderId = orderId;
+            }
+
+            document.querySelectorAll('.order-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            if (orderId === 'all') {
+                document.getElementById('allOrdersBtn').classList.add('active');
+            } else {
+                const items = document.querySelectorAll('.order-item');
+                items.forEach(item => {
+                    if (item.getAttribute('onclick') && item.getAttribute('onclick').includes(`'${orderId}'`)) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+
+            renderHeader();
+            applyFilters();
+        }
+
+        // 导出数据
+        function exportData() {
+            alert('导出功能：将导出当前筛选的 ' + filteredSamples.length + ' 条样品记录');
+        }
+
+        // 应用筛选
+        function applyFilters() {
+            const searchTerm = document.getElementById('sampleSearch').value.toLowerCase();
+            const testStatus = document.getElementById('filterTestStatus').value;
+            const certStatus = document.getElementById('filterCertStatus').value;
+
+            filteredSamples = samplesData.filter(sample => {
+                if (selectedOrderId !== null && sample.orderId !== selectedOrderId) {
+                    return false;
+                }
+
+                if (searchTerm) {
+                    const matchName = sample.name.toLowerCase().includes(searchTerm);
+                    const matchReg = sample.regNo.toLowerCase().includes(searchTerm);
+                    const matchOrder = sample.orderId.toLowerCase().includes(searchTerm);
+                    const matchCustomer = sample.orderCustomer.toLowerCase().includes(searchTerm);
+                    if (!matchName && !matchReg && !matchOrder && !matchCustomer) return false;
+                }
+
+                if (testStatus && sample.testInfo.status !== testStatus) return false;
+                if (certStatus && sample.certInfo.status !== certStatus) return false;
+
+                return true;
+            });
+
+            renderSamples();
+            updateStats();
+        }
+
+        // 更新统计
+        function updateStats() {
+            document.getElementById('sampleStats').textContent = `共 ${filteredSamples.length} 条样品`;
+        }
+
+        // 设置事件监听
+        function setupEventListeners() {
+            // 委托单搜索
+            document.getElementById('orderSearch').addEventListener('input', renderOrderList);
+            
+            // 委托单状态筛选
+            document.getElementById('orderStatusFilter').addEventListener('change', renderOrderList);
+
+            // 样品搜索和筛选
+            document.getElementById('sampleSearch').addEventListener('input', applyFilters);
+            document.getElementById('filterTestStatus').addEventListener('change', applyFilters);
+            document.getElementById('filterCertStatus').addEventListener('change', applyFilters);
+        }
+    </script>
+</body>
+</html>
