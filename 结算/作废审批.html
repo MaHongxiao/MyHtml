@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>结算单作废审批</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background-color: rgba(0,0,0,0.5); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 固定尺寸容器 */
+        .modal-container {
+            width: 800px;
+            height: 500px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* 自定义滚动条 */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+    </style>
+</head>
+<body>
+
+    <!-- 固定尺寸弹窗 -->
+    <div class="modal-container">
+        
+        <!-- 头部 -->
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-1 h-6 bg-orange-500 rounded-full"></div>
+                <h2 class="text-xl font-semibold text-gray-900">结算单作废审批</h2>
+            </div>
+            <button class="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <!-- 内容区 -->
+        <div class="flex-1 overflow-y-auto custom-scroll p-6">
+            
+            <!-- 警告提示 - 与图3风格一致 -->
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+                <svg class="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <div class="text-sm text-orange-800 leading-relaxed">
+                    <span class="font-semibold">注意：</span>结算单作废成功后，关联的所有样品状态都将重置为未结算状态，且不可恢复。请谨慎审批！
+                </div>
+            </div>
+
+            <!-- 申请信息 -->
+            <div class="grid grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-1.5">结算单号</label>
+                    <div class="text-base font-semibold text-gray-900 font-mono">JS20231102005</div>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-1.5">结算金额</label>
+                    <div class="text-base font-semibold text-gray-900">¥ 1,560.00</div>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-1.5">申请人</label>
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">李</div>
+                        <span class="text-sm font-medium text-gray-900">李四</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-1.5">申请时间</label>
+                    <div class="text-sm text-gray-900">2026-03-16 15:30:22</div>
+                </div>
+            </div>
+
+            <!-- 作废原因展示 -->
+            <div class="mb-6">
+                <label class="block text-sm text-gray-500 mb-2">作废原因 <span class="text-red-500">*</span></label>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 leading-relaxed min-h-[60px]">
+                    客户要求取消本次检测委托，样品已全部退回，未产生实际检测费用，申请作废重新开具结算单。
+                </div>
+            </div>
+
+            <!-- 关联样品信息 -->
+            <div class="mb-6">
+                <label class="block text-sm text-gray-500 mb-2">关联样品（共3个）</label>
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-gray-600">
+                            <tr>
+                                <th class="px-3 py-2 text-left font-medium text-xs">样品编号</th>
+                                <th class="px-3 py-2 text-left font-medium text-xs">样品名称</th>
+                                <th class="px-3 py-2 text-left font-medium text-xs">当前状态</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 text-xs">
+                            <tr>
+                                <td class="px-3 py-2 font-mono text-gray-600">YP20231102001</td>
+                                <td class="px-3 py-2 text-gray-900">绝缘电阻测试仪</td>
+                                <td class="px-3 py-2"><span class="text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">已结算</span></td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono text-gray-600">YP20231102002</td>
+                                <td class="px-3 py-2 text-gray-900">数字示波器</td>
+                                <td class="px-3 py-2"><span class="text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">已结算</span></td>
+                            </tr>
+                            <tr>
+                                <td class="px-3 py-2 font-mono text-gray-600">YP20231102003</td>
+                                <td class="px-3 py-2 text-gray-900">频谱分析仪</td>
+                                <td class="px-3 py-2"><span class="text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">已结算</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 审批意见 -->
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">
+                    审批意见
+                    <span class="text-xs text-gray-400 font-normal ml-1">（驳回时必填）</span>
+                </label>
+                <textarea 
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none" 
+                    rows="3" 
+                    placeholder="请输入审批意见，如不同意作废请说明原因..."
+                ></textarea>
+            </div>
+        </div>
+
+        <!-- 底部操作栏 -->
+        <div class="border-t border-gray-200 px-6 py-4 bg-gray-50 flex items-center justify-between flex-shrink-0">
+            <div class="text-xs text-gray-500">
+
+            </div>
+            <div class="flex items-center gap-3">
+                <button class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 text-sm font-medium transition-all">
+                    驳回申请
+                </button>
+                <button class="px-5 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium transition-all shadow-sm">
+                    同意作废
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
