@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>认证申请操作弹窗展示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', "Microsoft YaHei", "SimHei", sans-serif;
+            background-color: #f5f7fa;
+            padding: 40px;
+        }
+        .modal-box {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+.modal-box
+ {
+    width: 560px;
+    height: 561px!important;
+}
+    </style>
+</head>
+<body class="flex flex-col items-center gap-8">
+
+    <!-- 弹窗3：下载文件选择 -->
+    <div class="modal-box w-[560px] flex flex-col">
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">下载认证申请文件</h3>
+                <p class="text-xs text-gray-500 mt-0.5">请根据审核类型选择需要下载的文件</p>
+            </div>
+            <button class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="p-6 flex-1">
+            <!-- 审核类型标签 -->
+            <div class="flex gap-2 mb-4 border-b border-gray-200 pb-3">
+                <button class="audit-tab px-3 py-1.5 text-sm font-medium rounded-md bg-blue-50 text-blue-700 border border-blue-200" onclick="switchAuditType('initial', this)">初次认证</button>
+                <button class="audit-tab px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 border border-transparent" onclick="switchAuditType('supervision', this)">监督</button>
+                <button class="audit-tab px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 border border-transparent" onclick="switchAuditType('recertification', this)">再认证</button>
+                <button class="audit-tab px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 border border-transparent" onclick="switchAuditType('transfer', this)">认证转换</button>
+            </div>
+
+            <!-- 文件列表 -->
+            <div id="fileList" class="space-y-2 max-h-[240px] overflow-y-auto">
+                <!-- 动态内容 -->
+            </div>
+
+            <!-- 格式说明 -->
+            <div class="mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div class="flex items-center gap-2 text-xs text-gray-600">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>文件格式：PDF &nbsp;|&nbsp; 文件将打包为压缩包下载</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center rounded-b-lg">
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="selectAll" checked onchange="toggleSelectAll()" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                <span class="text-sm text-gray-700">全选</span>
+            </label>
+            <div class="flex gap-3">
+                <button class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium transition-colors">
+                    取消
+                </button>
+                <button class="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 font-medium transition-colors flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    下载
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 文件配置数据
+        const fileConfigs = {
+            initial: [
+                { code: 'MSF11-01', name: '认证申请表', required: true },
+                { code: 'MSF11-05', name: '认证场所清单', required: false, note: '若有多场所' }
+            ],
+            supervision: [
+                { code: 'MSF11-04', name: '管理体系过程清单', required: true },
+                { code: 'MSF11-05', name: '认证场所清单', required: false, note: '若有多场所' },
+                { code: 'MSF11-23', name: '获证方情况调查表', required: true },
+                { code: 'MSF11-25', name: '证书变更申请表', required: false, note: '若有' }
+            ],
+            recertification: [
+                { code: 'MSF11-01', name: '认证申请表', required: true },
+                { code: 'MSF11-04', name: '管理体系过程清单', required: true },
+                { code: 'MSF11-05', name: '认证场所清单', required: false, note: '若有多场所' },
+                { code: 'MSF11-23', name: '获证方情况调查表', required: true },
+                { code: 'MSF11-25', name: '证书变更申请表', required: false, note: '若有' }
+            ],
+            transfer: [
+                { code: 'MSF11-01', name: '认证申请表', required: true },
+                { code: 'MSF11-05', name: '认证场所清单', required: false, note: '若有多场所' },
+                { code: 'MSF11-23', name: '获证方情况调查表', required: true }
+            ]
+        };
+
+        let currentType = 'initial';
+
+        function renderFileList(type) {
+            const container = document.getElementById('fileList');
+            const files = fileConfigs[type];
+            
+            container.innerHTML = files.map((file, index) => `
+                <label class="flex items-start gap-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all cursor-pointer group">
+                    <input type="checkbox" 
+                           class="mt-0.5 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 file-checkbox" 
+                           ${file.required ? 'checked disabled' : 'checked'} 
+                           data-index="${index}">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium text-gray-900">${file.code}</span>
+                            <span class="text-sm text-gray-700">${file.name}</span>
+                        </div>
+                        ${file.note ? `<div class="text-xs text-gray-500 mt-1">${file.note}</div>` : ''}
+                    </div>
+                    <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </label>
+            `).join('');
+
+            // 更新全选状态
+            updateSelectAllStatus();
+        }
+
+        function switchAuditType(type, btn) {
+            currentType = type;
+            
+            // 更新标签样式
+            document.querySelectorAll('.audit-tab').forEach(tab => {
+                tab.className = 'audit-tab px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 border border-transparent';
+            });
+            btn.className = 'audit-tab px-3 py-1.5 text-sm font-medium rounded-md bg-blue-50 text-blue-700 border border-blue-200';
+            
+            renderFileList(type);
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.file-checkbox:not([disabled])');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        }
+
+        function updateSelectAllStatus() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:not([disabled])');
+            const checkedBoxes = document.querySelectorAll('.file-checkbox:not([disabled]):checked');
+            const selectAll = document.getElementById('selectAll');
+            
+            if (checkboxes.length === 0) {
+                selectAll.checked = true;
+                selectAll.disabled = true;
+            } else {
+                selectAll.disabled = false;
+                selectAll.checked = checkboxes.length === checkedBoxes.length;
+            }
+        }
+
+        // 监听单个复选框变化
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('file-checkbox')) {
+                updateSelectAllStatus();
+            }
+        });
+
+        // 初始化
+        renderFileList('initial');
+    </script>
+</body>
+</html>
