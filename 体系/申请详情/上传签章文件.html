@@ -1,0 +1,432 @@
+<div class="upload-modal">
+  <div class="modal-header">
+    <h3>上传客户签名扫描件</h3>
+    <button class="close-btn" onclick="closeModal()">×</button>
+  </div>
+  
+  <div class="modal-body">
+    <div class="process-flow">
+      <div class="flow-step completed">
+        <span class="step-num">1</span>
+        <span class="step-text">回传客户</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step completed">
+        <span class="step-num">2</span>
+        <span class="step-text">客户下载盖章</span>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step active">
+        <span class="step-num">3</span>
+        <span class="step-text">客服上传扫描件</span>
+      </div>
+    </div>
+
+    <div class="info-banner">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-right: 6px; vertical-align: text-bottom;">
+        <circle cx="8" cy="8" r="7" stroke="#0891b2" stroke-width="1.5"/>
+        <path d="M8 4v4M8 12V8" stroke="#0891b2" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      客户已完成线下签字盖章，请将扫描后的文件上传至系统
+    </div>
+
+    <div class="upload-container" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" style="display: none;" accept=".pdf,.jpg,.jpeg,.png" multiple onchange="handleFiles(this.files)">
+      
+      <div class="upload-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17,8 12,3 7,8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <div class="upload-text">
+        <p class="primary-text">点击或拖拽文件至此处上传</p>
+        <p class="secondary-text">支持 PDF、JPG、PNG 格式，单个文件不超过 20MB</p>
+      </div>
+    </div>
+
+    <div class="file-list" id="fileList">
+      <!-- 已上传文件将显示在这里 -->
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+    <button class="btn btn-primary" onclick="submitUpload()">确认上传</button>
+  </div>
+</div>
+
+<style>
+.upload-modal {
+  width: 600px;
+  height: 480px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #374151;
+}
+
+.modal-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+body{
+  margin: 0;
+  padding: 0;
+}
+.process-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  padding: 0 20px;
+}
+
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.flow-step .step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.flow-step.completed .step-num {
+  background: #10b981;
+  color: white;
+}
+
+.flow-step.active .step-num {
+  background: #0891b2;
+  color: white;
+}
+
+.flow-step .step-text {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.flow-step.completed .step-text,
+.flow-step.active .step-text {
+  color: #374151;
+  font-weight: 500;
+}
+
+.flow-arrow {
+  color: #d1d5db;
+  margin: 0 12px;
+  font-size: 14px;
+  margin-top: -12px;
+}
+
+.info-banner {
+  background: #ecfeff;
+  border: 1px solid #a5f3fc;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #0e7490;
+  margin-bottom: 16px;
+}
+
+.upload-container {
+  border: 2px dashed #d1d5db;
+  border-radius: 6px;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fafafa;
+}
+
+.upload-container:hover {
+  border-color: #0891b2;
+  background: #f0fdfa;
+}
+
+.upload-icon {
+  margin-bottom: 12px;
+}
+
+.upload-text .primary-text {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+}
+
+.upload-text .secondary-text {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.file-list {
+  margin-top: 16px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.file-icon {
+  color: #0891b2;
+  flex-shrink: 0;
+}
+
+.file-name {
+  font-size: 13px;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.file-delete {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.file-delete:hover {
+  background: #fee2e2;
+}
+
+.modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #fafafa;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.btn-secondary {
+  background: white;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.btn-primary {
+  background: #0891b2;
+  border-color: #0891b2;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0e7490;
+  border-color: #0e7490;
+}
+
+/* 滚动条样式 */
+.modal-body::-webkit-scrollbar,
+.file-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track,
+.file-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb,
+.file-list::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 20px;
+}
+</style>
+
+<script>
+let uploadedFiles = [];
+
+function handleFiles(files) {
+  const fileList = document.getElementById('fileList');
+  
+  Array.from(files).forEach(file => {
+    // 检查文件类型
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      alert('不支持的文件格式：' + file.name);
+      return;
+    }
+    
+    // 检查文件大小 (20MB)
+    if (file.size > 20 * 1024 * 1024) {
+      alert('文件大小超过20MB限制：' + file.name);
+      return;
+    }
+    
+    uploadedFiles.push(file);
+    
+    const fileSize = formatFileSize(file.size);
+    const fileItem = document.createElement('div');
+    fileItem.className = 'file-item';
+    fileItem.innerHTML = `
+      <div class="file-info">
+        <svg class="file-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+        </svg>
+        <span class="file-name" title="${file.name}">${file.name}</span>
+        <span class="file-size">${fileSize}</span>
+      </div>
+      <button class="file-delete" onclick="removeFile(this, '${file.name}')">删除</button>
+    `;
+    
+    fileList.appendChild(fileItem);
+  });
+  
+  // 清空input以便重复选择相同文件
+  document.getElementById('fileInput').value = '';
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function removeFile(btn, fileName) {
+  const item = btn.parentElement;
+  item.remove();
+  uploadedFiles = uploadedFiles.filter(f => f.name !== fileName);
+}
+
+function submitUpload() {
+  if (uploadedFiles.length === 0) {
+    alert('请先选择要上传的文件');
+    return;
+  }
+  
+  // 模拟上传提交
+  alert(`成功上传 ${uploadedFiles.length} 个文件，申请单状态将更新为"待受理"`);
+  closeModal();
+}
+
+function closeModal() {
+  // 实际使用时调用父级关闭逻辑
+  if (confirm('确定要关闭弹窗吗？未上传的文件将丢失。')) {
+    document.querySelector('.upload-modal').style.display = 'none';
+  }
+}
+
+// 拖拽支持
+const dropZone = document.getElementById('dropZone');
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.style.borderColor = '#0891b2';
+  dropZone.style.background = '#f0fdfa';
+});
+
+dropZone.addEventListener('dragleave', (e) => {
+  e.preventDefault();
+  dropZone.style.borderColor = '#d1d5db';
+  dropZone.style.background = '#fafafa';
+});
+
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.style.borderColor = '#d1d5db';
+  dropZone.style.background = '#fafafa';
+  handleFiles(e.dataTransfer.files);
+});
+</script>
