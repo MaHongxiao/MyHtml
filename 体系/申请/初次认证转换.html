@@ -4,7 +4,172 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>认证申请表单</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+
+// 更新班次时间显示
+function updateShiftTimeDisplay(cardId) {
+    const container = document.getElementById(`shiftTime_${cardId}`);
+    const display = document.getElementById(`shiftDisplay_${cardId}`);
+    if (!container || !display) return;
+
+    const hourStart = container.querySelector('.shift-hour-start').value;
+    const minuteStart = container.querySelector('.shift-minute-start').value;
+    const hourEnd = container.querySelector('.shift-hour-end').value;
+    const minuteEnd = container.querySelector('.shift-minute-end').value;
+
+    if (hourStart && minuteStart && hourEnd && minuteEnd) {
+        display.textContent = `已选择：${hourStart}:${minuteStart} - ${hourEnd}:${minuteEnd}`;
+        display.className = "mt-1 text-xs text-green-600 font-medium shift-time-display";
+    } else {
+        display.textContent = "请选择完整的班次时间";
+        display.className = "mt-1 text-xs text-amber-600 shift-time-display";
+    }
+}
+
+// 获取班次时间值
+function getShiftTimeValue(cardId) {
+    const container = document.getElementById(`shiftTime_${cardId}`);
+    if (!container) return null;
+
+    return {
+        startHour: container.querySelector('.shift-hour-start').value,
+        startMinute: container.querySelector('.shift-minute-start').value,
+        endHour: container.querySelector('.shift-hour-end').value,
+        endMinute: container.querySelector('.shift-minute-end').value
+    };
+}
+
+// 处理场所联系人选择变化
+function handleLocationContactChange(select) {
+    const input = select.parentElement.querySelector('.contact-input');
+    const phoneInput = select.closest('.grid').querySelector('input[type="tel"]');
+
+    if (select.value === 'manual') {
+        input.classList.remove('hidden');
+        input.value = '';
+        input.focus();
+        select.classList.add('hidden');
+    } else if (select.value) {
+        // 预置联系人数据
+        const presetData = {
+            '张三': { phone: '13800138000' },
+            '李四': { phone: '13900139000' },
+            '王五': { phone: '13700137000' }
+        };
+
+        input.value = select.value;
+        input.classList.remove('hidden');
+
+        // 自动填充电话
+        if (presetData[select.value] && phoneInput) {
+            phoneInput.value = presetData[select.value].phone;
+        }
+    }
+}
+
+// 同步联系人姓名到隐藏字段
+function syncContactName(input) {
+    const select = input.parentElement.querySelector('.contact-select');
+    if (input.value.trim() === '') {
+        // 如果手动输入为空，显示select并隐藏input
+        select.value = '';
+        select.classList.remove('hidden');
+        input.classList.add('hidden');
+    }
+}
+
+// 修改原有的handleContactChange函数（用于客户信息部分的联系人）
+function handleContactChange(select) {
+    const input = select.parentElement.querySelector('.contact-input');
+    if (select.value === 'manual') {
+        input.classList.remove('hidden');
+        input.value = '';
+        input.focus();
+        select.classList.add('hidden');
+    } else if (select.value) {
+        input.value = select.options[select.selectedIndex].text.split('（')[0];
+        input.classList.remove('hidden');
+    }
+}
+
+
+
+// 验证中心职能 - 多场所时至少一个中心职能（单个体系范围内）
+function validateCenterFunction() {
+    const systemCards = document.querySelectorAll('.system-card');
+    let hasError = false;
+    let errorMsg = '';
+
+    systemCards.forEach(card => {
+        const systemName = card.querySelector('.font-semibold').textContent;
+        const locationCards = card.querySelectorAll('.location-card');
+
+        if (locationCards.length > 1) {
+            // 多场所情况，必须至少有一个中心职能
+            let centerFunctionCount = 0;
+            locationCards.forEach(locCard => {
+                const centerSelect = locCard.querySelector('.center-function-select');
+                if (centerSelect && centerSelect.value === 'yes') {
+                    centerFunctionCount++;
+                }
+            });
+
+            if (centerFunctionCount === 0) {
+                hasError = true;
+                errorMsg = `【${systemName}】多场所认证时必须至少有一个中心职能场所，请设置其中一个场所为中心职能`;
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // 高亮显示中心职能选择框
+                locationCards.forEach(locCard => {
+                    const centerSelect = locCard.querySelector('.center-function-select');
+                    if (centerSelect) {
+                        centerSelect.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+                        setTimeout(() => {
+                            centerSelect.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
+                        }, 3000);
+                    }
+                });
+            }
+        }
+    });
+
+    if (hasError) {
+        showToast(errorMsg, 'error');
+        return false;
+    }
+
+    return true;
+}
+
+// 提交前验证
+const originalSubmitForm = submitForm;
+submitForm = function() {
+    // 验证中心职能
+    if (!validateCenterFunction()) {
+        return false;
+    }
+
+    // 验证季节性月份
+    const seasonRadio = document.querySelector('input[name="workNature"]:checked');
+    if (seasonRadio && seasonRadio.value === 'season') {
+        const startMonth = document.getElementById('seasonStartMonth').value;
+        const endMonth = document.getElementById('seasonEndMonth').value;
+        if (!startMonth || !endMonth) {
+            showToast('请选择季节性工作的开始和结束月份', 'error');
+            document.getElementById('seasonStartMonth').focus();
+            return false;
+        }
+        // 验证月份逻辑
+        if (parseInt(startMonth) > parseInt(endMonth)) {
+            // 跨年的情况也允许，比如11月到次年2月
+            console.log('季节性工作跨年度：' + startMonth + '月至' + endMonth + '月');
+        }
+    }
+
+    // 调用原提交函数
+    return originalSubmitForm();
+};
+
+</script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
@@ -937,6 +1102,10 @@
                             <label class="required">联系人</label>
                             <select id="contactPerson" onchange="fillContactInfo(this.value)">
                                 <option value="">请选择联系人</option>
+                                <option value="0">张三（质量管理部经理）</option>
+                                <option value="1">李四（行政部主任）</option>
+                                <option value="2">王五（工程部总工程师）</option>
+                                <option value="manual">手动填写</option>
                             </select>
                         </div>
                         <div class="form-field">
@@ -1132,16 +1301,17 @@
                 <div class="p-6 space-y-4 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1 required">整合程度（0-100%）</label>
-                            <input type="number" min="0" max="100" id="integrationDegree" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all" placeholder="0" onchange="validateIntegrationDegree()">
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">整合程度百分比（0-100%）</label>
+                            <input type="number" min="0" max="100" id="integrationDegree" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all" placeholder="请输入整合程度百分比" onchange="calculateIntegrationLevel()">
+                            <p class="text-xs text-slate-500 mt-1">输入百分比后自动计算整合程度级别</p>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1 required">级别</label>
-                            <select id="integrationLevel" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all" onchange="updateIntegrationContent()">
-                                <option value="">请选择</option>
-                                <option value="low">整合程度低（0%-40%）</option>
-                                <option value="medium">整合程度中（41%-80%）</option>
-                                <option value="high">整合程度高（81%-100%）</option>
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">整合程度级别（自动计算）</label>
+                            <select id="integrationLevel" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all" onchange="updateIntegrationContent()" disabled>
+                                <option value="">请先输入整合程度百分比</option>
+                                <option value="low">≥0% 且 ＜40%（整合程度低）</option>
+                                <option value="medium">≥41% 且 ≤80%（整合程度中）</option>
+                                <option value="high">≥81% 且 ≤100%（整合程度高）</option>
                             </select>
                         </div>
                     </div>
@@ -1369,7 +1539,7 @@
                     <div class="border-t border-slate-100 pt-4">
                         <div class="sub-section-title">
                             <i class="fas fa-clock"></i>
-                            生产（服务）班次情况
+                            生产（服务）班次情况 <span class="text-xs font-normal text-slate-500 ml-2">（时间按刻钟选择：0、15、30、45分钟）</span>
                         </div>
                         <div class="flex items-center gap-4 mb-4">
                             <span class="text-sm text-slate-600">共</span>
@@ -1384,7 +1554,7 @@
                         </div>
 
                         <!-- 横向班次时间 -->
-                        <div id="shiftTimesContainer" class="space-y-2 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div id="shiftTimesContainer" class="space-y-2 bg-slate-50 p-4 rounded-lg border border-slate-200" title="时间按刻钟选择：0、15、30、45分钟">
                             <!-- 动态生成班次时间输入 -->
                         </div>
 
@@ -1424,7 +1594,7 @@
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                             <div>
-                                <label class="block text-xs font-medium text-slate-700 mb-1 required">生产线总数</label>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">生产线总数</label>
                                 <input type="number" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all" placeholder="0">
                             </div>
                             <div>
@@ -1563,7 +1733,45 @@
                             </label>
                         </div>
                         <div id="seasonWorkFields" class="conditional-field mt-3">
-                            <input type="text" maxlength="100" class="w-full md:w-1/2 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all" placeholder="如：3月-10月">
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1">
+                                    <label class="block text-xs font-medium text-slate-700 mb-1">开始月份</label>
+                                    <select id="seasonStartMonth" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                        <option value="">请选择</option>
+                                        <option value="1">1月</option>
+                                        <option value="2">2月</option>
+                                        <option value="3">3月</option>
+                                        <option value="4">4月</option>
+                                        <option value="5">5月</option>
+                                        <option value="6">6月</option>
+                                        <option value="7">7月</option>
+                                        <option value="8">8月</option>
+                                        <option value="9">9月</option>
+                                        <option value="10">10月</option>
+                                        <option value="11">11月</option>
+                                        <option value="12">12月</option>
+                                    </select>
+                                </div>
+                                <span class="pt-6 text-slate-400">至</span>
+                                <div class="flex-1">
+                                    <label class="block text-xs font-medium text-slate-700 mb-1">结束月份</label>
+                                    <select id="seasonEndMonth" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                        <option value="">请选择</option>
+                                        <option value="1">1月</option>
+                                        <option value="2">2月</option>
+                                        <option value="3">3月</option>
+                                        <option value="4">4月</option>
+                                        <option value="5">5月</option>
+                                        <option value="6">6月</option>
+                                        <option value="7">7月</option>
+                                        <option value="8">8月</option>
+                                        <option value="9">9月</option>
+                                        <option value="10">10月</option>
+                                        <option value="11">11月</option>
+                                        <option value="12">12月</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1950,9 +2158,10 @@
                     {name: '李四', dept: '行政部', position: '主任', phone: '13900139000', email: 'lisi@example.com'}
                 ],
                 contracts: [
-                    {no: 'HT202403230001', name: '质量管理体系认证合同', amount: '100000', startDate: '2024-01-01', endDate: '2024-12-31'},
-                    {no: 'HT202403230002', name: '环境管理体系认证合同', amount: '80000', startDate: '2024-02-01', endDate: '2025-01-31'},
-                    {no: 'HT202403230003', name: '职业健康安全管理体系认证合同', amount: '75000', startDate: '2024-03-01', endDate: '2025-02-28'}
+                    {no: 'HT202403230001', name: '质量管理体系认证合同', amount: '100000', startDate: '2024-01-01', endDate: '2024-12-31', systems: ['QMS']},
+                    {no: 'HT202403230002', name: '环境管理体系认证合同', amount: '80000', startDate: '2024-02-01', endDate: '2025-01-31', systems: ['EMS']},
+                    {no: 'HT202403230003', name: '职业健康安全管理体系认证合同', amount: '75000', startDate: '2024-03-01', endDate: '2025-02-28', systems: ['OHSMS']},
+                    {no: 'HT202403230004', name: '质量环境职业健康安全三体系认证合同', amount: '200000', startDate: '2024-01-01', endDate: '2026-12-31', systems: ['QMS', 'EMS', 'OHSMS']}
                 ]
             },
             { 
@@ -1965,8 +2174,8 @@
                     {name: '王五', dept: '工程部', position: '总工程师', phone: '13700137000', email: 'wangwu@example.com'}
                 ],
                 contracts: [
-                    {no: 'HT202403230004', name: '建筑施工质量管理体系认证合同', amount: '150000', startDate: '2024-01-15', endDate: '2024-12-31'},
-                    {no: 'HT202403230005', name: '工程建设企业质量管理体系认证合同', amount: '120000', startDate: '2024-04-01', endDate: '2025-03-31'}
+                    {no: 'HT202403230005', name: '建筑施工质量管理体系认证合同', amount: '150000', startDate: '2024-01-15', endDate: '2024-12-31', systems: ['QMS']},
+                    {no: 'HT202403230006', name: '工程建设企业质量管理体系认证合同', amount: '120000', startDate: '2024-04-01', endDate: '2025-03-31', systems: ['QMS']}
                 ]
             },
             { 
@@ -1979,8 +2188,8 @@
                     {name: '赵六', dept: '食品安全部', position: '食品安全总监', phone: '13600136000', email: 'zhaoliu@example.com'}
                 ],
                 contracts: [
-                    {no: 'HT202403230006', name: '食品安全管理体系认证合同', amount: '90000', startDate: '2024-02-15', endDate: '2025-02-14'},
-                    {no: 'HT202403230007', name: 'HACCP体系认证合同', amount: '85000', startDate: '2024-03-15', endDate: '2025-03-14'}
+                    {no: 'HT202403230007', name: '食品安全管理体系认证合同', amount: '90000', startDate: '2024-02-15', endDate: '2025-02-14', systems: ['FSMS']},
+                    {no: 'HT202403230008', name: 'HACCP体系认证合同', amount: '85000', startDate: '2024-03-15', endDate: '2025-03-14', systems: ['HACCP', 'FSMS']}
                 ]
             }
         ];
@@ -2446,7 +2655,7 @@
                             <div class="flex gap-4 mt-2">
                                 <label class="flex items-center gap-1 text-xs cursor-pointer">
                                     <input type="radio" name="paper_${uniqueId}" value="yes" class="text-blue-600">
-                                    <span>是（50元/页）</span>
+                                    <span>是</span>
                                 </label>
                                 <label class="flex items-center gap-1 text-xs cursor-pointer">
                                     <input type="radio" name="paper_${uniqueId}" value="no" checked class="text-blue-600">
@@ -2750,12 +2959,41 @@
         }
 
         function fillContactInfo(idx) {
-            if (!selectedCustomer || !selectedCustomer.contacts[idx]) return;
-            const contact = selectedCustomer.contacts[idx];
-            document.getElementById('dept').value = contact.dept;
-            document.getElementById('position').value = contact.position;
-            document.getElementById('phone').value = contact.phone;
-            document.getElementById('email').value = contact.email;
+            // 预置联系人数据
+            const presetContacts = {
+                '0': { name: '张三', dept: '质量管理部', position: '经理', phone: '13800138000', email: 'zhangsan@example.com' },
+                '1': { name: '李四', dept: '行政部', position: '主任', phone: '13900139000', email: 'lisi@example.com' },
+                '2': { name: '王五', dept: '工程部', position: '总工程师', phone: '13700137000', email: 'wangwu@example.com' }
+            };
+
+            // 手动填写选项
+            if (idx === 'manual') {
+                document.getElementById('dept').value = '';
+                document.getElementById('position').value = '';
+                document.getElementById('phone').value = '';
+                document.getElementById('email').value = '';
+                document.getElementById('dept').focus();
+                return;
+            }
+
+            // 从客户数据填充
+            if (selectedCustomer && selectedCustomer.contacts[idx]) {
+                const contact = selectedCustomer.contacts[idx];
+                document.getElementById('dept').value = contact.dept;
+                document.getElementById('position').value = contact.position;
+                document.getElementById('phone').value = contact.phone;
+                document.getElementById('email').value = contact.email;
+                return;
+            }
+
+            // 从预置数据填充
+            if (presetContacts[idx]) {
+                const contact = presetContacts[idx];
+                document.getElementById('dept').value = contact.dept;
+                document.getElementById('position').value = contact.position;
+                document.getElementById('phone').value = contact.phone;
+                document.getElementById('email').value = contact.email;
+            }
         }
 
         // 合同选择相关
@@ -2821,8 +3059,227 @@
                 clearBtn.classList.remove('hidden');
             }
 
+            // 查找合同关联的认证领域
+            let contractSystems = [];
+            if (selectedCustomer && selectedCustomer.contracts) {
+                const contract = selectedCustomer.contracts.find(c => c.no === no);
+                if (contract && contract.systems) {
+                    contractSystems = contract.systems;
+                }
+            }
+
+            // 自动关联认证领域
+            if (contractSystems.length > 0) {
+                autoLoadContractSystems(contractSystems);
+            }
+
             closeContractModal();
-            showToast('合同选择成功');
+            showToast('合同选择成功，已自动关联认证领域：' + contractSystems.join(', '));
+        }
+
+        // 自动加载合同关联的认证领域
+        function autoLoadContractSystems(systems) {
+            // 清空现有认证领域
+            selectedSystems = [];
+            document.getElementById('systemCardsList').innerHTML = '';
+
+            // 添加合同关联的认证领域
+            systems.forEach((systemKey, index) => {
+                systemCounter++;
+                const uniqueId = `${systemKey}_${systemCounter}_${Date.now()}_${index}`;
+
+                selectedSystems.push({
+                    key: systemKey,
+                    id: uniqueId,
+                    index: systemCounter,
+                    selected: false,
+                    certType: 'initial',
+                    fromContract: true // 标记为合同关联
+                });
+
+                renderContractSystemCard(systemKey, uniqueId, systemCounter);
+            });
+
+            // 更新UI
+            if (selectedSystems.length > 0) {
+                document.getElementById('emptySystemTip').style.display = 'none';
+                document.getElementById('systemCardsList').classList.remove('hidden');
+            }
+
+            updateQuickNav();
+            updateIntegrationVisibility();
+            updateSystemCount();
+            checkAttachmentConditions();
+
+            // 禁用批量添加和删除功能
+            disableSystemModification();
+        }
+
+        // 渲染合同关联的认证领域卡片（表单信息需手动填写）
+        function renderContractSystemCard(systemKey, uniqueId, index) {
+            const sys = systemConfig[systemKey];
+            const cardsList = document.getElementById('systemCardsList');
+
+            const card = document.createElement('div');
+            card.className = `system-card p-4 mb-4 contract-system-card`;
+            card.id = `system-card-${uniqueId}`;
+            card.dataset.systemId = uniqueId;
+            card.dataset.system = systemKey;
+
+            // 生成小时选项（空值作为默认）
+            const hourOptions = Array.from({length: 24}, (_, h) => {
+                const hour = String(h).padStart(2, '0');
+                return `<option value="${hour}">${hour}</option>`;
+            }).join('');
+
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-${sys.color}-100 text-${sys.color}-600 flex items-center justify-center">
+                            <i class="fas ${sys.icon}"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-slate-900">${sys.name} <span class="text-slate-400">#${index}</span></div>
+                            <div class="text-xs text-slate-500">${systemKey}</div>
+                        </div>
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded border border-blue-200">
+                            <i class="fas fa-link mr-1"></i>合同关联
+                        </span>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                    <p class="text-xs text-amber-700">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        该认证领域由关联合同自动带出，不可删除，表单信息需手动填写
+                    </p>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- 认证类型选择 -->
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <label class="block text-xs font-medium text-slate-700 mb-2 required">认证类型</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="certType_${uniqueId}" value="initial" checked class="text-blue-600">
+                                <span class="text-sm text-slate-700">初次认证</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="certType_${uniqueId}" value="transfer" class="text-blue-600">
+                                <span class="text-sm text-slate-700">认证转换</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">认证标准</label>
+                            <div class="space-y-1 bg-white p-2 rounded border border-slate-300">
+                                ${sys.standards.map((std, idx) => `
+                                    <label class="flex items-center gap-2 text-xs">
+                                        <input type="checkbox" ${idx === 0 ? 'checked' : ''} class="rounded text-blue-600">
+                                        <span>${std}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">认可机构（多选）</label>
+                            <div class="flex flex-wrap gap-2">
+                                ${['CNAS', 'DAKKS', 'UKAS'].map(acc => `
+                                    <label class="flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border border-slate-300">
+                                        <input type="checkbox" ${acc === 'CNAS' ? 'checked' : ''} class="rounded text-blue-600">
+                                        <span>${acc}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">认证范围</label>
+                            <textarea maxlength="500" rows="2" placeholder="请详细描述认证范围（产品/服务/活动）..." 
+                                class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">是否需要纸质证书</label>
+                            <div class="flex gap-4 mt-2">
+                                <label class="flex items-center gap-1 text-xs cursor-pointer">
+                                    <input type="radio" name="paper_${uniqueId}" value="yes" class="text-blue-600">
+                                    <span>是</span>
+                                </label>
+                                <label class="flex items-center gap-1 text-xs cursor-pointer">
+                                    <input type="radio" name="paper_${uniqueId}" value="no" checked class="text-blue-600">
+                                    <span>否（电子证书）</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">其他对认证（及审核）的要求</label>
+                        <textarea maxlength="200" rows="2" placeholder="200字以内，非必填" 
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
+                    </div>
+
+                    <div class="border-t border-slate-200 pt-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="block text-xs font-medium text-slate-700 required">认证场所</label>
+                            <div class="flex gap-2">
+                                <button onclick="openLocationSelectModal('${uniqueId}')" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1">
+                                    <i class="fas fa-list"></i>选择场所
+                                </button>
+                                <button onclick="openTempLocationModal('${uniqueId}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1">
+                                    <i class="fas fa-plus"></i>新增临时场所
+                                </button>
+                            </div>
+                        </div>
+                        <div id="locations_${uniqueId}" class="space-y-3 mb-3">
+                            <!-- 场所卡片将动态插入这里 -->
+                        </div>
+                        <div id="emptyLocationTip_${uniqueId}" class="text-center py-6 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                            <i class="fas fa-map-marker-alt text-2xl text-slate-300 mb-2"></i>
+                            <p class="text-xs text-slate-500">暂无认证场所，请补充</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            cardsList.appendChild(card);
+        }
+
+        // 禁用认证领域修改功能
+        function disableSystemModification() {
+            // 隐藏批量添加栏
+            const batchBar = document.querySelector('.sticky-add-bar');
+            if (batchBar) {
+                batchBar.style.display = 'none';
+            }
+
+            // 隐藏批量操作栏
+            const batchActions = document.getElementById('batchActionsBar');
+            if (batchActions) {
+                batchActions.style.display = 'none';
+            }
+
+            // 标记为合同关联模式
+            window.isContractLinked = true;
+        }
+
+        // 恢复认证领域修改功能（清除合同时）
+        function enableSystemModification() {
+            const batchBar = document.querySelector('.sticky-add-bar');
+            if (batchBar) {
+                batchBar.style.display = 'block';
+            }
+
+            const batchActions = document.getElementById('batchActionsBar');
+            if (batchActions) {
+                batchActions.style.display = 'block';
+            }
+
+            window.isContractLinked = false;
         }
 
         function clearContract() {
@@ -2840,6 +3297,21 @@
 
             if (clearBtn) {
                 clearBtn.classList.add('hidden');
+            }
+
+            // 清除合同关联的认证领域
+            if (window.isContractLinked) {
+                if (confirm('清除合同将同时清除自动关联的认证领域，是否继续？')) {
+                    // 清空认证领域
+                    selectedSystems = [];
+                    document.getElementById('systemCardsList').innerHTML = '';
+                    document.getElementById('emptySystemTip').style.display = 'block';
+                    document.getElementById('systemCardsList').classList.add('hidden');
+                    updateQuickNav();
+                    updateSystemCount();
+                    enableSystemModification();
+                    showToast('已清除合同关联的认证领域');
+                }
             }
         }
 
@@ -3064,7 +3536,9 @@
                 // 整合程度相关 - 新逻辑
         const integrationData = {
             low: {
-                defaultValue: 40,
+                min: 0,
+                max: 39,
+                defaultValue: 20,
                 items: [
                     '分别建立管理体系',
                     '策划机制各不相同',
@@ -3074,7 +3548,9 @@
                 ]
             },
             medium: {
-                defaultValue: 80,
+                min: 41,
+                max: 80,
+                defaultValue: 60,
                 items: [
                     '一定程度上建立整合管理体系',
                     '一个管理体系协调员和不同的管理者代表',
@@ -3084,6 +3560,8 @@
                 ]
             },
             high: {
+                min: 81,
+                max: 100,
                 defaultValue: 90,
                 items: [
                     '为一套整合的文件，适宜时，包括适度融合的作业文件',
@@ -3104,21 +3582,18 @@
 
             if (!level || !integrationData[level]) {
                 container.innerHTML = '';
+                if (degreeInput) degreeInput.value = '';
                 return;
             }
 
-            // 自动填充默认值（如果是空值或之前是其他级别的默认值）
-            const currentValue = parseInt(degreeInput.value) || 0;
-            const newValue = integrationData[level].defaultValue;
-
-            // 检查是否是切换级别，如果是则更新默认值
-            if (!degreeInput.dataset.userModified || 
-                [40, 80, 90].includes(currentValue)) {
-                degreeInput.value = newValue;
+            const data = integrationData[level];
+            // 自动填充默认百分比
+            if (degreeInput) {
+                degreeInput.value = data.defaultValue;
             }
 
             // 生成复选框，第一个默认选中且不可取消
-            const items = integrationData[level].items;
+            const items = data.items;
             container.innerHTML = items.map((item, idx) => 
                 '<label class="flex items-start gap-2 cursor-pointer p-2 rounded hover:bg-white transition-colors">' +
                 '    <input type="checkbox" ' + 
@@ -3130,33 +3605,51 @@
             ).join('');
         }
 
-        function validateIntegrationDegree() {
-            const input = document.getElementById('integrationDegree');
-            let value = parseInt(input.value);
+        function calculateIntegrationLevel() {
+            const degreeInput = document.getElementById('integrationDegree');
+            const levelSelect = document.getElementById('integrationLevel');
 
-            // 标记为用户已修改
-            input.dataset.userModified = 'true';
+            let value = parseInt(degreeInput.value);
 
+            // 验证范围
             if (isNaN(value) || value < 0) {
                 value = 0;
+                degreeInput.value = 0;
             } else if (value > 100) {
                 value = 100;
+                degreeInput.value = 100;
             }
 
-            input.value = value;
-
-            // 根据值自动选择级别（反向联动）
-            const levelSelect = document.getElementById('integrationLevel');
-            if (value <= 40 && levelSelect.value !== 'low') {
-                levelSelect.value = 'low';
-                updateIntegrationContent();
-            } else if (value > 40 && value <= 80 && levelSelect.value !== 'medium') {
-                levelSelect.value = 'medium';
-                updateIntegrationContent();
-            } else if (value > 80 && levelSelect.value !== 'high') {
-                levelSelect.value = 'high';
-                updateIntegrationContent();
+            // 根据百分比反算级别
+            let level = '';
+            if (value >= 0 && value < 40) {
+                level = 'low';
+            } else if (value >= 41 && value <= 80) {
+                level = 'medium';
+            } else if (value >= 81 && value <= 100) {
+                level = 'high';
             }
+
+            // 设置级别选择框
+            levelSelect.value = level;
+            levelSelect.disabled = false;
+
+            // 更新内容
+            updateIntegrationContent();
+        }
+
+        function validateIntegrationDegree() {
+            // 保持兼容性
+            calculateIntegrationLevel();
+        }
+
+        // 保持兼容性
+        function updateIntegrationLevel() {
+            updateIntegrationContent();
+        }
+
+        function updateIntegrationDesc() {
+            updateIntegrationContent();
         }
 
         // 保持兼容性，保留旧函数名但调用新逻辑
@@ -3739,19 +4232,7 @@ function initAttachments() {
                     </div>
                     <div class="p-4 flex-1 overflow-y-auto custom-scrollbar">
                         <div class="grid grid-cols-1 gap-2">
-                            <div class="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-all" 
-                                 onclick="addLocationCard('${uniqueId}', 'HQ', '总部', '北京市朝阳区xxx路', 'default'); this.closest('.modal').remove();">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                                        <i class="fas fa-building"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-medium text-slate-900 text-sm">总部</p>
-                                        <p class="text-xs text-slate-500">北京市朝阳区xxx路</p>
-                                    </div>
-                                </div>
-                                <i class="fas fa-chevron-right text-slate-300"></i>
-                            </div>
+                            <!-- 场所选择排除总部，只允许选择分场所 -->
                             <div class="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-all" 
                                  onclick="addLocationCard('${uniqueId}', 'SH', '上海分公司', '上海市浦东新区xxx路', 'branch'); this.closest('.modal').remove();">
                                 <div class="flex items-center gap-3">
@@ -3765,6 +4246,25 @@ function initAttachments() {
                                 </div>
                                 <i class="fas fa-chevron-right text-slate-300"></i>
                             </div>
+                            <div class="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-all" 
+                                 onclick="addLocationCard('${uniqueId}', 'GZ', '广州分公司', '广州市天河区xxx路', 'branch'); this.closest('.modal').remove();">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                                        <i class="fas fa-code-branch"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-slate-900 text-sm">广州分公司</p>
+                                        <p class="text-xs text-slate-500">广州市天河区xxx路</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-chevron-right text-slate-300"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p class="text-xs text-amber-700">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                注：场所选择不包含总部，仅可选择分场所或新增临时场所
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -3849,26 +4349,68 @@ function initAttachments() {
                         <label class="block text-[10px] font-medium text-slate-500 mb-1 required">涉及的产品、过程、活动/工程项目进展情况</label>
                         <input type="text" placeholder="500字以内" maxlength="500" class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white">
                     </div>
-                    <div class="col-span-4">
+                    <div class="col-span-3">
                         <label class="block text-[10px] font-medium text-slate-500 mb-1">班次时间</label>
-                        <input type="text" placeholder="如：08:00-17:00" maxlength="500" class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white">
-                    </div>
+                        <div class="flex items-center gap-1">
+                            <select class="shift-hour-start w-14 px-1 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white" 
+                                    title="开始小时" onchange="updateShiftTimeDisplay('${cardId}')">
+                                    <option value="">--</option>
+                                    ${Array.from({length: 24}, (_, h) => `<option value="${String(h).padStart(2, '0')}">${String(h).padStart(2, '0')}</option>`).join('')}
+                                </select>
+                                <span class="text-xs">:</span>
+                                <select class="shift-minute-start w-12 px-1 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white" 
+                                    title="开始分钟" onchange="updateShiftTimeDisplay('${cardId}')">
+                                    <option value="">--</option>
+                                    <option value="00">00</option>
+                                    <option value="15">15</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                </select>
+                                <span class="text-xs text-slate-400 mx-1">-</span>
+                                <select class="shift-hour-end w-14 px-1 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white" 
+                                    title="结束小时" onchange="updateShiftTimeDisplay('${cardId}')">
+                                    <option value="">--</option>
+                                    ${Array.from({length: 24}, (_, h) => `<option value="${String(h).padStart(2, '0')}">${String(h).padStart(2, '0')}</option>`).join('')}
+                                </select>
+                                <span class="text-xs">:</span>
+                                <select class="shift-minute-end w-12 px-1 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white" 
+                                    title="结束分钟" onchange="updateShiftTimeDisplay('${cardId}')">
+                                    <option value="">--</option>
+                                    <option value="00">00</option>
+                                    <option value="15">15</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                </select>
+                            </div>
+                            <div class="mt-1 text-xs text-slate-500 shift-time-display" id="shiftDisplay_${cardId}">
+                                请选择班次时间
+                            </div>
+                        </div>
                     <div class="col-span-2">
                         <label class="block text-[10px] font-medium text-slate-500 mb-1">人数</label>
                         <input type="number" placeholder="0" class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white">
                     </div>
                     <div class="col-span-3">
                         <label class="block text-[10px] font-medium text-slate-500 mb-1">联系人</label>
-                        <input type="text" placeholder="姓名" class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white">
+                        <div class="contact-select-wrapper">
+                            <select class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white contact-select" onchange="handleLocationContactChange(this)">
+                                <option value="">选择联系人</option>
+                                <option value="张三">张三（质量管理部）</option>
+                                <option value="李四">李四（行政部）</option>
+                                <option value="王五">王五（工程部）</option>
+                                <option value="manual">+ 手动填写</option>
+                            </select>
+                        </div>
+                        <input type="text" placeholder="输入联系人姓名" class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white contact-input hidden mt-1" onblur="syncContactName(this)">
                     </div>
                     <div class="col-span-2">
                         <label class="block text-[10px] font-medium text-slate-500 mb-1">电话</label>
                         <input type="tel" placeholder="电话" class="w-full px-2 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white">
                     </div>
-                    <div class="col-span-1">
-                        <label class="block text-[10px] font-medium text-slate-500 mb-1">子证</label>
-                        <select class="w-full px-1 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white" title="子证书">
-                            <option value="no">否</option>
+                    <div class="col-span-2 flex flex-col">
+                        <label class="block text-[10px] font-medium text-slate-500 mb-1">中心职能</label>
+                        <select class="w-full px-1 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 bg-white center-function-select" title="是否为中心职能场所">
+                            <option value="no" selected>否</option>
                             <option value="yes">是</option>
                         </select>
                     </div>
@@ -3907,6 +4449,171 @@ function initAttachments() {
                 dropdown.classList.add('hidden');
             }
         });
-    </script>
+    
+
+// 更新班次时间显示
+function updateShiftTimeDisplay(cardId) {
+    const container = document.getElementById(`shiftTime_${cardId}`);
+    const display = document.getElementById(`shiftDisplay_${cardId}`);
+    if (!container || !display) return;
+
+    const hourStart = container.querySelector('.shift-hour-start').value;
+    const minuteStart = container.querySelector('.shift-minute-start').value;
+    const hourEnd = container.querySelector('.shift-hour-end').value;
+    const minuteEnd = container.querySelector('.shift-minute-end').value;
+
+    if (hourStart && minuteStart && hourEnd && minuteEnd) {
+        display.textContent = `已选择：${hourStart}:${minuteStart} - ${hourEnd}:${minuteEnd}`;
+        display.className = "mt-1 text-xs text-green-600 font-medium shift-time-display";
+    } else {
+        display.textContent = "请选择完整的班次时间";
+        display.className = "mt-1 text-xs text-amber-600 shift-time-display";
+    }
+}
+
+// 获取班次时间值
+function getShiftTimeValue(cardId) {
+    const container = document.getElementById(`shiftTime_${cardId}`);
+    if (!container) return null;
+
+    return {
+        startHour: container.querySelector('.shift-hour-start').value,
+        startMinute: container.querySelector('.shift-minute-start').value,
+        endHour: container.querySelector('.shift-hour-end').value,
+        endMinute: container.querySelector('.shift-minute-end').value
+    };
+}
+
+// 处理场所联系人选择变化
+function handleLocationContactChange(select) {
+    const input = select.parentElement.querySelector('.contact-input');
+    const phoneInput = select.closest('.grid').querySelector('input[type="tel"]');
+
+    if (select.value === 'manual') {
+        input.classList.remove('hidden');
+        input.value = '';
+        input.focus();
+        select.classList.add('hidden');
+    } else if (select.value) {
+        // 预置联系人数据
+        const presetData = {
+            '张三': { phone: '13800138000' },
+            '李四': { phone: '13900139000' },
+            '王五': { phone: '13700137000' }
+        };
+
+        input.value = select.value;
+        input.classList.remove('hidden');
+
+        // 自动填充电话
+        if (presetData[select.value] && phoneInput) {
+            phoneInput.value = presetData[select.value].phone;
+        }
+    }
+}
+
+// 同步联系人姓名到隐藏字段
+function syncContactName(input) {
+    const select = input.parentElement.querySelector('.contact-select');
+    if (input.value.trim() === '') {
+        // 如果手动输入为空，显示select并隐藏input
+        select.value = '';
+        select.classList.remove('hidden');
+        input.classList.add('hidden');
+    }
+}
+
+// 修改原有的handleContactChange函数（用于客户信息部分的联系人）
+function handleContactChange(select) {
+    const input = select.parentElement.querySelector('.contact-input');
+    if (select.value === 'manual') {
+        input.classList.remove('hidden');
+        input.value = '';
+        input.focus();
+        select.classList.add('hidden');
+    } else if (select.value) {
+        input.value = select.options[select.selectedIndex].text.split('（')[0];
+        input.classList.remove('hidden');
+    }
+}
+
+
+
+// 验证中心职能 - 多场所时至少一个中心职能（单个体系范围内）
+function validateCenterFunction() {
+    const systemCards = document.querySelectorAll('.system-card');
+    let hasError = false;
+    let errorMsg = '';
+
+    systemCards.forEach(card => {
+        const systemName = card.querySelector('.font-semibold').textContent;
+        const locationCards = card.querySelectorAll('.location-card');
+
+        if (locationCards.length > 1) {
+            // 多场所情况，必须至少有一个中心职能
+            let centerFunctionCount = 0;
+            locationCards.forEach(locCard => {
+                const centerSelect = locCard.querySelector('.center-function-select');
+                if (centerSelect && centerSelect.value === 'yes') {
+                    centerFunctionCount++;
+                }
+            });
+
+            if (centerFunctionCount === 0) {
+                hasError = true;
+                errorMsg = `【${systemName}】多场所认证时必须至少有一个中心职能场所，请设置其中一个场所为中心职能`;
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // 高亮显示中心职能选择框
+                locationCards.forEach(locCard => {
+                    const centerSelect = locCard.querySelector('.center-function-select');
+                    if (centerSelect) {
+                        centerSelect.classList.add('border-red-500', 'ring-2', 'ring-red-200');
+                        setTimeout(() => {
+                            centerSelect.classList.remove('border-red-500', 'ring-2', 'ring-red-200');
+                        }, 3000);
+                    }
+                });
+            }
+        }
+    });
+
+    if (hasError) {
+        showToast(errorMsg, 'error');
+        return false;
+    }
+
+    return true;
+}
+
+// 提交前验证
+const originalSubmitForm = submitForm;
+submitForm = function() {
+    // 验证中心职能
+    if (!validateCenterFunction()) {
+        return false;
+    }
+
+    // 验证季节性月份
+    const seasonRadio = document.querySelector('input[name="workNature"]:checked');
+    if (seasonRadio && seasonRadio.value === 'season') {
+        const startMonth = document.getElementById('seasonStartMonth').value;
+        const endMonth = document.getElementById('seasonEndMonth').value;
+        if (!startMonth || !endMonth) {
+            showToast('请选择季节性工作的开始和结束月份', 'error');
+            document.getElementById('seasonStartMonth').focus();
+            return false;
+        }
+        // 验证月份逻辑
+        if (parseInt(startMonth) > parseInt(endMonth)) {
+            // 跨年的情况也允许，比如11月到次年2月
+            console.log('季节性工作跨年度：' + startMonth + '月至' + endMonth + '月');
+        }
+    }
+
+    // 调用原提交函数
+    return originalSubmitForm();
+};
+
+</script>
 </body>
 </html>
