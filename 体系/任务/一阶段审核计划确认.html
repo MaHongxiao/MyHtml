@@ -671,151 +671,9 @@
             font-size: 12px;
             color: #389e0d;
         }
-
-        /* 电子签弹窗样式 */
-        .esign-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .esign-modal-overlay.show {
-            display: flex;
-        }
-        
-        .esign-modal {
-            background: white;
-            border-radius: 8px;
-            width: 600px;
-            max-width: 90%;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        }
-        
-        .esign-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #e8e8e8;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .esign-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #262626;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .esign-body {
-            padding: 20px;
-        }
-        
-        .esign-canvas-container {
-            border: 2px dashed #d9d9d9;
-            border-radius: 4px;
-            background: #fafafa;
-            position: relative;
-            cursor: crosshair;
-        }
-        
-        .esign-canvas {
-            width: 100%;
-            height: 200px;
-            display: block;
-        }
-        
-        .esign-placeholder {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #bfbfbf;
-            font-size: 14px;
-            pointer-events: none;
-            text-align: center;
-        }
-        
-        .esign-footer {
-            padding: 16px 20px;
-            border-top: 1px solid #e8e8e8;
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-        
-        .esign-hint {
-            margin-bottom: 12px;
-            padding: 8px 12px;
-            background: #e6f7ff;
-            border: 1px solid #91d5ff;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #0958d9;
-        }
-        
-        .btn-esign-clear {
-            color: #595959;
-            background: white;
-            border-color: #d9d9d9;
-        }
-        
-        .btn-esign-clear:hover {
-            color: #40a9ff;
-            border-color: #40a9ff;
-        }
     </style>
 </head>
 <body class="bg-gray-50">
-
-    <!-- 电子签签署弹窗 -->
-    <div class="esign-modal-overlay" id="esignModal">
-        <div class="esign-modal">
-            <div class="esign-header">
-                <div class="esign-title">
-                    <i class="fas fa-signature text-blue-500"></i>
-                    电子签签署确认
-                </div>
-                <button onclick="closeEsignModal()" style="background:none;border:none;cursor:pointer;color:#8c8c8c;">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="esign-body">
-                <div class="esign-hint">
-                    <i class="fas fa-info-circle"></i>
-                    请使用鼠标或触摸在下方签名区域手写签名，确认提交审核计划。签名将作为您确认审核计划内容的凭证。
-                </div>
-                <div class="esign-canvas-container" id="canvasContainer">
-                    <canvas class="esign-canvas" id="signatureCanvas"></canvas>
-                    <div class="esign-placeholder" id="canvasPlaceholder">
-                        <i class="fas fa-pen-nib" style="font-size:24px;margin-bottom:8px;display:block;"></i>
-                        请在此处手写签名
-                    </div>
-                </div>
-            </div>
-            <div class="esign-footer">
-                <button class="btn btn-esign-clear" onclick="clearSignature()">
-                    <i class="fas fa-eraser"></i>
-                    清除重签
-                </button>
-                <button class="btn btn-default" onclick="closeEsignModal()">
-                    取消
-                </button>
-                <button class="btn btn-primary" onclick="confirmSignature()">
-                    <i class="fas fa-check"></i>
-                    确认签署并提交
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- 顶部项目信息栏 -->
     <div class="project-header sticky top-0 z-50">
@@ -850,11 +708,6 @@
                     <button class="btn btn-primary btn-sm hidden" id="submitPlanBtn" onclick="submitPlan()">
                         <i class="fas fa-check-circle text-xs"></i>
                         提交审核计划
-                    </button>
-                    <!-- 专业审核员签字按钮（新增） -->
-                    <button class="btn btn-success btn-sm hidden" id="specialistSignBtn" onclick="handleSpecialistSign()">
-                        <i class="fas fa-user-check text-xs"></i>
-                        模拟专业审核员签字
                     </button>
                     <button class="btn btn-success btn-sm hidden" id="pmApproveBtn" onclick="handlePMAction('approve')">
                         <i class="fas fa-user-check text-xs"></i>
@@ -898,7 +751,7 @@
                 </div>
                 <div>
                     <span class="text-gray-500">审核阶段：</span>
-                    <span class="font-medium text-gray-900">二阶段</span>
+                    <span class="font-medium text-gray-900">一阶段</span>
                 </div>
                 <div>
                     <span class="text-gray-500">创建人：</span>
@@ -939,7 +792,7 @@
                             <div class="step-circle">
                                 <i class="fas fa-circle"></i>
                             </div>
-                            <div class="step-title">审核计划填报</div>
+                            <div class="step-title">审核计划确认</div>
                             <div class="step-date">进行中</div>
                         </div>
                         <div class="step-item pending" onclick="switchNode(2)">
@@ -990,7 +843,7 @@
             </div>
         </div>
 
-        <!-- 节点2：审核计划填报 -->
+        <!-- 节点2：审核计划确认 -->
         <div id="node-plan-confirm" class="node-content hidden-section">
             <div class="flex gap-4">
                 <!-- 左侧主要内容区 -->
@@ -1354,9 +1207,6 @@
                                 <button onclick="loadFlowScenario('customerReject')" class="btn btn-default btn-sm w-full justify-center">
                                     <i class="fas fa-times-circle text-red-500"></i> 客户驳回场景
                                 </button>
-                                <button onclick="loadFlowScenario('pendingSpecialist')" class="btn btn-default btn-sm w-full justify-center">
-                                    <i class="fas fa-user-edit text-blue-500"></i> 待专业审核员签字
-                                </button>
                                 <button onclick="loadFlowScenario('pendingPM')" class="btn btn-default btn-sm w-full justify-center">
                                     <i class="fas fa-clock text-blue-500"></i> 待PM确认
                                 </button>
@@ -1425,9 +1275,6 @@
         let isEditable = true;
         let currentFlowStep = 0; 
         let flowLogs = [];
-        let isDrawing = false;
-        let lastX = 0;
-        let lastY = 0;
         
         // 审核组人员数据
         const auditTeam = [
@@ -1438,13 +1285,13 @@
         // 节点配置（带日期和状态）
         const nodes = [
             { id: 'node-task-confirm', name: '审核任务确认', date: '2024-03-24', status: 'completed' },
-            { id: 'node-plan-confirm', name: '审核计划填报', date: '', status: 'active' },
+            { id: 'node-plan-confirm', name: '审核计划确认', date: '', status: 'active' },
             { id: 'node-audit-progress', name: '审核进行中', date: '', status: 'pending' },
             { id: 'node-rectification', name: '整改问题跟踪', date: '', status: 'pending' },
             { id: 'node-completed', name: '任务已完成', date: '', status: 'pending' }
         ];
 
-        // 流程场景数据（增加专业审核员签字节点step 1，原PM确认改为step 2，客户确认改为step 3，生效改为step 4）
+        // 流程场景数据
         const flowScenarios = {
             // 场景1：正向流程（全部通过）
             success: [
@@ -1460,16 +1307,6 @@
                 },
                 {
                     step: 1,
-                    title: '专业审核员签字',
-                    operator: '王洪伟',
-                    role: '专业审核员',
-                    time: '2024-03-24 11:15',
-                    status: 'completed',
-                    description: '专业审核员已完成审核计划的专业内容审查，确认专业代码匹配及审核深度适宜',
-                    tag: { text: '已签字', type: 'success' }
-                },
-                {
-                    step: 2,
                     title: '项目管理人员确认',
                     operator: '张管理',
                     role: '项目管理人员',
@@ -1479,7 +1316,7 @@
                     tag: { text: '已通过', type: 'success' }
                 },
                 {
-                    step: 3,
+                    step: 2,
                     title: '客户确认',
                     operator: '北京市地铁运营有限公司',
                     role: '客户',
@@ -1489,18 +1326,18 @@
                     tag: { text: '已确认', type: 'success' }
                 },
                 {
-                    step: 4,
+                    step: 3,
                     title: '审核计划生效',
                     operator: '系统',
                     role: '自动',
                     time: '2024-03-25 09:20',
                     status: 'completed',
-                    description: '四方确认完成，审核计划正式生效，可进入审核实施阶段',
+                    description: '三方确认完成，审核计划正式生效，可进入审核实施阶段',
                     tag: { text: '已生效', type: 'success' }
                 }
             ],
             
-            // 场景2：PM驳回（签字后PM驳回）
+            // 场景2：PM驳回
             pmReject: [
                 {
                     step: 0,
@@ -1514,16 +1351,6 @@
                 },
                 {
                     step: 1,
-                    title: '专业审核员签字',
-                    operator: '王洪伟',
-                    role: '专业审核员',
-                    time: '2024-03-24 11:15',
-                    status: 'completed',
-                    description: '专业审核员已完成审核计划的专业内容审查',
-                    tag: { text: '已签字', type: 'success' }
-                },
-                {
-                    step: 2,
                     title: '项目管理人员驳回',
                     operator: '张管理',
                     role: '项目管理人员',
@@ -1559,16 +1386,6 @@
                 },
                 {
                     step: 1,
-                    title: '专业审核员签字',
-                    operator: '王洪伟',
-                    role: '专业审核员',
-                    time: '2024-03-24 11:15',
-                    status: 'completed',
-                    description: '专业审核员已完成审核计划的专业内容审查',
-                    tag: { text: '已签字', type: 'success' }
-                },
-                {
-                    step: 2,
                     title: '项目管理人员确认',
                     operator: '张管理',
                     role: '项目管理人员',
@@ -1578,7 +1395,7 @@
                     tag: { text: '已通过', type: 'success' }
                 },
                 {
-                    step: 3,
+                    step: 2,
                     title: '客户驳回',
                     operator: '北京市地铁运营有限公司',
                     role: '客户',
@@ -1600,31 +1417,7 @@
                 }
             ],
             
-            // 场景4：待专业审核员签字（新增场景）
-            pendingSpecialist: [
-                {
-                    step: 0,
-                    title: '编制审核计划',
-                    operator: '武荣刚',
-                    role: '组长',
-                    time: '2024-03-24 10:30',
-                    status: 'completed',
-                    description: '审核计划已编制完成并提交，等待专业审核员进行专业内容审查',
-                    tag: { text: '已完成', type: 'success' }
-                },
-                {
-                    step: 1,
-                    title: '专业审核员签字',
-                    operator: '王洪伟',
-                    role: '专业审核员',
-                    time: null,
-                    status: 'active',
-                    description: '等待专业审核员对审核计划的专业匹配性进行审查确认...',
-                    tag: { text: '进行中', type: 'primary' }
-                }
-            ],
-            
-            // 场景5：待PM确认（签字后待PM，原编号相应调整）
+            // 场景4：待PM确认
             pendingPM: [
                 {
                     step: 0,
@@ -1633,21 +1426,11 @@
                     role: '组长',
                     time: '2024-03-24 10:30',
                     status: 'completed',
-                    description: '审核计划已编制完成并提交',
+                    description: '审核计划已编制完成并提交，等待项目管理人员审核',
                     tag: { text: '已完成', type: 'success' }
                 },
                 {
                     step: 1,
-                    title: '专业审核员签字',
-                    operator: '王洪伟',
-                    role: '专业审核员',
-                    time: '2024-03-24 11:15',
-                    status: 'completed',
-                    description: '专业审核员已完成审核计划的专业内容审查，确认通过',
-                    tag: { text: '已签字', type: 'success' }
-                },
-                {
-                    step: 2,
                     title: '项目管理人员确认',
                     operator: '张管理',
                     role: '项目管理人员',
@@ -1658,7 +1441,7 @@
                 }
             ],
             
-            // 场景6：待客户确认（相应调整step编号）
+            // 场景5：待客户确认
             pendingCustomer: [
                 {
                     step: 0,
@@ -1672,16 +1455,6 @@
                 },
                 {
                     step: 1,
-                    title: '专业审核员签字',
-                    operator: '王洪伟',
-                    role: '专业审核员',
-                    time: '2024-03-24 11:15',
-                    status: 'completed',
-                    description: '专业审核员已完成审核计划的专业内容审查',
-                    tag: { text: '已签字', type: 'success' }
-                },
-                {
-                    step: 2,
                     title: '项目管理人员确认',
                     operator: '张管理',
                     role: '项目管理人员',
@@ -1691,7 +1464,7 @@
                     tag: { text: '已通过', type: 'success' }
                 },
                 {
-                    step: 3,
+                    step: 2,
                     title: '客户确认',
                     operator: '北京市地铁运营有限公司',
                     role: '客户',
@@ -1711,137 +1484,15 @@
             updateAuditStats();
             // 默认加载成功场景
             loadFlowScenario('success');
-            initSignatureCanvas();
         });
 
-        // 初始化签名画布
-        function initSignatureCanvas() {
-            const canvas = document.getElementById('signatureCanvas');
-            const container = document.getElementById('canvasContainer');
-            const placeholder = document.getElementById('canvasPlaceholder');
-            
-            // 设置画布大小
-            canvas.width = container.offsetWidth;
-            canvas.height = 200;
-            
-            const ctx = canvas.getContext('2d');
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            
-            // 鼠标/触摸事件处理
-            const startDrawing = (e) => {
-                isDrawing = true;
-                const rect = canvas.getBoundingClientRect();
-                const x = (e.clientX || e.touches[0].clientX) - rect.left;
-                const y = (e.clientY || e.touches[0].clientY) - rect.top;
-                lastX = x;
-                lastY = y;
-                placeholder.style.display = 'none';
-            };
-            
-            const draw = (e) => {
-                if (!isDrawing) return;
-                e.preventDefault();
-                const rect = canvas.getBoundingClientRect();
-                const x = (e.clientX || e.touches[0].clientX) - rect.left;
-                const y = (e.clientY || e.touches[0].clientY) - rect.top;
-                
-                ctx.beginPath();
-                ctx.moveTo(lastX, lastY);
-                ctx.lineTo(x, y);
-                ctx.stroke();
-                
-                lastX = x;
-                lastY = y;
-            };
-            
-            const stopDrawing = () => {
-                isDrawing = false;
-            };
-            
-            // 鼠标事件
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseout', stopDrawing);
-            
-            // 触摸事件
-            canvas.addEventListener('touchstart', startDrawing);
-            canvas.addEventListener('touchmove', draw);
-            canvas.addEventListener('touchend', stopDrawing);
-        }
-
-        // 清除签名
-        function clearSignature() {
-            const canvas = document.getElementById('signatureCanvas');
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            document.getElementById('canvasPlaceholder').style.display = 'block';
-        }
-
-        // 关闭电子签弹窗
-        function closeEsignModal() {
-            document.getElementById('esignModal').classList.remove('show');
-            clearSignature();
-        }
-
-        // 确认签名（完成签署并提交）
-        function confirmSignature() {
-            const canvas = document.getElementById('signatureCanvas');
-            const ctx = canvas.getContext('2d');
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            
-            // 检查是否签名（简单检查是否有像素点）
-            let hasSignature = false;
-            for (let i = 0; i < imageData.data.length; i += 4) {
-                if (imageData.data[i + 3] > 0) {
-                    hasSignature = true;
-                    break;
-                }
-            }
-            
-            if (!hasSignature) {
-                alert('请先手写签名后再确认提交');
-                return;
-            }
-            
-            // 关闭弹窗
-            closeEsignModal();
-            
-            // 继续提交流程（进入待专业审核员签字状态）
-            currentFlowStep = 1;
-            
-            // 更新日志
-            flowLogs[0].status = 'completed';
-            flowLogs[0].tag = { text: '已完成', type: 'success' };
-            flowLogs[0].description = '审核计划已编制完成并提交，等待专业审核员签字';
-            flowLogs[0].time = formatDateTime(new Date());
-            
-            flowLogs.push({
-                step: 1,
-                title: '专业审核员签字',
-                operator: '王洪伟',
-                role: '专业审核员',
-                time: null,
-                status: 'active',
-                description: '等待专业审核员对审核计划进行专业内容审查并签字确认（该节点无驳回功能）',
-                tag: { text: '进行中', type: 'primary' }
-            });
-            
-            renderFlowLog();
-            updateHeaderStatus();
-            alert('电子签署成功！审核计划已提交，等待专业审核员签字确认');
-        }
-
-        // 加载流程场景（增加pendingSpecialist场景处理）
+        // 加载流程场景
         function loadFlowScenario(scenario) {
             flowLogs = JSON.parse(JSON.stringify(flowScenarios[scenario]));
             
             // 根据场景设置当前步骤
             if (scenario === 'success') {
-                currentFlowStep = 4; // 调整后最终步骤为4
+                currentFlowStep = 3;
                 planStatus = 'confirmed';
             } else if (scenario === 'pmReject') {
                 currentFlowStep = -1;
@@ -1849,63 +1500,16 @@
             } else if (scenario === 'customerReject') {
                 currentFlowStep = -2;
                 planStatus = 'rejected';
-            } else if (scenario === 'pendingSpecialist') {
-                currentFlowStep = 1; // 新增场景
-                planStatus = 'pending';
             } else if (scenario === 'pendingPM') {
-                currentFlowStep = 2; // 调整后PM确认是step 2
+                currentFlowStep = 1;
                 planStatus = 'pending';
             } else if (scenario === 'pendingCustomer') {
-                currentFlowStep = 3; // 调整后客户确认是step 3
+                currentFlowStep = 2;
                 planStatus = 'pending';
             }
             
             renderFlowLog();
             updateHeaderStatus();
-        }
-
-        // 专业审核员签字操作（新增函数，无驳回功能）
-        function handleSpecialistSign() {
-            if (!confirm('专业审核员确认签字通过？（此步骤不可驳回）')) return;
-            
-            currentFlowStep = 2; // 进入待PM确认状态
-            
-            // 更新签字记录为已完成
-            const signLog = flowLogs.find(l => l.step === 1 && l.status === 'active');
-            if (signLog) {
-                signLog.status = 'completed';
-                signLog.tag = { text: '已签字', type: 'success' };
-                signLog.time = formatDateTime(new Date());
-                signLog.description = '专业审核员已完成审核计划的专业内容审查，确认专业代码匹配、审核深度适宜，同意提交项目管理审核';
-            } else {
-                // 如果没有找到活动记录，添加新记录
-                flowLogs.push({
-                    step: 1,
-                    title: '专业审核员签字',
-                    operator: '王洪伟',
-                    role: '专业审核员',
-                    time: formatDateTime(new Date()),
-                    status: 'completed',
-                    description: '专业审核员已完成审核计划的专业内容审查，确认通过',
-                    tag: { text: '已签字', type: 'success' }
-                });
-            }
-            
-            // 添加PM确认待办
-            flowLogs.push({
-                step: 2,
-                title: '项目管理人员确认',
-                operator: '张管理',
-                role: '项目管理人员',
-                time: null,
-                status: 'active',
-                description: '等待项目管理人员审核确认',
-                tag: { text: '进行中', type: 'primary' }
-            });
-            
-            renderFlowLog();
-            updateHeaderStatus();
-            alert('专业审核员签字完成，已转交项目管理人员确认');
         }
 
         // 渲染流程日志
@@ -1968,7 +1572,7 @@
             container.innerHTML = html;
         }
 
-        // 切换节点
+        // 切换节点（根据新要求更新流程节点显示）
         function switchNode(index) {
             currentNodeIndex = index;
             
@@ -2012,7 +1616,7 @@
             updateHeaderStatus();
         }
 
-        // 更新头部状态（增加专业审核员签字按钮显示逻辑）
+        // 更新头部状态（根据新要求调整按钮逻辑）
         function updateHeaderStatus() {
             const statusBadge = document.getElementById('headerStatusBadge');
             const confirmBtn = document.getElementById('confirmTaskBtn');
@@ -2025,7 +1629,6 @@
             const pmRejectBtn = document.getElementById('pmRejectBtn');
             const customerApproveBtn = document.getElementById('customerApproveBtn');
             const customerRejectBtn = document.getElementById('customerRejectBtn');
-            const specialistSignBtn = document.getElementById('specialistSignBtn'); // 新增按钮引用
             
             // 重置所有按钮
             confirmBtn.classList.add('hidden');
@@ -2037,7 +1640,6 @@
             pmRejectBtn.classList.add('hidden');
             customerApproveBtn.classList.add('hidden');
             customerRejectBtn.classList.add('hidden');
-            specialistSignBtn.classList.add('hidden'); // 隐藏专业审核员按钮
             
             if (currentNodeIndex === 0) {
                 statusBadge.textContent = '审核任务确认中';
@@ -2057,17 +1659,7 @@
                     submitPlanBtn.classList.remove('hidden');
                     submitPlanBtn.innerHTML = '<i class="fas fa-check-circle text-xs"></i> 提交审核计划';
                 } else if (currentFlowStep === 1) {
-                    // 待专业审核员签字（新增状态）
-                    statusBadge.textContent = '等待专业审核员签字';
-                    statusBadge.className = 'status-badge badge-warning';
-                    isEditable = false;
-                    specialistSignBtn.classList.remove('hidden'); // 显示专业审核员签字按钮
-                    withdrawBtn.classList.remove('hidden');
-                    
-                    planStatus = 'pending';
-                    planStatusDropdown.value = 'pending';
-                } else if (currentFlowStep === 2) {
-                    // 待PM确认（调整后）
+                    // 待PM确认 - 显示PM操作按钮（演示用）
                     statusBadge.textContent = '等待项目管理人员确认';
                     statusBadge.className = 'status-badge badge-warning';
                     isEditable = false;
@@ -2077,8 +1669,8 @@
                     
                     planStatus = 'pending';
                     planStatusDropdown.value = 'pending';
-                } else if (currentFlowStep === 3) {
-                    // 待客户确认（调整后）
+                } else if (currentFlowStep === 2) {
+                    // 待客户确认 - 显示客户操作按钮（演示用）
                     statusBadge.textContent = '等待客户确认';
                     statusBadge.className = 'status-badge badge-warning';
                     isEditable = false;
@@ -2088,15 +1680,15 @@
                     
                     planStatus = 'pending';
                     planStatusDropdown.value = 'pending';
-                } else if (currentFlowStep === 4) {
-                    // 已确认（调整后）
+                } else if (currentFlowStep === 3) {
+                    // 已确认
                     statusBadge.textContent = '审核计划已确认';
                     statusBadge.className = 'status-badge badge-success';
                     isEditable = false;
                     planStatus = 'confirmed';
                     planStatusDropdown.value = 'confirmed';
                 } else if (currentFlowStep === -1) {
-                    // PM驳回（现在是在step 2被驳回）
+                    // PM驳回
                     statusBadge.textContent = '审核计划被驳回';
                     statusBadge.className = 'status-badge badge-error';
                     isEditable = true;
@@ -2105,7 +1697,7 @@
                     planStatus = 'rejected';
                     planStatusDropdown.value = 'rejected';
                 } else if (currentFlowStep === -2) {
-                    // 客户驳回（现在是在step 3被驳回）
+                    // 客户驳回
                     statusBadge.textContent = '审核计划被客户驳回';
                     statusBadge.className = 'status-badge badge-error';
                     isEditable = true;
@@ -2140,7 +1732,7 @@
             updateHeaderStatus();
         }
 
-        // 撤回功能（增加对专业审核员签字状态的判断）
+        // 撤回功能
         function withdrawPlan() {
             if (confirm('确定撤回审核计划吗？撤回后将回到待提交状态。')) {
                 currentFlowStep = 0;
@@ -2175,25 +1767,21 @@
             }
         }
 
-        // PM操作（确认/驳回，调整步骤编号）
+        // PM操作（确认/驳回）
         function handlePMAction(action) {
             if (action === 'approve') {
                 if (!confirm('确认通过该审核计划？')) return;
                 
-                currentFlowStep = 3; // 进入待客户确认（原2现3）
+                currentFlowStep = 2;
                 
-                // 更新前两步为已完成
-                flowLogs.forEach(log => {
-                    if (log.step === 0 || log.step === 1) {
-                        log.status = 'completed';
-                        log.tag = { text: log.step === 0 ? '已完成' : '已签字', type: 'success' };
-                        if (!log.time) log.time = formatDateTime(new Date());
-                    }
-                });
+                // 更新第一步为已完成
+                flowLogs[0].status = 'completed';
+                flowLogs[0].tag = { text: '已完成', type: 'success' };
+                if (!flowLogs[0].time) flowLogs[0].time = formatDateTime(new Date());
                 
                 // 添加PM确认记录
                 flowLogs.push({
-                    step: 2,
+                    step: 1,
                     title: '项目管理人员确认',
                     operator: '张管理',
                     role: '项目管理人员',
@@ -2205,7 +1793,7 @@
                 
                 // 添加待客户确认记录
                 flowLogs.push({
-                    step: 3,
+                    step: 2,
                     title: '客户确认',
                     operator: '北京市地铁运营有限公司',
                     role: '客户',
@@ -2224,17 +1812,13 @@
                 
                 currentFlowStep = -1; // 驳回状态
                 
-                // 更新前两步为已完成
-                flowLogs.forEach(log => {
-                    if (log.step === 0 || log.step === 1) {
-                        log.status = 'completed';
-                        log.tag = { text: log.step === 0 ? '已完成' : '已签字', type: 'success' };
-                    }
-                });
+                // 更新第一步为已完成
+                flowLogs[0].status = 'completed';
+                flowLogs[0].tag = { text: '已完成', type: 'success' };
                 
                 // 添加PM驳回记录
                 flowLogs.push({
-                    step: 2,
+                    step: 1,
                     title: '项目管理人员驳回',
                     operator: '张管理',
                     role: '项目管理人员',
@@ -2251,12 +1835,12 @@
             }
         }
 
-        // 客户操作（确认/驳回，调整步骤编号）
+        // 客户操作（确认/驳回）
         function handleCustomerAction(action) {
             if (action === 'approve') {
                 if (!confirm('客户确认通过该审核计划？')) return;
                 
-                currentFlowStep = 4; // 最终确认（原3现4）
+                currentFlowStep = 3;
                 
                 // 更新所有待办为已完成
                 flowLogs.forEach(log => {
@@ -2269,7 +1853,7 @@
                 
                 // 添加客户确认记录
                 flowLogs.push({
-                    step: 4,
+                    step: 3,
                     title: '客户确认通过',
                     operator: '北京市地铁运营有限公司',
                     role: '客户',
@@ -2290,7 +1874,7 @@
                 
                 // 更新待客户确认为驳回
                 const lastLog = flowLogs[flowLogs.length - 1];
-                if (lastLog && lastLog.step === 3) {
+                if (lastLog && lastLog.step === 2) {
                     lastLog.status = 'rejected';
                     lastLog.tag = { text: '已驳回', type: 'error' };
                     lastLog.rejectReason = reason;
@@ -2321,7 +1905,7 @@
             });
         }
 
-        // 班次行生成
+        // 班次行生成（修复模板字符串问题）
         function updateShiftRows() {
             const count = parseInt(document.getElementById('shiftCount').value);
             const container = document.getElementById('shiftContainer');
@@ -2387,7 +1971,7 @@
             }
         }
 
-        // 计算班次时长
+        // 计算班次时长（修复NaN问题）
         function calculateShiftDuration(shiftNum) {
             const row = document.querySelector(`.shift-row-compact[data-shift="${shiftNum}"]`);
             if (!row) return;
@@ -2419,7 +2003,7 @@
             }
         }
 
-        // 添加审核活动行
+        // 添加审核活动行（日期时间加宽）
         function addActivityRow(data = null) {
             const container = document.getElementById('activityContainer');
             const rowId = 'act_' + Date.now();
@@ -2481,7 +2065,7 @@
             updateAuditStats();
         }
 
-        // 生成时间选项
+        // 生成时间选项（半小时间隔）
         function generateTimeOptions(selectedTime = '09:00') {
             let html = '';
             for (let h = 0; h < 24; h++) {
@@ -2653,7 +2237,7 @@
             alert('审核计划已保存');
         }
 
-        // 提交计划（修改为弹出电子签弹窗）
+        // 提交计划
         function submitPlan() {
             const shiftCount = parseInt(document.getElementById('shiftCount').value);
             for (let i = 1; i <= shiftCount; i++) {
@@ -2683,15 +2267,30 @@
             });
             if (hasError) return;
             
-            // 弹出电子签签署弹窗（修改点3）
-            document.getElementById('esignModal').classList.add('show');
-            // 重新初始化画布大小
-            setTimeout(() => {
-                const canvas = document.getElementById('signatureCanvas');
-                const container = document.getElementById('canvasContainer');
-                canvas.width = container.offsetWidth;
-                canvas.height = 200;
-            }, 100);
+            if (confirm('确定提交审核计划吗？')) {
+                currentFlowStep = 1; // 进入待PM确认状态
+                
+                // 更新日志
+                flowLogs[0].status = 'completed';
+                flowLogs[0].tag = { text: '已完成', type: 'success' };
+                flowLogs[0].description = '审核计划已编制完成并提交';
+                flowLogs[0].time = formatDateTime(new Date());
+                
+                flowLogs.push({
+                    step: 1,
+                    title: '项目管理人员确认',
+                    operator: '张管理',
+                    role: '项目管理人员',
+                    time: null,
+                    status: 'active',
+                    description: '等待项目管理人员审核确认',
+                    tag: { text: '进行中', type: 'primary' }
+                });
+                
+                renderFlowLog();
+                updateHeaderStatus();
+                alert('审核计划已提交，等待项目管理人员确认');
+            }
         }
 
         // 其他原有函数
