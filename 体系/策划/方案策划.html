@@ -1,0 +1,3790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>方案策划管理 - 体系认证审核项目</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            min-width: 1800px;
+        }
+        
+        .container-fixed {
+            width: 1800px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        
+        .project-header {
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .badge-processing {
+            background: #e6f7ff;
+            color: #1890ff;
+            border-color: #1890ff;
+        }
+        
+        .badge-warning {
+            background: #fff7e6;
+            color: #fa8c16;
+            border-color: #ffa940;
+        }
+        
+        .timeline-section {
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 20px 0;
+        }
+        
+        .timeline-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 40px;
+        }
+        
+        .timeline-main {
+            flex: 1;
+        }
+        
+        .summary-card {
+            width: 280px;
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 8px;
+            padding: 16px;
+            flex-shrink: 0;
+        }
+        
+        .summary-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #52c41a;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #b7eb8f;
+            padding-bottom: 8px;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+        
+        .summary-item:last-child {
+            margin-bottom: 0;
+            padding-top: 10px;
+            border-top: 1px dashed #b7eb8f;
+            font-weight: 600;
+        }
+        
+        .summary-label {
+            color: #595959;
+        }
+        
+        .summary-value {
+            color: #52c41a;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .process-steps {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: relative;
+            padding: 20px 0 10px;
+        }
+        
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+            z-index: 2;
+        }
+        
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #d9d9d9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #d9d9d9;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .step-item.pending .step-circle {
+            border-color: #1890ff;
+            color: #1890ff;
+            background: #fff;
+        }
+        
+        .step-item.active .step-circle {
+            background: #1890ff;
+            border-color: #1890ff;
+            color: white;
+        }
+        
+        .step-item.completed .step-circle {
+            background: #52c41a;
+            border-color: #52c41a;
+            color: white;
+        }
+        
+        .step-item.inserted .step-circle {
+            background: #722ed1;
+            border-color: #722ed1;
+            color: white;
+        }
+        
+        .step-line {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            right: -50%;
+            height: 2px;
+            background: #e8e8e8;
+            z-index: 1;
+        }
+        
+        .step-item.completed .step-line {
+            background: #52c41a;
+        }
+        
+        .step-item.half-progress .step-line {
+            background: linear-gradient(to right, #1890ff 50%, #e8e8e8 50%);
+        }
+        
+        .step-item.pending .step-line {
+            background: #e8e8e8;
+        }
+        
+        .step-item:last-child .step-line {
+            display: none;
+        }
+        
+        .step-title {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #595959;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .step-item.active .step-title,
+        .step-item.pending .step-title {
+            color: #1890ff;
+            font-weight: 600;
+        }
+        
+        .step-item.completed .step-title {
+            color: #52c41a;
+        }
+        
+        .step-item.inserted .step-title {
+            color: #722ed1;
+        }
+        
+        .step-date {
+            font-size: 12px;
+            color: #8c8c8c;
+            margin-top: 4px;
+        }
+        
+        .step-audit-time {
+            font-size: 11px;
+            color: #1890ff;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+        
+        .delete-node-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 16px;
+            height: 16px;
+            background: #ff4d4f;
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .step-item:hover .delete-node-btn {
+            opacity: 1;
+        }
+        
+        .controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0 0;
+            margin-top: 16px;
+            border-top: 1px solid #e8e8e8;
+            gap: 16px;
+        }
+        
+        .controls-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+            flex-wrap: wrap;
+        }
+        
+        .controls-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .node-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .node-selector label {
+            font-size: 13px;
+            color: #595959;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .node-selector select {
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            min-width: 180px;
+            background: white;
+        }
+        
+        .change-option-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .change-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #fff7e6;
+            border: 1px solid #ffd591;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: #262626;
+            white-space: nowrap;
+        }
+        
+        .change-type-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .change-audit-info-display {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: #fff7e6;
+            border: 1px solid #ffd591;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        
+        .change-audit-info-display .info-label {
+            font-weight: 600;
+            color: #262626;
+        }
+        
+        .change-audit-info-display .info-value {
+            color: #fa8c16;
+            font-weight: 500;
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 2px;
+            border: 1px solid #e8e8e8;
+            margin-bottom: 16px;
+        }
+        
+        .card-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafafa;
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #262626;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .site-card {
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            background: white;
+            margin-bottom: 16px;
+        }
+        
+        .site-card-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e8e8e8;
+            background: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .site-card-body {
+            display: flex;
+            flex-direction: row;
+        }
+        
+        /* 修复：场所信息区域不再缩进，填满左侧 */
+        .site-info-left {
+            width: 45%;
+            padding: 16px;
+            border-right: 1px solid #e8e8e8;
+            background: #fafafa;
+        }
+        
+        .site-process-right {
+            width: 55%;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        
+        @media (max-width: 1800px) {
+            .site-card-body {
+                flex-direction: column;
+            }
+            .site-info-left {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #e8e8e8;
+            }
+            .site-process-right {
+                width: 100%;
+            }
+        }
+        
+        .form-row {
+            margin-bottom: 12px;
+        }
+        
+        .form-label {
+            font-size: 12px;
+            color: #8c8c8c;
+            margin-bottom: 4px;
+            display: block;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .form-input:hover {
+            border-color: #40a9ff;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
+        }
+        
+        .form-input:disabled, .form-input[readonly] {
+            background: #f5f5f5;
+            color: #8c8c8c;
+        }
+        
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .form-grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .prof-code-input-wrapper {
+            position: relative;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .data-table th {
+            background: #fafafa;
+            color: #262626;
+            font-weight: 600;
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e8e8e8;
+            white-space: nowrap;
+        }
+        
+        .data-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e8e8e8;
+            color: #595959;
+        }
+        
+        .data-table tr:hover {
+            background: #e6f7ff;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e8e8e8;
+            background: white;
+            padding: 0 24px;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #595959;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .tab:hover {
+            color: #1890ff;
+        }
+        
+        .tab.active {
+            color: #1890ff;
+            border-bottom-color: #1890ff;
+        }
+        
+        .hidden-section {
+            display: none !important;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 4px;
+            width: 520px;
+            max-width: 90%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e8e8e8;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .modal-footer {
+            padding: 12px 24px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary:hover {
+            background: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-default {
+            background: white;
+            border-color: #d9d9d9;
+            color: #595959;
+        }
+        
+        .btn-default:hover {
+            color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-danger {
+            color: #ff4d4f;
+            background: white;
+            border-color: #ff4d4f;
+        }
+        
+        .btn-danger:hover {
+            background: #ff4d4f;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 4px 12px;
+            font-size: 12px;
+        }
+
+        .btn-orange {
+            color: #fa8c16;
+            background: white;
+            border-color: #fa8c16;
+        }
+        
+        .btn-orange:hover {
+            background: #fa8c16;
+            color: white;
+        }
+
+        .btn-purple {
+            color: #722ed1;
+            background: white;
+            border-color: #722ed1;
+        }
+        
+        .btn-purple:hover {
+            background: #722ed1;
+            color: white;
+        }
+        
+        .change-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .form-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-textarea:hover {
+            border-color: #40a9ff;
+        }
+        
+        .form-textarea:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
+        }
+
+        .survey-field-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .survey-field-row:last-child {
+            border-bottom: none;
+        }
+        
+        .survey-field-label {
+            width: 400px;
+            font-size: 13px;
+            color: #262626;
+            font-weight: 500;
+            flex-shrink: 0;
+            padding-top: 6px;
+            line-height: 1.4;
+        }
+        
+        .survey-field-control {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .survey-radio-group {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        
+        .survey-radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .survey-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .survey-textarea:hover, .survey-input:hover {
+            border-color: #40a9ff;
+        }
+        
+        .survey-textarea:focus, .survey-input:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
+        }
+        
+        .survey-input {
+            width: 100%;
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .cert-change-section {
+            margin-bottom: 16px;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .cert-change-title {
+            font-weight: 600;
+            color: #262626;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+            padding: 12px 16px;
+            background: #fafafa;
+            border-bottom: 1px solid #e8e8e8;
+            transition: all 0.3s;
+        }
+        
+        .cert-change-title:hover {
+            background: #f0f0f0;
+        }
+        
+        .cert-change-title::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: #1890ff;
+            border-radius: 2px;
+        }
+        
+        .cert-change-title .toggle-icon {
+            margin-left: auto;
+            color: #8c8c8c;
+            transition: transform 0.3s;
+        }
+        
+        .cert-change-title.expanded .toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        .cert-change-title .section-checkbox {
+            margin-left: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: normal;
+            color: #595959;
+        }
+        
+        .cert-change-content {
+            display: none;
+            padding: 16px;
+            background: white;
+        }
+        
+        .cert-change-content.expanded {
+            display: block;
+        }
+        
+        .required-mark {
+            color: #ff4d4f;
+            margin-left: 2px;
+        }
+
+        .divider-v {
+            width: 1px;
+            height: 20px;
+            background: #d9d9d9;
+            margin: 0 4px;
+        }
+
+        .tab-content {
+            display: block;
+        }
+        
+        .tab-content.hidden-section {
+            display: none !important;
+        }
+
+        .compact-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        /* 修复：班次信息固定宽度，悬浮提示 */
+        .shift-info-wrapper {
+            position: relative;
+            display: block;
+            width: 100%;
+        }
+        
+        .shift-info-display {
+            font-size: 12px;
+            color: #595959;
+            background: #f6ffed;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #b7eb8f;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: help;
+            line-height: 1.5;
+            height: 32px;
+            position: relative;
+        }
+
+        .shift-info-display .shift-label {
+            font-weight: 600;
+            color: #52c41a;
+        }
+        
+        /* 悬浮提示样式优化 */
+        .shift-tooltip {
+            position: absolute;
+            left: 0;
+            top: 100%;
+            margin-top: 4px;
+            background: #fff;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            min-width: 320px;
+            max-width: 400px;
+            white-space: normal;
+        }
+        
+        .shift-info-wrapper:hover .shift-tooltip {
+            display: block;
+        }
+        
+        .shift-tooltip-row {
+            font-size: 12px;
+            color: #595959;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+            line-height: 1.6;
+        }
+        
+        .shift-tooltip-row:last-child {
+            border-bottom: none;
+        }
+
+        .tags-display-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 4px 8px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            background: white;
+            min-height: 32px;
+            align-items: center;
+            cursor: text;
+        }
+        
+        .tags-display-box:hover {
+            border-color: #40a9ff;
+        }
+        
+        .tags-display-box.focused {
+            border-color: #1890ff;
+            box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
+        }
+        
+        .inline-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+            background: #e6f7ff;
+            border: 1px solid #1890ff;
+            color: #1890ff;
+            flex-shrink: 0;
+        }
+        
+        .inline-tag.accreditation {
+            background: #f6ffed;
+            border-color: #52c41a;
+            color: #52c41a;
+        }
+        
+        .inline-tag .remove-tag {
+            cursor: pointer;
+            font-size: 10px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        .inline-tag .remove-tag:hover {
+            opacity: 1;
+            color: #ff4d4f;
+        }
+        
+        .tag-input {
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 13px;
+            flex: 1;
+            min-width: 80px;
+            padding: 2px;
+        }
+
+        .readonly-field {
+            background: #f5f5f5 !important;
+            color: #8c8c8c !important;
+            cursor: not-allowed;
+        }
+
+        .header-node-selector {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 16px;
+            padding-left: 16px;
+            border-left: 1px solid #e8e8e8;
+        }
+        
+        .header-node-selector label {
+            font-size: 13px;
+            color: #595959;
+            font-weight: 500;
+        }
+        
+        .header-node-selector select {
+            padding: 4px 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            min-width: 160px;
+            background: white;
+            color: #262626;
+        }
+
+        /* 附件上传样式 */
+        .attachment-section {
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            padding: 16px;
+            background: #fafafa;
+        }
+        
+        .attachment-upload-area {
+            border: 2px dashed #d9d9d9;
+            border-radius: 4px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+            margin-bottom: 16px;
+        }
+        
+        .attachment-upload-area:hover {
+            border-color: #1890ff;
+            background: #e6f7ff;
+        }
+        
+        .attachment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .attachment-item:hover {
+            border-color: #1890ff;
+            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+        }
+        
+        .attachment-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        
+        .attachment-icon {
+            width: 32px;
+            height: 32px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #595959;
+        }
+        
+        .attachment-name {
+            font-size: 13px;
+            color: #262626;
+            font-weight: 500;
+        }
+        
+        .attachment-size {
+            font-size: 11px;
+            color: #8c8c8c;
+        }
+        
+        .attachment-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .attachment-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+        
+        .attachment-btn.preview {
+            color: #1890ff;
+            border-color: #1890ff;
+            background: white;
+        }
+        
+        .attachment-btn.preview:hover {
+            background: #1890ff;
+            color: white;
+        }
+        
+        .attachment-btn.download {
+            color: #52c41a;
+            border-color: #52c41a;
+            background: white;
+        }
+        
+        .attachment-btn.download:hover {
+            background: #52c41a;
+            color: white;
+        }
+        
+        .attachment-btn.delete {
+            color: #ff4d4f;
+            border-color: #ff4d4f;
+            background: white;
+        }
+        
+        .attachment-btn.delete:hover {
+            background: #ff4d4f;
+            color: white;
+        }
+        
+        .attachment-category {
+            margin-bottom: 24px;
+        }
+        
+        .attachment-category-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 12px;
+            padding-left: 8px;
+            border-left: 3px solid #1890ff;
+        }
+
+        /* 新增场所/减少场所样式 */
+        .site-change-list {
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            padding: 12px;
+            background: #fafafa;
+            margin-top: 8px;
+        }
+        
+        .site-change-item {
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+        
+        .site-change-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .site-delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: #ff4d4f;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .add-site-btn-inline {
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        /* 附件列表详细样式 */
+        .attachment-detail-list {
+            margin-top: 8px;
+            padding-left: 16px;
+        }
+        
+        .attachment-detail-item {
+            font-size: 12px;
+            color: #595959;
+            line-height: 1.8;
+            position: relative;
+            padding-left: 12px;
+        }
+        
+        .attachment-detail-item::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #1890ff;
+        }
+
+        /* 右侧过程组模板选择抽屉 */
+        .template-drawer {
+            position: fixed;
+            top: 0;
+            right: -800px;
+            width: 800px;
+            height: 100%;
+            background: white;
+            box-shadow: -4px 0 16px rgba(0,0,0,0.15);
+            z-index: 1100;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .template-drawer.open {
+            right: 0;
+        }
+        
+        .template-drawer-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafafa;
+        }
+        
+        .template-drawer-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #262626;
+        }
+        
+        .template-drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            gap: 24px;
+        }
+        
+        .template-list-section {
+            width: 240px;
+            border-right: 1px solid #e8e8e8;
+            padding-right: 24px;
+        }
+        
+        .template-detail-section {
+            flex: 1;
+        }
+        
+        .template-item {
+            padding: 12px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+        
+        .template-item:hover {
+            background: #f6ffed;
+            border-color: #b7eb8f;
+        }
+        
+        .template-item.active {
+            background: #f6ffed;
+            border-color: #52c41a;
+            color: #52c41a;
+            font-weight: 500;
+        }
+        
+        .template-item-title {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .template-item-desc {
+            font-size: 12px;
+            color: #8c8c8c;
+        }
+        
+        .template-detail-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
+        .template-drawer-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #fafafa;
+        }
+        
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1099;
+            display: none;
+        }
+        
+        .drawer-overlay.open {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- 顶部项目信息栏 -->
+    <div class="project-header sticky top-0 z-50">
+        <div class="container-fixed py-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-gray-500 text-sm">PLN-2024-001</span>
+                    <h1 class="text-lg font-bold text-gray-900">2026年度质量管理体系审核方案策划</h1>
+                    <span class="status-badge badge-processing">待策划</span>
+                    
+                    <div class="header-node-selector">
+                        <label>当前进度节点：</label>
+                        <select id="nodeSelect" onchange="handleNodeSelect(this.value)">
+                            <option value="initial_pending">初次认证开始</option>
+                            <option value="initial_end">初次认证结束</option>
+                            <option value="surv1_pending">监督一开始</option>
+                            <option value="surv1_end">监督一结束</option>
+                            <option value="surv2_pending">监督二开始</option>
+                            <option value="surv2_end">监督二结束</option>
+                            <option value="recert_pending">再认证开始</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button class="btn btn-default btn-sm" onclick="saveDraft()">
+                        <i class="far fa-save text-xs"></i>
+                        保存
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="submitPlan()">
+                        <i class="fas fa-check text-xs"></i>
+                        提交
+                    </button>
+                    <button class="btn btn-default btn-sm" onclick="goBack()">
+                        <i class="fas fa-arrow-left text-xs"></i>
+                        返回
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-x-8 gap-y-3 text-sm">
+                <div>
+                    <span class="text-gray-500">客户名称：</span>
+                    <span class="font-medium text-gray-900">华信环境监测技术中心</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">认证领域：</span>
+                    <span class="font-medium text-gray-900">ISO 9001质量管理体系</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">业务评审编号：</span>
+                    <span class="font-medium text-gray-900">BR-2024-089</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">受理日期：</span>
+                    <span class="font-medium text-gray-900">2024-03-05</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">当前轮次：</span>
+                    <span class="font-medium text-blue-600">第1轮</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">审核阶段：</span>
+                    <span class="font-medium text-gray-900">一阶段</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">是否多场所：</span>
+                    <span class="font-medium text-gray-900">是</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">策划日期：</span>
+                    <span class="font-medium text-gray-900">2024-03-23</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 时间轴及统计信息整体区域 -->
+    <div class="timeline-section">
+        <div class="container-fixed">
+            <div class="timeline-wrapper">
+                <!-- 左侧：时间轴 -->
+                <div class="timeline-main">
+                    <div class="process-steps" id="timelineContainer"></div>
+                    
+                    <!-- 控制区域 -->
+                    <div class="controls-row">
+                        <div class="controls-left" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <!-- 是否涉及变更审核 -->
+                            <div id="changeOptionArea" class="change-option-wrapper hidden-section">
+                                <label class="change-checkbox-label">
+                                    <input type="checkbox" id="changeCheckbox" class="w-4 h-4 text-blue-600 rounded border-gray-300" onchange="toggleChangeDetail()">
+                                    <span>是否涉及变更审核</span>
+                                </label>
+                                
+                                <div id="hasStage1Check" class="hidden-section ml-4 flex items-center gap-2">
+                                    <input type="checkbox" id="hasStage1Checkbox" class="w-4 h-4 text-blue-600 rounded border-gray-300">
+                                    <label for="hasStage1Checkbox" class="text-sm text-gray-700">是否有一阶段审核</label>
+                                </div>
+                            </div>
+
+                            <!-- 新增变更/临时审核按钮 -->
+                            <div id="insertButtonsArea" class="flex items-center gap-2 hidden-section">
+                                <button onclick="insertAuditType('change')" class="btn btn-orange btn-sm" id="btnInsertChange">
+                                    <i class="fas fa-plus text-xs"></i>
+                                    新增变更审核
+                                </button>
+                                <button onclick="insertAuditType('temp')" class="btn btn-purple btn-sm" id="btnInsertTemp">
+                                    <i class="fas fa-plus text-xs"></i>
+                                    新增临时审核
+                                </button>
+                            </div>
+
+                            <!-- 新增：变更审核信息显示 -->
+                            <div id="changeAuditInfoDisplay" class="change-audit-info-display hidden-section">
+                                <span class="info-label">变更审核类型：</span>
+                                <span class="info-value" id="changeAuditTypeText">有现场 - 审核一阶段+审核二阶段</span>
+                                <button onclick="editChangeAudit()" class="btn btn-default btn-sm" style="margin-left: 8px;">
+                                    <i class="fas fa-edit text-xs"></i>
+                                    修改
+                                </button>
+                                <button onclick="deleteChangeAudit()" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-trash text-xs"></i>
+                                    删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧：汇总统计卡片 -->
+                <div class="summary-card">
+                    <div class="summary-title">
+                        <i class="fas fa-calculator mr-2"></i>审核人天统计
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">总审核准备：</span>
+                        <span class="summary-value" id="totalPrepTime">0.0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">总第一阶段审核：</span>
+                        <span class="summary-value" id="totalStage1">0.0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">总第二阶段现场审核：</span>
+                        <span class="summary-value" id="totalStage2">0.0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">调整后减少人天数：</span>
+                        <span class="summary-value" id="totalReducedDays">0.0</span>
+                    </div>
+                    <div class="summary-item" style="border-top: 1px solid #b7eb8f; padding-top: 10px; margin-top: 10px;">
+                        <span class="summary-label">总调整后人天数：</span>
+                        <span class="summary-value" style="font-size: 16px;" id="totalAdjustedDays">0.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 标签页 -->
+    <div class="tabs container-fixed bg-white" id="mainTabs">
+        <div class="tab active" onclick="switchTab(this, 'sampling')" id="tabSampling">场所抽样与审核策划</div>
+        <div class="tab" id="processListTab" onclick="switchTab(this, 'process')">管理体系过程清单</div>
+        <div class="tab hidden-section" id="surveyTab" onclick="switchTab(this, 'survey')">获证方情况调查</div>
+        <div class="tab hidden-section" id="certChangeTab" onclick="switchTab(this, 'certChange')">证书变更申请表</div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main class="container-fixed py-6">
+
+        <!-- 场所抽样方案及审核过程清单 -->
+        <div id="samplingTab" class="tab-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold text-gray-800">场所抽样方案及实施情况</h3>
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-orange-600 bg-orange-50 px-3 py-1 rounded border border-orange-200" id="samplingRuleHint">
+                        根据抽样规则，本次策划需要选择全部场所
+                    </span>
+                    <button onclick="showAddSiteModal()" class="btn btn-primary btn-sm" id="addSiteBtn">
+                        <i class="fas fa-plus"></i>
+                        新增场所
+                    </button>
+                </div>
+            </div>
+
+            <div id="siteCardsContainer">
+                <!-- 示例场所卡片 -->
+                <div class="site-card" id="site_0" data-is-main="true">
+                    <div class="site-card-header">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">总部</span>
+                            <span class="font-semibold text-gray-800 site-name">运营地址（中心职能）</span>
+                        </div>
+                    </div>
+                    <div class="site-card-body">
+                        <!-- 左侧：场所信息（填满左侧，无缩进） -->
+                        <div class="site-info-left">
+                            <div class="compact-row-2">
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">计划审核时间</label>
+                                    <input type="month" class="form-input plan-audit-time" value="2024-04" onchange="syncAuditTimeToTimeline('site_0', this.value)">
+                                </div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">实际审核时间</label>
+                                    <input type="text" class="form-input bg-gray-100" readonly placeholder="----年--月">
+                                </div>
+                            </div>
+                            
+                            <div class="compact-row-2">
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">班次信息</label>
+                                    <div class="shift-info-wrapper">
+                                        <div class="shift-info-display">
+                                            <span class="shift-label">班次：1</span>，08:00-17:30
+                                        </div>
+                                        <div class="shift-tooltip">
+                                            <div class="shift-tooltip-row"><span class="shift-label">班次1：</span>08:00-17:30（白班，正常工作时间段）</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">联系人/电话</label>
+                                    <input type="text" class="form-input" value="张先生/13800138000">
+                                </div>
+                            </div>
+                            
+                            <div class="compact-row-2">
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">地址</label>
+                                    <input type="text" class="form-input" value="北京市海淀区中关村大街1号">
+                                </div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">涉及产品/过程/活动</label>
+                                    <input type="text" class="form-input" value="软件开发、系统集成">
+                                </div>
+                            </div>
+                            
+                            <div class="compact-row-2">
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">专业代码</label>
+                                    <div class="tags-display-box" id="profCodeBox_site_0" onclick="focusTagInput(this)">
+                                        <span class="inline-tag" data-code="Q01">Q01<i class="fas fa-times remove-tag" onclick="removeTag(event, 'site_0', 'Q01', 'prof')"></i></span>
+                                        <input type="text" class="tag-input" list="profCodeList_site_0" placeholder="选择代码" 
+                                            onkeydown="handleTagInput(event, 'site_0', 'prof')" 
+                                            onchange="handleTagChange(this, 'site_0', 'prof')">
+                                    </div>
+                                    <datalist id="profCodeList_site_0">
+                                        <option value="Q01">Q01-质量管理体系</option>
+                                        <option value="Q02">Q02-环境管理体系</option>
+                                        <option value="Q03">Q03-职业健康安全管理体系</option>
+                                        <option value="Q04">Q04-食品安全管理体系</option>
+                                        <option value="Q05">Q05-信息安全管理体系</option>
+                                    </datalist>
+                                </div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">认可机构</label>
+                                    <div class="tags-display-box" id="accBox_site_0" onclick="focusTagInput(this)">
+                                        <span class="inline-tag accreditation" data-code="CNAS">CNAS<i class="fas fa-times remove-tag" onclick="removeTag(event, 'site_0', 'CNAS', 'acc')"></i></span>
+                                        <input type="text" class="tag-input" list="accList_site_0" placeholder="选择机构" 
+                                            onkeydown="handleTagInput(event, 'site_0', 'acc')" 
+                                            onchange="handleTagChange(this, 'site_0', 'acc')">
+                                    </div>
+                                    <datalist id="accList_site_0">
+                                        <option value="CNAS">CNAS-中国合格评定国家认可委员会</option>
+                                        <option value="DAKKS">DAKKS-德国认可委员会</option>
+                                        <option value="UKAS">UKAS-英国皇家认可委员会</option>
+                                    </datalist>
+                                </div>
+                            </div>
+                            
+                            <div class="compact-row-2">
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">人数(含承包方)</label>
+                                    <input type="number" class="form-input people-count" value="200" onchange="updateCalculations('site_0')">
+                                </div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <div class="flex justify-between items-center">
+                                        <label class="form-label">有效人数</label>
+                                        <label class="flex items-center gap-1 text-xs text-gray-600">
+                                            <input type="checkbox" checked disabled class="rounded text-gray-400">
+                                            <span>发子证</span>
+                                        </label>
+                                    </div>
+                                    <input type="number" class="form-input effective-people" value="180" placeholder="≤总人数" onchange="validateEffectivePeople(this)">
+                                </div>
+                            </div>
+                            
+                            <div class="border-t border-gray-200 pt-3 mt-3">
+                                <div class="text-xs font-semibold text-gray-700 mb-2">人天计算（AI底座）</div>
+                                <div class="compact-row-2">
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <label class="form-label">审核准备</label>
+                                        <input type="number" step="0.5" class="form-input calc-field" data-type="prep" value="1.5" onchange="updateCalculations('site_0')">
+                                    </div>
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <label class="form-label">第一阶段</label>
+                                        <input type="number" step="0.5" class="form-input calc-field" data-type="stage1" value="1.0" onchange="updateCalculations('site_0')">
+                                    </div>
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <label class="form-label">二阶段现场</label>
+                                        <input type="number" step="0.5" class="form-input calc-field" data-type="stage2" value="4.0" onchange="updateCalculations('site_0')">
+                                    </div>
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <label class="form-label">调整比例</label>
+                                        <input type="number" step="0.1" min="0.7" class="form-input calc-field" data-type="ratio" value="1.0" onchange="updateCalculations('site_0')">
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center bg-blue-50 p-2 rounded mt-2">
+                                    <span class="text-sm font-medium text-blue-900">调整后</span>
+                                    <span class="text-lg font-bold text-blue-600 adjusted-days">6.5</span>
+                                </div>
+                                <div class="form-row mt-2 mb-0">
+                                    <input type="text" class="form-input" placeholder="调整理由（如适用）" style="font-size: 12px;">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 右侧：过程审核策划 -->
+                        <div class="site-process-right">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-semibold text-gray-800">过程审核策划</h4>
+                                <div class="flex items-center gap-2">
+                                    <button class="btn btn-default btn-sm" onclick="openProcessTemplateDrawer('site_0')">
+                                        <i class="fas fa-list-alt"></i>
+                                        选择过程组模板
+                                    </button>
+                                    <button class="btn btn-default btn-sm" onclick="importProcessFromExcel('site_0')">
+                                        <i class="fas fa-file-excel"></i>
+                                        Excel导入
+                                    </button>
+                                    <button onclick="addProcessToSite('site_0')" class="btn btn-default btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                        新增行
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="w-10"><input type="checkbox" class="rounded" onchange="toggleSelectAll(this, 'site_0')"></th>
+                                        <th class="w-10">序号</th>
+                                        <th>过程名称</th>
+                                        <th>主责部门</th>
+                                        <th>相关部门</th>
+                                        <th>涉及标准条款</th>
+                                        <th>绩效参数/文件</th>
+                                        <th class="w-16 text-center">拟审核</th>
+                                        <th class="w-16 text-center">已审核</th>
+                                        <th class="w-10">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="site-process-body" id="processBody_site_0">
+                                    <tr>
+                                        <td><input type="checkbox" class="rounded row-checkbox"></td>
+                                        <td>1</td>
+                                        <td><input type="text" class="form-input" value="组织环境"></td>
+                                        <td><input type="text" class="form-input" value="管理层"></td>
+                                        <td><input type="text" class="form-input" value="各部门"></td>
+                                        <td><input type="text" class="form-input" value="4.1,4.2,4.3,4.4"></td>
+                                        <td><input type="text" class="form-input" value="《组织环境分析表》"></td>
+                                        <td class="text-center"><input type="checkbox" class="rounded text-blue-600" checked></td>
+                                        <td class="text-center"><span class="text-xs text-gray-400">待审核</span></td>
+                                        <td>
+                                            <button onclick="deleteProcessRow(this)" class="text-red-500 hover:text-red-700">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox" class="rounded row-checkbox"></td>
+                                        <td>2</td>
+                                        <td><input type="text" class="form-input" value="领导作用"></td>
+                                        <td><input type="text" class="form-input" value="总经理"></td>
+                                        <td><input type="text" class="form-input" value="管理层"></td>
+                                        <td><input type="text" class="form-input" value="5.1,5.2,5.3"></td>
+                                        <td><input type="text" class="form-input" value="质量方针、目标"></td>
+                                        <td class="text-center"><input type="checkbox" class="rounded text-blue-600" checked></td>
+                                        <td class="text-center"><span class="text-xs text-gray-400">待审核</span></td>
+                                        <td>
+                                            <button onclick="deleteProcessRow(this)" class="text-red-500 hover:text-red-700">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第二个场所（多班次示例） -->
+                <div class="site-card" id="site_1" data-is-main="false">
+                    <div class="site-card-header">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-gray-800 site-name">生产现场一</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <label class="flex items-center gap-1 text-sm text-gray-700 non-main-controls">
+                                <input type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 sample-checkbox" checked onchange="updateSamplingState('site_1')">
+                                <span>是否抽样</span>
+                            </label>
+                            <button onclick="removeSite('site_1')" class="text-red-500 hover:text-red-700 delete-site-btn non-main-controls">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="site-card-body">
+                        <div class="site-info-left">
+                            <div class="compact-row-2">
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">计划审核时间</label>
+                                    <input type="month" class="form-input plan-audit-time" value="2024-04" onchange="syncAuditTimeToTimeline('site_1', this.value)">
+                                </div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">实际审核时间</label>
+                                    <input type="text" class="form-input bg-gray-100" readonly placeholder="----年--月">
+                                </div>
+                            </div>
+                            
+                            <div class="compact-row-2">
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">班次信息</label>
+                                    <!-- 多班次固定宽度显示，悬浮显示详情 -->
+                                    <div class="shift-info-wrapper">
+                                        <div class="shift-info-display" title="班次：1，08:00-17:30；班次：2，18:00-02:00；班次：3，02:00-08:00">
+                                            <span class="shift-label">班次：1</span>،08:00-17:30；<span class="shift-label">班次：2</span>،18:00-02:00；<span class="shift-label">班次：3</span>،02:00-08:00
+                                        </div>
+                                        <div class="shift-tooltip">
+                                            <div class="shift-tooltip-row"><span class="shift-label">班次1：</span>08:00-17:30（白班，正常工作时间段）</div>
+                                            <div class="shift-tooltip-row"><span class="shift-label">班次2：</span>18:00-02:00（中班，晚班生产时段）</div>
+                                            <div class="shift-tooltip-row"><span class="shift-label">班次3：</span>02:00-08:00（夜班،凌晨生产时段）</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">联系人/电话</label>
+                                    <input type="text" class="form-input" value="李主管/13900139000">
+                                </div>
+                            </div>
+                            
+                            <div class="compact-row-2">
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">地址</label>
+                                    <input type="text" class="form-input" value="北京市昌平区生产基地">
+                                </div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">涉及产品/过程/活动</label>
+                                    <input type="text" class="form-input" value="硬件制造、组装测试">
+                                </div>
+                            </div>
+                            
+                            <div class="compact-row-2">
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">专业代码</label>
+                                    <div class="tags-display-box" id="profCodeBox_site_1" onclick="focusTagInput(this)">
+                                        <span class="inline-tag" data-code="Q01">Q01<i class="fas fa-times remove-tag" onclick="removeTag(event, 'site_1', 'Q01', 'prof')"></i></span>
+                                        <span class="inline-tag" data-code="Q02">Q02<i class="fas fa-times remove-tag" onclick="removeTag(event, 'site_1', 'Q02', 'prof')"></i></span>
+                                        <input type="text" class="tag-input" list="profCodeList_site_1" placeholder="选择代码" 
+                                            onkeydown="handleTagInput(event, 'site_1', 'prof')" 
+                                            onchange="handleTagChange(this, 'site_1', 'prof')">
+                                    </div>
+                                    <datalist id="profCodeList_site_1">
+                                        <option value="Q01">Q01-质量管理体系</option>
+                                        <option value="Q02">Q02-环境管理体系</option>
+                                        <option value="Q03">Q03-职业健康安全管理体系</option>
+                                        <option value="Q04">Q04-食品安全管理体系</option>
+                                        <option value="Q05">Q05-信息安全管理体系</option>
+                                    </datalist>
+                                </div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">认可机构</label>
+                                    <div class="tags-display-box" id="accBox_site_1" onclick="focusTagInput(this)">
+                                        <span class="inline-tag accreditation" data-code="CNAS">CNAS<i class="fas fa-times remove-tag" onclick="removeTag(event, 'site_1', 'CNAS', 'acc')"></i></span>
+                                        <span class="inline-tag accreditation" data-code="UKAS">UKAS<i class="fas fa-times remove-tag" onclick="removeTag(event, 'site_1', 'UKAS', 'acc')"></i></span>
+                                        <input type="text" class="tag-input" list="accList_site_1" placeholder="选择机构" 
+                                            onkeydown="handleTagInput(event, 'site_1', 'acc')" 
+                                            onchange="handleTagChange(this, 'site_1', 'acc')">
+                                    </div>
+                                    <datalist id="accList_site_1">
+                                        <option value="CNAS">CNAS-中国合格评定国家认可委员会</option>
+                                        <option value="DAKKS">DAKKS-德国认可委员会</option>
+                                        <option value="UKAS">UKAS-英国皇家认可委员会</option>
+                                    </datalist>
+                                </div>
+                            </div>
+                            
+                            <div class="compact-row-2">
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <label class="form-label">人数(含承包方)</label>
+                                    <input type="number" class="form-input people-count" value="80" onchange="updateCalculations('site_1')">
+                                </div>
+                                <div class="form-row" style="margin-bottom: 0;">
+                                    <div class="flex justify-between items-center">
+                                        <label class="form-label">有效人数</label>
+                                        <label class="flex items-center gap-1 text-xs text-gray-600">
+                                            <input type="checkbox" checked disabled class="rounded text-gray-400">
+                                            <span>发子证</span>
+                                        </label>
+                                    </div>
+                                    <input type="number" class="form-input effective-people" value="75" placeholder="≤总人数" onchange="validateEffectivePeople(this)">
+                                </div>
+                            </div>
+                            
+                            <div class="border-t border-gray-200 pt-3 mt-3">
+                                <div class="text-xs font-semibold text-gray-700 mb-2">人天计算（AI底座）</div>
+                                <div class="compact-row-2">
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <label class="form-label">审核准备</label>
+                                        <input type="number" step="0.5" class="form-input calc-field" data-type="prep" value="1.5" onchange="updateCalculations('site_1')">
+                                    </div>
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <label class="form-label">第一阶段</label>
+                                        <input type="number" step="0.5" class="form-input calc-field" data-type="stage1" value="1.0" onchange="updateCalculations('site_1')">
+                                    </div>
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <label class="form-label">二阶段现场</label>
+                                        <input type="number" step="0.5" class="form-input calc-field" data-type="stage2" value="4.0" onchange="updateCalculations('site_1')">
+                                    </div>
+                                    <div class="form-row" style="margin-bottom: 0;">
+                                        <label class="form-label">调整比例</label>
+                                        <input type="number" step="0.1" min="0.7" class="form-input calc-field" data-type="ratio" value="1.0" onchange="updateCalculations('site_1')">
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center bg-blue-50 p-2 rounded mt-2">
+                                    <span class="text-sm font-medium text-blue-900">调整后</span>
+                                    <span class="text-lg font-bold text-blue-600 adjusted-days">6.5</span>
+                                </div>
+                                <div class="form-row mt-2 mb-0">
+                                    <input type="text" class="form-input" placeholder="调整理由（如适用）" style="font-size: 12px;">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="site-process-right">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="font-semibold text-gray-800">过程审核策划</h4>
+                                <div class="flex items-center gap-2">
+                                    <button class="btn btn-default btn-sm" onclick="openProcessTemplateDrawer('site_1')">
+                                        <i class="fas fa-list-alt"></i>
+                                        选择过程组模板
+                                    </button>
+                                    <button class="btn btn-default btn-sm" onclick="importProcessFromExcel('site_1')">
+                                        <i class="fas fa-file-excel"></i>
+                                        Excel导入
+                                    </button>
+                                    <button onclick="addProcessToSite('site_1')" class="btn btn-default btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                        新增行
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="w-10"><input type="checkbox" class="rounded" onchange="toggleSelectAll(this, 'site_1')"></th>
+                                        <th class="w-10">序号</th>
+                                        <th>过程名称</th>
+                                        <th>主责部门</th>
+                                        <th>相关部门</th>
+                                        <th>涉及标准条款</th>
+                                        <th>绩效参数/文件</th>
+                                        <th class="w-16 text-center">拟审核</th>
+                                        <th class="w-16 text-center">已审核</th>
+                                        <th class="w-10">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="site-process-body" id="processBody_site_1">
+                                    <tr>
+                                        <td><input type="checkbox" class="rounded row-checkbox"></td>
+                                        <td>1</td>
+                                        <td><input type="text" class="form-input" value="生产提供"></td>
+                                        <td><input type="text" class="form-input" value="生产部"></td>
+                                        <td><input type="text" class="form-input" value="质量部"></td>
+                                        <td><input type="text" class="form-input" value="8.5"></td>
+                                        <td><input type="text" class="form-input" value="生产计划"></td>
+                                        <td class="text-center"><input type="checkbox" class="rounded text-blue-600" checked></td>
+                                        <td class="text-center"><span class="text-xs text-gray-400">待审核</span></td>
+                                        <td>
+                                            <button onclick="deleteProcessRow(this)" class="text-red-500 hover:text-red-700">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 管理体系过程清单 -->
+        <div id="processTab" class="tab-content hidden-section">
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-list-check text-blue-500"></i>
+                        管理体系过程清单
+                        <span class="text-xs text-gray-400 font-normal">适用于初次认证、监督、再认证</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="btn btn-default btn-sm">
+                            <i class="fas fa-file-excel"></i>
+                            Excel导入
+                        </button>
+                        <button onclick="addBaseProcess()" class="btn btn-default btn-sm">
+                            <i class="fas fa-plus"></i>
+                            新增过程
+                        </button>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px">序号</th>
+                                <th>过程名称</th>
+                                <th>主责部门</th>
+                                <th>相关部门</th>
+                                <th>涉及标准条款</th>
+                                <th>绩效参数或相关文件</th>
+                                <th style="width: 80px">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="baseProcessTable">
+                            <tr>
+                                <td>1</td>
+                                <td><input type="text" class="form-input" value="组织环境理解"></td>
+                                <td><input type="text" class="form-input" value="管理层"></td>
+                                <td><input type="text" class="form-input" value="各部门"></td>
+                                <td><input type="text" class="form-input" value="4.1-4.4"></td>
+                                <td><input type="text" class="form-input" value="环境因素识别表"></td>
+                                <td>
+                                    <button onclick="deleteBaseProcess(this)" class="text-red-500 hover:text-red-700">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 获证方情况调查 -->
+        <div id="surveyTabContent" class="tab-content hidden-section">
+            <div class="content-card" id="surveyFormCard">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-clipboard-check text-green-500"></i>
+                        获证方情况调查表
+                        <span class="text-xs text-gray-400 font-normal">适用于监督、再认证、认证转换</span>
+                        <span class="ml-2 text-xs text-orange-500 bg-orange-50 px-2 py-1 rounded hidden-section" id="surveyReadonlyTag">历史数据（只读）</span>
+                    </div>
+                </div>
+                <div class="p-6" id="surveyFieldsContainer">
+                </div>
+            </div>
+        </div>
+
+        <!-- 证书变更申请表 -->
+        <div id="certChangeTabContent" class="tab-content hidden-section">
+            <div id="certChangeFormCard" class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-certificate text-yellow-500"></i>
+                        证书变更申请表
+                        <span class="text-xs text-gray-400 font-normal">适用于监督、再认证</span>
+                        <span class="ml-2 text-xs text-orange-500 bg-orange-50 px-2 py-1 rounded hidden-section" id="certChangeReadonlyTag">历史数据（只读）</span>
+                    </div>
+                    <span class="status-badge badge-processing hidden-section" id="certChangeStatus">已提交</span>
+                </div>
+                <div class="p-6" id="certChangeContent">
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 弹窗 -->
+    <div id="insertModal" class="modal-overlay hidden-section">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle">新增变更审核</div>
+            <div class="modal-body">
+                <div id="changeModalContent">
+                    <div class="mb-4">
+                        <label class="form-label">是否有现场审核</label>
+                        <div class="flex gap-4 mt-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="hasSite" value="yes" class="w-4 h-4 text-blue-600" onchange="toggleModalChangeType(true)">
+                                <span>有现场</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="hasSite" value="no" class="w-4 h-4 text-blue-600" onchange="toggleModalChangeType(false)">
+                                <span>无现场</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="modalChangeTypeSelect" class="hidden-section">
+                        <label class="form-label">审核类型</label>
+                        <select class="form-input mt-1" id="modalChangeType">
+                            <option value="stage1">审核一阶段+审核二阶段</option>
+                            <option value="doc">仅文审+审核二阶段</option>
+                            <option value="stage2">审核二阶段</option>
+                        </select>
+                    </div>
+                    <div id="noSiteHint" class="hidden-section mt-4 text-sm text-orange-600 bg-orange-50 p-3 rounded">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        选择"无现场"将直接转入出证流程
+                    </div>
+                </div>
+                <div id="tempModalContent" class="hidden-section">
+                    <p class="text-gray-600">将在当前阶段后插入临时审核节点。</p>
+                    <p class="text-sm text-gray-500 mt-2">临时审核等同于增加纯"监督"阶段，提交后将创建临时审核类别的二阶段审核项目。</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeInsertModal()" class="btn btn-default">取消</button>
+                <button onclick="confirmInsert()" class="btn btn-primary">确认新增</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addSiteModal" class="modal-overlay hidden-section">
+        <div class="modal-content">
+            <div class="modal-header">选择场所</div>
+            <div class="modal-body">
+                <p class="text-sm text-gray-600 mb-4">认证申请中上报了以下场所信息，请选择要添加的场所：</p>
+                <div class="space-y-2" id="availableSitesList">
+                    <div class="flex items-center gap-3 p-3 border border-gray-200 rounded hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 text-blue-600 rounded site-select-check" data-name="分公司现场" onchange="toggleSiteSelection('分公司现场', this.checked)">
+                        <div class="flex-1">
+                            <div class="font-medium text-sm">分公司现场</div>
+                            <div class="text-xs text-gray-500">上海市浦东新区办公区 | 人数：45</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 border border-gray-200 rounded hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="w-4 h-4 text-blue-600 rounded site-select-check" data-name="研发中心" onchange="toggleSiteSelection('研发中心', this.checked)">
+                        <div class="flex-1">
+                            <div class="font-medium text-sm">研发中心</div>
+                            <div class="text-xs text-gray-500">深圳市南山区科技园 | 人数：120</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeAddSiteModal()" class="btn btn-default">取消</button>
+                <button onclick="confirmAddSite()" class="btn btn-primary">确认添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 过程组模板选择抽屉 -->
+    <div id="drawerOverlay" class="drawer-overlay" onclick="closeProcessTemplateDrawer()"></div>
+    <div id="templateDrawer" class="template-drawer">
+        <div class="template-drawer-header">
+            <div class="template-drawer-title">选择过程组模板</div>
+            <button onclick="closeProcessTemplateDrawer()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        <div class="template-drawer-body">
+            <div class="template-list-section">
+                <div class="template-item active" onclick="selectTemplate(0)" data-index="0">
+                    <div class="template-item-title">模板一：标准QMS流程</div>
+                    <div class="template-item-desc">适用于一般制造企业</div>
+                </div>
+                <div class="template-item" onclick="selectTemplate(1)" data-index="1">
+                    <div class="template-item-title">模板二：研发型企业</div>
+                    <div class="template-item-desc">适用于软件、研发机构</div>
+                </div>
+                <div class="template-item" onclick="selectTemplate(2)" data-index="2">
+                    <div class="template-item-title">模板三：制造业流程</div>
+                    <div class="template-item-desc">适用于生产加工企业</div>
+                </div>
+                <div class="template-item" onclick="selectTemplate(3)" data-index="3">
+                    <div class="template-item-title">模板四：服务业流程</div>
+                    <div class="template-item-desc">适用于服务、咨询行业</div>
+                </div>
+            </div>
+            <div class="template-detail-section">
+                <div class="template-detail-title" id="templateDetailTitle">模板一：标准QMS流程</div>
+                <table class="data-table" id="templateDetailTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px">序号</th>
+                            <th>过程名称</th>
+                            <th>主责部门</th>
+                            <th>相关部门</th>
+                            <th>涉及标准条款</th>
+                            <th>绩效参数/文件</th>
+                        </tr>
+                    </thead>
+                    <tbody id="templateDetailBody">
+                        <!-- 动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="template-drawer-footer">
+            <button onclick="closeProcessTemplateDrawer()" class="btn btn-default">取消</button>
+            <button onclick="confirmImportTemplate()" class="btn btn-primary">确认导入</button>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let phases = [
+            { id: 'initial', name: '初次认证', date: '2024-04', type: 'base', auditTime: '', actualAuditTime: '' },
+            { id: 'surv1', name: '监督一', date: '2025-04', type: 'base', auditTime: '', actualAuditTime: '' },
+            { id: 'surv2', name: '监督二', date: '2026-04', type: 'base', auditTime: '', actualAuditTime: '' },
+            { id: 'recert', name: '再认证', date: '2027-04', type: 'base', auditTime: '', actualAuditTime: '' }
+        ];
+        let sites = ['site_0', 'site_1'];
+        let currentInsertType = '';
+        let selectedAvailableSites = [];
+        let currentNodeState = 'initial_pending';
+        let newSiteRowCounter = 0;
+        let isChangeAuditMode = false;
+        let currentTemplateSiteId = '';
+        let selectedTemplateIndex = 0;
+        
+        // 存储变更审核信息
+        let changeAuditInfo = null;
+
+        const availableSitesPool = [
+            { name: '分公司现场', address: '上海市浦东新区办公区', products: '客户服务', people: 45 },
+            { name: '研发中心', address: '深圳市南山区科技园', products: '产品研发', people: 120 }
+        ];
+
+        const professionalCodes = [
+            { code: 'Q01', name: 'Q01-质量管理体系' },
+            { code: 'Q02', name: 'Q02-环境管理体系' },
+            { code: 'Q03', name: 'Q03-职业健康安全管理体系' },
+            { code: 'Q04', name: 'Q04-食品安全管理体系' },
+            { code: 'Q05', name: 'Q05-信息安全管理体系' }
+        ];
+
+        const accreditationBodies = [
+            { code: 'CNAS', name: 'CNAS-中国合格评定国家认可委员会' },
+            { code: 'DAKKS', name: 'DAKKS-德国认可委员会' },
+            { code: 'UKAS', name: 'UKAS-英国皇家认可委员会' }
+        ];
+
+        // 过程组模板数据
+        const processTemplates = [
+            {
+                name: '模板一：标准QMS流程',
+                desc: '适用于一般制造企业',
+                processes: [
+                    { seq: 1, name: '组织环境', dept: '管理层', related: '各部门', clause: '4.1-4.4', doc: '组织环境分析表' },
+                    { seq: 2, name: '领导作用', dept: '总经理', related: '管理层', clause: '5.1-5.3', doc: '质量方针、目标' },
+                    { seq: 3, name: '策划', dept: '质量部', related: '各部门', clause: '6.1-6.3', doc: '风险与机遇清单' },
+                    { seq: 4, name: '支持', dept: '行政部', related: '各部门', clause: '7.1-7.5', doc: '资源配置表' },
+                    { seq: 5, name: '运行', dept: '生产部', related: '质量部', clause: '8.1-8.7', doc: '生产计划、作业指导书' },
+                    { seq: 6, name: '绩效评价', dept: '质量部', related: '各部门', clause: '9.1-9.3', doc: '内审报告、管理评审' },
+                    { seq: 7, name: '改进', dept: '质量部', related: '各部门', clause: '10.1-10.3', doc: '纠正措施报告' }
+                ]
+            },
+            {
+                name: '模板二：研发型企业',
+                desc: '适用于软件、研发机构',
+                processes: [
+                    { seq: 1, name: '组织环境理解', dept: '管理层', related: '各部门', clause: '4.1-4.4', doc: '环境因素识别表' },
+                    { seq: 2, name: '领导作用与承诺', dept: 'CEO', related: '管理层', clause: '5.1-5.3', doc: '质量方针' },
+                    { seq: 3, name: '知识管理', dept: '研发部', related: 'HR', clause: '7.1.6', doc: '知识清单' },
+                    { seq: 4, name: '设计和开发', dept: '研发部', related: '产品部', clause: '8.3', doc: '设计开发计划' },
+                    { seq: 5, name: '软件实现', dept: '开发部', related: '测试部', clause: '8.5', doc: '代码规范、测试报告' },
+                    { seq: 6, name: '客户交付', dept: '交付部', related: '客服部', clause: '8.5.5', doc: '交付验收单' }
+                ]
+            },
+            {
+                name: '模板三：制造业流程',
+                desc: '适用于生产加工企业',
+                processes: [
+                    { seq: 1, name: '生产过程控制', dept: '生产部', related: '质量部', clause: '8.5', doc: '生产计划' },
+                    { seq: 2, name: '设备管理', dept: '设备部', related: '生产部', clause: '7.1.3', doc: '设备台账' },
+                    { seq: 3, name: '采购控制', dept: '采购部', related: '质量部', clause: '8.4', doc: '供应商评价表' },
+                    { seq: 4, name: '检验控制', dept: '质量部', related: '生产部', clause: '8.6', doc: '检验规程' },
+                    { seq: 5, name: '不合格品控制', dept: '质量部', related: '生产部', clause: '8.7', doc: '不合格品处理单' }
+                ]
+            },
+            {
+                name: '模板四：服务业流程',
+                desc: '适用于服务、咨询行业',
+                processes: [
+                    { seq: 1, name: '服务策划', dept: '运营部', related: '市场部', clause: '8.1', doc: '服务流程图' },
+                    { seq: 2, name: '客户沟通', dept: '客服部', related: '销售部', clause: '8.2', doc: '客户满意度调查' },
+                    { seq: 3, name: '服务提供', dept: '服务部', related: '技术部', clause: '8.5', doc: '服务记录' },
+                    { seq: 4, name: '投诉处理', dept: '客服部', related: '管理层', clause: '9.1.2', doc: '投诉处理记录' }
+                ]
+            }
+        ];
+
+        // 历史数据
+        const historicalSurveyData = {
+            orgName: { changed: false, value: '' },
+            address: { changed: false, value: '' },
+            contact: { changed: true, value: '张先生/13800138000' },
+            employeeCount: { changed: true, value: '280人' },
+            mainProcesses: { changed: false, value: '' },
+            products: { changed: false, value: '' }
+        };
+
+        const historicalCertChangeData = {
+            productChangeType: 'modify',
+            originalScope: '环境监测技术服务',
+            newScope: '环境监测技术服务、环境检测服务',
+            originalAddress: '北京市海淀区中关村大街1号',
+            newAddress: '北京市海淀区中关村大街1号'
+        };
+
+        // 附件上传相关数据
+        let uploadedFiles = {};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            handleNodeSelect('initial_pending');
+            updateTotals();
+        });
+
+        function handleNodeSelect(value) {
+            currentNodeState = value;
+            
+            let phaseId = '';
+            let status = '';
+            
+            const lastUnderscoreIndex = value.lastIndexOf('_');
+            if (lastUnderscoreIndex > 0) {
+                phaseId = value.substring(0, lastUnderscoreIndex);
+                status = value.substring(lastUnderscoreIndex + 1);
+            }
+            
+            const phaseIndex = phases.findIndex(p => p.id === phaseId);
+            
+            const isEnd = status === 'end';
+            const isPending = status === 'pending';
+            
+            if (phaseIndex !== -1) {
+                updateTimelineByIndex(phaseIndex, isEnd, isPending);
+            }
+            
+            let basePhaseId = phaseId.startsWith('insert_') ? getBasePhaseContext(phaseIndex) : phaseId;
+            
+            const currentPhase = phases.find(p => p.id === phaseId);
+            const isInsertedNode = currentPhase && currentPhase.type === 'inserted';
+            const insertedNodeType = currentPhase ? currentPhase.insertType : null;
+            
+            updateNodeControls(basePhaseId, status, isInsertedNode);
+            updateTabsVisibility(basePhaseId, isInsertedNode, insertedNodeType, isEnd);
+            updateSamplingRule(basePhaseId, status);
+        }
+
+        function getBasePhaseContext(insertIndex) {
+            if (insertIndex <= 0) return 'initial';
+            for (let i = insertIndex - 1; i >= 0; i--) {
+                if (phases[i].type === 'base') {
+                    return phases[i].id;
+                }
+            }
+            return 'initial';
+        }
+
+        function updateTimelineByIndex(activeIndex, isEnd, isPending) {
+            const container = document.getElementById('timelineContainer');
+            container.innerHTML = '';
+            
+            phases.forEach((phase, index) => {
+                const div = document.createElement('div');
+                let stateClass = '';
+                let icon = 'fa-circle';
+                
+                if (index < activeIndex) {
+                    stateClass = 'completed';
+                    icon = 'fa-check';
+                } else if (index === activeIndex) {
+                    if (isEnd) {
+                        stateClass = 'completed';
+                        icon = 'fa-check';
+                    } else if (isPending) {
+                        stateClass = 'pending';
+                        icon = 'fa-circle';
+                    }
+                }
+                
+                if (phase.type === 'inserted') {
+                    stateClass += ' inserted';
+                }
+                
+                div.className = `step-item ${stateClass}`;
+                
+                let dateHtml = '';
+                dateHtml += `<div class="step-date">计划：${phase.date}</div>`;
+                
+                const isCompleted = index < activeIndex || (index === activeIndex && isEnd);
+                if (isCompleted && phase.actualAuditTime) {
+                    dateHtml += `<div class="step-audit-time">审核：${phase.actualAuditTime}</div>`;
+                } else if (isCompleted) {
+                    const mockActualTime = phase.date + '-15';
+                    dateHtml += `<div class="step-audit-time">审核：${mockActualTime}</div>`;
+                }
+                
+                let displayName = phase.name;
+                if (isChangeAuditMode && index === activeIndex && phase.type !== 'inserted') {
+                    displayName = phase.name + '+变更';
+                }
+                
+                div.innerHTML = `
+                    <div class="step-line"></div>
+                    <div class="step-circle">
+                        ${phase.type === 'inserted' ? '<span class="delete-node-btn" onclick="deleteNode(event, ' + index + ')"><i class="fas fa-times"></i></span>' : ''}
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div class="step-title">${displayName}</div>
+                    ${dateHtml}
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        function updateNodeControls(basePhaseId, status, isInsertedNode) {
+            const insertButtons = document.getElementById('insertButtonsArea');
+            const changeOption = document.getElementById('changeOptionArea');
+            const changeAuditInfoDisplay = document.getElementById('changeAuditInfoDisplay');
+            const hasStage1Div = document.getElementById('hasStage1Check');
+            
+            insertButtons.classList.add('hidden-section');
+            changeOption.classList.add('hidden-section');
+            changeAuditInfoDisplay.classList.add('hidden-section');
+            hasStage1Div.classList.add('hidden-section');
+            document.getElementById('changeCheckbox').checked = false;
+            
+            // 如果是新增的变更审核节点，显示变更审核信息
+            if (isInsertedNode && changeAuditInfo) {
+                changeAuditInfoDisplay.classList.remove('hidden-section');
+                return;
+            }
+            
+            if ((basePhaseId === 'initial' || basePhaseId === 'surv1' || basePhaseId === 'surv2') && status === 'end') {
+                insertButtons.classList.remove('hidden-section');
+            }
+            else if ((basePhaseId === 'surv1' || basePhaseId === 'surv2' || basePhaseId === 'recert') && status === 'pending') {
+                changeOption.classList.remove('hidden-section');
+            }
+        }
+
+        function updateTabsVisibility(basePhaseId, isInsertedNode, insertedNodeType, isEnd) {
+            const processTab = document.getElementById('processListTab');
+            const surveyTab = document.getElementById('surveyTab');
+            const certChangeTab = document.getElementById('certChangeTab');
+            
+            processTab.classList.remove('hidden-section');
+            
+            surveyTab.classList.add('hidden-section');
+            certChangeTab.classList.add('hidden-section');
+            
+            document.getElementById('surveyReadonlyTag').classList.add('hidden-section');
+            document.getElementById('certChangeReadonlyTag').classList.add('hidden-section');
+            
+            if (!isInsertedNode) {
+                if (basePhaseId !== 'initial') {
+                    surveyTab.classList.remove('hidden-section');
+                    certChangeTab.classList.remove('hidden-section');
+                    renderSurveyForm(true);
+                    renderCertChangeForm(true);
+                    document.getElementById('surveyReadonlyTag').classList.remove('hidden-section');
+                    document.getElementById('certChangeReadonlyTag').classList.remove('hidden-section');
+                }
+            } else {
+                if (insertedNodeType === 'change') {
+                    certChangeTab.classList.remove('hidden-section');
+                    // 新增变更审核时，显示全量可编辑内容
+                    renderFullCertChangeForm();
+                } else if (insertedNodeType === 'temp') {
+                    // 临时审核不显示这两个表
+                }
+            }
+            
+            const activeTab = document.querySelector('.tab.active');
+            if (activeTab && activeTab.classList.contains('hidden-section')) {
+                document.getElementById('tabSampling').click();
+            }
+        }
+
+        function renderSurveyForm(readonly) {
+            const container = document.getElementById('surveyFieldsContainer');
+            const fields = [
+                { key: 'orgName', label: '组织名称', required: false },
+                { key: 'address', label: '注册地址或运营地址', required: false },
+                { key: 'contact', label: '联系人/联系方式', required: true },
+                { key: 'employeeCount', label: '组织人数或体系覆盖人数', required: true },
+                { key: 'mainProcesses', label: '管理体系的主要过程', required: false },
+                { key: 'products', label: '产品/服务（或业务）', required: false }
+            ];
+            
+            let html = '';
+            fields.forEach(field => {
+                const data = historicalSurveyData[field.key];
+                const requiredMark = field.required ? '<span class="required-mark">*</span>' : '';
+                const changed = data.changed;
+                const value = data.value;
+                
+                html += `
+                    <div class="survey-field-row">
+                        <div class="survey-field-label">${field.label} ${requiredMark}</div>
+                        <div class="survey-field-control">
+                            <div class="survey-radio-group">
+                                <label><input type="radio" name="${field.key}_change" value="no" ${!changed ? 'checked' : ''} ${readonly ? 'disabled' : ''}><span>否</span></label>
+                                <label><input type="radio" name="${field.key}_change" value="yes" ${changed ? 'checked' : ''} ${readonly ? 'disabled' : ''}><span>是</span></label>
+                            </div>
+                            ${changed ? `
+                            <div style="width: 100%; margin-top: 8px;">
+                                <input type="text" class="survey-input ${readonly ? 'readonly-field' : ''}" value="${value}" ${readonly ? 'readonly' : ''}>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 历史数据只读模式
+        function renderCertChangeForm(readonly) {
+            const container = document.getElementById('certChangeContent');
+            const data = historicalCertChangeData;
+            
+            container.innerHTML = `
+                <div class="cert-change-section">
+                    <div class="cert-change-title expanded">
+                        <span>1. 表头信息</span>
+                    </div>
+                    <div class="cert-change-content expanded">
+                        <div class="change-form-grid">
+                            <div class="form-row">
+                                <label class="form-label">客户名称</label>
+                                <input type="text" class="form-input ${readonly ? 'readonly-field' : ''}" value="华信环境监测技术中心" ${readonly ? 'readonly' : ''}>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">认证领域</label>
+                                <input type="text" class="form-input ${readonly ? 'readonly-field' : ''}" value="ISO 9001质量管理体系" ${readonly ? 'readonly' : ''}>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">申请变更证书的编号</label>
+                                <input type="text" class="form-input ${readonly ? 'readonly-field' : ''}" value="ISO9001-2024-001" ${readonly ? 'readonly' : ''}>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cert-change-section">
+                    <div class="cert-change-title expanded">
+                        <span>2. 证书中涉及产品和过程变更</span>
+                    </div>
+                    <div class="cert-change-content expanded">
+                        <div class="change-form-grid">
+                            <div class="form-row">
+                                <label class="form-label">变更类型</label>
+                                <div class="flex gap-4">
+                                    <label class="flex items-center gap-2">
+                                        <input type="radio" name="productChangeType" value="expand" class="w-4 h-4 text-blue-600" ${data.productChangeType === 'expand' ? 'checked' : ''} ${readonly ? 'disabled' : ''}>
+                                        <span>扩大</span>
+                                    </label>
+                                    <label class="flex items-center gap-2">
+                                        <input type="radio" name="productChangeType" value="shrink" class="w-4 h-4 text-blue-600" ${data.productChangeType === 'shrink' ? 'checked' : ''} ${readonly ? 'disabled' : ''}>
+                                        <span>缩小</span>
+                                    </label>
+                                    <label class="flex items-center gap-2">
+                                        <input type="radio" name="productChangeType" value="modify" class="w-4 h-4 text-blue-600" ${data.productChangeType === 'modify' ? 'checked' : ''} ${readonly ? 'disabled' : ''}>
+                                        <span>更改表述方式</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">原认证范围</label>
+                                <textarea class="form-textarea ${readonly ? 'readonly-field' : ''}" ${readonly ? 'readonly' : ''}>${data.originalScope}</textarea>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">拟变更为</label>
+                                <textarea class="form-textarea ${readonly ? 'readonly-field' : ''}" ${readonly ? 'readonly' : ''}>${data.newScope}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cert-change-section">
+                    <div class="cert-change-title expanded">
+                        <span>3. 地址变更</span>
+                    </div>
+                    <div class="cert-change-content expanded">
+                        <div class="change-form-grid">
+                            <div class="form-row">
+                                <label class="form-label">原地址</label>
+                                <input type="text" class="form-input ${readonly ? 'readonly-field' : ''}" value="${data.originalAddress}" ${readonly ? 'readonly' : ''}>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">拟变为</label>
+                                <input type="text" class="form-input ${readonly ? 'readonly-field' : ''}" value="${data.newAddress}" ${readonly ? 'readonly' : ''}>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 全量可编辑的证书变更申请表（新增变更审核时使用）- 包含完整附件信息
+        function renderFullCertChangeForm() {
+            const container = document.getElementById('certChangeContent');
+            
+            container.innerHTML = `
+                <!-- 1. 表头部分 -->
+                <div class="cert-change-section">
+                    <div class="cert-change-title expanded" onclick="toggleCertSection(this)">
+                        <span>1. 表头信息</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="cert-change-content expanded">
+                        <div class="change-form-grid">
+                            <div class="form-row">
+                                <label class="form-label">客户名称</label>
+                                <input type="text" class="form-input readonly-field" value="华信环境监测技术中心" readonly>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">认证领域</label>
+                                <input type="text" class="form-input readonly-field" value="ISO 9001质量管理体系" readonly>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">申请变更证书的编号 <span class="required-mark">*</span></label>
+                                <input type="text" class="form-input" value="ISO9001-2024-001" placeholder="请输入证书编号">
+                                <span class="text-xs text-gray-500 mt-1">系统校验必须与上一周期证书编号不同</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. 证书中涉及产品和过程变更 -->
+                <div class="cert-change-section">
+                    <div class="cert-change-title" onclick="toggleCertSection(this)">
+                        <span>2. 证书中涉及产品和过程变更</span>
+                        <div class="section-checkbox" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="section2_check" onchange="toggleSectionContent(2)">
+                            <label for="section2_check">涉及此项变更</label>
+                        </div>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="cert-change-content" id="section2_content">
+                        <div class="change-form-grid">
+                            <div class="form-row" style="grid-column: 1 / -1;">
+                                <label class="form-label">变更类型</label>
+                                <div class="flex gap-6">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="productChangeType" value="expand" class="w-4 h-4 text-blue-600">
+                                        <span>扩大</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="productChangeType" value="shrink" class="w-4 h-4 text-blue-600">
+                                        <span>缩小</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="productChangeType" value="modify" class="w-4 h-4 text-blue-600" checked>
+                                        <span>更改表述方式</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">原认证范围</label>
+                                <textarea class="form-textarea readonly-field" readonly>环境监测技术服务</textarea>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">拟变更为 <span class="required-mark">*</span></label>
+                                <textarea class="form-textarea" placeholder="请输入变更后的认证范围"></textarea>
+                            </div>
+                            <div class="form-row" style="grid-column: 1 / -1;">
+                                <label class="form-label">范围变更后涉及到员工数量的变化</label>
+                                <select class="form-input" style="width: 200px;" onchange="toggleEmployeeCountInput(this.value)">
+                                    <option value="no">无变化</option>
+                                    <option value="add">新增</option>
+                                    <option value="reduce">减少</option>
+                                </select>
+                                <div id="employeeCountInput" class="hidden-section mt-2" style="width: 200px;">
+                                    <input type="number" class="form-input" placeholder="人员数量">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. 认证标准变更 -->
+                <div class="cert-change-section">
+                    <div class="cert-change-title" onclick="toggleCertSection(this)">
+                        <span>3. 认证标准变更</span>
+                        <div class="section-checkbox" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="section3_check" onchange="toggleSectionContent(3)">
+                            <label for="section3_check">涉及此项变更</label>
+                        </div>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="cert-change-content" id="section3_content">
+                        <div class="change-form-grid">
+                            <div class="form-row">
+                                <label class="form-label">原认证标准</label>
+                                <input type="text" class="form-input readonly-field" value="GB/T 19001-2016/ISO 9001:2015" readonly>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">拟变更为 <span class="required-mark">*</span></label>
+                                <input type="text" class="form-input" placeholder="请输入新标准">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. 地址变更 -->
+                <div class="cert-change-section">
+                    <div class="cert-change-title" onclick="toggleCertSection(this)">
+                        <span>4. 地址变更（请附相关机构的证明文件）</span>
+                        <div class="section-checkbox" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="section4_check" onchange="toggleSectionContent(4)">
+                            <label for="section4_check">涉及此项变更</label>
+                        </div>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="cert-change-content" id="section4_content">
+                        <div class="change-form-grid">
+                            <div class="form-row" style="grid-column: 1 / -1;">
+                                <label class="form-label">变更类型</label>
+                                <select class="form-input" style="width: 200px;">
+                                    <option value="move">组织搬迁</option>
+                                    <option value="rename">地址名称变更</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">原地址</label>
+                                <input type="text" class="form-input readonly-field" value="北京市海淀区中关村大街1号" readonly>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">拟变为 <span class="required-mark">*</span></label>
+                                <input type="text" class="form-input" placeholder="请输入新地址">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. 组织名称变更 -->
+                <div class="cert-change-section">
+                    <div class="cert-change-title" onclick="toggleCertSection(this)">
+                        <span>5. 组织名称变更（请附营业执照或机构成立批文）</span>
+                        <div class="section-checkbox" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="section5_check" onchange="toggleSectionContent(5)">
+                            <label for="section5_check">涉及此项变更</label>
+                        </div>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="cert-change-content" id="section5_content">
+                        <div class="change-form-grid">
+                            <div class="form-row" style="grid-column: 1 / -1;">
+                                <label class="form-label">变更类型</label>
+                                <select class="form-input" style="width: 200px;">
+                                    <option value="cn">中文名称变更</option>
+                                    <option value="en">英文名称变更</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">原名称</label>
+                                <input type="text" class="form-input readonly-field" value="华信环境监测技术中心" readonly>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">拟变为 <span class="required-mark">*</span></label>
+                                <input type="text" class="form-input" placeholder="请输入新名称">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. 新增场所或减少场所 -->
+                <div class="cert-change-section">
+                    <div class="cert-change-title" onclick="toggleCertSection(this)">
+                        <span>6. 新增场所或减少场所</span>
+                        <div class="section-checkbox" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="section6_check" onchange="toggleSectionContent(6)">
+                            <label for="section6_check">涉及此项变更</label>
+                        </div>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="cert-change-content" id="section6_content">
+                        <div class="form-row" style="margin-bottom: 16px;">
+                            <label class="form-label">变更类型</label>
+                            <select class="form-input" style="width: 200px;" id="siteChangeType" onchange="toggleSiteChangeType(this.value)">
+                                <option value="">请选择</option>
+                                <option value="add">新增场所</option>
+                                <option value="reduce">减少场所</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 新增场所列表 -->
+                        <div id="addSiteSection" class="hidden-section">
+                            <div class="site-change-list" id="addSiteList">
+                                <!-- 动态添加的场所项 -->
+                            </div>
+                            <button onclick="addNewSiteItem()" class="btn btn-default btn-sm add-site-btn-inline">
+                                <i class="fas fa-plus"></i> 新增场所
+                            </button>
+                        </div>
+                        
+                        <!-- 减少场所选择 -->
+                        <div id="reduceSiteSection" class="hidden-section">
+                            <div class="form-row">
+                                <label class="form-label">选择要减少的场所（可多选）</label>
+                                <select class="form-input" multiple style="height: 100px;">
+                                    <option value="site_0">运营地址（中心职能）</option>
+                                    <option value="site_1">生产现场一</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. 组织人数变更 -->
+                <div class="cert-change-section">
+                    <div class="cert-change-title" onclick="toggleCertSection(this)">
+                        <span>7. 组织人数变更</span>
+                        <div class="section-checkbox" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="section7_check" onchange="toggleSectionContent(7)">
+                            <label for="section7_check">涉及此项变更</label>
+                        </div>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="cert-change-content" id="section7_content">
+                        <div class="change-form-grid">
+                            <div class="form-row">
+                                <label class="form-label">原人数</label>
+                                <input type="text" class="form-input readonly-field" value="280人" readonly>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">变更为 <span class="required-mark">*</span></label>
+                                <input type="number" class="form-input" placeholder="请输入新的人数">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. 其他原因变更 -->
+                <div class="cert-change-section">
+                    <div class="cert-change-title" onclick="toggleCertSection(this)">
+                        <span>8. 其他原因变更（请说明变更理由和变更要求）</span>
+                        <div class="section-checkbox" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="section8_check" onchange="toggleSectionContent(8)">
+                            <label for="section8_check">涉及此项变更</label>
+                        </div>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="cert-change-content" id="section8_content">
+                        <div class="form-row">
+                            <textarea class="form-textarea" rows="4" placeholder="请详细说明变更理由和变更要求"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. 对认证的其他需求 -->
+                <div class="cert-change-section">
+                    <div class="cert-change-title" onclick="toggleCertSection(this)">
+                        <span>9. 对认证的其他需求（如：希望现场审核的日期、证书内容表述等）</span>
+                        <div class="section-checkbox" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="section9_check" onchange="toggleSectionContent(9)">
+                            <label for="section9_check">涉及此项变更</label>
+                        </div>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="cert-change-content" id="section9_content">
+                        <div class="form-row">
+                            <textarea class="form-textarea" rows="4" placeholder="请说明其他需求"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 10. 希望现场审核的时间 -->
+                <div class="cert-change-section">
+                    <div class="cert-change-title" onclick="toggleCertSection(this)">
+                        <span>10. 希望现场审核的时间（适用于需要现场审核的情形）</span>
+                        <div class="section-checkbox" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="section10_check" onchange="toggleSectionContent(10)">
+                            <label for="section10_check">涉及此项变更</label>
+                        </div>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="cert-change-content" id="section10_content">
+                        <div class="form-row" style="width: 300px;">
+                            <label class="form-label">期望审核日期 <span class="required-mark">*</span></label>
+                            <input type="date" class="form-input" id="expectAuditDate">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 11. 附件部分（完整版） -->
+                <div class="cert-change-section">
+                    <div class="cert-change-title expanded" onclick="toggleCertSection(this)">
+                        <span>11. 附件部分</span>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                    <div class="cert-change-content expanded">
+                        <div class="attachment-section">
+                            <p class="text-sm text-gray-600 mb-4">如下列文件发生变化，请提供：</p>
+                            
+                            <!-- QES体系文件 -->
+                            <div class="attachment-category">
+                                <div class="attachment-category-title">QES体系文件</div>
+                                <div class="attachment-detail-list mb-3">
+                                    <div class="attachment-detail-item">有效版本的管理体系文件：如方针、目标、体系范围等（QES）</div>
+                                    <div class="attachment-detail-item">过程清单（QES）</div>
+                                </div>
+                                <div class="attachment-upload-area" onclick="triggerFileUpload('qes')">
+                                    <i class="fas fa-cloud-upload-alt text-2xl text-blue-500 mb-2"></i>
+                                    <p class="text-sm text-gray-600">点击上传文件（PDF、JPG、PNG、DOC）</p>
+                                    <input type="file" id="fileInput_qes" class="hidden-section" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onchange="handleFileUpload('qes', this.files)">
+                                </div>
+                                <div class="attachment-list" id="fileList_qes"></div>
+                            </div>
+
+                            <!-- 环境/职业健康安全相关资料 -->
+                            <div class="attachment-category">
+                                <div class="attachment-category-title">环境/职业健康安全相关资料（E/S）</div>
+                                <div class="attachment-detail-list mb-3">
+                                    <div class="attachment-detail-item">重要环境因素清单（E）、主要危险源和OHS风险（S）</div>
+                                    <div class="attachment-detail-item">需要应对的风险和机遇（E/S）</div>
+                                    <div class="attachment-detail-item">对于S包括"需要应对的OH&S风险和其他风险"和"需要应对的OH&S机遇和其他机遇"</div>
+                                    <div class="attachment-detail-item">重要环境因素/风险的确定准则（ES）</div>
+                                    <div class="attachment-detail-item">环境批复/安全批复/职业病危害预评价批复复印件（适用时）</div>
+                                    <div class="attachment-detail-item">"三同时"验收报告（环境、安全及职业健康）复印件（适用时）</div>
+                                </div>
+                                <div class="attachment-upload-area" onclick="triggerFileUpload('es')">
+                                    <i class="fas fa-cloud-upload-alt text-2xl text-blue-500 mb-2"></i>
+                                    <p class="text-sm text-gray-600">点击上传文件（PDF、JPG、PNG、DOC）</p>
+                                    <input type="file" id="fileInput_es" class="hidden-section" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onchange="handleFileUpload('es', this.files)">
+                                </div>
+                                <div class="attachment-list" id="fileList_es"></div>
+                            </div>
+
+                            <!-- 合规与资质证明 -->
+                            <div class="attachment-category">
+                                <div class="attachment-category-title">合规与资质证明文件</div>
+                                <div class="attachment-detail-list mb-3">
+                                    <div class="attachment-detail-item">合规义务文件化信息：如客户适用的法律法规及其他要求清单</div>
+                                    <div class="attachment-detail-item">营业执照（副本）复印件或机构成立批文复印件</div>
+                                    <div class="attachment-detail-item">相关资质文件复印件（法律法规有要求时）</div>
+                                    <div class="attachment-detail-item">消防法规符合性证明文件（适用时）（S）</div>
+                                </div>
+                                <div class="attachment-upload-area" onclick="triggerFileUpload('qual')">
+                                    <i class="fas fa-cloud-upload-alt text-2xl text-blue-500 mb-2"></i>
+                                    <p class="text-sm text-gray-600">点击上传文件（PDF、JPG、PNG、DOC）</p>
+                                    <input type="file" id="fileInput_qual" class="hidden-section" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onchange="handleFileUpload('qual', this.files)">
+                                </div>
+                                <div class="attachment-list" id="fileList_qual"></div>
+                            </div>
+
+                            <!-- 场所与生产相关 -->
+                            <div class="attachment-category">
+                                <div class="attachment-category-title">场所与生产相关文件</div>
+                                <div class="attachment-detail-list mb-3">
+                                    <div class="attachment-detail-item">地理位置示意图和厂区平面布置图（除Q以外）</div>
+                                    <div class="attachment-detail-item">生产工艺流程图</div>
+                                    <div class="attachment-detail-item">组织机构图</div>
+                                    <div class="attachment-detail-item">认证场所清单（仅适用于固定多场所组织及建筑类组织）</div>
+                                </div>
+                                <div class="attachment-upload-area" onclick="triggerFileUpload('site')">
+                                    <i class="fas fa-cloud-upload-alt text-2xl text-blue-500 mb-2"></i>
+                                    <p class="text-sm text-gray-600">点击上传文件（PDF、JPG、PNG、DOC）</p>
+                                    <input type="file" id="fileInput_site" class="hidden-section" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onchange="handleFileUpload('site', this.files)">
+                                </div>
+                                <div class="attachment-list" id="fileList_site"></div>
+                            </div>
+
+                            <!-- 食品安全/HACCP（适用时） -->
+                            <div class="attachment-category">
+                                <div class="attachment-category-title">食品安全/HACCP体系文件（F/H，适用时）</div>
+                                <div class="attachment-detail-list mb-3">
+                                    <div class="attachment-detail-item">食品添加剂使用清单（CQC提供）（Q食品生产企业F/H/DH）</div>
+                                    <div class="attachment-detail-item">食品安全管理体系/HACCP体系文件（包括产品描述、工艺流程图、工艺描述；危害分析、HACCP计划等）</div>
+                                    <div class="attachment-detail-item">产品执行的企业标准（适用时F/H/DG）</div>
+                                </div>
+                                <div class="attachment-upload-area" onclick="triggerFileUpload('food')">
+                                    <i class="fas fa-cloud-upload-alt text-2xl text-blue-500 mb-2"></i>
+                                    <p class="text-sm text-gray-600">点击上传文件（PDF、JPG、PNG、DOC）</p>
+                                    <input type="file" id="fileInput_food" class="hidden-section" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onchange="handleFileUpload('food', this.files)">
+                                </div>
+                                <div class="attachment-list" id="fileList_food"></div>
+                            </div>
+
+                            <!-- 信息安全（IS） -->
+                            <div class="attachment-category">
+                                <div class="attachment-category-title">信息安全相关资料（IS，适用时）</div>
+                                <div class="attachment-detail-list mb-3">
+                                    <div class="attachment-detail-item">ISMS范围和边界的描述</div>
+                                    <div class="attachment-detail-item">风险评估报告</div>
+                                    <div class="attachment-detail-item">风险处置计划</div>
+                                    <div class="attachment-detail-item">适用性声明</div>
+                                </div>
+                                <div class="attachment-upload-area" onclick="triggerFileUpload('isms')">
+                                    <i class="fas fa-cloud-upload-alt text-2xl text-blue-500 mb-2"></i>
+                                    <p class="text-sm text-gray-600">点击上传文件（PDF、JPG、PNG、DOC）</p>
+                                    <input type="file" id="fileInput_isms" class="hidden-section" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onchange="handleFileUpload('isms', this.files)">
+                                </div>
+                                <div class="attachment-list" id="fileList_isms"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 初始化日期选择器为当前日期之后
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('expectAuditDate');
+            if (dateInput) {
+                dateInput.min = today;
+            }
+        }
+
+        // 切换证书变更申请表的展开/折叠
+        function toggleCertSection(titleEl) {
+            titleEl.classList.toggle('expanded');
+            const content = titleEl.nextElementSibling;
+            content.classList.toggle('expanded');
+        }
+
+        // 切换章节内容的显示（通过checkbox）
+        function toggleSectionContent(sectionNum) {
+            const checkbox = document.getElementById(`section${sectionNum}_check`);
+            const content = document.getElementById(`section${sectionNum}_content`);
+            const title = checkbox.closest('.cert-change-title');
+            
+            if (checkbox.checked) {
+                content.classList.add('expanded');
+                title.classList.add('expanded');
+            } else {
+                content.classList.remove('expanded');
+                title.classList.remove('expanded');
+            }
+        }
+
+        // 切换员工数量输入框
+        function toggleEmployeeCountInput(value) {
+            const inputDiv = document.getElementById('employeeCountInput');
+            if (value === 'add' || value === 'reduce') {
+                inputDiv.classList.remove('hidden-section');
+            } else {
+                inputDiv.classList.add('hidden-section');
+            }
+        }
+
+        // 切换新增/减少场所显示
+        function toggleSiteChangeType(value) {
+            const addSection = document.getElementById('addSiteSection');
+            const reduceSection = document.getElementById('reduceSiteSection');
+            
+            if (value === 'add') {
+                addSection.classList.remove('hidden-section');
+                reduceSection.classList.add('hidden-section');
+            } else if (value === 'reduce') {
+                addSection.classList.add('hidden-section');
+                reduceSection.classList.remove('hidden-section');
+            } else {
+                addSection.classList.add('hidden-section');
+                reduceSection.classList.add('hidden-section');
+            }
+        }
+
+        // 添加新场所项
+        function addNewSiteItem() {
+            const list = document.getElementById('addSiteList');
+            const itemId = 'new_site_' + Date.now();
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'site-change-item';
+            itemDiv.id = itemId;
+            itemDiv.innerHTML = `
+                <i class="fas fa-times site-delete-btn" onclick="removeSiteItem('${itemId}')"></i>
+                <div class="compact-row-2">
+                    <div class="form-row" style="margin-bottom: 8px;">
+                        <label class="form-label">场所名称（适用时）</label>
+                        <select class="form-input" onchange="updateNewSiteInfo(this, '${itemId}')">
+                            <option value="">请选择</option>
+                            <option value="branch">分公司现场</option>
+                            <option value="rd">研发中心</option>
+                            <option value="factory">生产基地</option>
+                        </select>
+                    </div>
+                    <div class="form-row" style="margin-bottom: 8px;">
+                        <label class="form-label">新增场所的地址</label>
+                        <input type="text" class="form-input" readonly placeholder="关联场所名称显示">
+                    </div>
+                </div>
+                <div class="compact-row-2">
+                    <div class="form-row" style="margin-bottom: 0;">
+                        <label class="form-label">新增场所的产品（服务）范围</label>
+                        <input type="text" class="form-input" placeholder="请输入产品/服务范围">
+                    </div>
+                    <div class="form-row" style="margin-bottom: 0;">
+                        <label class="form-label">新增场所人数</label>
+                        <input type="number" class="form-input" placeholder="请输入人数">
+                    </div>
+                </div>
+            `;
+            
+            list.appendChild(itemDiv);
+        }
+
+        // 更新新场所信息（模拟关联）
+        function updateNewSiteInfo(select, itemId) {
+            const item = document.getElementById(itemId);
+            const addressInput = item.querySelectorAll('.form-input')[1];
+            
+            const addresses = {
+                'branch': '上海市浦东新区办公区',
+                'rd': '深圳市南山区科技园',
+                'factory': '北京市昌平区生产基地'
+            };
+            
+            addressInput.value = addresses[select.value] || '';
+        }
+
+        // 删除场所项
+        function removeSiteItem(itemId) {
+            const item = document.getElementById(itemId);
+            if (item) item.remove();
+        }
+
+        // 触发文件上传
+        function triggerFileUpload(category) {
+            document.getElementById(`fileInput_${category}`).click();
+        }
+
+        // 处理文件上传
+        function handleFileUpload(category, files) {
+            if (!uploadedFiles[category]) {
+                uploadedFiles[category] = [];
+            }
+            
+            Array.from(files).forEach(file => {
+                const fileId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                uploadedFiles[category].push({
+                    id: fileId,
+                    name: file.name,
+                    size: formatFileSize(file.size),
+                    type: file.type,
+                    file: file
+                });
+            });
+            
+            renderFileList(category);
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 渲染文件列表
+        function renderFileList(category) {
+            const listContainer = document.getElementById(`fileList_${category}`);
+            const files = uploadedFiles[category] || [];
+            
+            if (files.length === 0) {
+                listContainer.innerHTML = '';
+                return;
+            }
+            
+            listContainer.innerHTML = files.map(file => `
+                <div class="attachment-item" id="file_${file.id}">
+                    <div class="attachment-info">
+                        <div class="attachment-icon">
+                            <i class="fas ${getFileIcon(file.name)}"></i>
+                        </div>
+                        <div>
+                            <div class="attachment-name">${file.name}</div>
+                            <div class="attachment-size">${file.size}</div>
+                        </div>
+                    </div>
+                    <div class="attachment-actions">
+                        <button onclick="previewFile('${category}', '${file.id}')" class="attachment-btn preview">
+                            <i class="fas fa-eye"></i> 预览
+                        </button>
+                        <button onclick="downloadFile('${category}', '${file.id}')" class="attachment-btn download">
+                            <i class="fas fa-download"></i> 下载
+                        </button>
+                        <button onclick="deleteFile('${category}', '${file.id}')" class="attachment-btn delete">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 获取文件图标
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            if (['pdf'].includes(ext)) return 'fa-file-pdf';
+            if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'fa-file-image';
+            if (['doc', 'docx'].includes(ext)) return 'fa-file-word';
+            return 'fa-file';
+        }
+
+        // 预览文件
+        function previewFile(category, fileId) {
+            const file = uploadedFiles[category].find(f => f.id === fileId);
+            if (file) {
+                // 创建临时URL进行预览
+                const url = URL.createObjectURL(file.file);
+                window.open(url, '_blank');
+            }
+        }
+
+        // 下载文件
+        function downloadFile(category, fileId) {
+            const file = uploadedFiles[category].find(f => f.id === fileId);
+            if (file) {
+                const url = URL.createObjectURL(file.file);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        // 删除文件
+        function deleteFile(category, fileId) {
+            if (confirm('确定要删除此附件吗？')) {
+                uploadedFiles[category] = uploadedFiles[category].filter(f => f.id !== fileId);
+                renderFileList(category);
+            }
+        }
+
+        // 更新采样规则显示
+        function updateSamplingRule(basePhaseId, status) {
+            const hintEl = document.getElementById('samplingRuleHint');
+            if (!hintEl) return;
+            
+            const totalSites = sites.length || 1;
+            
+            if ((basePhaseId === 'initial' || basePhaseId === 'recert') && status === 'pending') {
+                hintEl.textContent = `根据抽样规则，本次策划需要选择全部场所（共${totalSites}个场所）`;
+                return;
+            }
+            
+            if (basePhaseId === 'initial') {
+                hintEl.textContent = `根据抽样规则，本次策划需要选择全部场所（共${totalSites}个场所）`;
+            } else {
+                let minSamples = 1;
+                if (basePhaseId === 'surv1' || basePhaseId === 'surv2') {
+                    minSamples = Math.round(Math.sqrt(totalSites) * 0.6);
+                } else if (basePhaseId === 'recert') {
+                    minSamples = Math.round(Math.sqrt(totalSites) * 0.8);
+                }
+                minSamples = Math.max(1, minSamples);
+                hintEl.textContent = `根据抽样规则，本次策划至少选择 ${minSamples} 个场所（共${totalSites}个场所）`;
+            }
+        }
+
+        function deleteNode(event, index) {
+            event.stopPropagation();
+            if (phases[index].type === 'inserted') {
+                if (confirm('确定删除此新增的审核节点吗？')) {
+                    const deletedPhase = phases[index];
+                    const select = document.getElementById('nodeSelect');
+                    
+                    const optionValue = deletedPhase.id + '_pending';
+                    const option = select.querySelector(`option[value="${optionValue}"]`);
+                    if (option) option.remove();
+                    
+                    const endOptionValue = deletedPhase.id + '_end';
+                    const endOption = select.querySelector(`option[value="${endOptionValue}"]`);
+                    if (endOption) endOption.remove();
+                    
+                    phases.splice(index, 1);
+                    
+                    // 清除变更审核信息
+                    changeAuditInfo = null;
+                    
+                    if (currentNodeState === optionValue || currentNodeState === endOptionValue) {
+                        if (index > 0) {
+                            const prevPhase = phases[index - 1];
+                            const newState = prevPhase.id + '_end';
+                            select.value = newState;
+                            handleNodeSelect(newState);
+                        } else {
+                            select.value = 'initial_pending';
+                            handleNodeSelect('initial_pending');
+                        }
+                    }
+                }
+            }
+        }
+
+        function insertAuditType(type) {
+            if (!(currentNodeState === 'initial_end' || currentNodeState === 'surv1_end' || currentNodeState === 'surv2_end')) {
+                return;
+            }
+            
+            currentInsertType = type;
+            document.getElementById('insertModal').classList.remove('hidden-section');
+            
+            if (type === 'change') {
+                document.getElementById('modalTitle').textContent = '新增变更审核';
+                document.getElementById('changeModalContent').classList.remove('hidden-section');
+                document.getElementById('tempModalContent').classList.add('hidden-section');
+                document.querySelectorAll('input[name="hasSite"]').forEach(r => r.checked = false);
+                document.getElementById('modalChangeTypeSelect').classList.add('hidden-section');
+                document.getElementById('noSiteHint').classList.add('hidden-section');
+            } else {
+                document.getElementById('modalTitle').textContent = '新增临时审核';
+                document.getElementById('changeModalContent').classList.add('hidden-section');
+                document.getElementById('tempModalContent').classList.remove('hidden-section');
+            }
+        }
+
+        function toggleModalChangeType(hasSite) {
+            if (hasSite) {
+                document.getElementById('modalChangeTypeSelect').classList.remove('hidden-section');
+                document.getElementById('noSiteHint').classList.add('hidden-section');
+            } else {
+                document.getElementById('modalChangeTypeSelect').classList.add('hidden-section');
+                document.getElementById('noSiteHint').classList.remove('hidden-section');
+            }
+        }
+
+        function closeInsertModal() {
+            document.getElementById('insertModal').classList.add('hidden-section');
+        }
+
+        function confirmInsert() {
+            const lastUnderscore = currentNodeState.lastIndexOf('_');
+            const currentPhaseId = currentNodeState.substring(0, lastUnderscore);
+            const currentIndex = phases.findIndex(p => p.id === currentPhaseId);
+            
+            if (currentIndex === -1) {
+                alert('无法确定当前节点位置');
+                return;
+            }
+            
+            let newPhase = {
+                id: 'insert_' + Date.now(),
+                date: new Date().toISOString().split('T')[0].substring(0, 7),
+                type: 'inserted',
+                insertType: currentInsertType
+            };
+            
+            if (currentInsertType === 'change') {
+                const hasSite = document.querySelector('input[name="hasSite"]:checked')?.value;
+                if (!hasSite) {
+                    alert('请选择是否有现场审核');
+                    return;
+                }
+                
+                let changeType = '';
+                let changeTypeText = '';
+                
+                if (hasSite === 'yes') {
+                    changeType = document.getElementById('modalChangeType').value;
+                    if (!changeType) {
+                        alert('请选择审核类型');
+                        return;
+                    }
+                    const typeTexts = {
+                        'stage1': '审核一阶段+审核二阶段',
+                        'doc': '仅文审+审核二阶段',
+                        'stage2': '审核二阶段'
+                    };
+                    changeTypeText = typeTexts[changeType];
+                } else {
+                    changeType = 'no_site';
+                    changeTypeText = '无现场（直接出证）';
+                }
+                
+                // 保存变更审核信息
+                changeAuditInfo = {
+                    hasSite: hasSite === 'yes',
+                    changeType: changeType,
+                    changeTypeText: changeTypeText
+                };
+                
+                newPhase.name = '变更审核';
+                newPhase.changeInfo = changeAuditInfo;
+            } else {
+                newPhase.name = '临时审核';
+            }
+            
+            phases.splice(currentIndex + 1, 0, newPhase);
+            
+            const select = document.getElementById('nodeSelect');
+            const currentOption = select.querySelector(`option[value="${currentNodeState}"]`);
+            const insertIndex = currentOption ? Array.from(select.options).indexOf(currentOption) : -1;
+            
+            const startOption = document.createElement('option');
+            startOption.value = newPhase.id + '_pending';
+            startOption.textContent = newPhase.name + '开始';
+            
+            const endOption = document.createElement('option');
+            endOption.value = newPhase.id + '_end';
+            endOption.textContent = newPhase.name + '结束';
+            
+            if (insertIndex !== -1 && insertIndex < select.options.length - 1) {
+                select.insertBefore(startOption, select.options[insertIndex + 1]);
+                select.insertBefore(endOption, select.options[insertIndex + 2]);
+            } else {
+                select.appendChild(startOption);
+                select.appendChild(endOption);
+            }
+            
+            closeInsertModal();
+            
+            const newState = newPhase.id + '_pending';
+            select.value = newState;
+            handleNodeSelect(newState);
+            
+            // 显示变更审核信息
+            if (currentInsertType === 'change' && changeAuditInfo) {
+                document.getElementById('changeAuditInfoDisplay').classList.remove('hidden-section');
+                document.getElementById('changeAuditTypeText').textContent = 
+                    changeAuditInfo.hasSite ? `有现场 - ${changeAuditInfo.changeTypeText}` : changeAuditInfo.changeTypeText;
+                document.getElementById('insertButtonsArea').classList.add('hidden-section');
+            }
+            
+            alert(`已${currentInsertType === 'change' ? '新增变更审核' : '新增临时审核'}，当前已切换到新节点。`);
+        }
+
+        // 编辑变更审核
+        function editChangeAudit() {
+            if (changeAuditInfo) {
+                document.getElementById('insertModal').classList.remove('hidden-section');
+                currentInsertType = 'change';
+                document.getElementById('modalTitle').textContent = '修改变更审核';
+                document.getElementById('changeModalContent').classList.remove('hidden-section');
+                document.getElementById('tempModalContent').classList.add('hidden-section');
+                
+                // 回显已有选择
+                if (changeAuditInfo.hasSite) {
+                    document.querySelector('input[name="hasSite"][value="yes"]').checked = true;
+                    document.getElementById('modalChangeTypeSelect').classList.remove('hidden-section');
+                    document.getElementById('modalChangeType').value = changeAuditInfo.changeType;
+                } else {
+                    document.querySelector('input[name="hasSite"][value="no"]').checked = true;
+                    document.getElementById('noSiteHint').classList.remove('hidden-section');
+                }
+            }
+        }
+
+        // 删除变更审核
+        function deleteChangeAudit() {
+            if (confirm('确定删除此变更审核吗？这将同时删除对应的审核节点。')) {
+                // 找到并删除对应的插入节点
+                const phaseIndex = phases.findIndex(p => p.type === 'inserted' && p.insertType === 'change');
+                if (phaseIndex !== -1) {
+                    deleteNode({stopPropagation: () => {}}, phaseIndex);
+                }
+                changeAuditInfo = null;
+                document.getElementById('changeAuditInfoDisplay').classList.add('hidden-section');
+                document.getElementById('insertButtonsArea').classList.remove('hidden-section');
+            }
+        }
+
+        function toggleChangeDetail() {
+            const checked = document.getElementById('changeCheckbox').checked;
+            const hasStage1Div = document.getElementById('hasStage1Check');
+            
+            if (checked) {
+                hasStage1Div.classList.remove('hidden-section');
+                // 默认不勾选一阶段审核
+                document.getElementById('hasStage1Checkbox').checked = false;
+                isChangeAuditMode = true;
+            } else {
+                hasStage1Div.classList.add('hidden-section');
+                isChangeAuditMode = false;
+            }
+            
+            // 刷新时间轴显示
+            const lastUnderscore = currentNodeState.lastIndexOf('_');
+            const phaseId = currentNodeState.substring(0, lastUnderscore);
+            const status = currentNodeState.substring(lastUnderscore + 1);
+            const phaseIndex = phases.findIndex(p => p.id === phaseId);
+            if (phaseIndex !== -1) {
+                updateTimelineByIndex(phaseIndex, status === 'end', status === 'pending');
+            }
+        }
+
+        function handleChangeType(value) {
+            const hints = {
+                'stage1': '将创建一阶段审核项目',
+                'doc': '二阶段任务书中增加文审报告填写按钮',
+                'stage2': '将直接创建二阶段审核项目'
+            };
+            const hintText = document.getElementById('changeHintText');
+            if (hintText) {
+                hintText.textContent = hints[value] || '';
+            }
+        }
+
+        function focusTagInput(container) {
+            const input = container.querySelector('.tag-input');
+            if (input) input.focus();
+            container.classList.add('focused');
+        }
+
+        function handleTagInput(event, siteId, type) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const input = event.target;
+                const value = input.value.trim();
+                if (value) {
+                    addTag(siteId, value, type);
+                    input.value = '';
+                }
+            }
+        }
+
+        function handleTagChange(input, siteId, type) {
+            const value = input.value.trim();
+            if (value) {
+                addTag(siteId, value, type);
+                input.value = '';
+            }
+        }
+
+        function addTag(siteId, code, type) {
+            const boxId = type === 'prof' ? `profCodeBox_${siteId}` : `accBox_${siteId}`;
+            const box = document.getElementById(boxId);
+            const input = box.querySelector('.tag-input');
+            
+            const existing = box.querySelector(`[data-code="${code}"]`);
+            if (existing) return;
+            
+            const validCodes = type === 'prof' ? professionalCodes.map(p => p.code) : accreditationBodies.map(a => a.code);
+            if (!validCodes.includes(code)) return;
+            
+            const tag = document.createElement('span');
+            tag.className = type === 'prof' ? 'inline-tag' : 'inline-tag accreditation';
+            tag.dataset.code = code;
+            tag.innerHTML = `${code}<i class="fas fa-times remove-tag" onclick="removeTag(event, '${siteId}', '${code}', '${type}')"></i>`;
+            
+            box.insertBefore(tag, input);
+        }
+
+        function removeTag(event, siteId, code, type) {
+            event.stopPropagation();
+            const boxId = type === 'prof' ? `profCodeBox_${siteId}` : `accBox_${siteId}`;
+            const box = document.getElementById(boxId);
+            const tag = box.querySelector(`[data-code="${code}"]`);
+            if (tag) tag.remove();
+        }
+
+        function syncAuditTimeToTimeline(siteId, auditTimeValue) {
+            const index = sites.indexOf(siteId);
+            if (index !== -1 && auditTimeValue) {
+                const yearMonth = auditTimeValue.substring(0, 7);
+                const phaseIndex = phases.findIndex(p => p.type === 'base' && (p.id === 'initial' || p.id === 'surv1' || p.id === 'surv2' || p.id === 'recert'));
+                if (phaseIndex !== -1) {
+                    phases[phaseIndex].auditTime = yearMonth;
+                    phases[phaseIndex].actualAuditTime = auditTimeValue + '-15';
+                }
+                
+                const [currentPhaseId, currentStatus] = currentNodeState.split('_');
+                const currPhaseIndex = phases.findIndex(p => p.id === currentPhaseId);
+                const isEnd = currentStatus === 'end';
+                const isPending = currentStatus === 'pending';
+                if (currPhaseIndex !== -1) {
+                    updateTimelineByIndex(currPhaseIndex, isEnd, isPending);
+                }
+            }
+        }
+
+        function updateCalculations(siteId) {
+            const card = document.getElementById(siteId);
+            if (!card) return;
+            
+            const prep = parseFloat(card.querySelector('[data-type="prep"]').value) || 0;
+            const stage1 = parseFloat(card.querySelector('[data-type="stage1"]').value) || 0;
+            const stage2 = parseFloat(card.querySelector('[data-type="stage2"]').value) || 0;
+            const ratio = parseFloat(card.querySelector('[data-type="ratio"]').value) || 1;
+            
+            const total = (prep + stage1 + stage2) * ratio;
+            const adjustedDaysEl = card.querySelector('.adjusted-days');
+            if (adjustedDaysEl) adjustedDaysEl.textContent = total.toFixed(1);
+            
+            updateTotals();
+        }
+
+        function updateTotals() {
+            let totalPrep = 0, totalStage1 = 0, totalStage2 = 0, totalAdjusted = 0;
+            let totalBaseDays = 0;
+            
+            sites.forEach(id => {
+                const card = document.getElementById(id);
+                if (card) {
+                    const prep = parseFloat(card.querySelector('[data-type="prep"]')?.value) || 0;
+                    const stage1 = parseFloat(card.querySelector('[data-type="stage1"]')?.value) || 0;
+                    const stage2 = parseFloat(card.querySelector('[data-type="stage2"]')?.value) || 0;
+                    const ratio = parseFloat(card.querySelector('[data-type="ratio"]')?.value) || 1;
+                    
+                    totalPrep += prep;
+                    totalStage1 += stage1;
+                    totalStage2 += stage2;
+                    
+                    const baseDays = prep + stage1 + stage2;
+                    totalBaseDays += baseDays;
+                    totalAdjusted += baseDays * ratio;
+                }
+            });
+            
+            const totalReduced = totalBaseDays - totalAdjusted;
+            
+            document.getElementById('totalPrepTime').textContent = totalPrep.toFixed(1);
+            document.getElementById('totalStage1').textContent = totalStage1.toFixed(1);
+            document.getElementById('totalStage2').textContent = totalStage2.toFixed(1);
+            document.getElementById('totalAdjustedDays').textContent = totalAdjusted.toFixed(1);
+            document.getElementById('totalReducedDays').textContent = totalReduced.toFixed(1);
+        }
+
+        function validateEffectivePeople(input) {
+            const card = input.closest('.site-card-body');
+            const total = parseInt(card.querySelector('.people-count').value) || 0;
+            const val = parseInt(input.value) || 0;
+            
+            if (val > total) {
+                alert('有效人数不能大于总人数(含承包方)');
+                input.value = total;
+            }
+        }
+
+        function addProcessToSite(siteId) {
+            const tbody = document.getElementById(`processBody_${siteId}`);
+            if (!tbody) return;
+            
+            const idx = tbody.children.length + 1;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="checkbox" class="rounded row-checkbox"></td>
+                <td>${idx}</td>
+                <td><input type="text" class="form-input" placeholder="过程名称"></td>
+                <td><input type="text" class="form-input" placeholder="主责部门"></td>
+                <td><input type="text" class="form-input" placeholder="相关部门"></td>
+                <td><input type="text" class="form-input" placeholder="标准条款"></td>
+                <td><input type="text" class="form-input" placeholder="绩效参数/文件"></td>
+                <td class="text-center"><input type="checkbox" class="rounded text-blue-600"></td>
+                <td class="text-center"><span class="text-xs text-gray-400">待审核</span></td>
+                <td>
+                    <button onclick="deleteProcessRow(this)" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function toggleSelectAll(checkbox, siteId) {
+            const tbody = document.getElementById(`processBody_${siteId}`);
+            if (tbody) {
+                tbody.querySelectorAll('.row-checkbox').forEach(cb => {
+                    cb.checked = checkbox.checked;
+                });
+            }
+        }
+
+        function deleteProcessRow(btn) {
+            const row = btn.closest('tr');
+            const tbody = row.closest('tbody');
+            if (row) row.remove();
+            
+            if (tbody) {
+                tbody.querySelectorAll('tr').forEach((tr, idx) => {
+                    tr.cells[1].textContent = idx + 1;
+                });
+            }
+        }
+
+        function switchTab(tab, contentId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden-section'));
+            
+            let actualContentId = contentId;
+            if (contentId === 'sampling') actualContentId = 'samplingTab';
+            if (contentId === 'process') actualContentId = 'processTab';
+            if (contentId === 'survey') actualContentId = 'surveyTabContent';
+            if (contentId === 'certChange') actualContentId = 'certChangeTabContent';
+            
+            const contentEl = document.getElementById(actualContentId);
+            if (contentEl) contentEl.classList.remove('hidden-section');
+        }
+
+        function addBaseProcess() {
+            const tbody = document.getElementById('baseProcessTable');
+            if (!tbody) return;
+            
+            const idx = tbody.children.length + 1;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${idx}</td>
+                <td><input type="text" class="form-input" placeholder="过程名称"></td>
+                <td><input type="text" class="form-input" placeholder="主责部门"></td>
+                <td><input type="text" class="form-input" placeholder="相关部门"></td>
+                <td><input type="text" class="form-input" placeholder="标准条款"></td>
+                <td><input type="text" class="form-input" placeholder="绩效参数或文件"></td>
+                <td>
+                    <button onclick="deleteBaseProcess(this)" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function deleteBaseProcess(btn) {
+            const row = btn.closest('tr');
+            const tbody = document.getElementById('baseProcessTable');
+            if (row) row.remove();
+            
+            if (tbody) {
+                tbody.querySelectorAll('tr').forEach((tr, idx) => {
+                    tr.cells[0].textContent = idx + 1;
+                });
+            }
+        }
+
+        function saveDraft() {
+            const btn = event.target.closest('button');
+            if (!btn) return;
+            
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> 已保存';
+            setTimeout(() => {
+                btn.innerHTML = original;
+            }, 2000);
+        }
+
+        function submitPlan() {
+            if (confirm('确定提交方案策划？')) {
+                alert('提交成功！');
+            }
+        }
+
+        function goBack() {
+            if (confirm('确定返回列表？')) {
+            }
+        }
+        
+        function updateSamplingState(siteId) {
+        }
+
+        function showAddSiteModal() {
+            document.getElementById('addSiteModal').classList.remove('hidden-section');
+        }
+
+        function toggleSiteSelection(siteName, checked) {
+            if (checked) {
+                selectedAvailableSites.push(siteName);
+            } else {
+                selectedAvailableSites = selectedAvailableSites.filter(n => n !== siteName);
+            }
+        }
+
+        function closeAddSiteModal() {
+            document.getElementById('addSiteModal').classList.add('hidden-section');
+        }
+
+        function confirmAddSite() {
+            alert('已添加选择的场所：' + selectedAvailableSites.join('、'));
+            closeAddSiteModal();
+        }
+
+        function removeSite(id) {
+            const card = document.getElementById(id);
+            if (card && card.dataset.isMain === 'true') return;
+            
+            if (card) {
+                card.remove();
+                sites = sites.filter(s => s !== id);
+                updateTotals();
+            }
+        }
+
+        function importProcessFromExcel(siteId) {
+            // Excel导入功能占位，仅显示按钮
+            alert('Excel导入功能：' + siteId);
+        }
+
+        // 打开过程组模板选择抽屉
+        function openProcessTemplateDrawer(siteId) {
+            currentTemplateSiteId = siteId;
+            selectedTemplateIndex = 0; // 默认选中第一个模板
+            
+            // 渲染默认模板详情
+            renderTemplateDetail(0);
+            
+            // 显示抽屉
+            document.getElementById('templateDrawer').classList.add('open');
+            document.getElementById('drawerOverlay').classList.add('open');
+        }
+
+        // 关闭过程组模板选择抽屉
+        function closeProcessTemplateDrawer() {
+            document.getElementById('templateDrawer').classList.remove('open');
+            document.getElementById('drawerOverlay').classList.remove('open');
+            currentTemplateSiteId = '';
+        }
+
+        // 选择模板
+        function selectTemplate(index) {
+            selectedTemplateIndex = index;
+            
+            // 更新选中状态
+            document.querySelectorAll('.template-item').forEach((item, idx) => {
+                if (idx === index) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            
+            // 渲染模板详情
+            renderTemplateDetail(index);
+        }
+
+        // 渲染模板详情
+        function renderTemplateDetail(index) {
+            const template = processTemplates[index];
+            document.getElementById('templateDetailTitle').textContent = template.name;
+            
+            const tbody = document.getElementById('templateDetailBody');
+            tbody.innerHTML = template.processes.map(p => `
+                <tr>
+                    <td>${p.seq}</td>
+                    <td>${p.name}</td>
+                    <td>${p.dept}</td>
+                    <td>${p.related}</td>
+                    <td>${p.clause}</td>
+                    <td>${p.doc}</td>
+                </tr>
+            `).join('');
+        }
+
+        // 确认导入模板
+        function confirmImportTemplate() {
+            if (!currentTemplateSiteId) return;
+            
+            const template = processTemplates[selectedTemplateIndex];
+            const tbody = document.getElementById(`processBody_${currentTemplateSiteId}`);
+            
+            if (!tbody) return;
+            
+            // 清空现有内容（可选，根据需求决定是否追加）
+            // tbody.innerHTML = '';
+            
+            // 添加模板中的过程
+            template.processes.forEach((p, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="checkbox" class="rounded row-checkbox"></td>
+                    <td>${tbody.children.length + idx + 1}</td>
+                    <td><input type="text" class="form-input" value="${p.name}"></td>
+                    <td><input type="text" class="form-input" value="${p.dept}"></td>
+                    <td><input type="text" class="form-input" value="${p.related}"></td>
+                    <td><input type="text" class="form-input" value="${p.clause}"></td>
+                    <td><input type="text" class="form-input" value="${p.doc}"></td>
+                    <td class="text-center"><input type="checkbox" class="rounded text-blue-600" checked></td>
+                    <td class="text-center"><span class="text-xs text-gray-400">待审核</span></td>
+                    <td>
+                        <button onclick="deleteProcessRow(this)" class="text-red-500 hover:text-red-700">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // 重新排序序号
+            tbody.querySelectorAll('tr').forEach((tr, idx) => {
+                tr.cells[1].textContent = idx + 1;
+            });
+            
+            alert(`已导入"${template.name}"的过程审核策划`);
+            closeProcessTemplateDrawer();
+        }
+    </script>
+</body>
+</html>
