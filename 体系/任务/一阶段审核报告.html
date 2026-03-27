@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>审核任务实施详情 - 整改问题跟踪 - 组长视图</title>
+    <title>一阶段审核报告</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -65,6 +65,12 @@
             background: #f5f5f5;
             color: #8c8c8c;
             border-color: #d9d9d9;
+        }
+        
+        .badge-info {
+            background: #e6fffb;
+            color: #13c2c2;
+            border-color: #87e8de;
         }
         
         .timeline-section {
@@ -195,30 +201,30 @@
             gap: 8px;
         }
         
-        .form-input {
+        .data-table {
             width: 100%;
-            padding: 4px 10px;
-            border: 1px solid #d9d9d9;
-            border-radius: 4px;
+            border-collapse: collapse;
             font-size: 13px;
-            transition: all 0.3s;
-            background: white;
-            min-height: 32px;
         }
         
-        .form-input:disabled {
-            background: #f5f5f5;
-            color: #8c8c8c;
-            cursor: not-allowed;
-            border-color: #d9d9d9;
+        .data-table th {
+            background: #fafafa;
+            color: #262626;
+            font-weight: 600;
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e8e8e8;
+            white-space: nowrap;
         }
         
-        .form-textarea {
-            min-height: 60px;
-            resize: vertical;
-            height: auto;
-            font-family: inherit;
-            line-height: 1.5;
+        .data-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e8e8e8;
+            color: #595959;
+        }
+        
+        .data-table tr:hover {
+            background: #e6f7ff;
         }
         
         .btn {
@@ -247,6 +253,12 @@
             border-color: #40a9ff;
         }
         
+        .btn-primary:disabled {
+            background: #bae7ff;
+            border-color: #bae7ff;
+            cursor: not-allowed;
+        }
+        
         .btn-default {
             background: white;
             border-color: #d9d9d9;
@@ -256,6 +268,16 @@
         .btn-default:hover {
             color: #40a9ff;
             border-color: #40a9ff;
+        }
+        
+        .btn-info {
+            background: white;
+            border-color: #91caff;
+            color: #1890ff;
+        }
+        
+        .btn-info:hover {
+            background: #e6f7ff;
         }
         
         .btn-success {
@@ -275,161 +297,335 @@
             height: 24px;
         }
         
-        .main-layout {
-            display: flex;
-            gap: 20px;
-            padding: 20px 0;
-        }
-        
-        .left-content {
-            flex: 1;
-        }
-        
-        .right-sidebar {
-            width: 380px;
-        }
-        
-        .phase1-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        
-        .phase1-table th {
-            background: #fafafa;
-            border: 1px solid #e8e8e8;
-            padding: 10px;
-            text-align: left;
-            font-weight: 600;
-            color: #262626;
-        }
-        
-        .phase1-table td {
-            border: 1px solid #e8e8e8;
-            padding: 8px;
-            vertical-align: top;
-            background: white;
-        }
-        
-        .phase1-table tr:hover td {
-            background: #f5f5f5;
-        }
-        
-        .phase1-table .col-seq {
-            width: 60px;
-            text-align: center;
-            font-weight: 500;
-            color: #1890ff;
-            background: #fafafa;
-        }
-        
-        .phase1-table .col-status {
-            width: 120px;
-        }
-        
-        .phase1-table .col-tracking {
-            width: 280px;
-        }
-        
-        .phase1-section {
-            margin-bottom: 24px;
-        }
-        
-        .phase1-section-title {
+        .btn-lg {
+            padding: 6px 16px;
             font-size: 14px;
-            font-weight: 600;
-            color: #262626;
-            margin-bottom: 12px;
-            padding-left: 8px;
-            border-left: 3px solid #1890ff;
+            height: 32px;
         }
         
-        .tracking-radio-group {
+        /* 操作按钮组 - 防止换行 */
+        .action-btns {
             display: flex;
-            flex-direction: column;
+            gap: 6px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+        
+        .tab-container {
+            background: white;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 0 20px;
+            display: flex;
             gap: 8px;
         }
         
-        .tracking-radio-item {
-            display: flex;
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #595959;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            color: #1890ff;
+            border-bottom-color: #1890ff;
+        }
+        
+        .tab-btn:hover {
+            color: #1890ff;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .hidden-section {
+            display: none !important;
+        }
+        
+        .personnel-tag {
+            display: inline-flex;
             align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        
-        .tracking-radio-item input[type="radio"] {
-            margin: 0;
-            cursor: pointer;
-        }
-        
-        .tracking-radio-item.disabled {
-            color: #8c8c8c;
-            cursor: not-allowed;
-        }
-        
-        .tracking-radio-item.disabled input[type="radio"] {
-            cursor: not-allowed;
-        }
-        
-        .incomplete-reason {
-            margin-top: 8px;
-            margin-left: 20px;
-        }
-        
-        .placeholder-text {
-            color: #8c8c8c;
-            font-style: italic;
-        }
-        
-        .stats-overview {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-card {
-            background: white;
-            border: 1px solid #e8e8e8;
+            padding: 1px 5px;
             border-radius: 4px;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            font-size: 11px;
+            margin-right: 3px;
         }
         
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
+        .tag-fulltime { background: #f9f0ff; color: #722ed1; }
+        .tag-parttime { background: #fff0f6; color: #eb2f96; }
+        .tag-qms { background: #e6f7ff; color: #1890ff; }
+        .tag-leader { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+        
+        .form-input {
+            width: 100%;
+            padding: 4px 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.3s;
+            background: white;
+            height: 28px;
+        }
+        
+        .form-input:hover {
+            border-color: #40a9ff;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+        }
+        
+        .form-input:disabled, .form-input[readonly] {
+            background: #f5f5f5;
+            color: #8c8c8c;
+            cursor: not-allowed;
+        }
+        
+        .form-label {
+            font-size: 12px;
+            color: #262626;
+            margin-bottom: 4px;
+            display: block;
+            font-weight: 500;
+        }
+        
+        textarea.form-input {
+            height: auto;
+            min-height: 60px;
+            resize: vertical;
+        }
+        
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal-container {
+            background: white;
+            border-radius: 4px;
+            width: 90%;
+            max-width: 1400px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafafa;
+        }
+        
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #262626;
+        }
+        
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            border-radius: 4px;
+            transition: all 0.3s;
         }
         
-        .stat-icon.blue { background: #e6f7ff; color: #1890ff; }
-        .stat-icon.orange { background: #fff7e6; color: #fa8c16; }
-        .stat-icon.green { background: #f6ffed; color: #52c41a; }
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #ff4d4f;
+        }
         
-        .stat-info {
+        .modal-body {
             flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            gap: 24px;
         }
         
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #262626;
-            line-height: 1;
+        .modal-sidebar {
+            width: 250px;
+            flex-shrink: 0;
+            border-right: 1px solid #e8e8e8;
+            padding-right: 16px;
         }
         
-        .stat-label {
+        .sidebar-title {
             font-size: 13px;
-            color: #8c8c8c;
-            margin-top: 4px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
         }
         
+        .sidebar-item {
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #595959;
+            margin-bottom: 4px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-item:hover {
+            background: #f5f5f5;
+            color: #1890ff;
+        }
+        
+        .sidebar-item.active {
+            background: #e6f7ff;
+            color: #1890ff;
+            font-weight: 500;
+        }
+        
+        .modal-main {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #fafafa;
+        }
+        
+        /* 富文本编辑器样式 */
+        .rich-editor {
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .rich-editor-toolbar {
+            padding: 8px;
+            background: #fafafa;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .toolbar-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid transparent;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #595959;
+            transition: all 0.3s;
+        }
+        
+        .toolbar-btn:hover {
+            border-color: #d9d9d9;
+            color: #1890ff;
+        }
+        
+        .rich-editor-content {
+            min-height: 200px;
+            padding: 12px;
+            outline: none;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .rich-editor-content:empty:before {
+            content: '请输入审核记录...';
+            color: #bfbfbf;
+        }
+        
+        /* 附件列表样式 */
+        .attachment-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .attachment-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #52c41a;
+        }
+        
+        .attachment-item i {
+            font-size: 14px;
+        }
+        
+        .attachment-item .remove {
+            cursor: pointer;
+            color: #8c8c8c;
+            margin-left: 4px;
+        }
+        
+        .attachment-item .remove:hover {
+            color: #ff4d4f;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: #8c8c8c;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #d9d9d9;
+        }
+        
+        /* 流程日志时间轴样式 - 竖向 */
         .flow-timeline {
             position: relative;
             padding-left: 20px;
@@ -533,12 +729,6 @@
             border: 1px solid #91d5ff;
         }
         
-        .flow-timeline-status.pending {
-            background: #f5f5f5;
-            color: #8c8c8c;
-            border: 1px solid #d9d9d9;
-        }
-        
         .flow-timeline-header {
             font-size: 14px;
             font-weight: 600;
@@ -550,13 +740,165 @@
             align-items: center;
             gap: 8px;
         }
+
+        /* 一阶段审核报告特有样式 */
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding: 16px;
+        }
         
-        .sidebar-card {
-            background: white;
-            border: 1px solid #e8e8e8;
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        .form-group-full {
+            grid-column: 1 / -1;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: #595959;
+        }
+        
+        .info-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #8c8c8c;
+            font-size: 13px;
+        }
+        
+        .info-value {
+            color: #262626;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .input-group-addon {
+            color: #8c8c8c;
+            font-size: 13px;
+        }
+        
+        .dynamic-list-item {
+            background: #f5f5f5;
             border-radius: 4px;
-            padding: 20px;
-            margin-bottom: 16px;
+            padding: 12px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+        
+        .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: #ff4d4f;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .remove-btn:hover {
+            color: #ff7875;
+        }
+        
+        .file-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .audit-advice-option {
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .audit-advice-option:hover {
+            border-color: #1890ff;
+            background: #e6f7ff;
+        }
+        
+        .audit-advice-option.selected {
+            border-color: #1890ff;
+            background: #e6f7ff;
+        }
+        
+        .advice-radio {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .advice-content {
+            flex: 1;
+        }
+        
+        .advice-title {
+            font-weight: 600;
+            color: #262626;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        
+        .advice-desc {
+            color: #8c8c8c;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        select.form-input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238c8c8c' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 24px;
+        }
+        
+        textarea.form-input {
+            min-height: 80px;
+            resize: vertical;
         }
     </style>
 </head>
@@ -568,22 +910,19 @@
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-3">
                     <span class="text-gray-500 text-sm">RW-202403240001</span>
-                    <h1 class="text-lg font-bold text-gray-900">审核任务实施详情</h1>
-                    <span class="status-badge badge-processing">整改问题跟踪</span>
+                    <h1 class="text-lg font-bold text-gray-900">一阶段审核报告</h1>
+                    <span class="status-badge badge-warning" id="headerStatusBadge">审核进行中</span>
+                    <span class="status-badge badge-info" id="phaseBadge">一阶段</span>
                 </div>
                 
                 <div class="flex items-center gap-2">
+                    <button class="btn btn-success btn-sm" onclick="submitAll()">
+                        <i class="fas fa-check text-xs"></i>
+                        提交
+                    </button>
                     <button class="btn btn-default btn-sm" onclick="goBack()">
                         <i class="fas fa-arrow-left text-xs"></i>
                         返回
-                    </button>
-                    <button class="btn btn-primary btn-sm" onclick="saveData()">
-                        <i class="fas fa-save text-xs"></i>
-                        保存
-                    </button>
-                    <button class="btn btn-success btn-sm" onclick="submitTracking()">
-                        <i class="fas fa-check-double text-xs"></i>
-                        提交跟踪结论
                     </button>
                 </div>
             </div>
@@ -603,7 +942,7 @@
                 </div>
                 <div>
                     <span class="text-gray-500">审核阶段：</span>
-                    <span class="font-medium text-blue-600">一阶段</span>
+                    <span class="font-medium text-gray-900">一阶段</span>
                 </div>
                 <div>
                     <span class="text-gray-500">组长：</span>
@@ -611,462 +950,1288 @@
                 </div>
                 <div>
                     <span class="text-gray-500">审核日期：</span>
-                    <span class="font-medium text-gray-900">2024-03-15 至 2024-03-17</span>
+                    <span class="font-medium text-gray-900">2024-04-15 至 2024-04-18</span>
                 </div>
                 <div>
                     <span class="text-gray-500">当前节点：</span>
-                    <span class="font-medium text-blue-600">整改问题跟踪</span>
+                    <span class="font-medium text-blue-600">审核进行中</span>
                 </div>
                 <div>
                     <span class="text-gray-500">项目状态：</span>
-                    <span class="font-medium text-orange-600">整改中</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 时间轴区域 -->
-    <div class="timeline-section">
-        <div class="container-fixed">
-            <div class="process-steps" id="timelineContainer">
-                <div class="step-item completed">
-                    <div class="step-line"></div>
-                    <div class="step-circle">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="step-title">审核任务确认</div>
-                    <div class="step-date">2024-03-10</div>
-                </div>
-                <div class="step-item completed">
-                    <div class="step-line"></div>
-                    <div class="step-circle">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="step-title">审核计划确认</div>
-                    <div class="step-date">2024-03-12</div>
-                </div>
-                <div class="step-item completed">
-                    <div class="step-line"></div>
-                    <div class="step-circle">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="step-title">一阶段审核</div>
-                    <div class="step-date">已完成</div>
-                </div>
-                <div class="step-item active">
-                    <div class="step-line"></div>
-                    <div class="step-circle">
-                        <i class="fas fa-circle"></i>
-                    </div>
-                    <div class="step-title">整改问题跟踪</div>
-                    <div class="step-date">进行中</div>
-                </div>
-                <div class="step-item pending">
-                    <div class="step-circle">
-                        <i class="fas fa-circle"></i>
-                    </div>
-                    <div class="step-title">二阶段审核</div>
-                    <div class="step-date">待开始</div>
+                    <span class="font-medium text-orange-600">执行中</span>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- 主内容区 -->
-    <div class="container-fixed main-layout">
+    <main class="container-fixed py-4">
         
-        <!-- 左侧主要内容 -->
-        <div class="left-content">
+        <!-- Tab 2: 一阶段审核报告 -->
+        <div id="tab-report" class="tab-content active">
             
-            <!-- 统计概览 -->
-            <div class="stats-overview">
-                <div class="stat-card">
-                    <div class="stat-icon blue">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="statPendingCustomer">1</div>
-                        <div class="stat-label">待客户填写</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon orange">
-                        <i class="fas fa-user-check"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="statPendingLeader">1</div>
-                        <div class="stat-label">待组长确认</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon green">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-value" id="statCompleted">0</div>
-                        <div class="stat-label">已确认</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 第一阶段审核问题清单 -->
+            <!-- 1. 基本信息 -->
             <div class="content-card">
                 <div class="card-header">
                     <div class="card-title">
-                        <i class="fas fa-tasks text-blue-500"></i>
-                        第一阶段审核问题清单
-                        <span class="text-xs font-normal text-gray-500 ml-2">（自动从一阶段审核带入）</span>
+                        <i class="fas fa-info-circle text-blue-500"></i>
+                        基本信息
                     </div>
                 </div>
-                
-                <div style="padding: 20px;">
-                    <!-- 需完成整改的问题 -->
-                    <div class="phase1-section">
-                        <div class="phase1-section-title">
-                            <i class="fas fa-exclamation-triangle text-orange-500 mr-2"></i>
+                <div class="section-grid">
+                    <div class="form-group">
+                        <label class="form-label">客户名称</label>
+                        <input type="text" class="form-input" value="北京市地铁运营有限公司" disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">地址</label>
+                        <input type="text" class="form-input" value="北京市西城区西直门外大街2号" disabled>
+                    </div>
+                    
+                    <div class="form-group form-group-full">
+                        <label class="form-label">审核目的</label>
+                        <textarea class="form-input" rows="2">收集客户管理体系范围内必要信息，评价客户基本情况和为管理体系策划、准备的情况，确定第二阶段审核的可行性和重点。</textarea>
+                    </div>
+                    
+                    <div class="form-group form-group-full">
+                        <label class="form-label">审核准则</label>
+                        <div class="checkbox-group mb-2">
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked> 管理体系标准（规范性要求）
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked> 客户管理体系文件
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked> 适用法律法规
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox"> 客户特殊要求
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox"> 其他
+                            </label>
+                        </div>
+                        <textarea class="form-input" rows="2" placeholder="具体说明其他审核准则..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">一阶段审核的方式</label>
+                        <div class="radio-group">
+                            <label class="radio-item">
+                                <input type="radio" name="auditType" value="onsite" checked onchange="toggleAuditDate('onsite')"> 现场审核
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="auditType" value="offsite" onchange="toggleAuditDate('offsite')"> 非现场审核
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">审核日期区间</label>
+                        <div class="input-group">
+                            <input type="date" class="form-input" id="auditStartDate" value="2024-04-15">
+                            <span class="input-group-addon">至</span>
+                            <input type="date" class="form-input" id="auditEndDate" value="2024-04-18">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">审核组长</label>
+                        <input type="text" class="form-input" value="武荣刚" disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">组员</label>
+                        <input type="text" class="form-input" value="王洪伟、李明" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 评价内容填报 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-clipboard-check text-orange-500"></i>
+                        评价内容填报
+                    </div>
+                </div>
+                <div class="p-4">
+                    <!-- 管理体系运行时间 -->
+                    <div class="info-row">
+                        <div class="info-label">管理体系运行超过3个月</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="systemRun3M" value="yes" checked onchange="toggleSystemRunDate(true)"> 符合
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="systemRun3M" value="no" onchange="toggleSystemRunDate(false)"> 不符合
+                                </label>
+                            </div>
+                            <div id="systemRunDate" style="margin-top: 8px;">
+                                <span style="font-size: 12px; color: #8c8c8c; margin-right: 8px;">体系开始运行时间：</span>
+                                <input type="date" class="form-input" style="width: 150px; display: inline-block;" value="2024-01-01">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 文件化信息符合性 -->
+                    <div class="info-row">
+                        <div class="info-label form-label-required">管理体系文件化信息与认证标准的符合性及与实际运作情况的一致性</div>
+                        <div class="info-value">
+                            <div style="margin-bottom: 8px;">
+                                <span style="font-size: 12px; color: #8c8c8c;">对客户</span>
+                                <input type="text" class="form-input" style="width: 200px; display: inline-block; margin: 0 4px;" placeholder="客户名称" maxlength="100">
+                                <span style="font-size: 12px; color: #8c8c8c;">文件（包括版本号或发布日期）进行了评审</span>
+                            </div>
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="docConformity" value="conform" checked onchange="toggleDocConformity(true)"> 符合
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="docConformity" value="nonconform" onchange="toggleDocConformity(false)"> 不符合
+                                </label>
+                            </div>
+                            <div id="docNonconformDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- QMS特有：不适用条款合理性 -->
+                    <div class="info-row qms-field">
+                        <div class="info-label form-label-required">组织确定的标准不适用条款或要求的合理性（QMS）</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="qmsExclusion" value="reasonable" checked onchange="toggleQmsExclusion('reasonable')"> 合理，不适用的具体条款或要求
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="qmsExclusion" value="unreasonable" onchange="toggleQmsExclusion('unreasonable')"> 不合理
+                                </label>
+                            </div>
+                            <div id="qmsExclusionReason">
+                                <textarea class="form-input" rows="2" placeholder="请填写理由..."></textarea>
+                            </div>
+                            <div id="qmsExclusionUnreasonable" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ISMS特有 -->
+                    <div class="info-row isms-field hidden">
+                        <div class="info-label form-label-required">ISMS范围与边界的描述、适用性声明的版本及发布日期（ISMS）</div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- ITSMS特有 -->
+                    <div class="info-row itsms-field hidden">
+                        <div class="info-label form-label-required">ITSMS范围的描述、服务目录\SLA\相关方接口\服务点概况（ITSMS）</div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 方针和目标适宜性 -->
+                    <div class="info-row">
+                        <div class="info-label form-label-required">方针和目标的适宜性以及对管理体系关键绩效的识别情况</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="policySuitability" value="conform" checked onchange="togglePolicySuitability(true)"> 符合
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="policySuitability" value="nonconform" onchange="togglePolicySuitability(false)"> 不符合
+                                </label>
+                            </div>
+                            <div id="policyNonconformDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 法律法规识别 -->
+                    <div class="info-row">
+                        <div class="info-label form-label-required">适用法律法规和其他要求的识别</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="legalIdentify" value="conform" checked onchange="toggleLegalIdentify(true)"> 符合
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="legalIdentify" value="nonconform" onchange="toggleLegalIdentify(false)"> 不符合
+                                </label>
+                            </div>
+                            <div id="legalNonconformDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 违反法律法规情况 -->
+                    <div class="info-row">
+                        <div class="info-label form-label-required">是否存在违反法律法规和强制性标准的情况</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="legalViolation" value="none" checked onchange="toggleLegalViolation(false)"> 未发现
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="legalViolation" value="exist" onchange="toggleLegalViolation(true)"> 存在
+                                </label>
+                            </div>
+                            <div id="legalViolationDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写具体说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 过程确定的充分性 -->
+                    <div class="info-row">
+                        <div class="info-label form-label-required">管理体系过程（包括外部提供服务和过程）确定的充分性</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="processAdequacy" value="conform" checked onchange="toggleProcessAdequacy(true)"> 符合
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="processAdequacy" value="nonconform" onchange="toggleProcessAdequacy(false)"> 不符合
+                                </label>
+                            </div>
+                            <div id="processNonconformDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- E/S/F/H特有：风险因素识别 -->
+                    <div class="info-row esfh-field">
+                        <div class="info-label form-label-required">认证范围内风险因素（如环境因素、危险源、食品安全危害）识别的全面性和重要因素/风险确定的合理性（E/S/F/H）</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="riskIdentify" value="conform" checked onchange="toggleRiskIdentify(true)"> 符合
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="riskIdentify" value="nonconform" onchange="toggleRiskIdentify(false)"> 不符合
+                                </label>
+                            </div>
+                            <div id="riskNonconformDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- E/S/F/H特有：风险控制策划 -->
+                    <div class="info-row esfh-field">
+                        <div class="info-label form-label-required">针对风险因素控制策划（方案、计划、过程、运行控制等）的充分性和适宜性（E/S/F/H）<br><span style="font-size: 11px; color: #8c8c8c;">注:F/H包含危害分析/前提方案/HACCP计划的评价</span></div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="riskControl" value="conform" checked onchange="toggleRiskControl(true)"> 符合
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="riskControl" value="nonconform" onchange="toggleRiskControl(false)"> 不符合
+                                </label>
+                            </div>
+                            <div id="riskControlNonconformDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- F/H特有：确认活动实施 -->
+                    <div class="info-row fh-field hidden">
+                        <div class="info-label form-label-required">确认活动实施的有效性和验证策划的充分性、合理性（F/H）</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="confirmActivity" value="conform" checked onchange="toggleConfirmActivity(true)"> 符合
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="confirmActivity" value="nonconform" onchange="toggleConfirmActivity(false)"> 不符合
+                                </label>
+                            </div>
+                            <div id="confirmNonconformDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q/E/S特有：风险和机遇 -->
+                    <div class="info-row qes-field">
+                        <div class="info-label form-label-required">"需要应对的风险和机遇"及策划的措施（Q/E/S）</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="riskOpportunity" value="conform" checked onchange="toggleRiskOpportunity(true)"> 符合
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="riskOpportunity" value="nonconform" onchange="toggleRiskOpportunity(false)"> 不符合
+                                </label>
+                            </div>
+                            <div id="riskOppNonconformDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- E/S特有：应急准备 -->
+                    <div class="info-row es-field">
+                        <div class="info-label form-label-required">潜在紧急情况的识别及应急准备和响应措施的策划情况（E/S）</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="emergencyPrep" value="conform" checked onchange="toggleEmergencyPrep(true)"> 符合
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="emergencyPrep" value="nonconform" onchange="toggleEmergencyPrep(false)"> 不符合
+                                </label>
+                            </div>
+                            <div id="emergencyNonconformDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- IS特有：信息安全风险评估 -->
+                    <div class="info-row is-field hidden">
+                        <div class="info-label form-label-required">信息安全风险评估方法的适宜性，风险评价的充分性，风险控制措施及措施删减的适宜性（IS）</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="infoSecurity" value="conform" checked onchange="toggleInfoSecurity(true)"> 符合
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="infoSecurity" value="nonconform" onchange="toggleInfoSecurity(false)"> 不符合
+                                </label>
+                            </div>
+                            <div id="infoSecNonconformDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 内审和管评 -->
+                    <div class="info-row">
+                        <div class="info-label form-label-required">是否实施了内部审核和管理评审</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="internalAudit" value="yes" checked onchange="toggleInternalAudit(true)"> 是
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="internalAudit" value="no" onchange="toggleInternalAudit(false)"> 否
+                                </label>
+                            </div>
+                            <div id="internalAuditDate" style="margin-top: 8px;">
+                                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                    <div>
+                                        <span style="font-size: 12px; color: #8c8c8c; margin-right: 4px;">内审时间：</span>
+                                        <input type="date" class="form-input" style="width: 130px; display: inline-block;">
+                                    </div>
+                                    <div>
+                                        <span style="font-size: 12px; color: #8c8c8c; margin-right: 4px;">管评时间：</span>
+                                        <input type="date" class="form-input" style="width: 130px; display: inline-block;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="internalAuditDesc" class="hidden" style="margin-top: 8px;">
+                                <textarea class="form-input" rows="2" placeholder="请填写说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 事故投诉 -->
+                    <div class="info-row">
+                        <div class="info-label form-label-required">一年内是否发生事故、职业病、投诉、行政监管处罚及处理和回应</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="incident" value="none" checked onchange="toggleIncident(false)"> 无
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="incident" value="exist" onchange="toggleIncident(true)"> 有
+                                </label>
+                            </div>
+                            <div id="incidentDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写具体说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 乳GMP特有：生鲜乳匹配 -->
+                    <div class="info-row dairygmp-field hidden">
+                        <div class="info-label form-label-required">生鲜乳日供应与企业日加工能力的匹配程度（乳GMP）</div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 其他 -->
+                    <div class="info-row">
+                        <div class="info-label">其他</div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2" placeholder="非必填项..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 经确认的组织建立的管理体系的相关信息 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-building text-green-500"></i>
+                        经确认的组织建立的管理体系的相关信息
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="info-row">
+                        <div class="info-label form-label-required">管理体系覆盖的产品/服务、活动的内容<br><span style="font-size: 11px; color: #8c8c8c;">（即认证范围，如各管理体系不同，请分别描述）</span></div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="3">QMS：城市轨道交通运营管理服务&#10;EMS：城市轨道交通运营管理服务及相关管理活动&#10;OHSMS：城市轨道交通运营管理服务及相关管理活动</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label form-label-required">管理体系范围内的场所（地址）</div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2">中心职能：北京市西城区西直门外大街2号&#10;多场所：北京市各运营线路站点</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label">临时服务现场信息</div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2" placeholder="如存在临时场所，请填写..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label">外部提供的职能或过程（外包）</div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2" placeholder="自动带入认证申请单中的信息，可修改..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row s-field hidden">
+                        <div class="info-label form-label-required">组织人员在其他组织场所提供的服务（S）</div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label form-label-required">管理体系范围内的有效人数</div>
+                        <div class="info-value">
+                            <div style="margin-bottom: 8px; font-size: 12px; color: #8c8c8c;">
+                                如与《认证申请评审表》中的不同，请列明重新计算的方法
+                            </div>
+                            <textarea class="form-input" rows="2">QMS：850人&#10;EMS：850人&#10;OHSMS：850人</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label">整合管理体系（IMS）的整合程度</div>
+                        <div class="info-value">
+                            <div class="input-group">
+                                <input type="number" class="form-input" style="width: 100px;" placeholder="百分比" min="0" max="100">
+                                <span class="input-group-addon">%</span>
+                                <span style="font-size: 12px; color: #8c8c8c; margin-left: 8px;">（需列明整合程度百分比）</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. 待调整内容 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-sliders-h text-purple-500"></i>
+                        待调整内容
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="info-row">
+                        <div class="info-label">审核方案是否需要调整</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="schemeAdjust" value="no" checked onchange="toggleSchemeAdjust(false)"> 不需要调整
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="schemeAdjust" value="yes" onchange="toggleSchemeAdjust(true)"> 需要调整，调整原因及如何调整
+                                </label>
+                            </div>
+                            <div id="schemeAdjustDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写调整原因及如何调整..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label">专业判定是否需要调整</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="professionalAdjust" value="no" checked onchange="toggleProfessionalAdjust(false)"> 不需要调整
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="professionalAdjust" value="yes" onchange="toggleProfessionalAdjust(true)"> 需要调整，调整原因及如何调整
+                                </label>
+                            </div>
+                            <div id="professionalAdjustDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写调整原因及如何调整..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label">二阶段审核人天数是否需相应调整</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="mandayAdjust" value="no" checked onchange="toggleMandayAdjust(false)"> 不需要调整
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="mandayAdjust" value="yes" onchange="toggleMandayAdjust(true)"> 需要调整，调整原因及如何调整
+                                </label>
+                            </div>
+                            <div id="mandayAdjustDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="请填写调整原因及如何调整..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. 其他内容 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-ellipsis-h text-gray-500"></i>
+                        其他内容
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="info-row es-field">
+                        <div class="info-label form-label-required">组织应执行的污染物排放标准（E）和（或）排放总量或作业环境危害因素标准（S）</div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label form-label-required">经确认的生产（或服务）班次和时间为</div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2" placeholder="自动带入认证申请表中的班次和时间信息，可修改...">三班倒：早班 06:00-14:00，中班 14:00-22:00，晚班 22:00-06:00</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label form-label-required">二阶段是否拟对所有班次进行审核</div>
+                        <div class="info-value">
+                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="allShiftAudit" value="yes" checked onchange="toggleAllShiftAudit(true)"> 是
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="allShiftAudit" value="no" onchange="toggleAllShiftAudit(false)"> 否
+                                </label>
+                            </div>
+                            <div id="allShiftAuditDesc" class="hidden">
+                                <textarea class="form-input" rows="2" placeholder="选择否情况下需要填写说明..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row qms-field">
+                        <div class="info-label form-label-required">经识别的对质量目标的实现具有重要影响的关键点为(QMS适用）</div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label form-label-required">确定的二阶段审核的重要审核点如下<br><span style="font-size: 11px; color: #8c8c8c;">（包括对场所审核安排的建议）</span></div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="3" placeholder="请填写..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="info-row">
+                        <div class="info-label">对二阶段审核审核组组成的建议<br><span style="font-size: 11px; color: #8c8c8c;">（尤其是专业人员的配备）（适用时）</span></div>
+                        <div class="info-value">
+                            <textarea class="form-input" rows="2" placeholder="非必填项..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. 审核组对下一阶段审核的建议 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-chart-line text-blue-600"></i>
+                        审核组对下一阶段审核的建议
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="audit-advice-option selected" onclick="selectAdvice(0)" id="advice0">
+                        <div class="advice-radio">
+                            <input type="radio" name="auditAdvice" value="proceed" checked onchange="changeAdvice(0)">
+                            <div class="advice-content">
+                                <div class="advice-title">可进入第二阶段审核</div>
+                                <div class="advice-desc">选择该选项提交且客户确认完毕后，自动关联相同审核项目创建二阶段审核任务，任务为待提交状态可保存，但5天后才可提交</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="audit-advice-option" onclick="selectAdvice(1)" id="advice1">
+                        <div class="advice-radio">
+                            <input type="radio" name="auditAdvice" value="conditional" onchange="changeAdvice(1)">
+                            <div class="advice-content">
+                                <div class="advice-title">待《第一阶段审核问题清单》中"需完成整改后方可进入第二阶段审核的问题"得到整改并经审核组确认接受后，可进入第二阶段审核</div>
+                                <div class="advice-desc">清单中的其他问题将在第二阶段审核中继续关注。注：若"需完成整改后方可进入第二阶段审核的问题"在六个月内仍未得到整改并经审核组确认，或在进入第二阶段审核前，客户管理体系出现重大变化而导致所收集的信息失去意义或已做出的审核结论面临风险时，应重新实施第一阶段审核。</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="audit-advice-option" onclick="selectAdvice(2)" id="advice2">
+                        <div class="advice-radio">
+                            <input type="radio" name="auditAdvice" value="reject" onchange="changeAdvice(2)">
+                            <div class="advice-content">
+                                <div class="advice-title">尚不具备进入第二阶段审核的条件</div>
+                                <div class="advice-desc">若继续申请认证，应在体系改进后重新实施第一阶段审核。选择该选项提交且客户确认完毕后，流程结束。</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. 第一阶段审核问题清单（默认隐藏，选择第二个建议选项时显示） -->
+            <div class="content-card hidden" id="problemListCard">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-list-check text-red-500"></i>
+                        第一阶段审核问题清单
+                    </div>
+                </div>
+                <div class="p-4">
+                    <!-- 需完成整改后方可进入第二阶段审核的问题 -->
+                    <div style="margin-bottom: 24px;">
+                        <div style="font-size: 14px; font-weight: 600; color: #262626; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-exclamation-triangle text-red-500"></i>
                             需完成整改后方可进入第二阶段审核的问题
                         </div>
                         
-                        <table class="phase1-table" id="phase1Table">
-                            <thead>
-                                <tr>
-                                    <th class="col-seq">序号</th>
-                                    <th style="width: 35%;">需完成整改后方可进入第二阶段审核的问题</th>
-                                    <th style="width: 25%;">整改情况（客户填写）</th>
-                                    <th class="col-status">当前状态</th>
-                                    <th class="col-tracking">跟踪情况</th>
-                                </tr>
-                            </thead>
-                            <tbody id="phase1TableBody">
-                                <!-- 动态生成 -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- 其他应关注的问题 -->
-                    <div class="phase1-section" style="margin-top: 32px;">
-                        <div class="phase1-section-title">
-                            <i class="fas fa-eye text-blue-500 mr-2"></i>
-                            其他应关注的问题
-                            <span class="text-xs font-normal text-gray-500 ml-2">（自动带入，不可修改）</span>
+                        <div id="majorProblemList">
+                            <!-- 动态生成 -->
                         </div>
                         
-                        <table class="phase1-table" id="otherIssuesTable">
-                            <thead>
-                                <tr>
-                                    <th class="col-seq">序号</th>
-                                    <th style="width: 90%;">其他应关注的问题</th>
-                                </tr>
-                            </thead>
-                            <tbody id="otherIssuesTableBody">
-                                <!-- 动态生成 -->
-                            </tbody>
-                        </table>
+                        <button class="btn btn-primary btn-sm" onclick="addMajorProblem()">
+                            <i class="fas fa-plus text-xs"></i>
+                            新增行
+                        </button>
                     </div>
+                    
+                    <!-- 其他应关注的问题 -->
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600; color: #262626; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-info-circle text-blue-500"></i>
+                            其他应关注的问题
+                        </div>
+                        
+                        <div id="minorProblemList">
+                            <!-- 动态生成 -->
+                        </div>
+                        
+                        <button class="btn btn-primary btn-sm" onclick="addMinorProblem()">
+                            <i class="fas fa-plus text-xs"></i>
+                            新增行
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. 上传附件 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-paperclip text-gray-600"></i>
+                        上传附件
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div style="border: 2px dashed #d9d9d9; border-radius: 4px; padding: 24px; text-align: center; margin-bottom: 16px;">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: #1890ff; margin-bottom: 8px;"></i>
+                        <div style="color: #595959; font-size: 13px; margin-bottom: 8px;">点击或拖拽文件到此区域上传</div>
+                        <div style="color: #8c8c8c; font-size: 12px;">支持 PDF 格式，单个文件不超过 20MB</div>
+                        <input type="file" accept=".pdf" style="display: none;" id="fileInput" onchange="handleFileSelect(event)">
+                        <button class="btn btn-default btn-sm" style="margin-top: 8px;" onclick="document.getElementById('fileInput').click()">
+                            选择文件
+                        </button>
+                    </div>
+                    
+                    <div id="fileList">
+                        <!-- 已上传文件列表 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提交按钮区域 -->
+            <div class="content-card" style="background: transparent; border: none;">
+                <div class="p-4 flex justify-center gap-4">
+                    <button class="btn btn-success btn-lg" onclick="submitReport()">
+                        <i class="fas fa-check text-sm"></i>
+                        提交审核报告
+                    </button>
+                    <button class="btn btn-primary btn-lg" onclick="saveReport()">
+                        <i class="fas fa-save text-sm"></i>
+                        保存
+                    </button>
                 </div>
             </div>
 
         </div>
 
-        <!-- 右侧流程日志 -->
-        <div class="right-sidebar">
-            <div class="sidebar-card">
-                <div class="flow-timeline-header">
-                    <i class="fas fa-stream text-blue-500"></i>
-                    流程日志
+    </main>
+
+    <!-- 核查记录确认/查看弹窗 -->
+    <div class="modal-overlay" id="verificationModal">
+        <div class="modal-container" style="max-width: 1600px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-clipboard-check text-blue-500 mr-2"></i>
+                    <span id="modalTitle">核查记录确认</span> - <span id="modalAuditorName">审核人员</span>
+                    <span id="modalReadOnlyTag" class="ml-2 px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs font-medium" style="display: none;">只读模式</span>
                 </div>
-                <div class="flow-timeline" id="phase1FlowLog">
-                    <div class="flow-timeline-item completed">
-                        <div class="flow-timeline-dot"></div>
-                        <div class="flow-timeline-title">一阶段审核完成</div>
-                        <div class="flow-timeline-time"><i class="fas fa-user-circle mr-1"></i>武荣刚 · 2024-03-17 16:30</div>
-                        <div class="flow-timeline-desc">发现问题并生成整改清单</div>
-                        <span class="flow-timeline-status completed"><i class="fas fa-check mr-1"></i>已完成</span>
+                <button class="modal-close" onclick="closeVerificationModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- 左侧边栏：审核活动列表 -->
+                <div class="modal-sidebar">
+                    <div class="sidebar-title">
+                        <i class="fas fa-list-ul mr-2"></i>
+                        审核活动列表
                     </div>
-                    <div class="flow-timeline-item active">
-                        <div class="flow-timeline-dot"></div>
-                        <div class="flow-timeline-title">客户填写整改情况</div>
-                        <div class="flow-timeline-time"><i class="fas fa-user-circle mr-1"></i>客户 · 进行中</div>
-                        <div class="flow-timeline-desc">等待客户提交整改情况说明</div>
-                        <span class="flow-timeline-status processing"><i class="fas fa-spinner fa-spin mr-1"></i>进行中</span>
+                    <div id="sidebarContent">
+                        <!-- 动态生成 -->
                     </div>
-                    <div class="flow-timeline-item pending">
-                        <div class="flow-timeline-dot"></div>
-                        <div class="flow-timeline-title">组长确认跟踪结论</div>
-                        <div class="flow-timeline-time"><i class="fas fa-user-circle mr-1"></i>武荣刚 · 待处理</div>
-                        <div class="flow-timeline-desc">确认整改完成或未完成</div>
-                        <span class="flow-timeline-status pending"><i class="fas fa-clock mr-1"></i>待处理</span>
+                </div>
+                
+                <!-- 右侧主内容：核查记录填报 -->
+                <div class="modal-main">
+                    <div id="verificationForms">
+                        <!-- 动态生成表单 -->
                     </div>
-                    <div class="flow-timeline-item pending">
-                        <div class="flow-timeline-dot"></div>
-                        <div class="flow-timeline-title">进入二阶段审核</div>
-                        <div class="flow-timeline-time"><i class="fas fa-user-circle mr-1"></i>审核组 · 待开始</div>
-                        <div class="flow-timeline-desc">所有问题整改完成后进入二阶段</div>
-                        <span class="flow-timeline-status pending"><i class="fas fa-clock mr-1"></i>待处理</span>
+                    
+                    <!-- 附件上传区域 -->
+                    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e8e8e8;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span class="form-label" style="margin-bottom: 0;">附件资料</span>
+                            <button class="btn btn-default btn-sm" id="uploadBtn" onclick="uploadAttachment()">
+                                <i class="fas fa-upload text-xs"></i>
+                                上传附件
+                            </button>
+                        </div>
+                        <div class="attachment-list" id="attachmentList">
+                            <!-- 动态生成 -->
+                        </div>
+                        <input type="file" id="fileInputModal" style="display: none;" accept=".doc,.docx,.pdf,.jpg,.jpeg,.png,.gif" onchange="handleFileSelectModal(event)" multiple>
                     </div>
                 </div>
             </div>
+            
+            <div class="modal-footer">
+                <span class="text-sm text-gray-500 mr-auto" id="modalHint">
+                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                    确认后该核查记录将不可再次修改
+                </span>
+                <button class="btn btn-default" onclick="closeVerificationModal()">取消</button>
+                <button class="btn btn-primary" id="confirmBtn" onclick="confirmVerification()">
+                    <i class="fas fa-check text-xs"></i>
+                    确认核查记录
+                </button>
+            </div>
         </div>
-
     </div>
 
     <script>
-        // 模拟数据：一阶段整改问题（整改情况在待客户填写状态下显示"待客户填写"）
-        let phase1Issues = [
-            {
-                id: 1,
-                description: '组织的环境因素识别不充分，未包含新开通线路的环境影响评价。',
-                rectification: '',
-                status: 'pending_customer', // pending_customer, pending_leader, confirmed
-                tracking: '',
-                incompleteReason: ''
+        // 全局数据 - 核查记录
+        const auditTeam = [
+            { id: 'wurg', name: '武荣刚', role: '组长', type: 'tag-leader', maxHours: 32, current: 28 },
+            { id: 'whw', name: '王洪伟', role: '组员', type: 'tag-qms', maxHours: 16, current: 16 },
+            { id: 'lz', name: '李战', role: '组员', type: 'tag-qms', maxHours: 16, current: 12 },
+            { id: 'zq', name: '赵强', role: '组员', type: 'tag-qms', maxHours: 8, current: 8 }
+        ];
+
+        // 核查记录数据
+        let verificationData = [
+            { 
+                auditorId: 'wurg', 
+                auditorName: '武荣刚', 
+                role: '组长', 
+                roleTag: 'tag-leader',
+                dateRange: '2024-04-15 至 2024-04-18', 
+                sites: '中心职能、场所1、场所2', 
+                status: 'submitted', 
+                submitTime: '2024-04-18 18:30:00',
+                records: [
+                    { date: '2024-04-15', time: '09:00-12:00', content: '组织环境 4.1-4.4', dept: '管理层/中心职能', record: '审核了公司管理体系的组织环境相关内容...', decision: '符合', standard: 'GB/T 19001-2016' },
+                    { date: '2024-04-15', time: '14:00-17:00', content: '领导作用 5.1-5.3', dept: '总经理办公室', record: '与总经理进行了访谈，了解了管理承诺...', decision: '符合', standard: 'GB/T 19001-2016' },
+                    { date: '2024-04-16', time: '09:00-12:00', content: '运行策划和控制 8.1', dept: '运营管理部门', record: '审核了轨道交通运营服务的运行策划...', decision: '观察项', standard: 'GB/T 19001-2016' }
+                ],
+                attachments: [
+                    { name: '审核记录表-第一天.docx', type: 'word' },
+                    { name: '现场照片1.jpg', type: 'image' }
+                ]
             },
-            {
-                id: 2,
-                description: '危险源辨识缺少对地铁施工期间交叉作业的风险评估。',
-                rectification: '已补充施工期间交叉作业的危险源辨识，制定了相应的风险控制措施，并对相关人员进行了培训。',
-                status: 'pending_leader',
-                tracking: '',
-                incompleteReason: ''
+            { 
+                auditorId: 'whw', 
+                auditorName: '王洪伟', 
+                role: '组员', 
+                roleTag: 'tag-qms',
+                dateRange: '2024-04-15 至 2024-04-16', 
+                sites: '场所1', 
+                status: 'confirmed', 
+                submitTime: '2024-04-16 17:45:00',
+                records: [
+                    { date: '2024-04-15', time: '09:00-12:00', content: '环境因素识别 6.1.2', dept: '环保部门', record: '审核了环境管理体系的环境因素识别过程...', decision: '符合', standard: 'GB/T 24001-2016' }
+                ],
+                attachments: []
+            },
+            { 
+                auditorId: 'lz', 
+                auditorName: '李战', 
+                role: '组员', 
+                roleTag: 'tag-qms',
+                dateRange: '2024-04-17 至 2024-04-18', 
+                sites: '场所2', 
+                status: 'unsubmitted', 
+                submitTime: '-',
+                records: [],
+                attachments: []
+            },
+            { 
+                auditorId: 'zq', 
+                auditorName: '赵强', 
+                role: '组员', 
+                roleTag: 'tag-qms',
+                dateRange: '2024-04-17', 
+                sites: '中心职能', 
+                status: 'submitted', 
+                submitTime: '2024-04-17 19:20:00',
+                records: [
+                    { date: '2024-04-17', time: '09:00-12:00', content: '职业健康安全风险识别 6.1.2', dept: '安全管理部门', record: '审核了职业健康安全管理体系的危险源辨识...', decision: '轻微不符合', standard: 'GB/T 45001-2020' }
+                ],
+                attachments: []
             }
         ];
 
-        // 模拟数据：其他应关注的问题（自动带入，不可修改）
-        let otherIssues = [
-            {
-                id: 1,
-                description: '建议关注员工心理健康管理，特别是高压岗位的心理疏导机制。'
-            },
-            {
-                id: 2,
-                description: '建议完善应急预案的演练记录，确保演练的真实性和有效性。'
-            }
-        ];
+        let currentVerificationIndex = null;
+        let currentActivityIndex = 0;
+        let isReadOnlyMode = false;
+        
+        // 一阶段审核报告数据
+        let majorProblems = [];
+        let minorProblems = [];
+        let uploadedFiles = [];
+        let currentAdvice = 0;
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
-            renderPhase1Table();
-            renderOtherIssuesTable();
-            updateStats();
+            // 根据认证领域显示/隐藏字段
+            showFieldsByCertScope();
+            // 初始化问题清单
+            addMajorProblem();
+            addMinorProblem();
         });
 
-        // 渲染需整改问题表格
-        function renderPhase1Table() {
-            const tbody = document.getElementById('phase1TableBody');
-            
-            tbody.innerHTML = phase1Issues.map((issue, index) => {
-                const statusConfig = getStatusConfig(issue.status);
-                const isCustomerPending = issue.status === 'pending_customer';
-                const isLeaderPending = issue.status === 'pending_leader';
-                const isConfirmed = issue.status === 'confirmed';
-                
-                // 整改情况列：置灰显示，待客户填写状态下显示"待客户填写"
-                let rectificationDisplay = '';
-                if (isCustomerPending) {
-                    rectificationDisplay = '<span class="placeholder-text">待客户填写</span>';
-                } else {
-                    rectificationDisplay = `<span style="color: #595959;">${issue.rectification || ''}</span>`;
-                }
-                
-                // 跟踪情况选择（仅在待组长确认状态下可编辑）
-                const trackingHtml = isLeaderPending ? `
-                    <div class="tracking-radio-group">
-                        <label class="tracking-radio-item">
-                            <input type="radio" name="tracking-${index}" value="completed" 
-                                ${issue.tracking === 'completed' ? 'checked' : ''}
-                                onchange="updateTracking(${index}, 'completed')">
-                            <span>整改完成</span>
-                        </label>
-                        <label class="tracking-radio-item">
-                            <input type="radio" name="tracking-${index}" value="incomplete" 
-                                ${issue.tracking === 'incomplete' ? 'checked' : ''}
-                                onchange="updateTracking(${index}, 'incomplete')">
-                            <span>整改未完成</span>
-                        </label>
-                        ${issue.tracking === 'incomplete' ? `
-                            <div class="incomplete-reason">
-                                <textarea class="form-input form-textarea" 
-                                    placeholder="请输入整改未完成原因及后续要求..."
-                                    onchange="updateIncompleteReason(${index}, this.value)"
-                                >${issue.incompleteReason || ''}</textarea>
-                            </div>
-                        ` : ''}
-                    </div>
-                ` : isConfirmed ? `
-                    <div class="tracking-radio-group">
-                        <label class="tracking-radio-item disabled">
-                            <input type="radio" disabled ${issue.tracking === 'completed' ? 'checked' : ''}>
-                            <span>${issue.tracking === 'completed' ? '整改完成' : '整改未完成'}</span>
-                        </label>
-                        ${issue.tracking === 'incomplete' ? `
-                            <div class="incomplete-reason" style="color: #595959; font-size: 12px; margin-left: 20px;">
-                                <i class="fas fa-info-circle text-orange-500"></i> ${issue.incompleteReason || ''}
-                            </div>
-                        ` : ''}
-                    </div>
-                ` : `
-                    <div class="tracking-radio-group">
-                        <label class="tracking-radio-item disabled">
-                            <input type="radio" disabled>
-                            <span style="color: #8c8c8c;">等待客户提交后可选</span>
-                        </label>
-                    </div>
-                `;
-                
-                return `
-                    <tr data-id="${issue.id}">
-                        <td class="col-seq">${index + 1}</td>
-                        <td>
-                            <div class="form-input form-textarea" style="background: #f5f5f5; border: 1px solid #d9d9d9; color: #262626; min-height: 60px; cursor: default;">
-                                ${issue.description || ''}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="form-input form-textarea" style="background: #f5f5f5; border: 1px solid #d9d9d9; min-height: 60px; cursor: default;">
-                                ${rectificationDisplay}
-                            </div>
-                        </td>
-                        <td class="col-status">
-                            <span class="status-badge ${statusConfig.badgeClass}">${statusConfig.text}</span>
-                        </td>
-                        <td class="col-tracking">
-                            ${trackingHtml}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        // 渲染其他关注问题表格（自动带入，不可修改）
-        function renderOtherIssuesTable() {
-            const tbody = document.getElementById('otherIssuesTableBody');
-            
-            tbody.innerHTML = otherIssues.map((issue, index) => `
-                <tr data-id="${issue.id}">
-                    <td class="col-seq">${index + 1}</td>
-                    <td>
-                        <div class="form-input form-textarea" style="background: #f5f5f5; border: 1px solid #d9d9d9; color: #262626; min-height: 40px; cursor: default;">
-                            ${issue.description || ''}
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // 获取状态配置
-        function getStatusConfig(status) {
-            const config = {
-                'pending_customer': { text: '待客户填写', badgeClass: 'badge-warning' },
-                'pending_leader': { text: '待组长确认', badgeClass: 'badge-processing' },
-                'confirmed': { text: '已确认', badgeClass: 'badge-success' }
-            };
-            return config[status] || { text: '未知', badgeClass: 'badge-draft' };
-        }
-
-        // 更新跟踪情况（组长选择）
-        function updateTracking(index, value) {
-            phase1Issues[index].tracking = value;
-            renderPhase1Table(); // 重新渲染以显示/隐藏未完成原因输入框
-        }
-
-        // 更新未完成原因
-        function updateIncompleteReason(index, value) {
-            phase1Issues[index].incompleteReason = value;
-        }
-
-        // 保存数据
-        function saveData() {
-            console.log('保存数据:', phase1Issues);
-            showToast('数据已保存', 'success');
-        }
-
-        // 提交跟踪结论（组长）
-        function submitTracking() {
-            const pendingLeaderItems = phase1Issues.filter(i => i.status === 'pending_leader');
-            
-            if (pendingLeaderItems.length === 0) {
-                alert('当前没有待组长确认的问题');
-                return;
-            }
-            
-            // 检查是否所有待确认项都已选择跟踪情况
-            const allTracked = pendingLeaderItems.every(i => i.tracking);
-            if (!allTracked) {
-                alert('请为所有待确认问题选择跟踪情况（整改完成或未完成）');
-                return;
-            }
-            
-            // 检查选择未完成的是否填写了原因
-            const incompleteItems = pendingLeaderItems.filter(i => i.tracking === 'incomplete');
-            const allReasonFilled = incompleteItems.every(i => i.incompleteReason && i.incompleteReason.trim());
-            if (!allReasonFilled) {
-                alert('请填写整改未完成的原因');
-                return;
-            }
-            
-            if (!confirm('确定提交跟踪结论吗？提交后不可修改。')) return;
-            
-            pendingLeaderItems.forEach(item => {
-                item.status = 'confirmed';
+        // 根据认证领域显示字段
+        function showFieldsByCertScope() {
+            // 实际应根据认证领域动态显示，这里演示QMS/EMS/OHSMS显示
+            document.querySelectorAll('.qms-field, .es-field, .esfh-field, .qes-field').forEach(el => {
+                el.classList.remove('hidden');
             });
-            
-            showToast('跟踪结论已提交', 'success');
-            renderPhase1Table();
-            updateStats();
-            updateFlowLog();
         }
 
-        // 更新统计
-        function updateStats() {
-            document.getElementById('statPendingCustomer').textContent = phase1Issues.filter(i => i.status === 'pending_customer').length;
-            document.getElementById('statPendingLeader').textContent = phase1Issues.filter(i => i.status === 'pending_leader').length;
-            document.getElementById('statCompleted').textContent = phase1Issues.filter(i => i.status === 'confirmed').length;
-        }
-
-        // 更新流程日志状态
-        function updateFlowLog() {
-            const items = document.querySelectorAll('.flow-timeline-item');
-            const allConfirmed = phase1Issues.every(i => i.status === 'confirmed');
-            const hasPendingLeader = phase1Issues.some(i => i.status === 'pending_leader');
-            const hasPendingCustomer = phase1Issues.some(i => i.status === 'pending_customer');
-            
-            // 第二项：客户填写
-            if (!hasPendingCustomer && items[1]) {
-                items[1].classList.remove('active');
-                items[1].classList.add('completed');
-                items[1].querySelector('.flow-timeline-status').className = 'flow-timeline-status completed';
-                items[1].querySelector('.flow-timeline-status').innerHTML = '<i class="fas fa-check mr-1"></i>已完成';
-            }
-            
-            // 第三项：组长确认
-            if (items[2]) {
-                if (hasPendingLeader) {
-                    items[2].classList.remove('pending');
-                    items[2].classList.add('active');
-                    items[2].querySelector('.flow-timeline-status').className = 'flow-timeline-status processing';
-                    items[2].querySelector('.flow-timeline-status').innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>进行中';
-                } else if (allConfirmed) {
-                    items[2].classList.remove('active', 'pending');
-                    items[2].classList.add('completed');
-                    items[2].querySelector('.flow-timeline-status').className = 'flow-timeline-status completed';
-                    items[2].querySelector('.flow-timeline-status').innerHTML = '<i class="fas fa-check mr-1"></i>已完成';
-                }
-            }
-            
-            // 第四项：进入二阶段
-            if (allConfirmed && items[3]) {
-                items[3].classList.remove('pending');
-                items[3].classList.add('active');
-                items[3].querySelector('.flow-timeline-status').className = 'flow-timeline-status processing';
-                items[3].querySelector('.flow-timeline-status').innerHTML = '<i class="fas fa-check mr-1"></i>可进入';
+        // 切换节点
+        function switchNode(index) {
+            if (index !== 2) {
+                alert('当前示例仅展示"审核进行中"节点内容');
+                return;
             }
         }
 
         // 返回
         function goBack() {
-            if (confirm('确定返回列表页？')) {
+            if (confirm('确定返回列表页？未保存的数据将丢失。')) {
                 console.log('返回列表页');
             }
+        }
+
+        // 全局提交
+        function submitAll() {
+            if (confirm('确定提交所有内容吗？')) {
+                showToast('提交成功', 'success');
+            }
+        }
+
+        // 一阶段审核报告函数
+        function toggleAuditDate(type) {
+            const startDate = document.getElementById('auditStartDate');
+            const endDate = document.getElementById('auditEndDate');
+            if (type === 'onsite') {
+                startDate.value = '2024-04-15';
+                endDate.value = '2024-04-18';
+            } else {
+                startDate.value = '';
+                endDate.value = '';
+            }
+        }
+
+        function toggleSystemRunDate(show) {
+            const div = document.getElementById('systemRunDate');
+            if (show) {
+                div.classList.remove('hidden');
+            } else {
+                div.classList.add('hidden');
+            }
+        }
+
+        function toggleDocConformity(conform) {
+            const desc = document.getElementById('docNonconformDesc');
+            if (conform) {
+                desc.classList.add('hidden');
+            } else {
+                desc.classList.remove('hidden');
+            }
+        }
+
+        function toggleQmsExclusion(type) {
+            const reasonDiv = document.getElementById('qmsExclusionReason');
+            const unreasonableDiv = document.getElementById('qmsExclusionUnreasonable');
+            if (type === 'reasonable') {
+                reasonDiv.classList.remove('hidden');
+                unreasonableDiv.classList.add('hidden');
+            } else {
+                reasonDiv.classList.add('hidden');
+                unreasonableDiv.classList.remove('hidden');
+            }
+        }
+
+        function togglePolicySuitability(conform) {
+            const desc = document.getElementById('policyNonconformDesc');
+            if (conform) desc.classList.add('hidden');
+            else desc.classList.remove('hidden');
+        }
+
+        function toggleLegalIdentify(conform) {
+            const desc = document.getElementById('legalNonconformDesc');
+            if (conform) desc.classList.add('hidden');
+            else desc.classList.remove('hidden');
+        }
+
+        function toggleLegalViolation(exist) {
+            const desc = document.getElementById('legalViolationDesc');
+            if (exist) desc.classList.remove('hidden');
+            else desc.classList.add('hidden');
+        }
+
+        function toggleProcessAdequacy(conform) {
+            const desc = document.getElementById('processNonconformDesc');
+            if (conform) desc.classList.add('hidden');
+            else desc.classList.remove('hidden');
+        }
+
+        function toggleRiskIdentify(conform) {
+            const desc = document.getElementById('riskNonconformDesc');
+            if (conform) desc.classList.add('hidden');
+            else desc.classList.remove('hidden');
+        }
+
+        function toggleRiskControl(conform) {
+            const desc = document.getElementById('riskControlNonconformDesc');
+            if (conform) desc.classList.add('hidden');
+            else desc.classList.remove('hidden');
+        }
+
+        function toggleConfirmActivity(conform) {
+            const desc = document.getElementById('confirmNonconformDesc');
+            if (conform) desc.classList.add('hidden');
+            else desc.classList.remove('hidden');
+        }
+
+        function toggleRiskOpportunity(conform) {
+            const desc = document.getElementById('riskOppNonconformDesc');
+            if (conform) desc.classList.add('hidden');
+            else desc.classList.remove('hidden');
+        }
+
+        function toggleEmergencyPrep(conform) {
+            const desc = document.getElementById('emergencyNonconformDesc');
+            if (conform) desc.classList.add('hidden');
+            else desc.classList.remove('hidden');
+        }
+
+        function toggleInfoSecurity(conform) {
+            const desc = document.getElementById('infoSecNonconformDesc');
+            if (conform) desc.classList.add('hidden');
+            else desc.classList.remove('hidden');
+        }
+
+        function toggleInternalAudit(yes) {
+            const dateDiv = document.getElementById('internalAuditDate');
+            const descDiv = document.getElementById('internalAuditDesc');
+            if (yes) {
+                dateDiv.classList.remove('hidden');
+                descDiv.classList.add('hidden');
+            } else {
+                dateDiv.classList.add('hidden');
+                descDiv.classList.remove('hidden');
+            }
+        }
+
+        function toggleIncident(exist) {
+            const desc = document.getElementById('incidentDesc');
+            if (exist) desc.classList.remove('hidden');
+            else desc.classList.add('hidden');
+        }
+
+        function toggleSchemeAdjust(yes) {
+            const desc = document.getElementById('schemeAdjustDesc');
+            if (yes) desc.classList.remove('hidden');
+            else desc.classList.add('hidden');
+        }
+
+        function toggleProfessionalAdjust(yes) {
+            const desc = document.getElementById('professionalAdjustDesc');
+            if (yes) desc.classList.remove('hidden');
+            else desc.classList.add('hidden');
+        }
+
+        function toggleMandayAdjust(yes) {
+            const desc = document.getElementById('mandayAdjustDesc');
+            if (yes) desc.classList.remove('hidden');
+            else desc.classList.add('hidden');
+        }
+
+        function toggleAllShiftAudit(yes) {
+            const desc = document.getElementById('allShiftAuditDesc');
+            if (yes) desc.classList.add('hidden');
+            else desc.classList.remove('hidden');
+        }
+
+        function selectAdvice(index) {
+            document.querySelectorAll('.audit-advice-option').forEach((el, i) => {
+                if (i === index) {
+                    el.classList.add('selected');
+                    el.querySelector('input').checked = true;
+                } else {
+                    el.classList.remove('selected');
+                }
+            });
+            currentAdvice = index;
+            
+            const problemCard = document.getElementById('problemListCard');
+            if (index === 1) {
+                problemCard.classList.remove('hidden');
+            } else {
+                problemCard.classList.add('hidden');
+            }
+        }
+
+        function changeAdvice(index) {
+            selectAdvice(index);
+        }
+
+        // 修改后的问题清单 - 增加整改情况和跟踪情况字段
+        function addMajorProblem() {
+            const id = majorProblems.length + 1;
+            majorProblems.push({ id: id, problem: '', rectification: '', tracking: '' });
+            renderMajorProblems();
+        }
+
+        function removeMajorProblem(index) {
+            majorProblems.splice(index, 1);
+            majorProblems.forEach((p, i) => p.id = i + 1);
+            renderMajorProblems();
+        }
+
+        function renderMajorProblems() {
+            const container = document.getElementById('majorProblemList');
+            container.innerHTML = majorProblems.map((p, index) => `
+                <div class="dynamic-list-item">
+                    <span class="remove-btn" onclick="removeMajorProblem(${index})"><i class="fas fa-times"></i></span>
+                    <div style="display: grid; grid-template-columns: 60px 1fr; gap: 12px; align-items: start;">
+                        <div>
+                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">序号</div>
+                            <input type="text" class="form-input" value="${p.id}" disabled style="width: 50px;">
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">需完成整改后方可进入第二阶段审核的问题</div>
+                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.problem}</textarea>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+                        <div>
+                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">整改情况</div>
+                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.rectification}</textarea>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">跟踪情况</div>
+                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.tracking}</textarea>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addMinorProblem() {
+            const id = minorProblems.length + 1;
+            minorProblems.push({ id: id, problem: '', rectification: '', tracking: '' });
+            renderMinorProblems();
+        }
+
+        function removeMinorProblem(index) {
+            minorProblems.splice(index, 1);
+            minorProblems.forEach((p, i) => p.id = i + 1);
+            renderMinorProblems();
+        }
+
+        function renderMinorProblems() {
+            const container = document.getElementById('minorProblemList');
+            container.innerHTML = minorProblems.map((p, index) => `
+                <div class="dynamic-list-item">
+                    <span class="remove-btn" onclick="removeMinorProblem(${index})"><i class="fas fa-times"></i></span>
+                    <div style="display: grid; grid-template-columns: 60px 1fr; gap: 12px; align-items: start;">
+                        <div>
+                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">序号</div>
+                            <input type="text" class="form-input" value="${p.id}" disabled style="width: 50px;">
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">其他应关注的问题</div>
+                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.problem}</textarea>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+                        <div>
+                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">整改情况</div>
+                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.rectification}</textarea>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">跟踪情况</div>
+                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.tracking}</textarea>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.type !== 'application/pdf') {
+                    alert('仅支持PDF文件');
+                    return;
+                }
+                uploadedFiles.push({
+                    name: file.name,
+                    size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+                    time: new Date().toLocaleString('zh-CN')
+                });
+                renderFileList();
+            }
+        }
+
+        function renderFileList() {
+            const container = document.getElementById('fileList');
+            if (uploadedFiles.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            container.innerHTML = uploadedFiles.map((f, index) => `
+                <div class="file-list-item">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-file-pdf text-red-500"></i>
+                        <span>${f.name}</span>
+                        <span style="color: #8c8c8c; font-size: 12px;">(${f.size})</span>
+                        <span style="color: #bfbfbf; font-size: 12px;">${f.time}</span>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-default btn-sm" onclick="previewFile(${index})">
+                            <i class="fas fa-eye text-xs"></i>预览
+                        </button>
+                        <button class="btn btn-default btn-sm" onclick="downloadFile(${index})">
+                            <i class="fas fa-download text-xs"></i>下载
+                        </button>
+                        <button class="btn btn-default btn-sm" onclick="deleteFile(${index})" style="color: #ff4d4f; border-color: #ff4d4f;">
+                            <i class="fas fa-trash text-xs"></i>删除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function previewFile(index) {
+            showToast('预览功能：' + uploadedFiles[index].name, 'info');
+        }
+
+        function downloadFile(index) {
+            showToast('开始下载：' + uploadedFiles[index].name, 'success');
+        }
+
+        function deleteFile(index) {
+            if (confirm('确定删除该附件吗？')) {
+                uploadedFiles.splice(index, 1);
+                renderFileList();
+                showToast('附件已删除', 'success');
+            }
+        }
+
+        function submitReport() {
+            if (!validateReport()) {
+                return;
+            }
+            
+            if (currentAdvice === 1 && majorProblems.length === 0) {
+                alert('选择"待整改后进入二阶段"时，必须至少添加一个需整改的问题');
+                return;
+            }
+            
+            if (confirm('确定提交一阶段审核报告吗？提交后将根据审核建议进入相应流程。')) {
+                showToast('提交成功', 'success');
+                
+                setTimeout(() => {
+                    if (currentAdvice === 2) {
+                        alert('已选择"尚不具备进入第二阶段审核的条件"，流程结束。');
+                    } else if (currentAdvice === 1) {
+                        alert('已生成第一阶段审核问题清单，等待客户整改确认。');
+                    } else {
+                        alert('已创建二阶段审核任务，5天后可提交。');
+                    }
+                }, 500);
+            }
+        }
+
+        function saveReport() {
+            showToast('保存成功', 'success');
+        }
+
+        function validateReport() {
+            return true;
         }
 
         // 显示提示
@@ -1078,6 +2243,13 @@
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 2000);
         }
+
+        // 点击弹窗外部关闭
+        document.getElementById('verificationModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeVerificationModal();
+            }
+        });
     </script>
 </body>
 </html>
