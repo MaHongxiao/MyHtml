@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审核任务实施详情 - 整改问题跟踪 - 组长视图</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            min-width: 1800px;
+        }
+        
+        .container-fixed {
+            width: 1800px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        
+        .project-header {
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .badge-processing {
+            background: #e6f7ff;
+            color: #1890ff;
+            border-color: #1890ff;
+        }
+        
+        .badge-success {
+            background: #f6ffed;
+            color: #52c41a;
+            border-color: #52c41a;
+        }
+        
+        .badge-warning {
+            background: #fff7e6;
+            color: #fa8c16;
+            border-color: #ffa940;
+        }
+        
+        .badge-error {
+            background: #fff1f0;
+            color: #ff4d4f;
+            border-color: #ff4d4f;
+        }
+        
+        .badge-draft {
+            background: #f5f5f5;
+            color: #8c8c8c;
+            border-color: #d9d9d9;
+        }
+        
+        .timeline-section {
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 20px 0;
+        }
+        
+        .process-steps {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: relative;
+            padding: 20px 0 10px;
+        }
+        
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+            z-index: 2;
+            cursor: pointer;
+        }
+        
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #d9d9d9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #d9d9d9;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .step-item.pending .step-circle {
+            border-color: #1890ff;
+            color: #1890ff;
+            background: #fff;
+        }
+        
+        .step-item.active .step-circle {
+            background: #1890ff;
+            border-color: #1890ff;
+            color: white;
+        }
+        
+        .step-item.completed .step-circle {
+            background: #52c41a;
+            border-color: #52c41a;
+            color: white;
+        }
+        
+        .step-line {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            right: -50%;
+            height: 2px;
+            background: #e8e8e8;
+            z-index: 1;
+        }
+        
+        .step-item.completed .step-line {
+            background: #52c41a;
+        }
+        
+        .step-item.active .step-line {
+            background: linear-gradient(to right, #52c41a 50%, #e8e8e8 50%);
+        }
+        
+        .step-item:last-child .step-line {
+            display: none;
+        }
+        
+        .step-title {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #595959;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .step-item.active .step-title,
+        .step-item.pending .step-title {
+            color: #1890ff;
+            font-weight: 600;
+        }
+        
+        .step-item.completed .step-title {
+            color: #52c41a;
+        }
+        
+        .step-date {
+            font-size: 12px;
+            color: #8c8c8c;
+            margin-top: 4px;
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 2px;
+            border: 1px solid #e8e8e8;
+            margin-bottom: 16px;
+        }
+        
+        .card-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafafa;
+        }
+        
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #262626;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .personnel-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-right: 3px;
+        }
+        
+        .tag-qms { background: #e6f7ff; color: #1890ff; }
+        .tag-leader { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+        
+        .form-input {
+            width: 100%;
+            padding: 4px 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.3s;
+            background: white;
+            height: 32px;
+        }
+        
+        .form-input:hover {
+            border-color: #40a9ff;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+        }
+        
+        .form-label {
+            font-size: 12px;
+            color: #262626;
+            margin-bottom: 4px;
+            display: block;
+            font-weight: 500;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .btn-primary {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary:hover {
+            background: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-default {
+            background: white;
+            border-color: #d9d9d9;
+            color: #595959;
+        }
+        
+        .btn-default:hover {
+            color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-success {
+            color: #52c41a;
+            background: white;
+            border-color: #52c41a;
+        }
+        
+        .btn-success:hover {
+            background: #52c41a;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 2px 8px;
+            font-size: 11px;
+            height: 24px;
+        }
+        
+        .ncr-card {
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+        }
+        
+        .ncr-left {
+            flex: 1;
+            padding: 16px;
+            border-right: 1px solid #e8e8e8;
+        }
+        
+        .ncr-right {
+            width: 320px;
+            background: #fafafa;
+            padding: 16px;
+        }
+        
+        .ncr-header {
+            background: #fafafa;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
+        .ncr-section {
+            margin-bottom: 16px;
+        }
+        
+        .ncr-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .ncr-section-content {
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #595959;
+            min-height: 60px;
+        }
+        
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #595959;
+            cursor: pointer;
+        }
+        
+        .radio-item input[type="radio"] {
+            cursor: pointer;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: #8c8c8c;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #d9d9d9;
+        }
+        
+        .flow-timeline {
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .flow-timeline:before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #e8e8e8;
+        }
+        
+        .flow-timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+            padding-left: 16px;
+        }
+        
+        .flow-timeline-item:last-child {
+            padding-bottom: 0;
+        }
+        
+        .flow-timeline-dot {
+            position: absolute;
+            left: -14px;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #d9d9d9;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px #d9d9d9;
+            z-index: 1;
+        }
+        
+        .flow-timeline-item.completed .flow-timeline-dot {
+            background: #52c41a;
+            box-shadow: 0 0 0 1px #52c41a;
+        }
+        
+        .flow-timeline-item.active .flow-timeline-dot {
+            background: #1890ff;
+            box-shadow: 0 0 0 1px #1890ff;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 1px #1890ff, 0 0 0 0 rgba(24,144,255,0.4); }
+            70% { box-shadow: 0 0 0 1px #1890ff, 0 0 0 6px rgba(24,144,255,0); }
+            100% { box-shadow: 0 0 0 1px #1890ff, 0 0 0 0 rgba(24,144,255,0); }
+        }
+        
+        .flow-timeline-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 4px;
+        }
+        
+        .flow-timeline-item.completed .flow-timeline-title {
+            color: #52c41a;
+        }
+        
+        .flow-timeline-item.active .flow-timeline-title {
+            color: #1890ff;
+        }
+        
+        .flow-timeline-time {
+            font-size: 11px;
+            color: #8c8c8c;
+            margin-bottom: 4px;
+        }
+        
+        .flow-timeline-desc {
+            font-size: 12px;
+            color: #595959;
+            line-height: 1.5;
+        }
+        
+        .flow-timeline-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+        
+        .flow-timeline-status.completed {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        
+        .flow-timeline-status.processing {
+            background: #e6f7ff;
+            color: #1890ff;
+            border: 1px solid #91d5ff;
+        }
+        
+        .flow-timeline-status.pending {
+            background: #f5f5f5;
+            color: #8c8c8c;
+            border: 1px solid #d9d9d9;
+        }
+        
+        .flow-timeline-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .stat-icon.blue { background: #e6f7ff; color: #1890ff; }
+        .stat-icon.orange { background: #fff7e6; color: #fa8c16; }
+        .stat-icon.green { background: #f6ffed; color: #52c41a; }
+        .stat-icon.red { background: #fff1f0; color: #ff4d4f; }
+        
+        .stat-info {
+            flex: 1;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #262626;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: #8c8c8c;
+            margin-top: 4px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        select.form-input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238c8c8c' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 24px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- 顶部项目信息栏 -->
+    <div class="project-header sticky top-0 z-50">
+        <div class="container-fixed py-3">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                    <span class="text-gray-500 text-sm">RW-202403240001</span>
+                    <h1 class="text-lg font-bold text-gray-900">审核任务实施详情</h1>
+                    <span class="status-badge badge-processing" id="headerStatusBadge">整改问题跟踪</span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button class="btn btn-default btn-sm" onclick="goBack()">
+                        <i class="fas fa-arrow-left text-xs"></i>
+                        返回
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-x-8 gap-y-2 text-sm">
+                <div>
+                    <span class="text-gray-500">审核任务编码：</span>
+                    <span class="font-medium text-gray-900">RW-202403240001</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">客户名称：</span>
+                    <span class="font-medium text-gray-900">北京市地铁运营有限公司</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">认证领域：</span>
+                    <span class="font-medium text-gray-900">QMS, EMS, OHSMS</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">审核阶段：</span>
+                    <span class="font-medium text-gray-900">二阶段</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">组长：</span>
+                    <span class="font-medium text-gray-900">武荣刚</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">审核日期：</span>
+                    <span class="font-medium text-gray-900">2024-04-15 至 2024-04-18</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">当前节点：</span>
+                    <span class="font-medium text-blue-600">整改问题跟踪</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">项目状态：</span>
+                    <span class="font-medium text-orange-600">整改中</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 时间轴区域 -->
+    <div class="timeline-section">
+        <div class="container-fixed">
+            <div class="timeline-wrapper">
+                <div class="timeline-main">
+                    <div class="process-steps" id="timelineContainer">
+                        <div class="step-item completed" onclick="switchNode(0)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="step-title">审核任务确认</div>
+                            <div class="step-date">2024-03-24</div>
+                        </div>
+                        <div class="step-item completed" onclick="switchNode(1)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="step-title">审核计划确认</div>
+                            <div class="step-date">2024-03-25</div>
+                        </div>
+                        <div class="step-item completed" onclick="switchNode(2)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="step-title">审核进行中</div>
+                            <div class="step-date">已完成</div>
+                        </div>
+                        <div class="step-item active" onclick="switchNode(3)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">整改问题跟踪</div>
+                            <div class="step-date">进行中</div>
+                        </div>
+                        <div class="step-item pending" onclick="switchNode(4)">
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">任务已完成</div>
+                            <div class="step-date">待开始</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main class="container-fixed py-4">
+        
+        <!-- 整改问题跟踪节点内容 -->
+        <div id="node-rectification">
+            <!-- 统计概览 -->
+            <div class="stats-overview">
+                <div class="stat-card">
+                    <div class="stat-icon orange">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statTotal">3</div>
+                        <div class="stat-label">不符合项总数</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statPendingCustomer">1</div>
+                        <div class="stat-label">待客户确认</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statPendingLeader">1</div>
+                        <div class="stat-label">待组长确认</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statConfirmed">1</div>
+                        <div class="stat-label">已整改确认</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 不符合项跟踪列表 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-tasks text-orange-500"></i>
+                        不符合项整改跟踪
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500 mr-2">筛选：</span>
+                        <select class="form-input" style="width: 120px;" onchange="filterNCR(this.value)">
+                            <option value="all">全部状态</option>
+                            <option value="pending_customer">待客户确认</option>
+                            <option value="pending_leader">待组长确认</option>
+                            <option value="confirmed">已确认</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="padding: 20px;" id="rectificationNcrContainer">
+                    <!-- 动态生成不符合项卡片 -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // 不符合项数据（整改问题跟踪节点只显示非草稿状态）
+        let ncrData = [
+            {
+                id: 2,
+                status: 'pending_customer',
+                description: '审核发现运营管理部门的现场作业指导书未更新，与实际操作不符。具体表现为2024年3月修订的设备维护流程未在作业指导书中体现。',
+                reason: '',
+                correction: '',
+                tracking: null,
+                severity: '轻微',
+                clause: 'GB/T 19001-2016 标准 7.5 条款',
+                department: '运营管理部门',
+                auditor: '武荣刚',
+                submitTime: '2024-04-16 10:15',
+                customerSubmitTime: null,
+                confirmTime: null,
+                deptProcess: '运营管理部门/文件控制过程',
+                nature: '轻微',
+                deadline: '2024-05-15',
+                flowLog: [
+                    { node: '提交不符合描述', time: '2024-04-16 10:15', operator: '武荣刚', status: 'completed', desc: '不符合项描述已提交' },
+                    { node: '客户原因分析和纠正措施', time: '-', operator: '客户', status: 'processing', desc: '等待客户填写原因分析及纠正措施' },
+                    { node: '跟踪确认', time: '-', operator: '组长', status: 'pending', desc: '等待客户提交后处理' }
+                ]
+            },
+            {
+                id: 3,
+                status: 'pending_leader',
+                description: '审核发现质量管理部门的检验记录不完整，缺少2024年2月份的部分原材料检验记录。抽查批次2024-02-15的钢筋进场检验记录缺失。',
+                reason: '因春节期间人员交接不当，导致部分检验记录未及时归档。已找到原始检验数据，正在补录系统。',
+                correction: '1. 补录缺失的检验记录；2. 建立节假日期间的工作交接制度；3. 每月进行记录完整性检查。',
+                tracking: null,
+                severity: '轻微',
+                clause: 'GB/T 19001-2016 标准 8.6 条款',
+                department: '质量管理部门',
+                auditor: '王洪伟',
+                submitTime: '2024-04-15 14:30',
+                customerSubmitTime: '2024-04-16 09:20',
+                confirmTime: null,
+                deptProcess: '质量管理部门/检验过程',
+                nature: '轻微',
+                deadline: '2024-04-25',
+                flowLog: [
+                    { node: '提交不符合描述', time: '2024-04-15 14:30', operator: '王洪伟', status: 'completed', desc: '不符合项描述已提交' },
+                    { node: '客户原因分析和纠正措施', time: '2024-04-16 09:20', operator: '客户', status: 'completed', desc: '客户已提交原因分析及纠正措施' },
+                    { node: '跟踪确认', time: '-', operator: '组长', status: 'processing', desc: '请选择跟踪结论并提交' }
+                ]
+            },
+            {
+                id: 4,
+                status: 'confirmed',
+                description: '审核发现环境管理部门的废弃物分类标识不清晰，危险废物与一般废物混放。',
+                reason: '新员工对分类标准不熟悉，标识牌老化褪色。',
+                correction: '1. 更换清晰的标识牌；2. 对相关人员重新培训；3. 建立日常检查机制。',
+                tracking: 'accepted',
+                severity: '轻微',
+                clause: 'GB/T 24001-2016 标准 8.1 条款',
+                department: '环境管理部门',
+                auditor: '王洪伟',
+                submitTime: '2024-04-15 16:00',
+                customerSubmitTime: '2024-04-17 10:00',
+                confirmTime: '2024-04-18 14:30',
+                deptProcess: '环境管理部门/废弃物管理',
+                nature: '轻微',
+                deadline: '2024-04-20',
+                flowLog: [
+                    { node: '提交不符合描述', time: '2024-04-15 16:00', operator: '王洪伟', status: 'completed', desc: '不符合项描述已提交' },
+                    { node: '客户原因分析和纠正措施', time: '2024-04-17 10:00', operator: '客户', status: 'completed', desc: '客户已提交原因分析及纠正措施' },
+                    { node: '跟踪确认', time: '2024-04-18 14:30', operator: '武荣刚', status: 'completed', desc: '纠正措施有效，不符合项关闭' }
+                ]
+            }
+        ];
+
+        let currentFilter = 'all';
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderRectificationNCRList();
+            updateRectificationStats();
+        });
+
+        // 切换节点提示
+        function switchNode(index) {
+            if (index === 3) {
+                // 当前已在整改问题跟踪节点
+                return;
+            } else if (index < 3) {
+                alert('已完成的历史节点，请在"审核进行中"查看历史记录');
+            } else if (index === 4) {
+                alert('请先完成所有不符合项的整改确认，才能进入任务已完成节点');
+            }
+        }
+
+        // 返回
+        function goBack() {
+            if (confirm('确定返回列表页？')) {
+                console.log('返回列表页');
+            }
+        }
+
+        // 获取状态配置
+        function getStatusConfig(status) {
+            const config = {
+                'pending_customer': { text: '待客户确认', badgeClass: 'badge-warning' },
+                'pending_leader': { text: '待审核组长确认', badgeClass: 'badge-processing' },
+                'confirmed': { text: '已确认', badgeClass: 'badge-success' }
+            };
+            return config[status] || { text: '未知', badgeClass: 'badge-draft' };
+        }
+
+        // 渲染整改问题跟踪节点的不符合项列表
+        function renderRectificationNCRList() {
+            const container = document.getElementById('rectificationNcrContainer');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            // 过滤数据：只显示非草稿状态，且符合筛选条件
+            let filteredData = ncrData.filter(ncr => ncr.status !== 'draft');
+            
+            if (currentFilter !== 'all') {
+                filteredData = filteredData.filter(ncr => ncr.status === currentFilter);
+            }
+            
+            if (filteredData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-check"></i>
+                        <p>暂无需要跟踪的不符合项</p>
+                        <p class="text-xs text-gray-400 mt-2">所有不符合项已关闭或未提交至客户</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            filteredData.forEach((ncr) => {
+                const originalIndex = ncrData.findIndex(item => item.id === ncr.id);
+                const card = createRectificationNCRCard(ncr, originalIndex);
+                container.appendChild(card);
+            });
+        }
+        
+        // 创建整改问题跟踪节点的不符合项卡片
+        function createRectificationNCRCard(ncr, originalIndex) {
+            const card = document.createElement('div');
+            card.className = 'ncr-card';
+            
+            const statusConfig = getStatusConfig(ncr.status);
+            
+            let flowLogHtml = '';
+            if (ncr.flowLog && ncr.flowLog.length > 0) {
+                flowLogHtml = ncr.flowLog.map((log) => {
+                    const statusClass = log.status;
+                    const statusText = log.status === 'completed' ? '已完成' : (log.status === 'processing' ? '进行中' : '待处理');
+                    const icon = log.status === 'completed' ? 'fa-check' : (log.status === 'processing' ? 'fa-spinner fa-spin' : 'fa-clock');
+                    
+                    return `
+                        <div class="flow-timeline-item ${statusClass}">
+                            <div class="flow-timeline-dot"></div>
+                            <div class="flow-timeline-title">${log.node}</div>
+                            <div class="flow-timeline-time"><i class="fas fa-user-circle mr-1"></i>${log.operator} · ${log.time}</div>
+                            <div class="flow-timeline-desc">${log.desc}</div>
+                            <span class="flow-timeline-status ${statusClass}"><i class="fas ${icon} mr-1"></i>${statusText}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // 整改问题跟踪节点特有的操作按钮
+            let actionButtons = '';
+            if (ncr.status === 'pending_leader') {
+                actionButtons = `
+                    <button class="btn btn-primary btn-sm" onclick="confirmTracking(${originalIndex})">
+                        <i class="fas fa-check text-xs"></i>
+                        确认跟踪结论
+                    </button>
+                `;
+            } else if (ncr.status === 'pending_customer') {
+                actionButtons = `
+                    <button class="btn btn-default btn-sm" disabled>
+                        <i class="fas fa-clock text-xs"></i>
+                        等待客户反馈
+                    </button>
+                `;
+            } else if (ncr.status === 'confirmed') {
+                actionButtons = `
+                    <button class="btn btn-success btn-sm" disabled>
+                        <i class="fas fa-check-circle text-xs"></i>
+                        已关闭
+                    </button>
+                `;
+            }
+            
+            // 判断是否逾期
+            const isOverdue = new Date(ncr.deadline) < new Date() && ncr.status !== 'confirmed';
+            const deadlineStyle = isOverdue ? 'color: #ff4d4f; font-weight: 600;' : '';
+            const overdueTag = isOverdue ? ' <span style="color: #ff4d4f; font-size: 12px;">(已逾期)</span>' : '';
+            
+            card.innerHTML = `
+                <div class="ncr-left">
+                    <div class="ncr-header">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-weight: 600; color: #262626;">不符合项 #${ncr.id}</span>
+                            <span class="status-badge ${statusConfig.badgeClass}">${statusConfig.text}</span>
+                            <span class="personnel-tag tag-qms">${ncr.auditor}</span>
+                            <span style="font-size: 12px; color: #8c8c8c;">${ncr.clause}</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 0 16px 16px 16px;">
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 4px; font-size: 13px; color: #595959;">
+                            <div>
+                                <span style="color: #8c8c8c;">受审核部门/过程：</span>
+                                <span style="font-weight: 500;">${ncr.deptProcess || '-'}</span>
+                            </div>
+                            <div>
+                                <span style="color: #8c8c8c;">性质：</span>
+                                <span class="status-badge ${ncr.nature === '严重' ? 'badge-error' : 'badge-warning'}" style="margin-left: 0;">${ncr.nature || '-'}</span>
+                            </div>
+                            <div>
+                                <span style="color: #8c8c8c;">整改完成期限：</span>
+                                <span style="${deadlineStyle}">${ncr.deadline || '-'}${overdueTag}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="ncr-section">
+                            <div class="ncr-section-title">
+                                <i class="fas fa-exclamation-circle text-red-500"></i>
+                                不符合项描述
+                            </div>
+                            <div class="ncr-section-content" style="border: 1px solid transparent; padding: 12px;">
+                                ${ncr.description}
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                            <div class="ncr-section">
+                                <div class="ncr-section-title">
+                                    <i class="fas fa-search text-blue-500"></i>
+                                    原因分析
+                                </div>
+                                <div class="ncr-section-content" style="border: 1px solid transparent; padding: 12px;">
+                                    ${ncr.reason || '<span style="color: #bfbfbf;">等待客户填写...</span>'}
+                                </div>
+                            </div>
+                            
+                            <div class="ncr-section">
+                                <div class="ncr-section-title">
+                                    <i class="fas fa-wrench text-orange-500"></i>
+                                    纠正、纠正措施或纠正措施计划
+                                </div>
+                                <div class="ncr-section-content" style="border: 1px solid transparent; padding: 12px;">
+                                    ${ncr.correction || '<span style="color: #bfbfbf;">等待客户填写...</span>'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${ncr.status === 'pending_leader' ? `
+                        <div class="ncr-section" style="border: 2px solid #1890ff; border-radius: 4px; padding: 12px; background: #e6f7ff;">
+                            <div class="ncr-section-title" style="color: #1890ff;">
+                                <i class="fas fa-clipboard-check"></i>
+                                组长跟踪确认
+                                <span style="color: #ff4d4f; font-size: 12px; margin-left: 8px;">* 请选择跟踪结论并提交</span>
+                            </div>
+                            <div class="radio-group" style="background: white; padding: 12px; border-radius: 4px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="rect-tracking-${originalIndex}" value="accepted" ${ncr.tracking === 'accepted' ? 'checked' : ''}>
+                                    <span>纠正和纠正措施可以接受且证实有效。</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="rect-tracking-${originalIndex}" value="plan_accepted" ${ncr.tracking === 'plan_accepted' ? 'checked' : ''}>
+                                    <span>纠正和纠正措施计划可以接受，将在下次审核中验证有效性。（仅针对轻微不符合）</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="rect-tracking-${originalIndex}" value="rejected" ${ncr.tracking === 'rejected' ? 'checked' : ''}>
+                                    <span>纠正和纠正措施不能接受，或纠正措施未有效实施。</span>
+                                </label>
+                            </div>
+                        </div>
+                        ` : `
+                        <div class="ncr-section">
+                            <div class="ncr-section-title">
+                                <i class="fas fa-clipboard-check text-green-500"></i>
+                                跟踪结论
+                            </div>
+                            <div class="ncr-section-content" style="border: 1px solid transparent; padding: 12px;">
+                                ${ncr.tracking === 'accepted' ? '<span style="color: #52c41a; font-weight: 500;"><i class="fas fa-check-circle"></i> 纠正和纠正措施可以接受且证实有效</span>' : 
+                                  ncr.tracking === 'plan_accepted' ? '<span style="color: #1890ff; font-weight: 500;"><i class="fas fa-check-circle"></i> 纠正和纠正措施计划可以接受，将在下次审核中验证</span>' : 
+                                  ncr.tracking === 'rejected' ? '<span style="color: #ff4d4f; font-weight: 500;"><i class="fas fa-times-circle"></i> 纠正和纠正措施不能接受，或纠正措施未有效实施</span>' : 
+                                  '<span style="color: #bfbfbf;">等待组长确认...</span>'}
+                            </div>
+                        </div>
+                        `}
+                    </div>
+                </div>
+                
+                <div class="ncr-right">
+                    <div class="flow-timeline-header">
+                        <i class="fas fa-stream text-blue-500"></i>
+                        流程日志
+                    </div>
+                    <div class="flow-timeline">
+                        ${flowLogHtml || '<div style="color: #8c8c8c; font-size: 12px; padding-left: 16px;">暂无流程记录</div>'}
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        // 整改问题跟踪节点：确认跟踪结论
+        function confirmTracking(index) {
+            const ncr = ncrData[index];
+            const trackingRadios = document.getElementsByName(`rect-tracking-${index}`);
+            let tracking = null;
+            for (let radio of trackingRadios) {
+                if (radio.checked) {
+                    tracking = radio.value;
+                    break;
+                }
+            }
+            
+            if (!tracking) {
+                alert('请选择跟踪结论');
+                return;
+            }
+            
+            if (!confirm('确定提交跟踪结论吗？提交后该不符合项将关闭。')) {
+                return;
+            }
+            
+            ncr.tracking = tracking;
+            ncr.status = 'confirmed';
+            ncr.confirmTime = new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/\//g, '-');
+            
+            // 更新流程日志
+            if (ncr.flowLog && ncr.flowLog[2]) {
+                ncr.flowLog[2].status = 'completed';
+                ncr.flowLog[2].time = ncr.confirmTime;
+                ncr.flowLog[2].desc = tracking === 'accepted' ? '纠正措施有效，不符合项关闭' : 
+                                      tracking === 'plan_accepted' ? '纠正措施计划可接受，下次审核验证' : 
+                                      '纠正措施无效，需要重新整改';
+            }
+            
+            showToast('跟踪确认完成，不符合项已关闭', 'success');
+            renderRectificationNCRList();
+            updateRectificationStats();
+        }
+        
+        // 筛选不符合项
+        function filterNCR(status) {
+            currentFilter = status;
+            renderRectificationNCRList();
+        }
+        
+        // 更新统计数据
+        function updateRectificationStats() {
+            const nonDraft = ncrData.filter(ncr => ncr.status !== 'draft');
+            document.getElementById('statTotal').textContent = nonDraft.length;
+            document.getElementById('statPendingCustomer').textContent = nonDraft.filter(ncr => ncr.status === 'pending_customer').length;
+            document.getElementById('statPendingLeader').textContent = nonDraft.filter(ncr => ncr.status === 'pending_leader').length;
+            document.getElementById('statConfirmed').textContent = nonDraft.filter(ncr => ncr.status === 'confirmed').length;
+        }
+
+        // 显示提示
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? '#52c41a' : (type === 'warning' ? '#fa8c16' : '#1890ff');
+            toast.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${bgColor}; color: white; padding: 10px 20px; border-radius: 4px; z-index: 9999; box-shadow: 0 2px 8px rgba(0,0,0,0.15);`;
+            toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+    </script>
+</body>
+</html>
