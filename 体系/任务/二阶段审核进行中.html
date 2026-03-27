@@ -1,0 +1,3170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审核任务实施详情 - 审核进行中 - 组长视图</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            min-width: 1800px;
+        }
+        
+        .container-fixed {
+            width: 1800px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        
+        .project-header {
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .badge-processing {
+            background: #e6f7ff;
+            color: #1890ff;
+            border-color: #1890ff;
+        }
+        
+        .badge-success {
+            background: #f6ffed;
+            color: #52c41a;
+            border-color: #52c41a;
+        }
+        
+        .badge-warning {
+            background: #fff7e6;
+            color: #fa8c16;
+            border-color: #ffa940;
+        }
+        
+        .badge-error {
+            background: #fff1f0;
+            color: #ff4d4f;
+            border-color: #ff4d4f;
+        }
+        
+        .badge-draft {
+            background: #f5f5f5;
+            color: #8c8c8c;
+            border-color: #d9d9d9;
+        }
+        
+        .timeline-section {
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 20px 0;
+        }
+        
+        .process-steps {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: relative;
+            padding: 20px 0 10px;
+        }
+        
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+            z-index: 2;
+            cursor: pointer;
+        }
+        
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #d9d9d9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #d9d9d9;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .step-item.pending .step-circle {
+            border-color: #1890ff;
+            color: #1890ff;
+            background: #fff;
+        }
+        
+        .step-item.active .step-circle {
+            background: #1890ff;
+            border-color: #1890ff;
+            color: white;
+        }
+        
+        .step-item.completed .step-circle {
+            background: #52c41a;
+            border-color: #52c41a;
+            color: white;
+        }
+        
+        .step-line {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            right: -50%;
+            height: 2px;
+            background: #e8e8e8;
+            z-index: 1;
+        }
+        
+        .step-item.completed .step-line {
+            background: #52c41a;
+        }
+        
+        .step-item.active .step-line {
+            background: linear-gradient(to right, #52c41a 50%, #e8e8e8 50%);
+        }
+        
+        .step-item:last-child .step-line {
+            display: none;
+        }
+        
+        .step-title {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #595959;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .step-item.active .step-title,
+        .step-item.pending .step-title {
+            color: #1890ff;
+            font-weight: 600;
+        }
+        
+        .step-item.completed .step-title {
+            color: #52c41a;
+        }
+        
+        .step-date {
+            font-size: 12px;
+            color: #8c8c8c;
+            margin-top: 4px;
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 2px;
+            border: 1px solid #e8e8e8;
+            margin-bottom: 16px;
+        }
+        
+        .card-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafafa;
+        }
+        
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #262626;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+            font-weight: 500;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .data-table th {
+            background: #fafafa;
+            color: #262626;
+            font-weight: 600;
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e8e8e8;
+            white-space: nowrap;
+        }
+        
+        .data-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e8e8e8;
+            color: #595959;
+        }
+        
+        .data-table tr:hover {
+            background: #e6f7ff;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .btn-primary {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary:hover {
+            background: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-primary:disabled {
+            background: #bae7ff;
+            border-color: #bae7ff;
+            cursor: not-allowed;
+        }
+        
+        .btn-default {
+            background: white;
+            border-color: #d9d9d9;
+            color: #595959;
+        }
+        
+        .btn-default:hover {
+            color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-info {
+            background: white;
+            border-color: #91caff;
+            color: #1890ff;
+        }
+        
+        .btn-info:hover {
+            background: #e6f7ff;
+        }
+        
+        .btn-danger {
+            color: #ff4d4f;
+            background: white;
+            border-color: #ff4d4f;
+        }
+        
+        .btn-danger:hover {
+            background: #ff4d4f;
+            color: white;
+        }
+        
+        .btn-success {
+            color: #52c41a;
+            background: white;
+            border-color: #52c41a;
+        }
+        
+        .btn-success:hover {
+            background: #52c41a;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 2px 8px;
+            font-size: 11px;
+            height: 24px;
+        }
+        
+        .btn-lg {
+            padding: 6px 16px;
+            font-size: 14px;
+            height: 32px;
+        }
+        
+        .action-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+        
+        .tab-container {
+            background: white;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 0 20px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #595959;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            color: #1890ff;
+            border-bottom-color: #1890ff;
+        }
+        
+        .tab-btn:hover {
+            color: #1890ff;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .personnel-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-right: 3px;
+        }
+        
+        .tag-fulltime { background: #f9f0ff; color: #722ed1; }
+        .tag-parttime { background: #fff0f6; color: #eb2f96; }
+        .tag-qms { background: #e6f7ff; color: #1890ff; }
+        .tag-leader { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+        
+        .form-input {
+            width: 100%;
+            padding: 4px 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.3s;
+            background: white;
+            height: 32px;
+        }
+        
+        .form-input:hover {
+            border-color: #40a9ff;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+        }
+        
+        .form-input:disabled, .form-input[readonly] {
+            background: #f5f5f5;
+            color: #8c8c8c;
+            cursor: not-allowed;
+        }
+        
+        .form-label {
+            font-size: 12px;
+            color: #262626;
+            margin-bottom: 4px;
+            display: block;
+            font-weight: 500;
+        }
+        
+        textarea.form-input {
+            height: auto;
+            min-height: 60px;
+            resize: vertical;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal-container {
+            background: white;
+            border-radius: 4px;
+            width: 90%;
+            max-width: 1400px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafafa;
+        }
+        
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #262626;
+        }
+        
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #ff4d4f;
+        }
+        
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            gap: 24px;
+        }
+        
+        .modal-sidebar {
+            width: 250px;
+            flex-shrink: 0;
+            border-right: 1px solid #e8e8e8;
+            padding-right: 16px;
+        }
+        
+        .sidebar-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .sidebar-item {
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #595959;
+            margin-bottom: 4px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-item:hover {
+            background: #f5f5f5;
+            color: #1890ff;
+        }
+        
+        .sidebar-item.active {
+            background: #e6f7ff;
+            color: #1890ff;
+            font-weight: 500;
+        }
+        
+        .modal-main {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #fafafa;
+        }
+        
+        .rich-editor {
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .rich-editor-toolbar {
+            padding: 8px;
+            background: #fafafa;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .toolbar-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid transparent;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #595959;
+            transition: all 0.3s;
+        }
+        
+        .toolbar-btn:hover {
+            border-color: #d9d9d9;
+            color: #1890ff;
+        }
+        
+        .rich-editor-content {
+            min-height: 200px;
+            padding: 12px;
+            outline: none;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .rich-editor-content:empty:before {
+            content: '请输入审核记录...';
+            color: #bfbfbf;
+        }
+        
+        .attachment-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .attachment-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #52c41a;
+        }
+        
+        .attachment-item i {
+            font-size: 14px;
+        }
+        
+        .attachment-item .remove {
+            cursor: pointer;
+            color: #8c8c8c;
+            margin-left: 4px;
+        }
+        
+        .attachment-item .remove:hover {
+            color: #ff4d4f;
+        }
+        
+        .ncr-card {
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        
+        .ncr-header {
+            background: #fafafa;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
+        .ncr-body {
+            padding: 16px;
+        }
+        
+        .ncr-section {
+            margin-bottom: 16px;
+        }
+        
+        .ncr-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .ncr-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .ncr-section-content {
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #595959;
+            min-height: 60px;
+        }
+        
+        .ncr-section-content.editable {
+            background: white;
+            border: 1px solid #d9d9d9;
+        }
+        
+        .ncr-section-content.editable:focus-within {
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: #8c8c8c;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #d9d9d9;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #262626;
+            margin: 24px 0 16px;
+            padding-left: 12px;
+            border-left: 4px solid #1890ff;
+        }
+        
+        .sub-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #595959;
+            margin: 16px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .radio-group-inline {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            color: #595959;
+            cursor: pointer;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            margin-top: 2px;
+            cursor: pointer;
+            width: 14px;
+            height: 14px;
+            accent-color: #1890ff;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .conditional-display {
+            padding: 12px;
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #52c41a;
+        }
+        
+        .info-text {
+            font-size: 12px;
+            color: #8c8c8c;
+            margin-top: 4px;
+            line-height: 1.5;
+        }
+        
+        .audit-type-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 8px;
+            background: #e6f7ff;
+            color: #1890ff;
+            border: 1px solid #91caff;
+        }
+        
+        .system-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 4px;
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        
+        .attachment-btn {
+            color: #1890ff;
+            cursor: pointer;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .attachment-btn:hover {
+            color: #40a9ff;
+        }
+        
+        .highlight-box {
+            background: #fff7e6;
+            border: 1px solid #ffd591;
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin: 16px 0;
+            color: #fa8c16;
+            font-size: 13px;
+        }
+        
+        .input-with-unit {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .unit {
+            color: #595959;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+        
+        select.form-input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238c8c8c' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 24px;
+        }
+
+        .main-content {
+            padding-bottom: 24px;
+        }
+        
+        textarea.form-input.placeholder-gray::placeholder {
+            color: #bfbfbf;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #595959;
+            cursor: pointer;
+        }
+        
+        .radio-item input[type="radio"] {
+            cursor: pointer;
+        }
+        
+        .radio-item.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .radio-item.disabled input[type="radio"] {
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- 顶部项目信息栏 -->
+    <div class="project-header sticky top-0 z-50">
+        <div class="container-fixed py-3">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                    <span class="text-gray-500 text-sm">RW-202403240001</span>
+                    <h1 class="text-lg font-bold text-gray-900">审核任务实施详情</h1>
+                    <span class="status-badge badge-warning" id="headerStatusBadge">审核进行中</span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button class="btn btn-default btn-sm" onclick="goBack()">
+                        <i class="fas fa-arrow-left text-xs"></i>
+                        返回
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-x-8 gap-y-2 text-sm">
+                <div>
+                    <span class="text-gray-500">审核任务编码：</span>
+                    <span class="font-medium text-gray-900">RW-202403240001</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">客户名称：</span>
+                    <span class="font-medium text-gray-900">北京市地铁运营有限公司</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">认证领域：</span>
+                    <span class="font-medium text-gray-900">QMS, EMS, OHSMS</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">审核阶段：</span>
+                    <span class="font-medium text-gray-900">二阶段</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">组长：</span>
+                    <span class="font-medium text-gray-900">武荣刚</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">审核日期：</span>
+                    <span class="font-medium text-gray-900">2024-04-15 至 2024-04-18</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">当前节点：</span>
+                    <span class="font-medium text-blue-600">审核进行中</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">项目状态：</span>
+                    <span class="font-medium text-orange-600">执行中</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 时间轴区域 -->
+    <div class="timeline-section">
+        <div class="container-fixed">
+            <div class="timeline-wrapper">
+                <div class="timeline-main">
+                    <div class="process-steps" id="timelineContainer">
+                        <div class="step-item completed" onclick="switchNode(0)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="step-title">审核任务确认</div>
+                            <div class="step-date">2024-03-24</div>
+                        </div>
+                        <div class="step-item completed" onclick="switchNode(1)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="step-title">审核计划确认</div>
+                            <div class="step-date">2024-03-25</div>
+                        </div>
+                        <div class="step-item active" onclick="switchNode(2)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">审核进行中</div>
+                            <div class="step-date">进行中</div>
+                        </div>
+                        <div class="step-item pending" onclick="switchNode(3)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">整改问题跟踪</div>
+                            <div class="step-date">待开始</div>
+                        </div>
+                        <div class="step-item pending" onclick="switchNode(4)">
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">任务已完成</div>
+                            <div class="step-date">待开始</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main class="container-fixed py-4 main-content">
+        
+        <!-- Tab切换 -->
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('doc-review')">
+                <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                文审报告
+                <span class="status-tag status-badge badge-draft" id="docReviewStatusBadge">待提交</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('verification')">
+                <i class="fas fa-clipboard-check text-blue-500 mr-2"></i>
+                核查记录
+            </button>
+            <button class="tab-btn" onclick="switchTab('report')">
+                <i class="fas fa-file-alt text-blue-500 mr-2"></i>
+                审核报告
+                <span class="status-tag status-badge badge-draft" id="reportStatusBadgeTab">待提交</span>
+            </button>
+        </div>
+
+        <!-- Tab 1: 文审报告 -->
+        <div id="tab-doc-review" class="tab-content active">
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-file-contract text-blue-500"></i>
+                        文件评审报告
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-500 mr-4">提交时间：<span id="docReviewSubmitTime">-</span></span>
+                        <button class="btn btn-success btn-sm" onclick="saveDocReviewDraft()">
+                            <i class="fas fa-save text-xs"></i>
+                            保存草稿
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="docReviewSubmitBtn" onclick="submitDocReview()">
+                            <i class="fas fa-check text-xs"></i>
+                            提交报告
+                        </button>
+                        <button class="btn btn-danger btn-sm hidden" id="docReviewWithdrawBtn" onclick="withdrawDocReview()">
+                            <i class="fas fa-undo text-xs"></i>
+                            撤回报告
+                        </button>
+                    </div>
+                </div>
+                <div style="padding: 20px;">
+                    <!-- 客户名称 -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">客户名称</label>
+                            <input type="text" class="form-input" value="北京市地铁运营有限公司" readonly>
+                        </div>
+                    </div>
+
+                    <!-- 评审目的 -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">评审目的</label>
+                            <input type="text" class="form-input" value="初步评价客户文件的符合性、充分性和适宜性。" readonly>
+                        </div>
+                    </div>
+
+                    <!-- 评审准则 -->
+                    <div class="sub-section-title">评审准则</div>
+                    <div style="padding: 16px; background: #fafafa; border-radius: 4px; margin-bottom: 16px;">
+                        <div style="margin-bottom: 12px;">
+                            <label class="form-label">管理体系标准（规范性要求）</label>
+                            <input type="text" class="form-input" id="docReviewStandard" placeholder="请输入管理体系标准">
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <label class="form-label">适用法律法规</label>
+                            <input type="text" class="form-input" id="docReviewLaws" placeholder="请输入适用法律法规">
+                        </div>
+                        <div>
+                            <label class="form-label">其他</label>
+                            <input type="text" class="form-input" id="docReviewOther" placeholder="请输入其他评审准则">
+                        </div>
+                    </div>
+
+                    <!-- 管理体系文件 -->
+                    <div class="sub-section-title">管理体系文件</div>
+                    <div style="margin-bottom: 12px;">
+                        <table class="data-table border border-gray-200" id="docFileTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;">序号</th>
+                                    <th>文件名称</th>
+                                    <th>编号</th>
+                                    <th>版本号/发布日期</th>
+                                    <th style="width: 100px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td><input type="text" class="form-input" placeholder="请输入文件名称"></td>
+                                    <td><input type="text" class="form-input" placeholder="请输入编号"></td>
+                                    <td><input type="text" class="form-input" placeholder="版本号/发布日期"></td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteDocFileRow(this)">
+                                            <i class="fas fa-trash text-xs"></i>
+                                            删除
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 12px;">
+                            <button class="btn btn-primary btn-sm" onclick="addDocFileRow()">
+                                <i class="fas fa-plus text-xs"></i>
+                                添加文件
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 评审结论 -->
+                    <div class="sub-section-title">评审结论</div>
+                    <div style="padding: 16px; background: #fafafa; border-radius: 4px; margin-bottom: 16px;">
+                        <div class="radio-group-inline" style="margin-bottom: 16px;">
+                            <label class="radio-item">
+                                <input type="radio" name="doc-review-conclusion" value="conform" checked onchange="toggleDocReviewConclusion(false)">
+                                <span>符合要求，可进行现场审核。</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="doc-review-conclusion" value="non-conform" onchange="toggleDocReviewConclusion(true)">
+                                <span>不符合标准要求，请对以下存在的问题修改并再次提交，确认符合要求后可进入现场审核。</span>
+                            </label>
+                        </div>
+                        
+                        <!-- 存在的问题 -->
+                        <div style="margin-bottom: 16px;">
+                            <label class="form-label">存在的问题（可附页）</label>
+                            <textarea class="form-input" id="docReviewIssues" rows="4" placeholder="请描述存在的问题..."></textarea>
+                        </div>
+                        
+                        <!-- 修改情况的确认 -->
+                        <div id="docReviewModificationSection">
+                            <label class="form-label">修改情况的确认</label>
+                            <textarea class="form-input" id="docReviewModification" rows="3" placeholder="请描述修改情况的确认..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 备注说明 -->
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <div class="info-text" style="padding: 12px; background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 4px; color: #52c41a;">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            注：管理体系文件可以是手册、程序文件、流程图、作业文件等，至少应包括标准所要求的文件。
+                        </div>
+                    </div>
+
+                    <!-- 附件上传 -->
+                    <div class="sub-section-title">附件资料</div>
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">支持上传PDF、Word、图片等格式文件</span>
+                            <button class="btn btn-default btn-sm" onclick="uploadDocReviewAttachment()">
+                                <i class="fas fa-upload text-xs"></i>
+                                上传附件
+                            </button>
+                        </div>
+                        <div class="attachment-list" id="docReviewAttachmentList">
+                            <!-- 动态生成附件列表 -->
+                        </div>
+                        <input type="file" id="docReviewFileInput" style="display: none;" accept=".doc,.docx,.pdf,.jpg,.jpeg,.png,.gif" onchange="handleDocReviewFileSelect(event)" multiple>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: 核查记录 -->
+        <div id="tab-verification" class="tab-content">
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-tasks text-blue-500"></i>
+                        组员核查记录执行情况
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        提示：点击"核查记录确认"按钮查看并确认组员填报内容，点击"查看详情"可预览记录
+                    </div>
+                </div>
+                <div style="padding: 16px;">
+                    <table class="data-table border border-gray-200">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">审核人员</th>
+                                <th style="width: 100px;">组内身份</th>
+                                <th style="width: 220px; white-space: nowrap;">审核日期区间</th>
+                                <th>审核场所</th>
+                                <th style="width: 100px;">状态</th>
+                                <th style="width: 150px;">提交时间</th>
+                                <th style="width: 240px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="verificationTableBody">
+                            <!-- 数据行将通过JS动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: 审核报告 -->
+        <div id="tab-report" class="tab-content">
+            <!-- 审核报告操作栏 -->
+            <div class="content-card" style="margin-bottom: 16px; position: sticky; top: 0; z-index: 40;">
+                <div class="card-header" style="background: #fff; border-bottom: 1px solid #e8e8e8;">
+                    <div class="card-title">
+                        <i class="fas fa-file-contract text-blue-500"></i>
+                        审核报告操作
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="btn btn-success btn-sm" onclick="saveReportDraft()">
+                            <i class="fas fa-save text-xs"></i>
+                            保存草稿
+                        </button>
+                        <button class="btn btn-danger btn-sm hidden" id="reportWithdrawBtn" onclick="withdrawReport()">
+                            <i class="fas fa-undo text-xs"></i>
+                            撤回报告
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="reportSubmitBtn" onclick="submitReport()">
+                            <i class="fas fa-check text-xs"></i>
+                            提交报告
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 一、基本信息 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-info-circle text-blue-500"></i>
+                        一、基本信息
+                    </div>
+                </div>
+                <div style="padding: 20px;">
+                    <!-- 1. 客户基本信息 -->
+                    <div class="sub-section-title">1. 客户基本信息</div>
+                    <div class="grid-4">
+                        <div class="form-group">
+                            <label class="form-label">客户名称</label>
+                            <input type="text" class="form-input" value="北京市地铁运营有限公司" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">地址</label>
+                            <input type="text" class="form-input" value="北京市西城区西直门外大街2号" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">客户代表</label>
+                            <input type="text" class="form-input" value="张明华" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">联系电话</label>
+                            <input type="text" class="form-input" value="010-12345678" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 0 0 25%;">
+                            <label class="form-label">邮箱</label>
+                            <input type="text" class="form-input" value="zhangmh@bjmetro.com" readonly>
+                        </div>
+                    </div>
+
+                    <!-- 2. 审核类型+认证领域（合并展示） -->
+                    <div class="sub-section-title">2. 审核类型及认证领域</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">审核类型及认证领域</label>
+                            <div style="padding: 6px 0;">
+                                <span class="audit-type-tag">初次认证E（EMS环境管理体系）</span>
+                                <span class="audit-type-tag">初次认证S（OHSMS职业健康安全管理体系）</span>
+                                <span class="audit-type-tag">初次认证Q（QMS质量管理体系）</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. 审核准则 -->
+                    <div class="sub-section-title">3. 审核准则</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">管理体系标准（规范性要求）</label>
+                            <input type="text" class="form-input" value="GB/T 19001-2016、GB/T 24001-2016、GB/T 45001-2020" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">客户管理体系文件</label>
+                            <input type="text" class="form-input" value="《质量管理手册》《程序文件汇编》" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">适用法律法规</label>
+                            <input type="text" class="form-input" value="《中华人民共和国产品质量法》《中华人民共和国环境保护法》《中华人民共和国安全生产法》等" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">客户特殊要求</label>
+                            <input type="text" class="form-input" value="无" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">其他</label>
+                            <input type="text" class="form-input" value="无" readonly>
+                        </div>
+                    </div>
+
+                    <!-- 4. 审核目的 -->
+                    <div class="sub-section-title">4. 审核目的</div>
+                    <div class="checkbox-group" style="padding: 12px; background: #fafafa; border-radius: 4px;">
+                        <label class="checkbox-item">
+                            <input type="checkbox" checked disabled>
+                            <span>初次认证：评价客户管理体系的实施情况，包括有效性，以确定是否推荐认证；</span>
+                        </label>
+                    </div>
+
+                    <!-- 5. 审核范围 -->
+                    <div class="sub-section-title">5. 审核范围</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">涉及的产品（服务）/活动及相应的场所</label>
+                            <table class="data-table" style="margin-top: 8px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;">序号</th>
+                                        <th style="width: 180px;">认证领域</th>
+                                        <th style="width: 350px;">场所地址</th>
+                                        <th>认证范围（产品/服务/活动）</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>QMS</td>
+                                        <td>北京市西城区西直门外大街2号（中心职能）</td>
+                                        <td>地铁运营服务（客运服务、车辆维护、轨道维护）</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>EMS</td>
+                                        <td>北京市西城区西直门外大街2号（中心职能）</td>
+                                        <td>地铁运营服务及相关管理活动</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>OHSMS</td>
+                                        <td>北京市西城区西直门外大街2号（中心职能）</td>
+                                        <td>地铁运营服务及相关职业健康安全管理活动</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 6. 审核组情况 -->
+                    <div class="sub-section-title">6. 审核组情况</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 80px;">姓名</th>
+                                        <th style="width: 100px;">组内身份</th>
+                                        <th style="width: 80px;">性别</th>
+                                        <th style="width: 150px;">联系电话</th>
+                                        <th>注册资格</th>
+                                        <th style="width: 150px;">专业代码</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>武荣刚</td>
+                                        <td>组长</td>
+                                        <td>男</td>
+                                        <td>13800138001</td>
+                                        <td>质量管理体系审核员、环境管理体系审核员、职业健康安全管理体系审核员</td>
+                                        <td>19.01.01</td>
+                                    </tr>
+                                    <tr>
+                                        <td>王洪伟</td>
+                                        <td>组员</td>
+                                        <td>男</td>
+                                        <td>13900139001</td>
+                                        <td>环境管理体系审核员</td>
+                                        <td>19.01.01</td>
+                                    </tr>
+                                    <tr>
+                                        <td>李战</td>
+                                        <td>组员</td>
+                                        <td>男</td>
+                                        <td>13700137001</td>
+                                        <td>职业健康安全管理体系审核员</td>
+                                        <td>19.01.01</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 二、审核综述 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-clipboard-list text-blue-500"></i>
+                        二、审核综述
+                    </div>
+                </div>
+                <div style="padding: 20px;">
+                    
+                    <!-- 1. 客户简要 -->
+                    <div class="sub-section-title">1. 客户简要</div>
+                    <div class="form-group">
+                        <textarea class="form-input placeholder-gray" placeholder="请简要介绍客户的情况，包括其所在行业、 体系覆盖范围内的员工数、主要的产品/服务、生产能力、业务状况等特征性信息；&#10;&#10;如果客户是多场所，应清楚地说明认证范围内共有多少场所，组织结构及相互之间的关系； 如果是多名称，应清楚第说明两个名称组织之间的关系； &#10;&#10;对于监督审核和再认证审核，请描述上述内容的最新信息和变化的情况。"></textarea>
+                    </div>
+
+                    <!-- 2. 文件评审情况 -->
+                    <div class="sub-section-title">2. 文件评审情况（适用时）</div>
+                    <div id="doc-review-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <span style="font-size: 13px; color: #595959;">
+                                    于 <input type="text" class="form-input" style="width: 120px; display: inline-block;" value="2024-03-20" readonly> 
+                                    对受审方的 <input type="text" class="form-input" style="width: 200px; display: inline-block;" placeholder="请输入体系名称"> 体系文件进行了评审、结果为：
+                                </span>
+                            </div>
+                        </div>
+                        <div class="radio-group-inline" style="margin: 12px 0;">
+                            <label class="radio-item">
+                                <input type="radio" name="doc-review-result" value="satisfied" checked>
+                                <span>满足要求</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="doc-review-result" value="unsatisfied">
+                                <span>未满足要求</span>
+                            </label>
+                        </div>
+                        <div id="doc-review-unsatisfied" class="hidden" style="padding: 12px; background: #fff1f0; border: 1px solid #ffccc7; border-radius: 4px;">
+                            <span style="font-size: 13px; color: #595959;">
+                                对文件中的问题，受审核方已于 <input type="text" class="form-input" style="width: 120px; display: inline-block;" value="2024-03-22" readonly> 
+                                完成了修改，经审核组于 <input type="text" class="form-input" style="width: 120px; display: inline-block;" value="2024-03-23" readonly> 
+                                重新评审后，符合要求。
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 3. 一阶段审核情况 -->
+                    <div class="sub-section-title">3. 一阶段审核情况（适用时）</div>
+                    <div id="stage1-section">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <span style="font-size: 13px; color: #595959;">
+                                    于 <input type="text" class="form-input" style="width: 200px; display: inline-block;" value="2024-04-01 至 2024-04-02" readonly> 
+                                    进行了第一阶段
+                                    <label class="radio-item" style="display: inline-flex; margin-left: 8px;">
+                                        <input type="radio" name="stage1-type" value="onsite" checked>
+                                        <span>现场审核</span>
+                                    </label>
+                                    <label class="radio-item" style="display: inline-flex; margin-left: 8px;">
+                                        <input type="radio" name="stage1-type" value="offsite">
+                                        <span>非现场审核</span>
+                                    </label>
+                                    ，一阶段审核结果（详见一阶段审核报告）：
+                                </span>
+                            </div>
+                        </div>
+                        <div class="radio-group-inline" style="margin: 12px 0;">
+                            <label class="radio-item">
+                                <input type="radio" name="stage1-result" value="no-issue" checked>
+                                <span>未发现问题</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="stage1-result" value="has-issue">
+                                <span>发现问题</span>
+                            </label>
+                        </div>
+                        <div id="stage1-issues" class="hidden">
+                            <div style="padding: 12px; background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 4px; font-size: 13px; color: #595959; line-height: 1.8;">
+                                其中需要整改的问题 <input type="text" class="form-input" style="width: 60px; display: inline-block; text-align: center;" value="0" readonly> 项，
+                                审核组于 <input type="text" class="form-input" style="width: 120px; display: inline-block;" value="2024-04-05" readonly> 
+                                对组织整改措施进行了验证；需要关注的问题，审核组在二阶段对 
+                                <input type="text" class="form-input" style="width: 200px; display: inline-block;" value="中心职能、场所1、场所2" readonly> 
+                                场所 <input type="text" class="form-input" style="width: 150px; display: inline-block;" placeholder="手动录入过程/活动"> 过程/活动的现场审核中实施了进一步的审核和确认。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. 审核计划完成情况 -->
+                    <div class="sub-section-title">4. 审核计划完成情况</div>
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-size: 13px; color: #262626; margin-bottom: 8px; font-weight: 500;">（1）审核计划的调整：</div>
+                        <div class="radio-group-inline">
+                            <label class="radio-item">
+                                <input type="radio" name="plan-adjust" value="no" checked onchange="togglePlanAdjust(false)">
+                                <span>未调整</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="plan-adjust" value="yes" onchange="togglePlanAdjust(true)">
+                                <span>有调整</span>
+                            </label>
+                        </div>
+                        <div id="plan-adjust-content" class="hidden" style="margin-top: 8px;">
+                            <textarea class="form-input" placeholder="请描述审核计划调整的具体内容..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-size: 13px; color: #262626; margin-bottom: 8px; font-weight: 500;">（2）审核活动完成情况：</div>
+                        <div class="radio-group-inline">
+                            <label class="radio-item">
+                                <input type="radio" name="plan-complete" value="completed" checked onchange="togglePlanComplete(false)">
+                                <span>完成了全部审核计划的内容</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="plan-complete" value="uncompleted" onchange="togglePlanComplete(true)">
+                                <span>未能完成全部审核计划的内容</span>
+                            </label>
+                        </div>
+                        <div id="plan-uncomplete-content" class="hidden" style="margin-top: 8px; padding: 12px; background: #fff1f0; border: 1px solid #ffccc7; border-radius: 4px;">
+                            <div style="font-size: 13px; color: #262626; margin-bottom: 8px;">原因是：（以下内容支持多选）</div>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item">
+                                    <input type="checkbox">
+                                    <span>组织对审核活动不配合，审核活动无法进行，经机构同意终止审核；</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox">
+                                    <span>受审核方实际情况与申请材料有重大不一致，经机构同意终止审核；</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox">
+                                    <span>组织的 <input type="text" class="form-input" style="width: 120px; display: inline-block;" placeholder="手动录入"> 管理体系有重大缺陷，不符合认证标准 <input type="text" class="form-input" style="width: 120px; display: inline-block;" placeholder="手动录入"> 的要求；</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox">
+                                    <span>组织存在重大质量安全/环境/职业健康安全/食品安全问题或其他严重违法违规行为；</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox">
+                                    <span>其他原因：<input type="text" class="form-input" style="width: 300px; display: inline-block;" placeholder="手动录入"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. 本次审核情况 -->
+                    <div class="sub-section-title">5. 本次审核情况</div>
+                    
+                    <div style="margin-bottom: 16px; font-size: 13px; color: #595959; line-height: 1.8;">
+                        （1）本次审核于 <input type="text" class="form-input" style="width: 200px; display: inline-block;" value="2024-04-15 至 2024-04-18" readonly> 进行，
+                        审核组一行 <input type="text" class="form-input" style="width: 50px; display: inline-block; text-align: center;" value="4" readonly> 人，
+                        审核了 <input type="text" class="form-input" style="width: 50px; display: inline-block; text-align: center;" value="3" readonly> 个场所；
+                        涉及 <input type="text" class="form-input" style="width: 50px; display: inline-block; text-align: center;" value="2" readonly> 班次，
+                        审核实施的地点为：<input type="text" class="form-input" style="width: 300px; display: inline-block;" value="中心职能、场所1、场所2" readonly>，
+                        审核组分别于 <input type="date" class="form-input" style="width: 140px; display: inline-block;"> 和 <input type="date" class="form-input" style="width: 140px; display: inline-block;"> 
+                        组织召开了首、末次会议，具体参会人员详见首、末次会议签到表。
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-size: 13px; color: #262626; margin-bottom: 8px;">（2）收集审核证据的方法包括：</div>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked>
+                                <span>现场观察</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked>
+                                <span>查阅文件记录</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked>
+                                <span>面谈交流</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox">
+                                <span>远程审核</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox">
+                                <span>其他：<input type="text" class="form-input" style="width: 200px; display: inline-block; margin-left: 4px;" placeholder="请输入"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 16px; font-size: 13px; color: #595959; line-height: 1.8;">
+                        （3）本次审核对在一阶段审核中识别出的 <input type="text" class="form-input" style="width: 60px; display: inline-block;" placeholder="手动录入"> 项重要审核点的过程控制的有效性进行了重点审核，审核结果详见本报告第三部分的 <input type="text" class="form-input" style="width: 200px; display: inline-block;" placeholder="手动录入文字">。
+                    </div>
+
+                    <div style="margin-bottom: 16px; font-size: 13px; color: #595959; line-height: 1.8;">
+                        （4）本次审核发现严重不符合 <input type="text" class="form-input" style="width: 60px; display: inline-block; text-align: center;" value="0" readonly> 项，
+                        轻微不符合 <input type="text" class="form-input" style="width: 60px; display: inline-block; text-align: center;" value="2" readonly> 项。
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-size: 13px; color: #262626; margin-bottom: 8px;">（5）本次审核是：</div>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="combined-audit" onchange="toggleCombinedAudit(this.checked)">
+                                <span>结合审核</span>
+                            </label>
+                            <div id="combined-audit-content" class="hidden conditional-display" style="margin-left: 22px;">
+                                审核的管理体系包括：<span style="color: #595959;">QMS质量管理体系、EMS环境管理体系、OHSMS职业健康安全管理体系</span>
+                            </div>
+                            
+                            <label class="checkbox-item" style="margin-top: 8px;">
+                                <input type="checkbox" id="joint-audit" onchange="toggleJointAudit(this.checked)">
+                                <span>联合审核，其他认证机构的名称：<input type="text" class="form-input" style="width: 200px; display: inline-block; margin-left: 4px;" placeholder="手动录入"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 6. 管理体系变更 -->
+                    <div class="sub-section-title">6. 自上次审核以来，组织的管理体系</div>
+                    <div class="radio-group-inline" style="margin-bottom: 12px;">
+                        <label class="radio-item">
+                            <input type="radio" name="system-change" value="no" checked onchange="toggleSystemChange(false)">
+                            <span>无重大变更</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="system-change" value="yes" onchange="toggleSystemChange(true)">
+                            <span>有重大变更</span>
+                        </label>
+                    </div>
+                    <div id="system-change-content" class="hidden">
+                        <textarea class="form-input placeholder-gray" placeholder="如有详细描述并评价其对体系的影响或符合性。就组织存在的与上次审核之后是否发生重大变更（如：产品变更、标准变更、活动/过程变更、组织机构变更、重要岗位人员变更……），以及变更是否对管理体系的有效运行产生影响、变更后的持续符合性进行评价。如果企业是变更换发证书，此处更应重点描述。"></textarea>
+                    </div>
+
+                    <!-- 7. 不适用说明 -->
+                    <div class="sub-section-title">7. 质量管理体系不适用说明</div>
+                    <div class="radio-group-inline" style="margin-bottom: 12px;">
+                        <label class="radio-item">
+                            <input type="radio" name="qms-na" value="no" checked onchange="toggleQmsNa(false)">
+                            <span>无</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="qms-na" value="yes" onchange="toggleQmsNa(true)">
+                            <span>有</span>
+                        </label>
+                    </div>
+                    <div id="qms-na-content" class="hidden">
+                        <textarea class="form-input" placeholder="请说明不适用的条款及理由..."></textarea>
+                    </div>
+
+                    <!-- 8. 认证范围的适宜性 -->
+                    <div class="sub-section-title">8. 认证范围的适宜性</div>
+                    <div class="radio-group-inline" style="margin-bottom: 12px;">
+                        <label class="radio-item">
+                            <input type="radio" name="scope-change" value="no" checked onchange="toggleScopeChange(false)">
+                            <span>无变化</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="scope-change" value="yes" onchange="toggleScopeChange(true)">
+                            <span>有变化</span>
+                        </label>
+                    </div>
+                    <div id="scope-change-content" class="hidden">
+                        <textarea class="form-input" placeholder="请描述认证范围的变化情况..."></textarea>
+                    </div>
+
+                    <!-- 9. 审核风险 -->
+                    <div class="sub-section-title">9. 审核风险及审核中遇到的可能影响审核结论的不确定因素和（或）障碍（适用时）</div>
+                    <div class="form-group">
+                        <textarea class="form-input" placeholder="如断电、火灾、洪灾等特殊情况，非必填项"></textarea>
+                    </div>
+
+                    <!-- 10. 是否达成审核目的 -->
+                    <div class="sub-section-title">10. 本次是否达成审核目的</div>
+                    <div class="radio-group-inline" style="margin-bottom: 12px;">
+                        <label class="radio-item">
+                            <input type="radio" name="purpose-achieved" value="yes" checked onchange="togglePurposeAchieved(false)">
+                            <span>达成</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="purpose-achieved" value="no" onchange="togglePurposeAchieved(true)">
+                            <span>未达成</span>
+                        </label>
+                    </div>
+                    <div id="purpose-achieved-content" class="hidden">
+                        <textarea class="form-input" placeholder="请说明未达成审核目的的原因..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 三、主要审核发现 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-search text-blue-500"></i>
+                        三、主要审核发现、审核证据及管理体系评价
+                    </div>
+                </div>
+                <div style="padding: 20px;">
+                    
+                    <div class="section-title">（一）符合性及有效性评价</div>
+
+                    <!-- 1. 风险和机遇管理 -->
+                    <div class="sub-section-title">1. 对所处环境的风险和机遇管理（QESF）</div>
+                    <div style="padding: 16px; background: #fafafa; border-radius: 4px;">
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">1）组织分析了自身的内、外部环境（环境状况（E）），确定了相关方并理解其需求和期望； 适当时进行了评审和更新：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-1" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-1" value="no">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">2)合理地确定了需要应对的风险和机遇以及措施：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-2" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-2" value="no">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                            <div style="margin-top: 6px;">
+                                <span style="font-size: 12px; color: #8c8c8c;">确定的主要风险和机遇包括：</span>
+                                <input type="text" class="form-input" style="margin-top: 4px;" placeholder="非必填项">
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">3)在相关过程中有效地实施了措施：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-3" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-3" value="no" onchange="toggleRadioText(this, 'risk1-3-text')">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                            <div id="risk1-3-text" class="hidden" style="margin-top: 6px;">
+                                <textarea class="form-input" placeholder="请描述具体情况..."></textarea>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">4)对措施的实施有效性进行了评价：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-4" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-4" value="no" onchange="toggleRadioText(this, 'risk1-4-text')">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                            <div id="risk1-4-text" class="hidden" style="margin-top: 6px;">
+                                <textarea class="form-input" placeholder="请描述具体情况..."></textarea>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">5)基本达到了风险和机遇管理的预期目标：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-5" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-5" value="no" onchange="toggleRadioText(this, 'risk1-5-text')">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                            <div id="risk1-5-text" class="hidden" style="margin-top: 6px;">
+                                <textarea class="form-input" placeholder="请描述具体情况..."></textarea>
+                            </div>
+                        </div>
+                        <div>
+                            <span style="font-size: 13px; color: #595959;">6)将风险和机遇的管理情况输入了管理评审：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-6" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="risk1-6" value="no" onchange="toggleRadioText(this, 'risk1-6-text')">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                            <div id="risk1-6-text" class="hidden" style="margin-top: 6px;">
+                                <textarea class="form-input" placeholder="请描述具体情况..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. 领导作用 -->
+                    <div class="sub-section-title">2. 领导作用、职责和权限</div>
+                    <div style="padding: 16px; background: #fafafa; border-radius: 4px;">
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">1)组织的最高管理层基本履行了规定的职责和承诺：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="leader2-1" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="leader2-1" value="no" onchange="toggleRadioText(this, 'leader2-1-text')">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                            <div id="leader2-1-text" class="hidden" style="margin-top: 6px;">
+                                <textarea class="form-input" placeholder="请描述具体情况..."></textarea>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">2)组织机构符合实际、职责权限分配明确，并沟通和理解：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="leader2-2" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="leader2-2" value="no" onchange="toggleRadioText(this, 'leader2-2-text')">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                            <div id="leader2-2-text" class="hidden" style="margin-top: 6px;">
+                                <textarea class="form-input" placeholder="请描述具体情况..."></textarea>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">3)指定了体系负责人（如管代），并职责明确符合：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="leader2-3" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="leader2-3" value="no" onchange="toggleRadioText(this, 'leader2-3-text')">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                            <div id="leader2-3-text" class="hidden" style="margin-top: 6px;">
+                                <textarea class="form-input" placeholder="请描述具体情况..."></textarea>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">4)食品安全文化建立情况（H）：</span>
+                            <textarea class="form-input" placeholder="非必填项，仅H体系显示"></textarea>
+                        </div>
+                        <div>
+                            <span style="font-size: 13px; color: #595959;">5)其他评价（需要时）：</span>
+                            <textarea class="form-input" placeholder="非必填项"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 3. 工作人员的协商和参与情况（仅OHSMS） -->
+                    <div class="sub-section-title" id="ohs-worker-title">3. 工作人员的协商和参与情况（OHSMS）</div>
+                    <div class="form-group" id="ohs-worker-content">
+                        <textarea class="form-input" placeholder="仅OHSMS显示该条，文本录入"></textarea>
+                    </div>
+
+                    <!-- 4. 管理体系方针 -->
+                    <div class="sub-section-title">4. 管理体系方针</div>
+                    <div style="padding: 16px; background: #fafafa; border-radius: 4px;">
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">1)方针是否符合标准要求和切合组织情况：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="policy4-1" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="policy4-1" value="no" onchange="toggleRadioText(this, 'policy4-1-text')">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                            <div id="policy4-1-text" class="hidden" style="margin-top: 6px;">
+                                <textarea class="form-input" placeholder="请描述具体情况..."></textarea>
+                            </div>
+                        </div>
+                        <div>
+                            <span style="font-size: 13px; color: #595959;">2)沟通、理解、被相关方获取较好：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="policy4-2" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="policy4-2" value="no" onchange="toggleRadioText(this, 'policy4-2-text')">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                            <div id="policy4-2-text" class="hidden" style="margin-top: 6px;">
+                                <textarea class="form-input" placeholder="请描述具体情况..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. 管理体系目标 -->
+                    <div class="sub-section-title">5. 管理体系目标及实现情况</div>
+                    <div class="form-group">
+                        <textarea class="form-input placeholder-gray" placeholder="请就组织目标制订及完成情况进行评价。包括：为实现方针，在相关职能、层次（和过程）上建立目标的情况；管理体系目标有哪些，是否与方针保持一致，是否适宜、可测量；是否有实现目标的具体措施（如方案）。目标是否得到沟通和监视、是否按计划完成。"></textarea>
+                    </div>
+
+                    <!-- 6. 法律法规 -->
+                    <div class="sub-section-title">6. 法律法规及其他要求（合规性义务）</div>
+                    <div class="form-group">
+                        <textarea class="form-input placeholder-gray" placeholder="请就法律法规的获取、识别，合规性评价开展情况，及组织的合规情况进行评价。包括：&#10;组织法律法规（如质量、环境及职业健康安全、食品安全方面法律法规）及其他要求获取是否充分，适用法律法规和相应要求识别是否合理、全面进行评价，有无遗漏等。出口企业申请HACCP应识别目的地国家的法规要求。&#10;组织如何开展合规性评价、评价频次、评价方法，评价内容是否全面，评价结果是否真实、合理。&#10;组织对法律及其他要的履行情况（实际守法情况），如：产品/服务质量是否合格（QMS），是否持有应有的资质许可证书（如安全生产许可证、物业资质、危险化学品相应资质、建筑业资质、食品生产/加工、经营相关资质如食品生产/经营许可证、饲料加工许可证、保健品加工资质……等），环评批复、三同时手续（EMS，适用时），职评批复及三同时验收手续（OHSMS，适用时），安评批复及三同时手续（OHSMS，适用时），消防验收（OHSMS），污染物排放是否达标（EMS，适用时）、危废的处置是否符合要求（EMS,适用时），作业场所有害物质是否达标（OHSMS，适用时）等。对违法情况，组织采取的措施及有效性。&#10;监督、再认证时关注法规的变化及符合法规情况。"></textarea>
+                    </div>
+
+                    <!-- 7. QMS产品/服务提供过程 -->
+                    <div class="sub-section-title" id="qms-process-title">7. 产品/服务提供过程及运行控制(QMS)</div>
+                    <div class="form-group" id="qms-process-content">
+                        <textarea class="form-input placeholder-gray" placeholder="请评价组织产品/服务提供过程的运行策划及控制情况，包括：&#10;1）针对组织产品和服务的特点识别的主要过程（或价值创造过程）有哪些，详细评述其控制方法和达成其结果的程度，包括正面的或负面的。可能的主要过程如订单接收、设计开发、采购（外包提供的产品/服务）、生产或服务提供、不合格和纠正、更改等；&#10;2）需要时，描述质量关键特性及其控制情况;产品和服务有关的应急措施情况。   &#10;3）评述应基于审核证据，可以从PDCA、5M1E、符合性有效性等方面考虑。&#10;监督、再认证时关注持续的运作控制和对变更的管理。"></textarea>
+                    </div>
+
+                    <!-- 8. EMS环境因素控制 -->
+                    <div class="sub-section-title" id="ems-process-title">8. 与重要环境因素有关的过程及运行控制(EMS)</div>
+                    <div class="form-group" id="ems-process-content">
+                        <textarea class="form-input placeholder-gray" placeholder="请就环境因素的识别和重要环境因素的确定，重要环境因素的控制措施及控制情况进行评价，包括：&#10;1）针对环境因素识别的充分性，环境影响评价及重要环境因素确定的合理性；控制措施的确定；控制措施实施的有效性及过程预期结果是否达到进行全面详细评价，包括正面的或负面的。描述必须与审核发现实际情况相一致，并体现受审核组织的特点。 &#10;2）生命周期观点如何体现、对相关方施加影响方面的评价；&#10;3）组织紧急情况识别的充分性、应急准备和响应措施的有效性进行评价，包括应急物资配备（是否充足、有效）、应急预案的编制和演练、及发生事故后对响应措施的评价和完善等。&#10;监督、再认证时关注保持和对变更的管理。"></textarea>
+                    </div>
+
+                    <!-- 9. OHSMS危险源控制 -->
+                    <div class="sub-section-title" id="ohs-process-title">9. 与OH&S风险有关的过程及运行控制（OHSMS）</div>
+                    <div class="form-group" id="ohs-process-content">
+                        <textarea class="form-input placeholder-gray" placeholder="请就危险源识别、风险评价，OH&S风险控制措施及控制情况进行评价，包括：&#10;1）针对危险源识别的充分性、风险评价的合理性，控制措施的确定实施的有效性，以及过程预期结果是否达到进行全面详细评价，包括正面的或负面的。描述必须与审核发现实际情况相一致，并体现受审核组织的特点。&#10;2）如何基于风险考虑，对相关方（尤其是承包方）进行管理及有效性；&#10;3）组织紧急情况识别的充分性、应急准备和响应措施的有效性进行评价，包括应急物资配备（是否充足、有效）、应急预案的编制和演练、及发生事故后对响应措施的评价和完善等。&#10;监督、再认证时关注保持和对变更的管理。"></textarea>
+                    </div>
+
+                    <!-- 10. FH食品危害控制 -->
+                    <div class="sub-section-title hidden" id="fh-process-title">10. 与食品危害控制有关的运行过程管理（F/H）</div>
+                    <div class="form-group hidden" id="fh-process-content">
+                        <textarea class="form-input placeholder-gray" placeholder="评价的内容需包括：&#10;1. 良好卫生规范/前提方案的适宜性、有效性（可简述）&#10;2.食品安全危害的识别及控制：&#10;1） 食品安全危害的识别充分性，危害可接受水平的合理性，危害评估、控制措施的选择、分类的合理性；需描述组织识别评估出了哪些显著危害？依据什么确定危害的可接收水平？确定了哪些对应的主要控制措施/组合；（包括CCP,OPRP或HACCP体系中的相关危害控制方案）&#10;2）控制措施确认的实施情况，包括确认的时机、方法、结果；&#10;3）危害控制计划实施的有效性；    评价的结论需基于可追溯的审核证据（包括生产现场观察、既往运行记录的抽查）；&#10;3. 原辅料采购（外包提供的产品/服务）/致敏物质管理/食品防护计划/产品追溯系统/食品欺诈预防/应急响应等过程的控制情况（在上面“2）”中已评价的活动，不用重复评价）&#10;4. 监督、再认证时关注保持和对变更的管理。"></textarea>
+                    </div>
+
+                    <!-- 11. QMS顾客满意 -->
+                    <div class="sub-section-title" id="qms-customer-title">11. 顾客满意（Q）</div>
+                    <div class="form-group" id="qms-customer-content">
+                        <textarea class="form-input placeholder-gray" placeholder="请就组织针对顾客满意程度进行监视、信息收集、分析、处理的方法及有效性进行评价，以及组织目前的顾客满意处于什么程度。"></textarea>
+                    </div>
+
+                    <!-- 12. FH/HACCP验证 -->
+                    <div class="sub-section-title hidden" id="fh-verify-title">12. 验证（F/H/DG)</div>
+                    <div class="form-group hidden" id="fh-verify-content">
+                        <textarea class="form-input placeholder-gray" placeholder="评价的内容需包括：&#10;1.策划的验证活动是否满足标准的要求;&#10;2.验证活动的实施情况:&#10;1）前提方案/前提计划的验证;&#10;2）危害控制计划/HACCP计划的验证;&#10;评价的结论需基于可追溯的审核证据（包括生产现场观察、既往运行记录的抽查）；&#10;对基于终产品或过程样品的检测验证产品安全性的，需描述抽样的合理性（即说明已有的相关产品检测报告能证明认证范围内的产品的食品安全危害在可接受水平内。如抽样是否的覆盖范围内所有的产品（产品小类）、检测的项目是否包括了组织识别评估的需特别控制的显著危害并满足相关标准/客户的要求等;&#10;3.验证结果的分析"></textarea>
+                    </div>
+
+                    <!-- 13. 监视测量分析评价 -->
+                    <div class="sub-section-title">13. 监视、测量、分析和评价</div>
+                    <div class="form-group">
+                        <textarea class="form-input placeholder-gray" placeholder="请就组织开展监视和测量内容是否全面，监视、测量方法及监视过程是否有效；以及组织对监视、测量所获得的信息进行分析和评价的时机、方法、评价准则及评价结果的有效性等进行逐一评价，包括：对目标、绩效、产品和服务的符合性、法律法规符合性、策划的过程是否得到有效实施、外部供方的绩效等监视、测量、分析和评价。&#10;通常情况下，QMS体系应评价对过程和产品（服务）的监视、测量的过程符合性及有效性；EMS体系应评价对废水、废气、噪声排放的监测情况及结果的有效性；OHSMS应评价对作业场所尘、毒、噪的监测及结果的有效性；FH主要评价组织监视测量的方法和设备是否适宜，结果是否真实有效，对产品与过程的监视测量的评价在对“验证”的评价中体现。"></textarea>
+                    </div>
+
+                    <!-- 14. 内部审核 -->
+                    <div class="sub-section-title">14. 内部审核</div>
+                    <div class="form-group">
+                        <textarea class="form-input placeholder-gray" placeholder="就组织内审工作开展的有效性进行评价，包括：内审的频次、何时实施、审核方案的策划、内审范围、审核人员的能力及公正性、内审不符合项及整改的有效性、内审结果的汇报等&#10;评价内审是否有效."></textarea>
+                    </div>
+
+                    <!-- 15. 管理评审 -->
+                    <div class="sub-section-title">15. 管理评审</div>
+                    <div class="form-group">
+                        <textarea class="form-input placeholder-gray" placeholder="就组织管理评审工作开展的有效性进行评价，包括：管理评审频次、何时实施、由谁主持实施 、评审输入/输出、以往评审结果的落实等。&#10;评价管理评审是否有效."></textarea>
+                    </div>
+
+                    <!-- 16. 不符合和纠正措施 -->
+                    <div class="sub-section-title">16. 不符合和纠正措施</div>
+                    <div class="form-group">
+                        <textarea class="form-input placeholder-gray" placeholder="就组织的不符合与纠正措施的管理机制的有效性进行评价，包括：不符合的调查、原因分析、制定并采取纠正和纠正措施、纠正措施的有效性等；…&#10;对FH还应包括对组织召回策划及实施的评价。"></textarea>
+                    </div>
+
+                    <!-- 17. 主要绩效及改进 -->
+                    <div class="sub-section-title">17. 主要绩效及其改进</div>
+                    <div class="form-group">
+                        <textarea class="form-input placeholder-gray" placeholder="请就组织（组织层面）在体系运行期间/认证周期内所取得的主要绩效及趋势进行评述。（包括质量绩效、环境绩效、OH&S绩效……等），侧重相应管理体系的预期结果及其能力评价；如： 产品/服务质量结果、顾客满意度、污染物排放、能源资源消耗方面、作业场所环境、职业病、……等方面。      &#10;评价组织的持续改进机制是否健全、有效，在管理体系及绩效方面相对于体系建立前（或上次审核）是否取得了持续的改进。"></textarea>
+                    </div>
+
+                    <!-- 18. 人员能力 -->
+                    <div class="sub-section-title">18. 人员的能力、意识和培训</div>
+                    <div class="form-group">
+                        <textarea class="form-input placeholder-gray" placeholder="请就组织不同（主要是重点）岗位人员能力和意识的情况进行评价，是否可以胜任管理体系中的相关工作，以及评价组织为确保相应人员具备应有的能力和意识所采取的措施及其有效性，如：转岗、招聘、培训需求的确定、培训的实施及培训的效果等。&#10;对FH，还应包括对食品安全/HACCP小组的评价。"></textarea>
+                    </div>
+
+                    <!-- 19. 体系运行支持 -->
+                    <div class="sub-section-title">19. 体系运行支持和保障（资源、文件化信息、信息沟通等）</div>
+                    <div style="padding: 16px; background: #fafafa; border-radius: 4px; margin-bottom: 16px;">
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">1)基础设施的配置和维护能满足管理体系有效运行的需要：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="resource19-1" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="resource19-1" value="no">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">2)运行所需的设备包括附属设备的配置和维护能满足过程运行的需要：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="resource19-2" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="resource19-2" value="no">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">3）监视和测量设备的配置和校准能有效确保各类监视和测量活动：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="resource19-3" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="resource19-3" value="no">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">4）过程运行环境能确保达到过程的预期结果：</span>
+                            <div class="radio-group-inline" style="margin-top: 6px;">
+                                <label class="radio-item">
+                                    <input type="radio" name="resource19-4" value="yes" checked>
+                                    <span>是</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="resource19-4" value="no">
+                                    <span>否</span>
+                                </label>
+                            </div>
+                            <div style="margin-top: 6px;">
+                                <span style="font-size: 12px; color: #8c8c8c;">评价说明：</span>
+                                <textarea class="form-input" style="margin-top: 4px;" placeholder="文本录入"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" id="qms-knowledge-content" style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">5）知识管理评价（Q）：</span>
+                            <textarea class="form-input placeholder-gray" style="margin-top: 4px;" placeholder="就组织如何确定和维护运行中所需的知识，以及组织的知识是否足以使其提供合格产品和服务，并应对不断变化的需求和发展趋势进行评价（QMS)。"></textarea>
+                        </div>
+                        
+                        <div style="margin-bottom: 12px;">
+                            <span style="font-size: 13px; color: #595959;">6）信息交流情况：</span>
+                            <textarea class="form-input placeholder-gray" style="margin-top: 4px;" placeholder="请就组织内部信息交流和外部信息交流的有效性进行评价，包括：沟通方式、沟通渠道是否畅通，尤其是对外部（包括顾客、相关方）存在投诉、抱怨等情况的收集及处理的及时性和有效性。"></textarea>
+                        </div>
+                        
+                        <div>
+                            <span style="font-size: 13px; color: #595959;">7）其它：</span>
+                            <textarea class="form-input placeholder-gray" style="margin-top: 4px;" placeholder="需要时（指组织管理特别好或差或有其它需要说明的情况时）评价：如内部沟通、文件化信息整合、修订、日常管理等。"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 20. 资质有效性验证 -->
+                    <div class="sub-section-title">20. 组织认证有关的资质有效性验证（适用时）</div>
+                    <div class="form-group">
+                        <textarea class="form-input placeholder-gray" placeholder="写明资质的名称、有效期，需要时表明范围等；验证其有效性。"></textarea>
+                    </div>
+
+                    <!-- 21. 产品安全性验证（仅F/H/DG） -->
+                    <div class="sub-section-title hidden" id="fh-safety-title">21. 产品安全性验证（适用于F/H/DG）</div>
+                    <div class="form-group hidden" id="fh-safety-content">
+                        <textarea class="form-input placeholder-gray" placeholder="请描述本次审核覆盖范围的产品安全性验证情况。如产品检测报告抽样情况或现场产品抽样检测的产品种类和检测项目，抽样时间、地点以及产品检测机构的信息，并对产品安全性验证的结果进行评价。如未实施产品抽样检测需说明理由。"></textarea>
+                    </div>
+
+                    <div class="section-title" style="margin-top: 32px;">（二）其他事项</div>
+
+                    <!-- 1. 认证证书及标志使用 -->
+                    <div class="sub-section-title hidden" id="cert-usage-title">1. 认证证书及标志的使用（初审不适用）</div>
+                    <div class="form-group hidden" id="cert-usage-content">
+                        <textarea class="form-input placeholder-gray" placeholder="请就客户在认证证书、徽标（如CQC徽标）、认可标志方面的使用情况是否符合要求进行评价，如：名片、文件文具、包装、公司网站和对外宣传资料中关于认证信息和状态的表述等。"></textarea>
+                    </div>
+
+                    <!-- 2. 紧急情况事故 -->
+                    <div class="sub-section-title">2. 紧急情况、事故</div>
+                    <div class="radio-group-inline" style="margin-bottom: 12px;">
+                        <label class="radio-item">
+                            <input type="radio" name="emergency" value="no" checked onchange="toggleEmergency(false)">
+                            <span>否</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="emergency" value="yes" onchange="toggleEmergency(true)">
+                            <span>是</span>
+                        </label>
+                    </div>
+                    <div id="emergency-content" class="hidden">
+                        <textarea class="form-input placeholder-gray" placeholder="请就组织是否发生了紧急情况、事故等情况，及处理措施是否有效进行评价，如：质量事故、环境事故、安全事故、人身伤亡事故、被媒体曝光……等"></textarea>
+                    </div>
+
+                    <!-- 3. 上次审核不符合纠正措施验证 -->
+                    <div class="sub-section-title hidden" id="last-ncr-title">3. 上次审核不符合纠正措施的验证（初审不适用）</div>
+                    <div class="form-group hidden" id="last-ncr-content">
+                        <textarea class="form-input placeholder-gray" placeholder="请就审核组对组织针对上次审核发现的不符合项的纠正和纠正措施进行现场确认、验证情况进行描述，对纠正措施的有效性进行评价。"></textarea>
+                    </div>
+
+                    <!-- 4. 分歧意见 -->
+                    <div class="sub-section-title">4. 审核组和客户之间的尚未解决的分歧意见（适用时）</div>
+                    <div class="radio-group-inline" style="margin-bottom: 12px;">
+                        <label class="radio-item">
+                            <input type="radio" name="disagreement" value="no" checked onchange="toggleDisagreement(false)">
+                            <span>否</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="disagreement" value="yes" onchange="toggleDisagreement(true)">
+                            <span>是</span>
+                        </label>
+                    </div>
+                    <div id="disagreement-content" class="hidden">
+                        <textarea class="form-input" placeholder="请描述分歧意见的具体内容..."></textarea>
+                    </div>
+
+                    <!-- 不符合项表格 -->
+                    <div class="sub-section-title">（三）不符合项</div>
+                    <div class="form-group">
+                        <table class="data-table border border-gray-200">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;">序号</th>
+                                    <th style="width: 120px;">部门/过程</th>
+                                    <th style="width: 200px;">标准及条款</th>
+                                    <th>不符合事实</th>
+                                    <th style="width: 100px;">不符合性质</th>
+                                    <th style="width: 100px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ncrTableBody">
+                                <tr>
+                                    <td>1</td>
+                                    <td><input type="text" class="form-input" value="安全管理部门"></td>
+                                    <td><input type="text" class="form-input" value="GB/T 45001-2020 6.1.2"></td>
+                                    <td>
+                                        <textarea class="form-input">审核发现未对新设备操作岗位进行系统的危险源辨识。抽查2024年3月新投入使用的自动检票机维护岗位，未提供相应的危险源辨识记录。</textarea>
+                                        <div style="margin-top: 4px;">
+                                            <span class="attachment-btn" onclick="uploadImage(this)">
+                                                <i class="fas fa-image"></i> 上传图片
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <select class="form-input">
+                                            <option value="minor" selected>轻微</option>
+                                            <option value="major">严重</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteNcrRow(this)">
+                                            <i class="fas fa-trash text-xs"></i>
+                                            删除
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td><input type="text" class="form-input" value="运营管理部门"></td>
+                                    <td><input type="text" class="form-input" value="GB/T 19001-2016 7.5"></td>
+                                    <td>
+                                        <textarea class="form-input">审核发现现场作业指导书未更新，与实际操作不符。2024年3月修订的设备维护流程未在作业指导书中体现。</textarea>
+                                        <div style="margin-top: 4px;">
+                                            <span class="attachment-btn" onclick="uploadImage(this)">
+                                                <i class="fas fa-image"></i> 上传图片
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <select class="form-input">
+                                            <option value="minor" selected>轻微</option>
+                                            <option value="major">严重</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteNcrRow(this)">
+                                            <i class="fas fa-trash text-xs"></i>
+                                            删除
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 12px;">
+                            <button class="btn btn-primary btn-sm" onclick="addNcrRow()">
+                                <i class="fas fa-plus text-xs"></i>
+                                新增不符合项
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 四、审核中观察到的其他事项 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-eye text-blue-500"></i>
+                        四、审核中观察到的其他事项
+                    </div>
+                </div>
+                <div style="padding: 20px;">
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label">1. 组织的其他优势项 <span class="text-gray-400 text-xs">（非必填项）</span></label>
+                        <textarea class="form-input" placeholder="请描述审核中发现的其他优势项..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">2. 改进建议/机会 <span class="text-gray-400 text-xs">（非必填项）</span></label>
+                        <textarea class="form-input" placeholder="请提出改进建议或机会..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 五、审核结论及推荐意见 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-gavel text-blue-500"></i>
+                        五、审核结论及推荐意见
+                    </div>
+                </div>
+                <div style="padding: 20px;">
+                    
+                    <!-- 1. 审核结论（支持修改） -->
+                    <div class="sub-section-title">1. 审核结论</div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <textarea class="form-input" id="auditConclusionText">经现场审核确认，该公司质量管理体系、环境管理体系、职业健康安全管理体系管理体系运行持续符合GB/T 19001-2016、GB/T 24001-2016、GB/T 45001-2020标准要求。</textarea>
+                    </div>
+
+                    <!-- 根据认证阶段显示不同选项 -->
+                    <div style="padding: 16px; background: #fafafa; border-radius: 4px;">
+                        <div id="conclusion-initial" style="font-size: 13px; color: #595959; line-height: 2;">
+                            建立、实施
+                            <select class="form-input" style="width: 100px; display: inline-block;">
+                                <option value="conform">符合</option>
+                                <option value="non-conform">不符合</option>
+                            </select>
+                            审核准则的要求，体系运行
+                            <select class="form-input" style="width: 100px; display: inline-block;">
+                                <option value="effective">有效</option>
+                                <option value="ineffective">失效</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 2. 推荐意见 -->
+                    <div class="sub-section-title">2. 推荐意见</div>
+                    <div style="padding: 16px; background: #fafafa; border-radius: 4px;">
+                        <div style="margin-bottom: 12px;">
+                            <span class="system-tag">QMS初次认证</span>
+                            <select class="form-input" style="width: 400px; display: inline-block;">
+                                <option value="recommend">推荐</option>
+                                <option value="conditional-recommend">在规定时限内对不符合采取了经审核组评审、接受并证实有效的纠正和纠正措施（对一般不符合提出经审核组评审并接受的纠正和纠正措施计划也可）</option>
+                                <option value="not-recommend">不予推荐</option>
+                                <option value="suspend">暂停认证</option>
+                                <option value="revoke">撤销认证</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <span class="system-tag">EMS初次认证</span>
+                            <select class="form-input" style="width: 400px; display: inline-block;">
+                                <option value="recommend">推荐</option>
+                                <option value="conditional-recommend">在规定时限内对不符合采取了经审核组评审、接受并证实有效的纠正和纠正措施（对一般不符合提出经审核组评审并接受的纠正和纠正措施计划也可）</option>
+                                <option value="not-recommend">不予推荐</option>
+                                <option value="suspend">暂停认证</option>
+                                <option value="revoke">撤销认证</option>
+                            </select>
+                        </div>
+                        <div>
+                            <span class="system-tag">OHSMS初次认证</span>
+                            <select class="form-input" style="width: 400px; display: inline-block;">
+                                <option value="recommend">推荐</option>
+                                <option value="conditional-recommend">在规定时限内对不符合采取了经审核组评审、接受并证实有效的纠正和纠正措施（对一般不符合提出经审核组评审并接受的纠正和纠正措施计划也可）</option>
+                                <option value="not-recommend">不予推荐</option>
+                                <option value="suspend">暂停认证</option>
+                                <option value="revoke">撤销认证</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 六、后续行动 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-tasks text-blue-500"></i>
+                        六、后续行动
+                    </div>
+                </div>
+                <div style="padding: 20px;">
+                    
+                    <!-- 1. 不符合项整改要求 -->
+                    <div class="sub-section-title">1. 不符合项整改要求</div>
+                    <div id="ncr-rectification" style="padding: 12px; background: #fff7e6; border: 1px solid #ffd591; border-radius: 4px; font-size: 13px; color: #595959; line-height: 1.8;">
+                        不符合项的纠正措施及相应证明资料（轻微不符合可以是整改计划）需要在 <input type="date" class="form-input" style="width: 140px; display: inline-block;"> 之前提交给审核组，审核组将采取 
+                        <select class="form-input" style="width: 120px; display: inline-block;">
+                            <option value="document">材料评审</option>
+                            <option value="onsite">现场跟踪审核</option>
+                        </select> 
+                        的方式，对不符合项的纠正措施的有效性进行确认。
+                        <div style="margin-top: 8px; color: #ff4d4f; font-weight: 500;">
+                            <i class="fas fa-exclamation-circle"></i> 注：不符合项的整改措施应在规定的时间内提交，否则，本次审核将失效，组织的认证证书将被暂停或撤销。
+                        </div>
+                    </div>
+                    <div id="no-ncr-notice" class="hidden" style="padding: 12px; background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 4px; font-size: 13px; color: #52c41a;">
+                        <i class="fas fa-check-circle"></i> 本次审核未开具不符合项，无需整改。
+                    </div>
+
+                    <!-- 2. 下次审核的说明 -->
+                    <div class="sub-section-title">2. 下次审核的说明</div>
+                    <div style="font-size: 13px; color: #595959; line-height: 2;">
+                        <div style="margin-bottom: 8px;">
+                            <i class="fas fa-check-square text-blue-500 mr-2"></i>
+                            下一次审核的审核类型：<span class="font-medium">QMS第一次监督审核，EMS第一次监督审核，OHSMS第一次监督审核</span>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <i class="fas fa-calendar-alt text-blue-500 mr-2"></i>
+                            下次审核需要在 <input type="date" class="form-input" style="width: 140px; display: inline-block;"> 之前完成；
+                        </div>
+                        <div>
+                            <i class="fas fa-eye text-blue-500 mr-2"></i>
+                            下次审核的关注点：<input type="text" class="form-input" style="width: 600px; display: inline-block;" placeholder="手动录入">
+                        </div>
+                    </div>
+
+                    <!-- 3. 其他说明 -->
+                    <div class="sub-section-title">3. 其他说明（适用时）</div>
+                    <div class="form-group">
+                        <div class="info-text" style="margin-bottom: 8px;">与末次会议上提供给客户信息的差异说明：</div>
+                        <textarea class="form-input" placeholder="请输入其他说明..."></textarea>
+                    </div>
+
+                    <!-- 4. 派出机构意见 -->
+                    <div class="sub-section-title">4. 审核派出机构意见</div>
+                    <div class="radio-group-inline" style="margin-bottom: 16px;">
+                        <label class="radio-item">
+                            <input type="radio" name="org-opinion" value="agree" checked>
+                            <span>同意审核组意见</span>
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="org-opinion" value="disagree">
+                            <span>不同意审核组意见</span>
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 0 0 200px;">
+                            <label class="form-label">授权人（签字）</label>
+                            <input type="text" class="form-input" disabled placeholder="二阶段审核报告审核组长提交后，需要领导审批">
+                        </div>
+                        <div class="form-group" style="flex: 0 0 150px;">
+                            <label class="form-label">日期</label>
+                            <input type="text" class="form-input" disabled>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 核查记录确认/查看弹窗 -->
+    <div class="modal-overlay" id="verificationModal">
+        <div class="modal-container" style="max-width: 1600px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-clipboard-check text-blue-500 mr-2"></i>
+                    <span id="modalTitle">核查记录确认</span> - <span id="modalAuditorName">审核人员</span>
+                    <span id="modalReadOnlyTag" class="ml-2 px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs font-medium" style="display: none;">只读模式</span>
+                </div>
+                <button class="modal-close" onclick="closeVerificationModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- 左侧边栏：审核活动列表 -->
+                <div class="modal-sidebar">
+                    <div class="sidebar-title">
+                        <i class="fas fa-list-ul mr-2"></i>
+                        审核活动列表
+                    </div>
+                    <div id="sidebarContent">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 右侧主内容：核查记录填报 -->
+                <div class="modal-main">
+                    <div id="verificationForms">
+                        <!-- 动态生成表单 -->
+                    </div>
+                    
+                    <!-- 附件上传区域 -->
+                    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e8e8e8;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span class="form-label" style="margin-bottom: 0;">附件资料</span>
+                            <button class="btn btn-default btn-sm" id="uploadBtn" onclick="uploadAttachment()">
+                                <i class="fas fa-upload text-xs"></i>
+                                上传附件
+                            </button>
+                        </div>
+                        <div class="attachment-list" id="attachmentList">
+                            <!-- 动态生成 -->
+                        </div>
+                        <input type="file" id="fileInput" style="display: none;" accept=".doc,.docx,.pdf,.jpg,.jpeg,.png,.gif" onchange="handleFileSelect(event)" multiple>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <span class="text-sm text-gray-500 mr-auto" id="modalHint">
+                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                    确认后该核查记录将不可再次修改
+                </span>
+                <button class="btn btn-default" onclick="closeVerificationModal()">取消</button>
+                <button class="btn btn-primary" id="confirmBtn" onclick="confirmVerification()">
+                    <i class="fas fa-check text-xs"></i>
+                    确认核查记录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局数据
+        const auditTeam = [
+            { id: 'wurg', name: '武荣刚', role: '组长', type: 'tag-leader', maxHours: 32, current: 28 },
+            { id: 'whw', name: '王洪伟', role: '组员', type: 'tag-qms', maxHours: 16, current: 16 },
+            { id: 'lz', name: '李战', role: '组员', type: 'tag-qms', maxHours: 16, current: 12 },
+            { id: 'zq', name: '赵强', role: '组员', type: 'tag-qms', maxHours: 8, current: 8 }
+        ];
+
+        // 核查记录数据
+        let verificationData = [
+            { 
+                auditorId: 'wurg', 
+                auditorName: '武荣刚', 
+                role: '组长', 
+                roleTag: 'tag-leader',
+                dateRange: '2024-04-15 至 2024-04-18', 
+                sites: '中心职能、场所1、场所2', 
+                status: 'submitted', 
+                submitTime: '2024-04-18 18:30:00',
+                records: [
+                    { date: '2024-04-15', time: '09:00-12:00', content: '组织环境 4.1-4.4', dept: '管理层/中心职能', record: '审核了公司管理体系的组织环境相关内容...', decision: '符合', standard: 'GB/T 19001-2016' },
+                    { date: '2024-04-15', time: '14:00-17:00', content: '领导作用 5.1-5.3', dept: '总经理办公室', record: '与总经理进行了访谈，了解了管理承诺...', decision: '符合', standard: 'GB/T 19001-2016' },
+                    { date: '2024-04-16', time: '09:00-12:00', content: '运行策划和控制 8.1', dept: '运营管理部门', record: '审核了轨道交通运营服务的运行策划...', decision: '观察项', standard: 'GB/T 19001-2016' }
+                ],
+                attachments: [
+                    { name: '审核记录表-第一天.docx', type: 'word' },
+                    { name: '现场照片1.jpg', type: 'image' }
+                ]
+            },
+            { 
+                auditorId: 'whw', 
+                auditorName: '王洪伟', 
+                role: '组员', 
+                roleTag: 'tag-qms',
+                dateRange: '2024-04-15 至 2024-04-16', 
+                sites: '场所1', 
+                status: 'confirmed', 
+                submitTime: '2024-04-16 17:45:00',
+                records: [
+                    { date: '2024-04-15', time: '09:00-12:00', content: '环境因素识别 6.1.2', dept: '环保部门', record: '审核了环境管理体系的环境因素识别过程...', decision: '符合', standard: 'GB/T 24001-2016' }
+                ],
+                attachments: []
+            },
+            { 
+                auditorId: 'lz', 
+                auditorName: '李战', 
+                role: '组员', 
+                roleTag: 'tag-qms',
+                dateRange: '2024-04-17 至 2024-04-18', 
+                sites: '场所2', 
+                status: 'unsubmitted', 
+                submitTime: '-',
+                records: [],
+                attachments: []
+            },
+            { 
+                auditorId: 'zq', 
+                auditorName: '赵强', 
+                role: '组员', 
+                roleTag: 'tag-qms',
+                dateRange: '2024-04-17', 
+                sites: '中心职能', 
+                status: 'submitted', 
+                submitTime: '2024-04-17 19:20:00',
+                records: [
+                    { date: '2024-04-17', time: '09:00-12:00', content: '职业健康安全风险识别 6.1.2', dept: '安全管理部门', record: '审核了职业健康安全管理体系的危险源辨识...', decision: '轻微不符合', standard: 'GB/T 45001-2020' }
+                ],
+                attachments: []
+            }
+        ];
+
+        let currentVerificationIndex = null;
+        let currentActivityIndex = 0;
+        let isReadOnlyMode = false;
+        let reportStatus = 'draft'; // 审核报告状态：draft, submitted
+        let docReviewStatus = 'draft'; // 文审报告状态：draft, submitted
+        let docReviewAttachments = []; // 文审报告附件
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderVerificationTable();
+            
+            // 监听文件评审结果
+            document.querySelectorAll('input[name="doc-review-result"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    toggleDocReview(this.value === 'unsatisfied');
+                });
+            });
+            
+            // 监听一阶段审核结果
+            document.querySelectorAll('input[name="stage1-result"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    toggleStage1Issues(this.value === 'has-issue');
+                });
+            });
+        });
+
+        // 切换节点
+        function switchNode(index) {
+            if (index !== 2) {
+                alert('当前示例仅展示"审核进行中"节点内容');
+                return;
+            }
+        }
+
+        // 返回
+        function goBack() {
+            if (confirm('确定返回列表页？未保存的数据将丢失。')) {
+                console.log('返回列表页');
+            }
+        }
+
+        // 切换Tab
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.tab-btn').classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        // 渲染核查记录表格
+        function renderVerificationTable() {
+            const tbody = document.getElementById('verificationTableBody');
+            tbody.innerHTML = '';
+            
+            verificationData.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                
+                let statusBadge = '';
+                if (item.status === 'unsubmitted') {
+                    statusBadge = '<span class="status-badge badge-draft">未提交</span>';
+                } else if (item.status === 'submitted') {
+                    statusBadge = '<span class="status-badge badge-processing">已提交</span>';
+                } else if (item.status === 'confirmed') {
+                    statusBadge = '<span class="status-badge badge-success">已确认</span>';
+                }
+                
+                let actionBtns = '<div class="action-btns">';
+                
+                actionBtns += `<button class="btn btn-info btn-sm" onclick="viewVerificationDetails(${index})">
+                    <i class="fas fa-eye text-xs"></i>
+                    查看详情
+                </button>`;
+                
+                if (item.status === 'submitted') {
+                    actionBtns += `<button class="btn btn-primary btn-sm" onclick="openVerificationModal(${index})">
+                        <i class="fas fa-check-circle text-xs"></i>
+                        核查记录确认
+                    </button>`;
+                } else if (item.status === 'confirmed') {
+                    actionBtns += `<button class="btn btn-default btn-sm" disabled>
+                        <i class="fas fa-check text-xs"></i>
+                        已确认
+                    </button>`;
+                } else {
+                    actionBtns += `<button class="btn btn-default btn-sm" disabled>
+                        <i class="fas fa-clock text-xs"></i>
+                        等待提交
+                    </button>`;
+                }
+                
+                actionBtns += '</div>';
+                
+                tr.innerHTML = `
+                    <td class="font-medium">${item.auditorName}</td>
+                    <td><span class="personnel-tag ${item.roleTag}">${item.role}</span></td>
+                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.dateRange}">${item.dateRange}</td>
+                    <td>${item.sites}</td>
+                    <td>${statusBadge}</td>
+                    <td class="text-gray-500">${item.submitTime}</td>
+                    <td>${actionBtns}</td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 查看核查记录详情（只读模式）
+        function viewVerificationDetails(index) {
+            currentVerificationIndex = index;
+            const data = verificationData[index];
+            currentActivityIndex = 0;
+            isReadOnlyMode = true;
+            
+            document.getElementById('modalTitle').textContent = '核查记录详情';
+            document.getElementById('modalAuditorName').textContent = data.auditorName;
+            document.getElementById('modalReadOnlyTag').style.display = 'inline-flex';
+            document.getElementById('modalHint').innerHTML = '<i class="fas fa-info-circle text-blue-500 mr-1"></i>当前为只读模式，仅可查看不可编辑';
+            document.getElementById('confirmBtn').style.display = 'none';
+            document.getElementById('uploadBtn').style.display = 'none';
+            
+            renderSidebar(data);
+            renderVerificationFormsReadOnly(data);
+            renderAttachmentsReadOnly(data);
+            
+            document.getElementById('verificationModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 打开核查记录确认弹窗（编辑模式）
+        function openVerificationModal(index) {
+            currentVerificationIndex = index;
+            const data = verificationData[index];
+            currentActivityIndex = 0;
+            isReadOnlyMode = false;
+            
+            document.getElementById('modalTitle').textContent = '核查记录确认';
+            document.getElementById('modalAuditorName').textContent = data.auditorName;
+            document.getElementById('modalReadOnlyTag').style.display = 'none';
+            document.getElementById('modalHint').innerHTML = '<i class="fas fa-info-circle text-blue-500 mr-1"></i>确认后该核查记录将不可再次修改';
+            document.getElementById('confirmBtn').style.display = 'inline-flex';
+            document.getElementById('uploadBtn').style.display = 'inline-flex';
+            
+            renderSidebar(data);
+            renderVerificationForms();
+            renderAttachments();
+            
+            document.getElementById('verificationModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 渲染侧边栏
+        function renderSidebar(data) {
+            const sidebarContent = document.getElementById('sidebarContent');
+            sidebarContent.innerHTML = '';
+            
+            if (!data.records || data.records.length === 0) {
+                sidebarContent.innerHTML = '<div style="padding: 12px; color: #8c8c8c; font-size: 12px;">暂无记录</div>';
+                return;
+            }
+            
+            data.records.forEach((record, idx) => {
+                const item = document.createElement('div');
+                item.className = 'sidebar-item ' + (idx === currentActivityIndex ? 'active' : '');
+                item.onclick = () => switchActivity(idx);
+                item.innerHTML = `
+                    <div style="font-weight: 500; margin-bottom: 2px;">${record.date} ${record.time}</div>
+                    <div style="color: #8c8c8c; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${record.content}</div>
+                `;
+                sidebarContent.appendChild(item);
+            });
+        }
+
+        // 切换审核活动
+        function switchActivity(index) {
+            currentActivityIndex = index;
+            
+            document.querySelectorAll('.sidebar-item').forEach((item, idx) => {
+                item.classList.toggle('active', idx === index);
+            });
+            
+            if (isReadOnlyMode) {
+                renderVerificationFormsReadOnly(verificationData[currentVerificationIndex]);
+            } else {
+                renderVerificationForms();
+            }
+        }
+
+        // 渲染核查记录表单（可编辑）
+        function renderVerificationForms() {
+            const container = document.getElementById('verificationForms');
+            const data = verificationData[currentVerificationIndex];
+            const record = data.records[currentActivityIndex];
+            
+            if (!record) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>暂无核查记录</p></div>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <label class="form-label">日期/时间 <span class="text-gray-400 text-xs">（自动带入，不可修改）</span></label>
+                        <input type="text" class="form-input" value="${record.date} ${record.time}" readonly>
+                    </div>
+                    <div>
+                        <label class="form-label">判定</label>
+                        <select class="form-input">
+                            <option value="符合" ${record.decision === '符合' ? 'selected' : ''}>符合</option>
+                            <option value="观察项" ${record.decision === '观察项' ? 'selected' : ''}>观察项</option>
+                            <option value="轻微不符合" ${record.decision === '轻微不符合' ? 'selected' : ''}>轻微不符合</option>
+                            <option value="严重不符合" ${record.decision === '严重不符合' ? 'selected' : ''}>严重不符合</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">检查内容/涉及标准条款 <span class="text-gray-400 text-xs">（自动带入，支持修改）</span></label>
+                    <input type="text" class="form-input" value="${record.content} ${record.standard}" style="width: 100%;">
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">涉及部门/场所 <span class="text-gray-400 text-xs">（自动带入，支持修改）</span></label>
+                    <input type="text" class="form-input" value="${record.dept}" style="width: 100%;">
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">审核记录 <span class="text-red-500">*</span></label>
+                    <div class="rich-editor">
+                        <div class="rich-editor-toolbar">
+                            <button type="button" class="toolbar-btn" onclick="execCmd('bold')" title="加粗"><i class="fas fa-bold"></i></button>
+                            <button type="button" class="toolbar-btn" onclick="execCmd('italic')" title="斜体"><i class="fas fa-italic"></i></button>
+                            <button type="button" class="toolbar-btn" onclick="execCmd('underline')" title="下划线"><i class="fas fa-underline"></i></button>
+                            <div style="width: 1px; height: 20px; background: #e8e8e8; margin: 0 4px;"></div>
+                            <button type="button" class="toolbar-btn" onclick="insertImage()" title="插入图片"><i class="fas fa-image"></i></button>
+                        </div>
+                        <div class="rich-editor-content" contenteditable="true" id="richEditor">
+                            ${record.record}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染核查记录表单（只读）
+        function renderVerificationFormsReadOnly(data) {
+            const container = document.getElementById('verificationForms');
+            const record = data.records[currentActivityIndex];
+            
+            if (!record) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>暂无核查记录</p></div>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <label class="form-label">日期/时间</label>
+                        <input type="text" class="form-input" value="${record.date} ${record.time}" readonly>
+                    </div>
+                    <div>
+                        <label class="form-label">判定</label>
+                        <input type="text" class="form-input" value="${record.decision}" readonly>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">检查内容/涉及标准条款</label>
+                    <input type="text" class="form-input" value="${record.content} ${record.standard}" style="width: 100%;" readonly>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">涉及部门/场所</label>
+                    <input type="text" class="form-input" value="${record.dept}" style="width: 100%;" readonly>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">审核记录</label>
+                    <div class="ncr-section-content" style="min-height: 200px; background: #f5f5f5; border: 1px solid #e8e8e8; padding: 12px; border-radius: 4px; font-size: 13px; line-height: 1.6;">
+                        ${record.record || '<span style="color: #bfbfbf;">无记录内容</span>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 富文本命令
+        function execCmd(command) {
+            document.execCommand(command, false, null);
+            document.getElementById('richEditor').focus();
+        }
+
+        // 插入图片
+        function insertImage() {
+            const url = prompt('请输入图片URL:');
+            if (url) {
+                document.execCommand('insertImage', false, url);
+            }
+        }
+
+        // 渲染附件列表（可编辑）
+        function renderAttachments() {
+            const container = document.getElementById('attachmentList');
+            const data = verificationData[currentVerificationIndex];
+            
+            container.innerHTML = '';
+            
+            data.attachments.forEach((att, index) => {
+                const item = document.createElement('div');
+                item.className = 'attachment-item';
+                
+                let icon = 'fa-file';
+                if (att.type === 'word') icon = 'fa-file-word';
+                if (att.type === 'pdf') icon = 'fa-file-pdf';
+                if (att.type === 'image') icon = 'fa-file-image';
+                
+                item.innerHTML = `
+                    <i class="fas ${icon}"></i>
+                    <span>${att.name}</span>
+                    <span class="remove" onclick="removeAttachment(${index})"><i class="fas fa-times"></i></span>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        // 渲染附件列表（只读）
+        function renderAttachmentsReadOnly(data) {
+            const container = document.getElementById('attachmentList');
+            container.innerHTML = '';
+            
+            if (!data.attachments || data.attachments.length === 0) {
+                container.innerHTML = '<span style="color: #8c8c8c; font-size: 12px;">无附件</span>';
+                return;
+            }
+            
+            data.attachments.forEach((att) => {
+                const item = document.createElement('div');
+                item.className = 'attachment-item';
+                item.style.cursor = 'default';
+                
+                let icon = 'fa-file';
+                if (att.type === 'word') icon = 'fa-file-word';
+                if (att.type === 'pdf') icon = 'fa-file-pdf';
+                if (att.type === 'image') icon = 'fa-file-image';
+                
+                item.innerHTML = `
+                    <i class="fas ${icon}"></i>
+                    <span>${att.name}</span>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        // 上传附件
+        function uploadAttachment() {
+            document.getElementById('fileInput').click();
+        }
+
+        // 处理文件选择
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            const data = verificationData[currentVerificationIndex];
+            
+            for (let file of files) {
+                let type = 'file';
+                if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) type = 'word';
+                else if (file.name.endsWith('.pdf')) type = 'pdf';
+                else if (file.name.match(/\.(jpg|jpeg|png|gif)$/)) type = 'image';
+                
+                data.attachments.push({ name: file.name, type: type });
+            }
+            
+            renderAttachments();
+            event.target.value = '';
+        }
+
+        // 删除附件
+        function removeAttachment(index) {
+            if (confirm('确定删除该附件吗？')) {
+                verificationData[currentVerificationIndex].attachments.splice(index, 1);
+                renderAttachments();
+            }
+        }
+
+        // 确认核查记录
+        function confirmVerification() {
+            if (!confirm('确定确认该核查记录吗？确认后将不可再次修改。')) {
+                return;
+            }
+            
+            verificationData[currentVerificationIndex].status = 'confirmed';
+            renderVerificationTable();
+            closeVerificationModal();
+            
+            showToast('核查记录已确认', 'success');
+        }
+
+        // 关闭弹窗
+        function closeVerificationModal() {
+            document.getElementById('verificationModal').classList.remove('show');
+            document.body.style.overflow = '';
+            currentVerificationIndex = null;
+            isReadOnlyMode = false;
+        }
+
+        // 显示提示
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? '#52c41a' : (type === 'warning' ? '#fa8c16' : '#1890ff');
+            toast.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${bgColor}; color: white; padding: 10px 20px; border-radius: 4px; z-index: 9999; box-shadow: 0 2px 8px rgba(0,0,0,0.15);`;
+            toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        // 审核报告相关函数
+        function saveReportDraft() {
+            showToast('审核报告草稿已保存', 'success');
+        }
+
+        function submitReport() {
+            if (confirm('确定提交审核报告吗？提交后将进入审批流程，不可再修改。')) {
+                reportStatus = 'submitted';
+                document.getElementById('reportStatusBadgeTab').textContent = '已提交';
+                document.getElementById('reportStatusBadgeTab').className = 'status-tag status-badge badge-success';
+                document.getElementById('reportSubmitBtn').classList.add('hidden');
+                document.getElementById('reportWithdrawBtn').classList.remove('hidden');
+                showToast('审核报告已提交', 'success');
+            }
+        }
+
+        function withdrawReport() {
+            if (confirm('确定撤回审核报告吗？撤回后将变为待提交状态。')) {
+                reportStatus = 'draft';
+                document.getElementById('reportStatusBadgeTab').textContent = '待提交';
+                document.getElementById('reportStatusBadgeTab').className = 'status-tag status-badge badge-draft';
+                document.getElementById('reportSubmitBtn').classList.remove('hidden');
+                document.getElementById('reportWithdrawBtn').classList.add('hidden');
+                showToast('审核报告已撤回', 'warning');
+            }
+        }
+
+        // 切换显示/隐藏函数
+        function togglePlanAdjust(show) {
+            document.getElementById('plan-adjust-content').classList.toggle('hidden', !show);
+        }
+        
+        function togglePlanComplete(show) {
+            document.getElementById('plan-uncomplete-content').classList.toggle('hidden', !show);
+        }
+        
+        function toggleCombinedAudit(checked) {
+            document.getElementById('combined-audit-content').classList.toggle('hidden', !checked);
+        }
+        
+        function toggleJointAudit(checked) {
+            // 联合审核逻辑
+        }
+        
+        function toggleSystemChange(show) {
+            document.getElementById('system-change-content').classList.toggle('hidden', !show);
+        }
+        
+        function toggleQmsNa(show) {
+            document.getElementById('qms-na-content').classList.toggle('hidden', !show);
+        }
+        
+        function toggleScopeChange(show) {
+            document.getElementById('scope-change-content').classList.toggle('hidden', !show);
+        }
+        
+        function togglePurposeAchieved(show) {
+            document.getElementById('purpose-achieved-content').classList.toggle('hidden', !show);
+        }
+        
+        function toggleRadioText(radio, textId) {
+            const show = radio.value === 'no' && radio.checked;
+            document.getElementById(textId).classList.toggle('hidden', !show);
+        }
+        
+        function toggleEmergency(show) {
+            document.getElementById('emergency-content').classList.toggle('hidden', !show);
+        }
+        
+        function toggleDisagreement(show) {
+            document.getElementById('disagreement-content').classList.toggle('hidden', !show);
+        }
+        
+        function toggleDocReview(show) {
+            document.getElementById('doc-review-unsatisfied').classList.toggle('hidden', !show);
+        }
+        
+        function toggleStage1Issues(show) {
+            document.getElementById('stage1-issues').classList.toggle('hidden', !show);
+        }
+
+        // 审核报告中的不符合项表格操作
+        function addNcrRow() {
+            const tbody = document.getElementById('ncrTableBody');
+            const rowCount = tbody.rows.length + 1;
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${rowCount}</td>
+                <td><input type="text" class="form-input" placeholder="部门/过程"></td>
+                <td><input type="text" class="form-input" placeholder="标准及条款"></td>
+                <td>
+                    <textarea class="form-input" placeholder="不符合事实描述..."></textarea>
+                    <div style="margin-top: 4px;">
+                        <span class="attachment-btn" onclick="uploadImage(this)">
+                            <i class="fas fa-image"></i> 上传图片
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    <select class="form-input">
+                        <option value="minor">轻微</option>
+                        <option value="major">严重</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deleteNcrRow(this)">
+                        <i class="fas fa-trash text-xs"></i>
+                        删除
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+            updateReportNcrVisibility();
+        }
+        
+        function deleteNcrRow(btn) {
+            if (confirm('确定删除该不符合项吗？')) {
+                const row = btn.closest('tr');
+                row.remove();
+                const tbody = document.getElementById('ncrTableBody');
+                Array.from(tbody.rows).forEach((row, index) => {
+                    row.cells[0].textContent = index + 1;
+                });
+                updateReportNcrVisibility();
+            }
+        }
+        
+        function updateReportNcrVisibility() {
+            const tbody = document.getElementById('ncrTableBody');
+            const hasNcr = tbody.rows.length > 0;
+            document.getElementById('ncr-rectification').classList.toggle('hidden', !hasNcr);
+            document.getElementById('no-ncr-notice').classList.toggle('hidden', hasNcr);
+        }
+
+        // 文审报告相关函数
+        function toggleDocReviewConclusion(isNonConform) {
+            // 可以根据评审结论切换显示相关内容
+        }
+
+        function addDocFileRow() {
+            const tbody = document.getElementById('docFileTable').getElementsByTagName('tbody')[0];
+            const rowCount = tbody.rows.length + 1;
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${rowCount}</td>
+                <td><input type="text" class="form-input" placeholder="请输入文件名称"></td>
+                <td><input type="text" class="form-input" placeholder="请输入编号"></td>
+                <td><input type="text" class="form-input" placeholder="版本号/发布日期"></td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deleteDocFileRow(this)">
+                        <i class="fas fa-trash text-xs"></i>
+                        删除
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+        }
+
+        function deleteDocFileRow(btn) {
+            if (confirm('确定删除该文件记录吗？')) {
+                const row = btn.closest('tr');
+                row.remove();
+                const tbody = document.getElementById('docFileTable').getElementsByTagName('tbody')[0];
+                Array.from(tbody.rows).forEach((row, index) => {
+                    row.cells[0].textContent = index + 1;
+                });
+            }
+        }
+
+        function uploadDocReviewAttachment() {
+            document.getElementById('docReviewFileInput').click();
+        }
+
+        function handleDocReviewFileSelect(event) {
+            const files = event.target.files;
+            
+            for (let file of files) {
+                let type = 'file';
+                if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) type = 'word';
+                else if (file.name.endsWith('.pdf')) type = 'pdf';
+                else if (file.name.match(/\.(jpg|jpeg|png|gif)$/)) type = 'image';
+                
+                docReviewAttachments.push({ name: file.name, type: type });
+            }
+            
+            renderDocReviewAttachments();
+            event.target.value = '';
+        }
+
+        function renderDocReviewAttachments() {
+            const container = document.getElementById('docReviewAttachmentList');
+            container.innerHTML = '';
+            
+            docReviewAttachments.forEach((att, index) => {
+                const item = document.createElement('div');
+                item.className = 'attachment-item';
+                
+                let icon = 'fa-file';
+                if (att.type === 'word') icon = 'fa-file-word';
+                if (att.type === 'pdf') icon = 'fa-file-pdf';
+                if (att.type === 'image') icon = 'fa-file-image';
+                
+                item.innerHTML = `
+                    <i class="fas ${icon}"></i>
+                    <span>${att.name}</span>
+                    <span class="remove" onclick="removeDocReviewAttachment(${index})"><i class="fas fa-times"></i></span>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        function removeDocReviewAttachment(index) {
+            if (confirm('确定删除该附件吗？')) {
+                docReviewAttachments.splice(index, 1);
+                renderDocReviewAttachments();
+            }
+        }
+
+        function saveDocReviewDraft() {
+            showToast('文件评审报告草稿已保存', 'success');
+        }
+
+        function submitDocReview() {
+            if (confirm('确定提交文件评审报告吗？提交后将不可再修改。')) {
+                docReviewStatus = 'submitted';
+                const now = new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/\//g, '-');
+                document.getElementById('docReviewSubmitTime').textContent = now;
+                document.getElementById('docReviewStatusBadge').textContent = '已提交';
+                document.getElementById('docReviewStatusBadge').className = 'status-tag status-badge badge-success';
+                document.getElementById('docReviewSubmitBtn').classList.add('hidden');
+                document.getElementById('docReviewWithdrawBtn').classList.remove('hidden');
+                showToast('文件评审报告已提交', 'success');
+            }
+        }
+
+        function withdrawDocReview() {
+            if (confirm('确定撤回文件评审报告吗？撤回后将变为待提交状态。')) {
+                docReviewStatus = 'draft';
+                document.getElementById('docReviewSubmitTime').textContent = '-';
+                document.getElementById('docReviewStatusBadge').textContent = '待提交';
+                document.getElementById('docReviewStatusBadge').className = 'status-tag status-badge badge-draft';
+                document.getElementById('docReviewSubmitBtn').classList.remove('hidden');
+                document.getElementById('docReviewWithdrawBtn').classList.add('hidden');
+                showToast('文件评审报告已撤回', 'warning');
+            }
+        }
+
+        // 点击弹窗外部关闭
+        document.getElementById('verificationModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeVerificationModal();
+            }
+        });
+    </script>
+</body>
+</html>
