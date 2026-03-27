@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审核任务实施详情 - 审核进行中 - 组长视图</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            min-width: 1800px;
+        }
+        
+        .container-fixed {
+            width: 1800px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        
+        .project-header {
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .badge-processing {
+            background: #e6f7ff;
+            color: #1890ff;
+            border-color: #1890ff;
+        }
+        
+        .badge-success {
+            background: #f6ffed;
+            color: #52c41a;
+            border-color: #52c41a;
+        }
+        
+        .badge-warning {
+            background: #fff7e6;
+            color: #fa8c16;
+            border-color: #ffa940;
+        }
+        
+        .badge-error {
+            background: #fff1f0;
+            color: #ff4d4f;
+            border-color: #ff4d4f;
+        }
+        
+        .badge-draft {
+            background: #f5f5f5;
+            color: #8c8c8c;
+            border-color: #d9d9d9;
+        }
+        
+        .badge-info {
+            background: #e6fffb;
+            color: #13c2c2;
+            border-color: #87e8de;
+        }
+        
+        .timeline-section {
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 20px 0;
+        }
+        
+        .process-steps {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: relative;
+            padding: 20px 0 10px;
+        }
+        
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+            z-index: 2;
+            cursor: pointer;
+        }
+        
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #d9d9d9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #d9d9d9;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .step-item.pending .step-circle {
+            border-color: #1890ff;
+            color: #1890ff;
+            background: #fff;
+        }
+        
+        .step-item.active .step-circle {
+            background: #1890ff;
+            border-color: #1890ff;
+            color: white;
+        }
+        
+        .step-item.completed .step-circle {
+            background: #52c41a;
+            border-color: #52c41a;
+            color: white;
+        }
+        
+        .step-line {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            right: -50%;
+            height: 2px;
+            background: #e8e8e8;
+            z-index: 1;
+        }
+        
+        .step-item.completed .step-line {
+            background: #52c41a;
+        }
+        
+        .step-item.active .step-line {
+            background: linear-gradient(to right, #52c41a 50%, #e8e8e8 50%);
+        }
+        
+        .step-item:last-child .step-line {
+            display: none;
+        }
+        
+        .step-title {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #595959;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .step-item.active .step-title,
+        .step-item.pending .step-title {
+            color: #1890ff;
+            font-weight: 600;
+        }
+        
+        .step-item.completed .step-title {
+            color: #52c41a;
+        }
+        
+        .step-date {
+            font-size: 12px;
+            color: #8c8c8c;
+            margin-top: 4px;
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 2px;
+            border: 1px solid #e8e8e8;
+            margin-bottom: 16px;
+        }
+        
+        .card-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafafa;
+        }
+        
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #262626;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .data-table th {
+            background: #fafafa;
+            color: #262626;
+            font-weight: 600;
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e8e8e8;
+            white-space: nowrap;
+        }
+        
+        .data-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e8e8e8;
+            color: #595959;
+        }
+        
+        .data-table tr:hover {
+            background: #e6f7ff;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .btn-primary {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary:hover {
+            background: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-primary:disabled {
+            background: #bae7ff;
+            border-color: #bae7ff;
+            cursor: not-allowed;
+        }
+        
+        .btn-default {
+            background: white;
+            border-color: #d9d9d9;
+            color: #595959;
+        }
+        
+        .btn-default:hover {
+            color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-info {
+            background: white;
+            border-color: #91caff;
+            color: #1890ff;
+        }
+        
+        .btn-info:hover {
+            background: #e6f7ff;
+        }
+        
+        .btn-success {
+            color: #52c41a;
+            background: white;
+            border-color: #52c41a;
+        }
+        
+        .btn-success:hover {
+            background: #52c41a;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 2px 8px;
+            font-size: 11px;
+            height: 24px;
+        }
+        
+        .btn-lg {
+            padding: 6px 16px;
+            font-size: 14px;
+            height: 32px;
+        }
+        
+        /* 操作按钮组 - 防止换行 */
+        .action-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+        
+        .tab-container {
+            background: white;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 0 20px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #595959;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            color: #1890ff;
+            border-bottom-color: #1890ff;
+        }
+        
+        .tab-btn:hover {
+            color: #1890ff;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .hidden-section {
+            display: none !important;
+        }
+        
+        .personnel-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-right: 3px;
+        }
+        
+        .tag-fulltime { background: #f9f0ff; color: #722ed1; }
+        .tag-parttime { background: #fff0f6; color: #eb2f96; }
+        .tag-qms { background: #e6f7ff; color: #1890ff; }
+        .tag-leader { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+        
+        .form-input {
+            width: 100%;
+            padding: 4px 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.3s;
+            background: white;
+            height: 28px;
+        }
+        
+        .form-input:hover {
+            border-color: #40a9ff;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+        }
+        
+        .form-input:disabled, .form-input[readonly] {
+            background: #f5f5f5;
+            color: #8c8c8c;
+            cursor: not-allowed;
+        }
+        
+        .form-label {
+            font-size: 12px;
+            color: #262626;
+            margin-bottom: 4px;
+            display: block;
+            font-weight: 500;
+        }
+        
+        textarea.form-input {
+            height: auto;
+            min-height: 60px;
+            resize: vertical;
+        }
+        
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal-container {
+            background: white;
+            border-radius: 4px;
+            width: 90%;
+            max-width: 1400px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafafa;
+        }
+        
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #262626;
+        }
+        
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #ff4d4f;
+        }
+        
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            gap: 24px;
+        }
+        
+        .modal-sidebar {
+            width: 250px;
+            flex-shrink: 0;
+            border-right: 1px solid #e8e8e8;
+            padding-right: 16px;
+        }
+        
+        .sidebar-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .sidebar-item {
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #595959;
+            margin-bottom: 4px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-item:hover {
+            background: #f5f5f5;
+            color: #1890ff;
+        }
+        
+        .sidebar-item.active {
+            background: #e6f7ff;
+            color: #1890ff;
+            font-weight: 500;
+        }
+        
+        .modal-main {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #fafafa;
+        }
+        
+        /* 富文本编辑器样式 */
+        .rich-editor {
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .rich-editor-toolbar {
+            padding: 8px;
+            background: #fafafa;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .toolbar-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid transparent;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #595959;
+            transition: all 0.3s;
+        }
+        
+        .toolbar-btn:hover {
+            border-color: #d9d9d9;
+            color: #1890ff;
+        }
+        
+        .rich-editor-content {
+            min-height: 200px;
+            padding: 12px;
+            outline: none;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .rich-editor-content:empty:before {
+            content: '请输入审核记录...';
+            color: #bfbfbf;
+        }
+        
+        /* 附件列表样式 */
+        .attachment-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .attachment-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #52c41a;
+        }
+        
+        .attachment-item i {
+            font-size: 14px;
+        }
+        
+        .attachment-item .remove {
+            cursor: pointer;
+            color: #8c8c8c;
+            margin-left: 4px;
+        }
+        
+        .attachment-item .remove:hover {
+            color: #ff4d4f;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: #8c8c8c;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #d9d9d9;
+        }
+        
+        /* 流程日志时间轴样式 - 竖向 */
+        .flow-timeline {
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .flow-timeline:before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #e8e8e8;
+        }
+        
+        .flow-timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+            padding-left: 16px;
+        }
+        
+        .flow-timeline-item:last-child {
+            padding-bottom: 0;
+        }
+        
+        .flow-timeline-dot {
+            position: absolute;
+            left: -14px;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #d9d9d9;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px #d9d9d9;
+            z-index: 1;
+        }
+        
+        .flow-timeline-item.completed .flow-timeline-dot {
+            background: #52c41a;
+            box-shadow: 0 0 0 1px #52c41a;
+        }
+        
+        .flow-timeline-item.active .flow-timeline-dot {
+            background: #1890ff;
+            box-shadow: 0 0 0 1px #1890ff;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 1px #1890ff, 0 0 0 0 rgba(24,144,255,0.4); }
+            70% { box-shadow: 0 0 0 1px #1890ff, 0 0 0 6px rgba(24,144,255,0); }
+            100% { box-shadow: 0 0 0 1px #1890ff, 0 0 0 0 rgba(24,144,255,0); }
+        }
+        
+        .flow-timeline-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 4px;
+        }
+        
+        .flow-timeline-item.completed .flow-timeline-title {
+            color: #52c41a;
+        }
+        
+        .flow-timeline-item.active .flow-timeline-title {
+            color: #1890ff;
+        }
+        
+        .flow-timeline-time {
+            font-size: 11px;
+            color: #8c8c8c;
+            margin-bottom: 4px;
+        }
+        
+        .flow-timeline-desc {
+            font-size: 12px;
+            color: #595959;
+            line-height: 1.5;
+        }
+        
+        .flow-timeline-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+        
+        .flow-timeline-status.completed {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        
+        .flow-timeline-status.processing {
+            background: #e6f7ff;
+            color: #1890ff;
+            border: 1px solid #91d5ff;
+        }
+        
+        .flow-timeline-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 一阶段审核报告特有样式 */
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        .form-group-full {
+            grid-column: 1 / -1;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: #595959;
+        }
+        
+        .info-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #8c8c8c;
+            font-size: 13px;
+        }
+        
+        .info-value {
+            color: #262626;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .input-group-addon {
+            color: #8c8c8c;
+            font-size: 13px;
+        }
+        
+        .dynamic-list-item {
+            background: #f5f5f5;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+        
+        .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: #ff4d4f;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .remove-btn:hover {
+            color: #ff7875;
+        }
+        
+        .file-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .audit-advice-option {
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .audit-advice-option:hover {
+            border-color: #1890ff;
+            background: #e6f7ff;
+        }
+        
+        .audit-advice-option.selected {
+            border-color: #1890ff;
+            background: #e6f7ff;
+        }
+        
+        .advice-radio {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .advice-content {
+            flex: 1;
+        }
+        
+        .advice-title {
+            font-weight: 600;
+            color: #262626;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        
+        .advice-desc {
+            color: #8c8c8c;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        select.form-input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238c8c8c' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 24px;
+        }
+        
+        textarea.form-input {
+            min-height: 80px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- 顶部项目信息栏 -->
+    <div class="project-header sticky top-0 z-50">
+        <div class="container-fixed py-3">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                    <span class="text-gray-500 text-sm">RW-202403240001</span>
+                    <h1 class="text-lg font-bold text-gray-900">审核任务实施详情</h1>
+                    <span class="status-badge badge-warning" id="headerStatusBadge">审核进行中</span>
+                    <span class="status-badge badge-info" id="phaseBadge">一阶段</span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button class="btn btn-success btn-sm" onclick="submitAll()">
+                        <i class="fas fa-check text-xs"></i>
+                        提交
+                    </button>
+                    <button class="btn btn-default btn-sm" onclick="goBack()">
+                        <i class="fas fa-arrow-left text-xs"></i>
+                        返回
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-x-8 gap-y-2 text-sm">
+                <div>
+                    <span class="text-gray-500">审核任务编码：</span>
+                    <span class="font-medium text-gray-900">RW-202403240001</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">客户名称：</span>
+                    <span class="font-medium text-gray-900">北京市地铁运营有限公司</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">认证领域：</span>
+                    <span class="font-medium text-gray-900">QMS, EMS, OHSMS</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">审核阶段：</span>
+                    <span class="font-medium text-gray-900">一阶段</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">组长：</span>
+                    <span class="font-medium text-gray-900">武荣刚</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">审核日期：</span>
+                    <span class="font-medium text-gray-900">2024-04-15 至 2024-04-18</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">当前节点：</span>
+                    <span class="font-medium text-blue-600">审核进行中</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">项目状态：</span>
+                    <span class="font-medium text-orange-600">执行中</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 时间轴区域 -->
+    <div class="timeline-section">
+        <div class="container-fixed">
+            <div class="timeline-wrapper">
+                <div class="timeline-main">
+                    <div class="process-steps" id="timelineContainer">
+                        <div class="step-item completed" onclick="switchNode(0)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="step-title">审核任务确认</div>
+                            <div class="step-date">2024-03-24</div>
+                        </div>
+                        <div class="step-item completed" onclick="switchNode(1)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="step-title">审核计划填报</div>
+                            <div class="step-date">2024-03-25</div>
+                        </div>
+                        <div class="step-item active" onclick="switchNode(2)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">审核进行中</div>
+                            <div class="step-date">进行中</div>
+                        </div>
+                        <div class="step-item pending" onclick="switchNode(3)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">整改问题跟踪</div>
+                            <div class="step-date">待开始</div>
+                        </div>
+                        <div class="step-item pending" onclick="switchNode(4)">
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">任务已完成</div>
+                            <div class="step-date">待开始</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main class="container-fixed py-4">
+        
+        <!-- Tab切换 -->
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('verification')" id="tab-btn-verification">
+                <i class="fas fa-clipboard-check text-blue-500 mr-2"></i>
+                核查记录
+                <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-xs font-medium" id="verificationCount">4</span>
+            </button>
+        </div>
+
+        <!-- Tab 1: 核查记录 -->
+        <div id="tab-verification" class="tab-content active">
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-tasks text-blue-500"></i>
+                        组员核查记录执行情况
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        提示：点击"核查记录确认"按钮查看并确认组员填报内容，点击"查看详情"可预览记录
+                    </div>
+                </div>
+                <div style="padding: 16px;">
+                    <table class="data-table border border-gray-200">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">审核人员</th>
+                                <th style="width: 100px;">组内身份</th>
+                                <th style="width: 220px; white-space: nowrap;">审核日期区间</th>
+                                <th>审核场所</th>
+                                <th style="width: 100px;">状态</th>
+                                <th style="width: 150px;">提交时间</th>
+                                <th style="width: 240px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="verificationTableBody">
+                            <!-- 数据行将通过JS动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 核查记录确认/查看弹窗 -->
+    <div class="modal-overlay" id="verificationModal">
+        <div class="modal-container" style="max-width: 1600px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-clipboard-check text-blue-500 mr-2"></i>
+                    <span id="modalTitle">核查记录确认</span> - <span id="modalAuditorName">审核人员</span>
+                    <span id="modalReadOnlyTag" class="ml-2 px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs font-medium" style="display: none;">只读模式</span>
+                </div>
+                <button class="modal-close" onclick="closeVerificationModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- 左侧边栏：审核活动列表 -->
+                <div class="modal-sidebar">
+                    <div class="sidebar-title">
+                        <i class="fas fa-list-ul mr-2"></i>
+                        审核活动列表
+                    </div>
+                    <div id="sidebarContent">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 右侧主内容：核查记录填报 -->
+                <div class="modal-main">
+                    <div id="verificationForms">
+                        <!-- 动态生成表单 -->
+                    </div>
+                    
+                    <!-- 附件上传区域 -->
+                    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e8e8e8;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span class="form-label" style="margin-bottom: 0;">附件资料</span>
+                            <button class="btn btn-default btn-sm" id="uploadBtn" onclick="uploadAttachment()">
+                                <i class="fas fa-upload text-xs"></i>
+                                上传附件
+                            </button>
+                        </div>
+                        <div class="attachment-list" id="attachmentList">
+                            <!-- 动态生成 -->
+                        </div>
+                        <input type="file" id="fileInputModal" style="display: none;" accept=".doc,.docx,.pdf,.jpg,.jpeg,.png,.gif" onchange="handleFileSelectModal(event)" multiple>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <span class="text-sm text-gray-500 mr-auto" id="modalHint">
+                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                    确认后该核查记录将不可再次修改
+                </span>
+                <button class="btn btn-default" onclick="closeVerificationModal()">取消</button>
+                <button class="btn btn-primary" id="confirmBtn" onclick="confirmVerification()">
+                    <i class="fas fa-check text-xs"></i>
+                    确认核查记录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局数据 - 核查记录
+        const auditTeam = [
+            { id: 'wurg', name: '武荣刚', role: '组长', type: 'tag-leader', maxHours: 32, current: 28 },
+            { id: 'whw', name: '王洪伟', role: '组员', type: 'tag-qms', maxHours: 16, current: 16 },
+            { id: 'lz', name: '李战', role: '组员', type: 'tag-qms', maxHours: 16, current: 12 },
+            { id: 'zq', name: '赵强', role: '组员', type: 'tag-qms', maxHours: 8, current: 8 }
+        ];
+
+        // 核查记录数据
+        let verificationData = [
+            { 
+                auditorId: 'wurg', 
+                auditorName: '武荣刚', 
+                role: '组长', 
+                roleTag: 'tag-leader',
+                dateRange: '2024-04-15 至 2024-04-18', 
+                sites: '中心职能、场所1、场所2', 
+                status: 'submitted', 
+                submitTime: '2024-04-18 18:30:00',
+                records: [
+                    { date: '2024-04-15', time: '09:00-12:00', content: '组织环境 4.1-4.4', dept: '管理层/中心职能', record: '审核了公司管理体系的组织环境相关内容...', decision: '符合', standard: 'GB/T 19001-2016' },
+                    { date: '2024-04-15', time: '14:00-17:00', content: '领导作用 5.1-5.3', dept: '总经理办公室', record: '与总经理进行了访谈，了解了管理承诺...', decision: '符合', standard: 'GB/T 19001-2016' },
+                    { date: '2024-04-16', time: '09:00-12:00', content: '运行策划和控制 8.1', dept: '运营管理部门', record: '审核了轨道交通运营服务的运行策划...', decision: '观察项', standard: 'GB/T 19001-2016' }
+                ],
+                attachments: [
+                    { name: '审核记录表-第一天.docx', type: 'word' },
+                    { name: '现场照片1.jpg', type: 'image' }
+                ]
+            },
+            { 
+                auditorId: 'whw', 
+                auditorName: '王洪伟', 
+                role: '组员', 
+                roleTag: 'tag-qms',
+                dateRange: '2024-04-15 至 2024-04-16', 
+                sites: '场所1', 
+                status: 'confirmed', 
+                submitTime: '2024-04-16 17:45:00',
+                records: [
+                    { date: '2024-04-15', time: '09:00-12:00', content: '环境因素识别 6.1.2', dept: '环保部门', record: '审核了环境管理体系的环境因素识别过程...', decision: '符合', standard: 'GB/T 24001-2016' }
+                ],
+                attachments: []
+            },
+            { 
+                auditorId: 'lz', 
+                auditorName: '李战', 
+                role: '组员', 
+                roleTag: 'tag-qms',
+                dateRange: '2024-04-17 至 2024-04-18', 
+                sites: '场所2', 
+                status: 'unsubmitted', 
+                submitTime: '-',
+                records: [],
+                attachments: []
+            },
+            { 
+                auditorId: 'zq', 
+                auditorName: '赵强', 
+                role: '组员', 
+                roleTag: 'tag-qms',
+                dateRange: '2024-04-17', 
+                sites: '中心职能', 
+                status: 'submitted', 
+                submitTime: '2024-04-17 19:20:00',
+                records: [
+                    { date: '2024-04-17', time: '09:00-12:00', content: '职业健康安全风险识别 6.1.2', dept: '安全管理部门', record: '审核了职业健康安全管理体系的危险源辨识...', decision: '轻微不符合', standard: 'GB/T 45001-2020' }
+                ],
+                attachments: []
+            }
+        ];
+
+        let currentVerificationIndex = null;
+        let currentActivityIndex = 0;
+        let isReadOnlyMode = false;
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderVerificationTable();
+            updateVerificationCount();
+        });
+
+        // 切换Tab
+        function switchTab(tabName) {
+            // 更新按钮状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById('tab-btn-' + tabName).classList.add('active');
+            
+            // 更新内容显示
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        // 切换节点
+        function switchNode(index) {
+            if (index !== 2) {
+                alert('当前示例仅展示"审核进行中"节点内容');
+                return;
+            }
+        }
+
+        // 返回
+        function goBack() {
+            if (confirm('确定返回列表页？未保存的数据将丢失。')) {
+                console.log('返回列表页');
+            }
+        }
+
+        // 全局提交
+        function submitAll() {
+            if (confirm('确定提交所有内容吗？')) {
+                showToast('提交成功', 'success');
+            }
+        }
+
+        // 渲染核查记录表格
+        function renderVerificationTable() {
+            const tbody = document.getElementById('verificationTableBody');
+            tbody.innerHTML = '';
+            
+            verificationData.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                
+                let statusBadge = '';
+                if (item.status === 'unsubmitted') {
+                    statusBadge = '<span class="status-badge badge-draft">未提交</span>';
+                } else if (item.status === 'submitted') {
+                    statusBadge = '<span class="status-badge badge-processing">已提交</span>';
+                } else if (item.status === 'confirmed') {
+                    statusBadge = '<span class="status-badge badge-success">已确认</span>';
+                }
+                
+                let actionBtns = '<div class="action-btns">';
+                
+                actionBtns += `<button class="btn btn-info btn-sm" onclick="viewVerificationDetails(${index})">
+                    <i class="fas fa-eye text-xs"></i>
+                    查看详情
+                </button>`;
+                
+                if (item.status === 'submitted') {
+                    actionBtns += `<button class="btn btn-primary btn-sm" onclick="openVerificationModal(${index})">
+                        <i class="fas fa-check-circle text-xs"></i>
+                        核查记录确认
+                    </button>`;
+                } else if (item.status === 'confirmed') {
+                    actionBtns += `<button class="btn btn-default btn-sm" disabled>
+                        <i class="fas fa-check text-xs"></i>
+                        已确认
+                    </button>`;
+                } else {
+                    actionBtns += `<button class="btn btn-default btn-sm" disabled>
+                        <i class="fas fa-clock text-xs"></i>
+                        等待提交
+                    </button>`;
+                }
+                
+                actionBtns += '</div>';
+                
+                tr.innerHTML = `
+                    <td class="font-medium">${item.auditorName}</td>
+                    <td><span class="personnel-tag ${item.roleTag}">${item.role}</span></td>
+                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${item.dateRange}">${item.dateRange}</td>
+                    <td>${item.sites}</td>
+                    <td>${statusBadge}</td>
+                    <td class="text-gray-500">${item.submitTime}</td>
+                    <td>${actionBtns}</td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 更新核查记录计数
+        function updateVerificationCount() {
+            document.getElementById('verificationCount').textContent = verificationData.length;
+        }
+
+        // 查看核查记录详情（只读模式）
+        function viewVerificationDetails(index) {
+            currentVerificationIndex = index;
+            const data = verificationData[index];
+            currentActivityIndex = 0;
+            isReadOnlyMode = true;
+            
+            document.getElementById('modalTitle').textContent = '核查记录详情';
+            document.getElementById('modalAuditorName').textContent = data.auditorName;
+            document.getElementById('modalReadOnlyTag').style.display = 'inline-flex';
+            document.getElementById('modalHint').innerHTML = '<i class="fas fa-info-circle text-blue-500 mr-1"></i>当前为只读模式，仅可查看不可编辑';
+            document.getElementById('confirmBtn').style.display = 'none';
+            document.getElementById('uploadBtn').style.display = 'none';
+            
+            renderSidebar(data);
+            renderVerificationFormsReadOnly(data);
+            renderAttachmentsReadOnly(data);
+            
+            document.getElementById('verificationModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 打开核查记录确认弹窗（编辑模式）
+        function openVerificationModal(index) {
+            currentVerificationIndex = index;
+            const data = verificationData[index];
+            currentActivityIndex = 0;
+            isReadOnlyMode = false;
+            
+            document.getElementById('modalTitle').textContent = '核查记录确认';
+            document.getElementById('modalAuditorName').textContent = data.auditorName;
+            document.getElementById('modalReadOnlyTag').style.display = 'none';
+            document.getElementById('modalHint').innerHTML = '<i class="fas fa-info-circle text-blue-500 mr-1"></i>确认后该核查记录将不可再次修改';
+            document.getElementById('confirmBtn').style.display = 'inline-flex';
+            document.getElementById('uploadBtn').style.display = 'inline-flex';
+            
+            renderSidebar(data);
+            renderVerificationForms();
+            renderAttachments();
+            
+            document.getElementById('verificationModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 渲染侧边栏
+        function renderSidebar(data) {
+            const sidebarContent = document.getElementById('sidebarContent');
+            sidebarContent.innerHTML = '';
+            
+            if (!data.records || data.records.length === 0) {
+                sidebarContent.innerHTML = '<div style="padding: 12px; color: #8c8c8c; font-size: 12px;">暂无记录</div>';
+                return;
+            }
+            
+            data.records.forEach((record, idx) => {
+                const item = document.createElement('div');
+                item.className = 'sidebar-item ' + (idx === currentActivityIndex ? 'active' : '');
+                item.onclick = () => switchActivity(idx);
+                item.innerHTML = `
+                    <div style="font-weight: 500; margin-bottom: 2px;">${record.date} ${record.time}</div>
+                    <div style="color: #8c8c8c; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${record.content}</div>
+                `;
+                sidebarContent.appendChild(item);
+            });
+        }
+
+        // 切换审核活动
+        function switchActivity(index) {
+            currentActivityIndex = index;
+            
+            document.querySelectorAll('.sidebar-item').forEach((item, idx) => {
+                item.classList.toggle('active', idx === index);
+            });
+            
+            if (isReadOnlyMode) {
+                renderVerificationFormsReadOnly(verificationData[currentVerificationIndex]);
+            } else {
+                renderVerificationForms();
+            }
+        }
+
+        // 渲染核查记录表单（可编辑）
+        function renderVerificationForms() {
+            const container = document.getElementById('verificationForms');
+            const data = verificationData[currentVerificationIndex];
+            const record = data.records[currentActivityIndex];
+            
+            if (!record) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>暂无核查记录</p></div>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <label class="form-label">日期/时间 <span class="text-gray-400 text-xs">（自动带入，不可修改）</span></label>
+                        <input type="text" class="form-input" value="${record.date} ${record.time}" readonly>
+                    </div>
+                    <div>
+                        <label class="form-label">判定</label>
+                        <select class="form-input">
+                            <option value="符合" ${record.decision === '符合' ? 'selected' : ''}>符合</option>
+                            <option value="观察项" ${record.decision === '观察项' ? 'selected' : ''}>观察项</option>
+                            <option value="轻微不符合" ${record.decision === '轻微不符合' ? 'selected' : ''}>轻微不符合</option>
+                            <option value="严重不符合" ${record.decision === '严重不符合' ? 'selected' : ''}>严重不符合</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">检查内容/涉及标准条款 <span class="text-gray-400 text-xs">（自动带入，支持修改）</span></label>
+                    <input type="text" class="form-input" value="${record.content} ${record.standard}" style="width: 100%;">
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">涉及部门/场所 <span class="text-gray-400 text-xs">（自动带入，支持修改）</span></label>
+                    <input type="text" class="form-input" value="${record.dept}" style="width: 100%;">
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">审核记录 <span class="text-red-500">*</span></label>
+                    <div class="rich-editor">
+                        <div class="rich-editor-toolbar">
+                            <button type="button" class="toolbar-btn" onclick="execCmd('bold')" title="加粗"><i class="fas fa-bold"></i></button>
+                            <button type="button" class="toolbar-btn" onclick="execCmd('italic')" title="斜体"><i class="fas fa-italic"></i></button>
+                            <button type="button" class="toolbar-btn" onclick="execCmd('underline')" title="下划线"><i class="fas fa-underline"></i></button>
+                            <div style="width: 1px; height: 20px; background: #e8e8e8; margin: 0 4px;"></div>
+                            <button type="button" class="toolbar-btn" onclick="insertImage()" title="插入图片"><i class="fas fa-image"></i></button>
+                        </div>
+                        <div class="rich-editor-content" contenteditable="true" id="richEditor">
+                            ${record.record}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染核查记录表单（只读）
+        function renderVerificationFormsReadOnly(data) {
+            const container = document.getElementById('verificationForms');
+            const record = data.records[currentActivityIndex];
+            
+            if (!record) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>暂无核查记录</p></div>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <label class="form-label">日期/时间</label>
+                        <input type="text" class="form-input" value="${record.date} ${record.time}" readonly>
+                    </div>
+                    <div>
+                        <label class="form-label">判定</label>
+                        <input type="text" class="form-input" value="${record.decision}" readonly>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">检查内容/涉及标准条款</label>
+                    <input type="text" class="form-input" value="${record.content} ${record.standard}" style="width: 100%;" readonly>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">涉及部门/场所</label>
+                    <input type="text" class="form-input" value="${record.dept}" style="width: 100%;" readonly>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label class="form-label">审核记录</label>
+                    <div class="ncr-section-content" style="min-height: 200px; background: #f5f5f5; border: 1px solid #e8e8e8; padding: 12px; border-radius: 4px; font-size: 13px; line-height: 1.6;">
+                        ${record.record || '<span style="color: #bfbfbf;">无记录内容</span>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 富文本命令
+        function execCmd(command) {
+            document.execCommand(command, false, null);
+            document.getElementById('richEditor').focus();
+        }
+
+        // 插入图片
+        function insertImage() {
+            const url = prompt('请输入图片URL:');
+            if (url) {
+                document.execCommand('insertImage', false, url);
+            }
+        }
+
+        // 渲染附件列表（可编辑）
+        function renderAttachments() {
+            const container = document.getElementById('attachmentList');
+            const data = verificationData[currentVerificationIndex];
+            
+            container.innerHTML = '';
+            
+            data.attachments.forEach((att, index) => {
+                const item = document.createElement('div');
+                item.className = 'attachment-item';
+                
+                let icon = 'fa-file';
+                if (att.type === 'word') icon = 'fa-file-word';
+                if (att.type === 'pdf') icon = 'fa-file-pdf';
+                if (att.type === 'image') icon = 'fa-file-image';
+                
+                item.innerHTML = `
+                    <i class="fas ${icon}"></i>
+                    <span>${att.name}</span>
+                    <span class="remove" onclick="removeAttachment(${index})"><i class="fas fa-times"></i></span>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        // 渲染附件列表（只读）
+        function renderAttachmentsReadOnly(data) {
+            const container = document.getElementById('attachmentList');
+            container.innerHTML = '';
+            
+            if (!data.attachments || data.attachments.length === 0) {
+                container.innerHTML = '<span style="color: #8c8c8c; font-size: 12px;">无附件</span>';
+                return;
+            }
+            
+            data.attachments.forEach((att) => {
+                const item = document.createElement('div');
+                item.className = 'attachment-item';
+                item.style.cursor = 'default';
+                
+                let icon = 'fa-file';
+                if (att.type === 'word') icon = 'fa-file-word';
+                if (att.type === 'pdf') icon = 'fa-file-pdf';
+                if (att.type === 'image') icon = 'fa-file-image';
+                
+                item.innerHTML = `
+                    <i class="fas ${icon}"></i>
+                    <span>${att.name}</span>
+                `;
+                
+                container.appendChild(item);
+            });
+        }
+
+        // 上传附件
+        function uploadAttachment() {
+            document.getElementById('fileInputModal').click();
+        }
+
+        // 处理文件选择
+        function handleFileSelectModal(event) {
+            const files = event.target.files;
+            const data = verificationData[currentVerificationIndex];
+            
+            for (let file of files) {
+                let type = 'file';
+                if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) type = 'word';
+                else if (file.name.endsWith('.pdf')) type = 'pdf';
+                else if (file.name.match(/\.(jpg|jpeg|png|gif)$/)) type = 'image';
+                
+                data.attachments.push({ name: file.name, type: type });
+            }
+            
+            renderAttachments();
+            event.target.value = '';
+        }
+
+        // 删除附件
+        function removeAttachment(index) {
+            if (confirm('确定删除该附件吗？')) {
+                verificationData[currentVerificationIndex].attachments.splice(index, 1);
+                renderAttachments();
+            }
+        }
+
+        // 确认核查记录
+        function confirmVerification() {
+            if (!confirm('确定确认该核查记录吗？确认后将不可再次修改。')) {
+                return;
+            }
+            
+            verificationData[currentVerificationIndex].status = 'confirmed';
+            renderVerificationTable();
+            updateVerificationCount();
+            closeVerificationModal();
+            
+            showToast('核查记录已确认', 'success');
+        }
+
+        // 关闭弹窗
+        function closeVerificationModal() {
+            document.getElementById('verificationModal').classList.remove('show');
+            document.body.style.overflow = '';
+            currentVerificationIndex = null;
+            isReadOnlyMode = false;
+        }
+
+        // 显示提示
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? '#52c41a' : (type === 'warning' ? '#fa8c16' : '#1890ff');
+            toast.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${bgColor}; color: white; padding: 10px 20px; border-radius: 4px; z-index: 9999; box-shadow: 0 2px 8px rgba(0,0,0,0.15);`;
+            toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        // 点击弹窗外部关闭
+        document.getElementById('verificationModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeVerificationModal();
+            }
+        });
+    </script>
+</body>
+</html>
