@@ -1,0 +1,2712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审核任务实施详情 - 组长视图</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            min-width: 1800px;
+        }
+        
+        .container-fixed {
+            width: 1800px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        
+        .project-header {
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .badge-processing {
+            background: #e6f7ff;
+            color: #1890ff;
+            border-color: #1890ff;
+        }
+        
+        .badge-success {
+            background: #f6ffed;
+            color: #52c41a;
+            border-color: #52c41a;
+        }
+        
+        .badge-warning {
+            background: #fff7e6;
+            color: #fa8c16;
+            border-color: #ffa940;
+        }
+        
+        .badge-error {
+            background: #fff1f0;
+            color: #ff4d4f;
+            border-color: #ff4d4f;
+        }
+        
+        .timeline-section {
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            padding: 20px 0;
+        }
+        
+        .process-steps {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: relative;
+            padding: 20px 0 10px;
+        }
+        
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+            z-index: 2;
+            cursor: pointer;
+        }
+        
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #d9d9d9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #d9d9d9;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .step-item.pending .step-circle {
+            border-color: #1890ff;
+            color: #1890ff;
+            background: #fff;
+        }
+        
+        .step-item.active .step-circle {
+            background: #1890ff;
+            border-color: #1890ff;
+            color: white;
+        }
+        
+        .step-item.completed .step-circle {
+            background: #52c41a;
+            border-color: #52c41a;
+            color: white;
+        }
+        
+        .step-line {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            right: -50%;
+            height: 2px;
+            background: #e8e8e8;
+            z-index: 1;
+        }
+        
+        .step-item.completed .step-line {
+            background: #52c41a;
+        }
+        
+        .step-item.active .step-line {
+            background: linear-gradient(to right, #52c41a 50%, #e8e8e8 50%);
+        }
+        
+        .step-item:last-child .step-line {
+            display: none;
+        }
+        
+        .step-title {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #595959;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .step-item.active .step-title,
+        .step-item.pending .step-title {
+            color: #1890ff;
+            font-weight: 600;
+        }
+        
+        .step-item.completed .step-title {
+            color: #52c41a;
+        }
+        
+        .step-date {
+            font-size: 12px;
+            color: #8c8c8c;
+            margin-top: 4px;
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 2px;
+            border: 1px solid #e8e8e8;
+            margin-bottom: 16px;
+        }
+        
+        .card-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafafa;
+        }
+        
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #262626;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .data-table th {
+            background: #fafafa;
+            color: #262626;
+            font-weight: 600;
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e8e8e8;
+            white-space: nowrap;
+        }
+        
+        .data-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e8e8e8;
+            color: #595959;
+        }
+        
+        .data-table tr:hover {
+            background: #e6f7ff;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 4px 10px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.3s;
+            background: white;
+            height: 28px;
+        }
+        
+        .form-input:hover {
+            border-color: #40a9ff;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+        }
+        
+        .form-input:disabled, .form-input[readonly] {
+            background: #f5f5f5;
+            color: #8c8c8c;
+            cursor: not-allowed;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary:hover {
+            background: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-primary:disabled {
+            background: #bae7ff;
+            border-color: #bae7ff;
+            cursor: not-allowed;
+        }
+        
+        .btn-default {
+            background: white;
+            border-color: #d9d9d9;
+            color: #595959;
+        }
+        
+        .btn-default:hover {
+            color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-danger {
+            color: #ff4d4f;
+            background: white;
+            border-color: #ff4d4f;
+        }
+        
+        .btn-danger:hover {
+            background: #ff4d4f;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #52c41a;
+            color: white;
+            border-color: #52c41a;
+        }
+        
+        .btn-success:hover {
+            background: #73d13d;
+            border-color: #73d13d;
+        }
+        
+        .btn-sm {
+            padding: 2px 8px;
+            font-size: 11px;
+            height: 24px;
+        }
+        
+        .site-card {
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            background: white;
+            margin-bottom: 16px;
+        }
+        
+        .site-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            background: #e6f7ff;
+            color: #1890ff;
+            border: 1px solid #91d5ff;
+        }
+        
+        .center-function-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        
+        .compact-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .hidden-section {
+            display: none !important;
+        }
+        
+        .personnel-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-right: 3px;
+        }
+        
+        .tag-fulltime { background: #f9f0ff; color: #722ed1; }
+        .tag-parttime { background: #fff0f6; color: #eb2f96; }
+        .tag-qms { background: #e6f7ff; color: #1890ff; }
+        
+        .form-row {
+            margin-bottom: 12px;
+        }
+        
+        .form-label {
+            font-size: 12px;
+            color: #262626;
+            margin-bottom: 4px;
+            display: block;
+            font-weight: 500;
+        }
+        
+        .shift-row-compact {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .time-select {
+            width: 70px;
+            padding: 2px 4px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            height: 26px;
+            font-size: 12px;
+        }
+        
+        .status-select {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            border: 1px solid #d9d9d9;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .combined-info-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        
+        .activity-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .activity-row-single {
+            display: grid;
+            grid-template-columns: 130px 160px 220px 1fr 150px 60px;
+            gap: 8px;
+            align-items: center;
+            padding: 6px 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .activity-row-single:hover {
+            background: #fafafa;
+        }
+        
+        .auditor-select-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        .auditor-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            min-height: 24px;
+            padding: 2px 6px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            cursor: pointer;
+            background: white;
+        }
+        
+        .auditor-tags:hover {
+            border-color: #40a9ff;
+        }
+        
+        .auditor-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .auditor-dropdown.show {
+            display: block;
+        }
+        
+        .auditor-option {
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .auditor-option:hover {
+            background: #e6f7ff;
+        }
+        
+        .auditor-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 1px 6px;
+            background: #e6f7ff;
+            color: #1890ff;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        
+        .auditor-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .auditor-tag .remove:hover {
+            color: #ff4d4f;
+        }
+
+        /* 流程日志样式 - 模仿图片 */
+        .flow-timeline {
+            position: relative;
+            padding-left: 28px;
+        }
+        
+        .flow-timeline::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #e8e8e8;
+        }
+        
+        .flow-item {
+            position: relative;
+            padding-bottom: 20px;
+        }
+        
+        .flow-item:last-child {
+            padding-bottom: 0;
+        }
+        
+        .flow-dot {
+            position: absolute;
+            left: -28px;
+            top: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #d9d9d9;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .flow-item.completed .flow-dot {
+            background: #52c41a;
+            border-color: #52c41a;
+        }
+        
+        .flow-item.completed .flow-dot::after {
+            content: '';
+            width: 5px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg) translate(-1px, -1px);
+        }
+        
+        .flow-item.active .flow-dot {
+            background: #1890ff;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 3px rgba(24,144,255,0.2);
+        }
+        
+        .flow-item.rejected .flow-dot {
+            background: #ff4d4f;
+            border-color: #ff4d4f;
+        }
+        
+        .flow-item.rejected .flow-dot::after {
+            content: '!';
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .flow-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .flow-meta {
+            font-size: 12px;
+            color: #8c8c8c;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .flow-desc {
+            font-size: 12px;
+            color: #595959;
+            margin-bottom: 6px;
+            line-height: 1.5;
+        }
+        
+        .flow-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .flow-tag-success {
+            background: #f6ffed;
+            color: #52c41a;
+            border-color: #b7eb8f;
+        }
+        
+        .flow-tag-primary {
+            background: #e6f7ff;
+            color: #1890ff;
+            border-color: #91d5ff;
+        }
+        
+        .flow-tag-default {
+            background: #f5f5f5;
+            color: #8c8c8c;
+            border-color: #d9d9d9;
+        }
+        
+        .flow-tag-error {
+            background: #fff1f0;
+            color: #ff4d4f;
+            border-color: #ffa39e;
+        }
+        
+        .flow-tag-warning {
+            background: #fff7e6;
+            color: #fa8c16;
+            border-color: #ffd591;
+        }
+        
+        .sidebar-sticky {
+            position: sticky;
+            top: 80px;
+        }
+
+        .reject-reason-box {
+            background: #fff1f0;
+            border: 1px solid #ffa39e;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 6px;
+            font-size: 12px;
+            color: #cf1322;
+        }
+
+        .resubmit-box {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 6px;
+            font-size: 12px;
+            color: #389e0d;
+        }
+
+        /* 电子签弹窗样式 */
+        .esign-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .esign-modal-overlay.show {
+            display: flex;
+        }
+        
+        .esign-modal {
+            background: white;
+            border-radius: 8px;
+            width: 600px;
+            max-width: 90%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        .esign-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .esign-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #262626;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .esign-body {
+            padding: 20px;
+        }
+        
+        .esign-canvas-container {
+            border: 2px dashed #d9d9d9;
+            border-radius: 4px;
+            background: #fafafa;
+            position: relative;
+            cursor: crosshair;
+        }
+        
+        .esign-canvas {
+            width: 100%;
+            height: 200px;
+            display: block;
+        }
+        
+        .esign-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #bfbfbf;
+            font-size: 14px;
+            pointer-events: none;
+            text-align: center;
+        }
+        
+        .esign-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .esign-hint {
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #0958d9;
+        }
+        
+        .btn-esign-clear {
+            color: #595959;
+            background: white;
+            border-color: #d9d9d9;
+        }
+        
+        .btn-esign-clear:hover {
+            color: #40a9ff;
+            border-color: #40a9ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- 电子签签署弹窗 -->
+    <div class="esign-modal-overlay" id="esignModal">
+        <div class="esign-modal">
+            <div class="esign-header">
+                <div class="esign-title">
+                    <i class="fas fa-signature text-blue-500"></i>
+                    电子签签署确认
+                </div>
+                <button onclick="closeEsignModal()" style="background:none;border:none;cursor:pointer;color:#8c8c8c;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="esign-body">
+                <div class="esign-hint">
+                    <i class="fas fa-info-circle"></i>
+                    请使用鼠标或触摸在下方签名区域手写签名，确认提交审核计划。签名将作为您确认审核计划内容的凭证。
+                </div>
+                <div class="esign-canvas-container" id="canvasContainer">
+                    <canvas class="esign-canvas" id="signatureCanvas"></canvas>
+                    <div class="esign-placeholder" id="canvasPlaceholder">
+                        <i class="fas fa-pen-nib" style="font-size:24px;margin-bottom:8px;display:block;"></i>
+                        请在此处手写签名
+                    </div>
+                </div>
+            </div>
+            <div class="esign-footer">
+                <button class="btn btn-esign-clear" onclick="clearSignature()">
+                    <i class="fas fa-eraser"></i>
+                    清除重签
+                </button>
+                <button class="btn btn-default" onclick="closeEsignModal()">
+                    取消
+                </button>
+                <button class="btn btn-primary" onclick="confirmSignature()">
+                    <i class="fas fa-check"></i>
+                    确认签署并提交
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 顶部项目信息栏 -->
+    <div class="project-header sticky top-0 z-50">
+        <div class="container-fixed py-3">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                    <span class="text-gray-500 text-sm">RW-202403240001</span>
+                    <h1 class="text-lg font-bold text-gray-900">审核任务实施详情</h1>
+                    <span class="status-badge badge-processing" id="headerStatusBadge">审核任务确认中</span>
+                    
+                    <!-- 审核计划状态下拉 -->
+                    <div class="flex items-center gap-2 ml-4" id="planStatusSelector" style="display: none;">
+                        <span class="text-sm text-gray-600">审核计划状态：</span>
+                        <select class="status-select" id="planStatusDropdown" onchange="changePlanStatus(this.value)">
+                            <option value="draft">待提交</option>
+                            <option value="pending">待确认</option>
+                            <option value="confirmed">已确认</option>
+                            <option value="rejected">已驳回</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2" id="headerActions">
+                    <button class="btn btn-primary btn-sm hidden" id="confirmTaskBtn" onclick="confirmTaskAsLeader()">
+                        <i class="fas fa-check text-xs"></i>
+                        确认接收任务
+                    </button>
+                    <button class="btn btn-default btn-sm hidden" id="savePlanBtn" onclick="savePlan()">
+                        <i class="fas fa-save text-xs"></i>
+                        保存
+                    </button>
+                    <button class="btn btn-primary btn-sm hidden" id="submitPlanBtn" onclick="submitPlan()">
+                        <i class="fas fa-check-circle text-xs"></i>
+                        提交审核计划
+                    </button>
+                    <!-- 专业审核员签字按钮（新增） -->
+                    <button class="btn btn-success btn-sm hidden" id="specialistSignBtn" onclick="handleSpecialistSign()">
+                        <i class="fas fa-user-check text-xs"></i>
+                        模拟专业审核员签字
+                    </button>
+                    <button class="btn btn-success btn-sm hidden" id="pmApproveBtn" onclick="handlePMAction('approve')">
+                        <i class="fas fa-user-check text-xs"></i>
+                        模拟PM确认
+                    </button>
+                    <button class="btn btn-danger btn-sm hidden" id="pmRejectBtn" onclick="handlePMAction('reject')">
+                        <i class="fas fa-user-times text-xs"></i>
+                        模拟PM驳回
+                    </button>
+                    <button class="btn btn-success btn-sm hidden" id="customerApproveBtn" onclick="handleCustomerAction('approve')">
+                        <i class="fas fa-check text-xs"></i>
+                        模拟客户确认
+                    </button>
+                    <button class="btn btn-danger btn-sm hidden" id="customerRejectBtn" onclick="handleCustomerAction('reject')">
+                        <i class="fas fa-times text-xs"></i>
+                        模拟客户驳回
+                    </button>
+                    <button class="btn btn-danger btn-sm hidden" id="withdrawBtn" onclick="withdrawPlan()">
+                        <i class="fas fa-undo text-xs"></i>
+                        撤回
+                    </button>
+                    <button class="btn btn-default btn-sm" onclick="goBack()">
+                        <i class="fas fa-arrow-left text-xs"></i>
+                        返回
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-x-8 gap-y-2 text-sm">
+                <div>
+                    <span class="text-gray-500">审核任务编码：</span>
+                    <span class="font-medium text-gray-900">RW-202403240001</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">客户名称：</span>
+                    <span class="font-medium text-gray-900">北京市地铁运营有限公司</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">认证领域：</span>
+                    <span class="font-medium text-gray-900">QMS, EMS, OHSMS</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">审核阶段：</span>
+                    <span class="font-medium text-gray-900">二阶段</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">创建人：</span>
+                    <span class="font-medium text-gray-900">管理员</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">提交时间：</span>
+                    <span class="font-medium text-gray-900">2024-03-24 10:30:00</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">是否多场所：</span>
+                    <span class="font-medium text-blue-600">是</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">关联项目数量：</span>
+                    <span class="font-medium text-gray-900">3个审核项目</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 时间轴区域 -->
+    <div class="timeline-section">
+        <div class="container-fixed">
+            <div class="timeline-wrapper">
+                <div class="timeline-main">
+                    <div class="process-steps" id="timelineContainer">
+                        <div class="step-item completed" onclick="switchNode(0)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="step-title">审核任务确认</div>
+                            <div class="step-date">2024-03-24</div>
+                        </div>
+                        <div class="step-item active" onclick="switchNode(1)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">审核计划填报</div>
+                            <div class="step-date">进行中</div>
+                        </div>
+                        <div class="step-item pending" onclick="switchNode(2)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">审核进行中</div>
+                            <div class="step-date">待开始</div>
+                        </div>
+                        <div class="step-item pending" onclick="switchNode(3)">
+                            <div class="step-line"></div>
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">整改问题跟踪</div>
+                            <div class="step-date">待开始</div>
+                        </div>
+                        <div class="step-item pending" onclick="switchNode(4)">
+                            <div class="step-circle">
+                                <i class="fas fa-circle"></i>
+                            </div>
+                            <div class="step-title">任务已完成</div>
+                            <div class="step-date">待开始</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main class="container-fixed py-4">
+        
+        <!-- 节点1：审核任务确认 -->
+        <div id="node-task-confirm" class="node-content">
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-user-check text-blue-500"></i>
+                        组员确认情况
+                    </div>
+                </div>
+                <div class="p-4 text-center text-gray-400">
+                    <i class="fas fa-check-circle text-3xl mb-2"></i>
+                    <p class="text-sm">请点击"确认接收任务"按钮进入审核计划阶段</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 节点2：审核计划填报 -->
+        <div id="node-plan-confirm" class="node-content hidden-section">
+            <div class="flex gap-4">
+                <!-- 左侧主要内容区 -->
+                <div class="flex-1">
+                    <form id="auditPlanForm">
+                        
+                        <!-- 1. 审核类型（多组合显示，无说明） -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-tasks text-blue-500"></i>
+                                    审核类型
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <div class="combined-info-row" style="background: #e6f7ff; border: 1px solid #91d5ff;">
+                                    <i class="fas fa-info-circle text-blue-500"></i>
+                                    <span class="font-medium text-gray-900">初次认证二阶段QE，监督S</span>
+                                    <span class="text-xs text-gray-500">（自动带入，不可修改）</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. 审核目的（显示初次认证和监督内容） -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-bullseye text-blue-500"></i>
+                                    审核目的
+                                </div>
+                            </div>
+                            <div class="p-3 space-y-3">
+                                <div class="bg-green-50 p-3 rounded border-l-4 border-green-500">
+                                    <div class="font-semibold text-gray-900 mb-1">初次认证：</div>
+                                    <div class="text-sm text-gray-700 leading-relaxed">
+                                        评价客户管理体系的实施情况，包括有效性，以确定是否推荐认证；
+                                    </div>
+                                </div>
+                                <div class="bg-blue-50 p-3 rounded border-l-4 border-blue-500">
+                                    <div class="font-semibold text-gray-900 mb-1">监督：</div>
+                                    <div class="text-sm text-gray-700 leading-relaxed">
+                                        评价客户管理体系的持续符合性和有效性，以确定是否推荐保持认证；
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. 审核范围（时间可选择） -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-sitemap text-blue-500"></i>
+                                    审核范围
+                                </div>
+                                <span class="text-xs text-gray-400">（自动带入，不可修改）</span>
+                            </div>
+                            <div class="p-3">
+                                <!-- 范围项1：中心职能 -->
+                                <div class="combined-info-row">
+                                    <span class="center-function-tag">中心职能</span>
+                                    <span class="text-gray-600">北京市西城区北礼士路甲38号</span>
+                                    <span class="text-gray-400">|</span>
+                                    <span class="font-medium text-blue-700">QMS：轨道交通运营服务</span>
+                                    <span class="text-gray-400">|</span>
+                                    <span>自</span>
+                                    <input type="month" class="form-input" style="width: 120px;" value="2023-04">
+                                    <span>至</span>
+                                    <input type="date" class="form-input" style="width: 130px;" value="2024-04-18">
+                                </div>
+                                <!-- 范围项2：场所1 -->
+                                <div class="combined-info-row">
+                                    <span class="site-tag">场所1</span>
+                                    <span class="text-gray-600">北京市东城区建国门南大街5号</span>
+                                    <span class="text-gray-400">|</span>
+                                    <span class="font-medium text-green-700">EMS：城市轨道交通运营环境管理</span>
+                                    <span class="text-gray-400">|</span>
+                                    <span>自</span>
+                                    <input type="month" class="form-input" style="width: 120px;" value="2023-04">
+                                    <span>至</span>
+                                    <input type="date" class="form-input" style="width: 130px;" value="2024-04-18">
+                                </div>
+                                <!-- 范围项3：场所2 -->
+                                <div class="combined-info-row">
+                                    <span class="site-tag">场所2</span>
+                                    <span class="text-gray-600">北京市朝阳区望京北路9号</span>
+                                    <span class="text-gray-400">|</span>
+                                    <span class="font-medium text-orange-700">OHSMS：轨道交通职业健康安全管理</span>
+                                    <span class="text-gray-400">|</span>
+                                    <span>自</span>
+                                    <input type="month" class="form-input" style="width: 120px;" value="2023-04">
+                                    <span>至</span>
+                                    <input type="date" class="form-input" style="width: 130px;" value="2024-04-18">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. 班次和时间（修复小时显示，删除NaN提示） -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-clock text-blue-500"></i>
+                                    班次和班次时间
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm">共</span>
+                                    <select class="form-input" style="width: 50px;" id="shiftCount" onchange="updateShiftRows()">
+                                        <option value="1" selected>1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                    </select>
+                                    <span class="text-sm">班次</span>
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <div id="shiftContainer" class="flex flex-wrap gap-y-2">
+                                    <!-- 默认第1班次 -->
+                                    <div class="shift-row-compact" data-shift="1">
+                                        <span class="text-sm font-medium text-gray-700 w-14">第1班次</span>
+                                        <div class="flex items-center gap-1">
+                                            <select class="time-select" onchange="calculateShiftDuration(1)">
+                                                <option value="0">00</option>
+                                                <option value="1">01</option>
+                                                <option value="2">02</option>
+                                                <option value="3">03</option>
+                                                <option value="4">04</option>
+                                                <option value="5">05</option>
+                                                <option value="6">06</option>
+                                                <option value="7">07</option>
+                                                <option value="8" selected>08</option>
+                                                <option value="9">09</option>
+                                                <option value="10">10</option>
+                                                <option value="11">11</option>
+                                                <option value="12">12</option>
+                                                <option value="13">13</option>
+                                                <option value="14">14</option>
+                                                <option value="15">15</option>
+                                                <option value="16">16</option>
+                                                <option value="17">17</option>
+                                                <option value="18">18</option>
+                                                <option value="19">19</option>
+                                                <option value="20">20</option>
+                                                <option value="21">21</option>
+                                                <option value="22">22</option>
+                                                <option value="23">23</option>
+                                            </select>
+                                            <span>:</span>
+                                            <select class="time-select" style="width: 50px;" onchange="calculateShiftDuration(1)">
+                                                <option value="0" selected>00</option>
+                                                <option value="15">15</option>
+                                                <option value="30">30</option>
+                                                <option value="45">45</option>
+                                            </select>
+                                        </div>
+                                        <span class="text-gray-400">-</span>
+                                        <div class="flex items-center gap-1">
+                                            <select class="time-select" onchange="calculateShiftDuration(1)">
+                                                <option value="0">00</option>
+                                                <option value="1">01</option>
+                                                <option value="2">02</option>
+                                                <option value="3">03</option>
+                                                <option value="4">04</option>
+                                                <option value="5">05</option>
+                                                <option value="6">06</option>
+                                                <option value="7">07</option>
+                                                <option value="8">08</option>
+                                                <option value="9">09</option>
+                                                <option value="10">10</option>
+                                                <option value="11">11</option>
+                                                <option value="12">12</option>
+                                                <option value="13">13</option>
+                                                <option value="14">14</option>
+                                                <option value="15">15</option>
+                                                <option value="16">16</option>
+                                                <option value="17" selected>17</option>
+                                                <option value="18">18</option>
+                                                <option value="19">19</option>
+                                                <option value="20">20</option>
+                                                <option value="21">21</option>
+                                                <option value="22">22</option>
+                                                <option value="23">23</option>
+                                            </select>
+                                            <span>:</span>
+                                            <select class="time-select" style="width: 50px;" onchange="calculateShiftDuration(1)">
+                                                <option value="0" selected>00</option>
+                                                <option value="15">15</option>
+                                                <option value="30">30</option>
+                                                <option value="45">45</option>
+                                            </select>
+                                        </div>
+                                        <span class="text-xs font-medium text-green-600 ml-2" id="shift1Duration">8小时0分钟</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5&6. 审核日期和专业代码 -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-calendar-alt text-blue-500"></i>
+                                    审核日期及专业代码
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <div class="compact-row-2">
+                                    <div class="form-row mb-0">
+                                        <label class="form-label">审核日期 <span class="text-gray-400 text-xs">（自动带入，不可修改）</span></label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="date" class="form-input readonly-field" style="width: 140px;" value="2024-04-15" readonly>
+                                            <span class="text-gray-500">至</span>
+                                            <input type="date" class="form-input readonly-field" style="width: 140px;" value="2024-04-18" readonly>
+                                            <span class="text-sm text-gray-600 ml-2">共 <span class="font-bold text-gray-900">4</span> 天</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-row mb-0">
+                                        <label class="form-label">专业代码</label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" class="form-input" style="width: 200px;" value="Q01, E03, OHS02">
+                                            <div class="flex gap-1">
+                                                <span class="px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded text-xs">Q01</span>
+                                                <span class="px-2 py-0.5 bg-green-50 text-green-600 border border-green-200 rounded text-xs">E03</span>
+                                                <span class="px-2 py-0.5 bg-orange-50 text-orange-600 border border-orange-200 rounded text-xs">OHS02</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 7. 审核组 -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-users text-blue-500"></i>
+                                    审核组
+                                </div>
+                                <span class="text-xs text-gray-400">（自动带入审核任务信息）</span>
+                            </div>
+                            <div class="p-3">
+                                <table class="data-table border border-gray-200 text-xs">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 60px;">姓名</th>
+                                            <th style="width: 60px;">组内身份</th>
+                                            <th>资格及注册编号</th>
+                                            <th style="width: 80px;">CQC编号</th>
+                                            <th style="width: 100px;">联系电话</th>
+                                            <th style="width: 60px;">专兼职</th>
+                                            <th style="width: 140px;">审核日期区间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="font-medium">武荣刚</td>
+                                            <td><span class="personnel-tag tag-qms">组长</span></td>
+                                            <td>Q审核员(2022-N1QMS-6028373)</td>
+                                            <td class="font-mono">CQC21458</td>
+                                            <td>13661227694</td>
+                                            <td><span class="personnel-tag tag-fulltime">专职</span></td>
+                                            <td>2024-04-15 至 2024-04-18</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="font-medium">王洪伟</td>
+                                            <td><span class="personnel-tag tag-qms">组员</span></td>
+                                            <td>Q高级审核员(2021-N1QMS-5012345)</td>
+                                            <td class="font-mono">CQC10852</td>
+                                            <td>13800138001</td>
+                                            <td><span class="personnel-tag tag-parttime">兼职</span></td>
+                                            <td>2024-04-15 至 2024-04-16</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 8. 审核活动安排（日期时间加宽） -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-clipboard-list text-blue-500"></i>
+                                    审核活动安排
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="file" id="excelUpload" accept=".xlsx,.xls" class="hidden" onchange="handleExcelUpload(event)">
+                                    <button type="button" class="btn btn-default btn-sm" onclick="document.getElementById('excelUpload').click()">
+                                        <i class="fas fa-file-excel"></i> 导入Excel
+                                    </button>
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="addActivityRow()">
+                                        <i class="fas fa-plus"></i> 新增
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <!-- 人员时间统计 -->
+                                <div class="activity-stats" id="activityStats">
+                                    <div class="flex items-center gap-4">
+                                        <span class="font-medium text-gray-700">已安排时长统计：</span>
+                                        <div class="flex items-center gap-1">
+                                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                            <span>武荣刚:</span>
+                                            <span class="font-bold text-gray-900" id="stat-wurg">0</span>
+                                            <span class="text-gray-500">/32h</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                                            <span>王洪伟:</span>
+                                            <span class="font-bold text-gray-900" id="stat-whw">0</span>
+                                            <span class="text-gray-500">/16h</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 表头 -->
+                                <div class="activity-row-single bg-gray-50 font-semibold text-gray-700 border-b-2 border-gray-200" style="padding: 8px;">
+                                    <div>日期</div>
+                                    <div>时间</div>
+                                    <div>审核人员</div>
+                                    <div>拟审核的过程或活动及相关的标准条款</div>
+                                    <div>涉及的部门/场所</div>
+                                    <div>操作</div>
+                                </div>
+                                
+                                <!-- 活动行容器 -->
+                                <div id="activityContainer"></div>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <!-- 右侧流程日志 -->
+                <div class="w-80 flex-shrink-0">
+                    <div class="sidebar-sticky">
+                        <div class="content-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-stream text-blue-500"></i>
+                                    流程日志
+                                </div>
+                            </div>
+                            <div class="p-4" id="flowLogContainer">
+                                <!-- 动态生成流程日志内容 -->
+                            </div>
+                        </div>
+                        
+                        <!-- 流程示例切换器（仅用于演示） -->
+                        <div class="content-card mt-4">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-random text-orange-500"></i>
+                                    流程场景演示
+                                </div>
+                            </div>
+                            <div class="p-3 space-y-2">
+                                <button onclick="loadFlowScenario('success')" class="btn btn-default btn-sm w-full justify-center">
+                                    <i class="fas fa-check-circle text-green-500"></i> 正向流程（成功）
+                                </button>
+                                <button onclick="loadFlowScenario('pmReject')" class="btn btn-default btn-sm w-full justify-center">
+                                    <i class="fas fa-user-times text-red-500"></i> PM驳回场景
+                                </button>
+                                <button onclick="loadFlowScenario('customerReject')" class="btn btn-default btn-sm w-full justify-center">
+                                    <i class="fas fa-times-circle text-red-500"></i> 客户驳回场景
+                                </button>
+                                <button onclick="loadFlowScenario('pendingSpecialist')" class="btn btn-default btn-sm w-full justify-center">
+                                    <i class="fas fa-user-edit text-blue-500"></i> 待专业审核员签字
+                                </button>
+                                <button onclick="loadFlowScenario('pendingPM')" class="btn btn-default btn-sm w-full justify-center">
+                                    <i class="fas fa-clock text-blue-500"></i> 待PM确认
+                                </button>
+                                <button onclick="loadFlowScenario('pendingCustomer')" class="btn btn-default btn-sm w-full justify-center">
+                                    <i class="fas fa-clock text-orange-500"></i> 待客户确认
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 节点3-5 -->
+        <div id="node-audit-progress" class="node-content hidden-section">
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-tasks text-blue-500"></i>
+                        审核进行中
+                    </div>
+                </div>
+                <div class="p-8 text-center text-gray-400">
+                    <i class="fas fa-spinner text-5xl mb-4"></i>
+                    <p>审核任务尚未开始</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="node-rectification" class="node-content hidden-section">
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-exclamation-triangle text-blue-500"></i>
+                        整改问题跟踪
+                    </div>
+                </div>
+                <div class="p-8 text-center text-gray-400">
+                    <i class="fas fa-clipboard-check text-5xl mb-4"></i>
+                    <p>暂无整改问题</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="node-completed" class="node-content hidden-section">
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-flag-checkered text-blue-500"></i>
+                        任务已完成
+                    </div>
+                </div>
+                <div class="p-8 text-center text-gray-400">
+                    <i class="fas fa-check-double text-5xl mb-4"></i>
+                    <p>审核任务尚未完成</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // 全局状态
+        let currentNodeIndex = 0;
+        let planStatus = 'draft';
+        let isEditable = true;
+        let currentFlowStep = 0; 
+        let flowLogs = [];
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        
+        // 审核组人员数据
+        const auditTeam = [
+            { id: 'wurg', name: '武荣刚', maxHours: 32, color: 'blue', current: 0 },
+            { id: 'whw', name: '王洪伟', maxHours: 16, color: 'green', current: 0 }
+        ];
+        
+        // 节点配置（带日期和状态）
+        const nodes = [
+            { id: 'node-task-confirm', name: '审核任务确认', date: '2024-03-24', status: 'completed' },
+            { id: 'node-plan-confirm', name: '审核计划填报', date: '', status: 'active' },
+            { id: 'node-audit-progress', name: '审核进行中', date: '', status: 'pending' },
+            { id: 'node-rectification', name: '整改问题跟踪', date: '', status: 'pending' },
+            { id: 'node-completed', name: '任务已完成', date: '', status: 'pending' }
+        ];
+
+        // 流程场景数据（增加专业审核员签字节点step 1，原PM确认改为step 2，客户确认改为step 3，生效改为step 4）
+        const flowScenarios = {
+            // 场景1：正向流程（全部通过）
+            success: [
+                {
+                    step: 0,
+                    title: '编制审核计划',
+                    operator: '武荣刚',
+                    role: '组长',
+                    time: '2024-03-24 10:30',
+                    status: 'completed',
+                    description: '审核计划已编制完成并提交，包含QMS、EMS、OHSMS三体系审核安排',
+                    tag: { text: '已完成', type: 'success' }
+                },
+                {
+                    step: 1,
+                    title: '专业审核员签字',
+                    operator: '王洪伟',
+                    role: '专业审核员',
+                    time: '2024-03-24 11:15',
+                    status: 'completed',
+                    description: '专业审核员已完成审核计划的专业内容审查，确认专业代码匹配及审核深度适宜',
+                    tag: { text: '已签字', type: 'success' }
+                },
+                {
+                    step: 2,
+                    title: '项目管理人员确认',
+                    operator: '张管理',
+                    role: '项目管理人员',
+                    time: '2024-03-24 14:15',
+                    status: 'completed',
+                    description: '已审核审核组人员资质、审核时间安排及专业代码匹配性，符合要求',
+                    tag: { text: '已通过', type: 'success' }
+                },
+                {
+                    step: 3,
+                    title: '客户确认',
+                    operator: '北京市地铁运营有限公司',
+                    role: '客户',
+                    time: '2024-03-25 09:20',
+                    status: 'completed',
+                    description: '客户已确认审核计划安排，同意按计划实施现场审核',
+                    tag: { text: '已确认', type: 'success' }
+                },
+                {
+                    step: 4,
+                    title: '审核计划生效',
+                    operator: '系统',
+                    role: '自动',
+                    time: '2024-03-25 09:20',
+                    status: 'completed',
+                    description: '四方确认完成，审核计划正式生效，可进入审核实施阶段',
+                    tag: { text: '已生效', type: 'success' }
+                }
+            ],
+            
+            // 场景2：PM驳回（签字后PM驳回）
+            pmReject: [
+                {
+                    step: 0,
+                    title: '编制审核计划',
+                    operator: '武荣刚',
+                    role: '组长',
+                    time: '2024-03-24 10:30',
+                    status: 'completed',
+                    description: '审核计划已编制完成并提交',
+                    tag: { text: '已完成', type: 'success' }
+                },
+                {
+                    step: 1,
+                    title: '专业审核员签字',
+                    operator: '王洪伟',
+                    role: '专业审核员',
+                    time: '2024-03-24 11:15',
+                    status: 'completed',
+                    description: '专业审核员已完成审核计划的专业内容审查',
+                    tag: { text: '已签字', type: 'success' }
+                },
+                {
+                    step: 2,
+                    title: '项目管理人员驳回',
+                    operator: '张管理',
+                    role: '项目管理人员',
+                    time: '2024-03-24 16:45',
+                    status: 'rejected',
+                    description: '审核计划存在问题，需修改后重新提交',
+                    tag: { text: '已驳回', type: 'error' },
+                    rejectReason: '1. 王洪伟审核日期与实际排班冲突（4月16日已有其他任务）<br>2. 场所2的OHSMS审核时间不足，建议增加0.5人日<br>3. 专业代码OHS02与审核范围不匹配，请核对'
+                },
+                {
+                    step: 0,
+                    title: '重新编制审核计划',
+                    operator: '武荣刚',
+                    role: '组长',
+                    time: '2024-03-25 08:00',
+                    status: 'active',
+                    description: '已根据PM意见调整：修改王洪伟审核日期为4月15-16日；增加场所2审核时长；修正专业代码为OHS03',
+                    tag: { text: '进行中', type: 'primary' }
+                }
+            ],
+            
+            // 场景3：客户驳回
+            customerReject: [
+                {
+                    step: 0,
+                    title: '编制审核计划',
+                    operator: '武荣刚',
+                    role: '组长',
+                    time: '2024-03-24 10:30',
+                    status: 'completed',
+                    description: '审核计划已编制完成并提交',
+                    tag: { text: '已完成', type: 'success' }
+                },
+                {
+                    step: 1,
+                    title: '专业审核员签字',
+                    operator: '王洪伟',
+                    role: '专业审核员',
+                    time: '2024-03-24 11:15',
+                    status: 'completed',
+                    description: '专业审核员已完成审核计划的专业内容审查',
+                    tag: { text: '已签字', type: 'success' }
+                },
+                {
+                    step: 2,
+                    title: '项目管理人员确认',
+                    operator: '张管理',
+                    role: '项目管理人员',
+                    time: '2024-03-24 14:15',
+                    status: 'completed',
+                    description: '审核计划符合要求，已转交客户确认',
+                    tag: { text: '已通过', type: 'success' }
+                },
+                {
+                    step: 3,
+                    title: '客户驳回',
+                    operator: '北京市地铁运营有限公司',
+                    role: '客户',
+                    time: '2024-03-25 11:30',
+                    status: 'rejected',
+                    description: '客户对审核时间安排有异议，需调整',
+                    tag: { text: '已驳回', type: 'error' },
+                    rejectReason: '1. 4月15日上午公司有重要会议，无法接受首末次会议<br>2. 望京北路9号场所4月18日设备检修，不便接受审核<br>3. 建议将审核日期调整为4月16日-19日'
+                },
+                {
+                    step: 0,
+                    title: '重新编制审核计划',
+                    operator: '武荣刚',
+                    role: '组长',
+                    time: '2024-03-25 14:00',
+                    status: 'active',
+                    description: '已根据客户要求调整审核日期为4月16日-19日，相应调整各场所审核顺序',
+                    tag: { text: '进行中', type: 'primary' }
+                }
+            ],
+            
+            // 场景4：待专业审核员签字（新增场景）
+            pendingSpecialist: [
+                {
+                    step: 0,
+                    title: '编制审核计划',
+                    operator: '武荣刚',
+                    role: '组长',
+                    time: '2024-03-24 10:30',
+                    status: 'completed',
+                    description: '审核计划已编制完成并提交，等待专业审核员进行专业内容审查',
+                    tag: { text: '已完成', type: 'success' }
+                },
+                {
+                    step: 1,
+                    title: '专业审核员签字',
+                    operator: '王洪伟',
+                    role: '专业审核员',
+                    time: null,
+                    status: 'active',
+                    description: '等待专业审核员对审核计划的专业匹配性进行审查确认...',
+                    tag: { text: '进行中', type: 'primary' }
+                }
+            ],
+            
+            // 场景5：待PM确认（签字后待PM，原编号相应调整）
+            pendingPM: [
+                {
+                    step: 0,
+                    title: '编制审核计划',
+                    operator: '武荣刚',
+                    role: '组长',
+                    time: '2024-03-24 10:30',
+                    status: 'completed',
+                    description: '审核计划已编制完成并提交',
+                    tag: { text: '已完成', type: 'success' }
+                },
+                {
+                    step: 1,
+                    title: '专业审核员签字',
+                    operator: '王洪伟',
+                    role: '专业审核员',
+                    time: '2024-03-24 11:15',
+                    status: 'completed',
+                    description: '专业审核员已完成审核计划的专业内容审查，确认通过',
+                    tag: { text: '已签字', type: 'success' }
+                },
+                {
+                    step: 2,
+                    title: '项目管理人员确认',
+                    operator: '张管理',
+                    role: '项目管理人员',
+                    time: null,
+                    status: 'active',
+                    description: '正在审核审核组资质及计划合理性...',
+                    tag: { text: '进行中', type: 'primary' }
+                }
+            ],
+            
+            // 场景6：待客户确认（相应调整step编号）
+            pendingCustomer: [
+                {
+                    step: 0,
+                    title: '编制审核计划',
+                    operator: '武荣刚',
+                    role: '组长',
+                    time: '2024-03-24 10:30',
+                    status: 'completed',
+                    description: '审核计划已编制完成并提交',
+                    tag: { text: '已完成', type: 'success' }
+                },
+                {
+                    step: 1,
+                    title: '专业审核员签字',
+                    operator: '王洪伟',
+                    role: '专业审核员',
+                    time: '2024-03-24 11:15',
+                    status: 'completed',
+                    description: '专业审核员已完成审核计划的专业内容审查',
+                    tag: { text: '已签字', type: 'success' }
+                },
+                {
+                    step: 2,
+                    title: '项目管理人员确认',
+                    operator: '张管理',
+                    role: '项目管理人员',
+                    time: '2024-03-24 14:15',
+                    status: 'completed',
+                    description: '审核计划已通过项目管理审核，已发送至客户确认',
+                    tag: { text: '已通过', type: 'success' }
+                },
+                {
+                    step: 3,
+                    title: '客户确认',
+                    operator: '北京市地铁运营有限公司',
+                    role: '客户',
+                    time: null,
+                    status: 'active',
+                    description: '等待客户审核确认，已发送确认邮件至客户联系人',
+                    tag: { text: '进行中', type: 'primary' }
+                }
+            ]
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            switchNode(0);
+            updateShiftRows();
+            addActivityRow();
+            updateAuditStats();
+            // 默认加载成功场景
+            loadFlowScenario('success');
+            initSignatureCanvas();
+        });
+
+        // 初始化签名画布
+        function initSignatureCanvas() {
+            const canvas = document.getElementById('signatureCanvas');
+            const container = document.getElementById('canvasContainer');
+            const placeholder = document.getElementById('canvasPlaceholder');
+            
+            // 设置画布大小
+            canvas.width = container.offsetWidth;
+            canvas.height = 200;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // 鼠标/触摸事件处理
+            const startDrawing = (e) => {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                lastX = x;
+                lastY = y;
+                placeholder.style.display = 'none';
+            };
+            
+            const draw = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                
+                lastX = x;
+                lastY = y;
+            };
+            
+            const stopDrawing = () => {
+                isDrawing = false;
+            };
+            
+            // 鼠标事件
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            // 触摸事件
+            canvas.addEventListener('touchstart', startDrawing);
+            canvas.addEventListener('touchmove', draw);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
+
+        // 清除签名
+        function clearSignature() {
+            const canvas = document.getElementById('signatureCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('canvasPlaceholder').style.display = 'block';
+        }
+
+        // 关闭电子签弹窗
+        function closeEsignModal() {
+            document.getElementById('esignModal').classList.remove('show');
+            clearSignature();
+        }
+
+        // 确认签名（完成签署并提交）
+        function confirmSignature() {
+            const canvas = document.getElementById('signatureCanvas');
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            // 检查是否签名（简单检查是否有像素点）
+            let hasSignature = false;
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                if (imageData.data[i + 3] > 0) {
+                    hasSignature = true;
+                    break;
+                }
+            }
+            
+            if (!hasSignature) {
+                alert('请先手写签名后再确认提交');
+                return;
+            }
+            
+            // 关闭弹窗
+            closeEsignModal();
+            
+            // 继续提交流程（进入待专业审核员签字状态）
+            currentFlowStep = 1;
+            
+            // 更新日志
+            flowLogs[0].status = 'completed';
+            flowLogs[0].tag = { text: '已完成', type: 'success' };
+            flowLogs[0].description = '审核计划已编制完成并提交，等待专业审核员签字';
+            flowLogs[0].time = formatDateTime(new Date());
+            
+            flowLogs.push({
+                step: 1,
+                title: '专业审核员签字',
+                operator: '王洪伟',
+                role: '专业审核员',
+                time: null,
+                status: 'active',
+                description: '等待专业审核员对审核计划进行专业内容审查并签字确认（该节点无驳回功能）',
+                tag: { text: '进行中', type: 'primary' }
+            });
+            
+            renderFlowLog();
+            updateHeaderStatus();
+            alert('电子签署成功！审核计划已提交，等待专业审核员签字确认');
+        }
+
+        // 加载流程场景（增加pendingSpecialist场景处理）
+        function loadFlowScenario(scenario) {
+            flowLogs = JSON.parse(JSON.stringify(flowScenarios[scenario]));
+            
+            // 根据场景设置当前步骤
+            if (scenario === 'success') {
+                currentFlowStep = 4; // 调整后最终步骤为4
+                planStatus = 'confirmed';
+            } else if (scenario === 'pmReject') {
+                currentFlowStep = -1;
+                planStatus = 'rejected';
+            } else if (scenario === 'customerReject') {
+                currentFlowStep = -2;
+                planStatus = 'rejected';
+            } else if (scenario === 'pendingSpecialist') {
+                currentFlowStep = 1; // 新增场景
+                planStatus = 'pending';
+            } else if (scenario === 'pendingPM') {
+                currentFlowStep = 2; // 调整后PM确认是step 2
+                planStatus = 'pending';
+            } else if (scenario === 'pendingCustomer') {
+                currentFlowStep = 3; // 调整后客户确认是step 3
+                planStatus = 'pending';
+            }
+            
+            renderFlowLog();
+            updateHeaderStatus();
+        }
+
+        // 专业审核员签字操作（新增函数，无驳回功能）
+        function handleSpecialistSign() {
+            if (!confirm('专业审核员确认签字通过？（此步骤不可驳回）')) return;
+            
+            currentFlowStep = 2; // 进入待PM确认状态
+            
+            // 更新签字记录为已完成
+            const signLog = flowLogs.find(l => l.step === 1 && l.status === 'active');
+            if (signLog) {
+                signLog.status = 'completed';
+                signLog.tag = { text: '已签字', type: 'success' };
+                signLog.time = formatDateTime(new Date());
+                signLog.description = '专业审核员已完成审核计划的专业内容审查，确认专业代码匹配、审核深度适宜，同意提交项目管理审核';
+            } else {
+                // 如果没有找到活动记录，添加新记录
+                flowLogs.push({
+                    step: 1,
+                    title: '专业审核员签字',
+                    operator: '王洪伟',
+                    role: '专业审核员',
+                    time: formatDateTime(new Date()),
+                    status: 'completed',
+                    description: '专业审核员已完成审核计划的专业内容审查，确认通过',
+                    tag: { text: '已签字', type: 'success' }
+                });
+            }
+            
+            // 添加PM确认待办
+            flowLogs.push({
+                step: 2,
+                title: '项目管理人员确认',
+                operator: '张管理',
+                role: '项目管理人员',
+                time: null,
+                status: 'active',
+                description: '等待项目管理人员审核确认',
+                tag: { text: '进行中', type: 'primary' }
+            });
+            
+            renderFlowLog();
+            updateHeaderStatus();
+            alert('专业审核员签字完成，已转交项目管理人员确认');
+        }
+
+        // 渲染流程日志
+        function renderFlowLog() {
+            const container = document.getElementById('flowLogContainer');
+            let html = '<div class="flow-timeline">';
+            
+            flowLogs.forEach((log, index) => {
+                const isLast = index === flowLogs.length - 1;
+                const statusClass = log.status === 'completed' ? 'completed' : 
+                                   log.status === 'rejected' ? 'rejected' : 'active';
+                
+                let tagClass = '';
+                switch(log.tag.type) {
+                    case 'success': tagClass = 'flow-tag-success'; break;
+                    case 'primary': tagClass = 'flow-tag-primary'; break;
+                    case 'error': tagClass = 'flow-tag-error'; break;
+                    case 'warning': tagClass = 'flow-tag-warning'; break;
+                    default: tagClass = 'flow-tag-default';
+                }
+                
+                // 驳回原因展示
+                let rejectHtml = '';
+                if (log.rejectReason) {
+                    rejectHtml = `<div class="reject-reason-box">
+                        <div class="font-medium mb-1"><i class="fas fa-exclamation-triangle"></i> 驳回原因：</div>
+                        ${log.rejectReason}
+                    </div>`;
+                }
+                
+                // 重新提交提示
+                let resubmitHtml = '';
+                if (log.step === 0 && log.status === 'active' && index > 0) {
+                    resubmitHtml = `<div class="resubmit-box">
+                        <i class="fas fa-edit"></i> 已根据审核意见修改，准备重新提交
+                    </div>`;
+                }
+                
+                html += `
+                    <div class="flow-item ${statusClass}">
+                        <div class="flow-dot"></div>
+                        <div class="flow-title">
+                            ${log.title}
+                        </div>
+                        <div class="flow-meta">
+                            <i class="fas fa-user-circle"></i>
+                            <span>${log.operator} · ${log.time || '待定'}</span>
+                        </div>
+                        <div class="flow-desc">${log.description}</div>
+                        ${rejectHtml}
+                        ${resubmitHtml}
+                        <span class="flow-tag ${tagClass}">
+                            ${log.tag.text}
+                        </span>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 切换节点
+        function switchNode(index) {
+            currentNodeIndex = index;
+            
+            // 更新步骤条
+            const stepItems = document.querySelectorAll('.step-item');
+            stepItems.forEach((item, idx) => {
+                // 移除所有状态类
+                item.classList.remove('active', 'completed', 'pending');
+                
+                // 设置圆圈内容
+                const circle = item.querySelector('.step-circle');
+                const title = item.querySelector('.step-title');
+                const date = item.querySelector('.step-date');
+                
+                if (idx < index) {
+                    // 已完成的节点
+                    item.classList.add('completed');
+                    circle.innerHTML = '<i class="fas fa-check"></i>';
+                    date.textContent = nodes[idx].date || '2024-03-24';
+                } else if (idx === index) {
+                    // 当前节点
+                    item.classList.add('active');
+                    circle.innerHTML = '<i class="fas fa-circle"></i>';
+                    date.textContent = '进行中';
+                } else {
+                    // 待开始的节点
+                    item.classList.add('pending');
+                    circle.innerHTML = '<i class="fas fa-circle"></i>';
+                    date.textContent = '待开始';
+                }
+            });
+            
+            // 隐藏所有节点内容
+            document.querySelectorAll('.node-content').forEach(el => {
+                el.classList.add('hidden-section');
+            });
+            
+            // 显示当前节点
+            document.getElementById(nodes[index].id).classList.remove('hidden-section');
+            
+            updateHeaderStatus();
+        }
+
+        // 更新头部状态（增加专业审核员签字按钮显示逻辑）
+        function updateHeaderStatus() {
+            const statusBadge = document.getElementById('headerStatusBadge');
+            const confirmBtn = document.getElementById('confirmTaskBtn');
+            const savePlanBtn = document.getElementById('savePlanBtn');
+            const submitPlanBtn = document.getElementById('submitPlanBtn');
+            const withdrawBtn = document.getElementById('withdrawBtn');
+            const planStatusSelector = document.getElementById('planStatusSelector');
+            const planStatusDropdown = document.getElementById('planStatusDropdown');
+            const pmApproveBtn = document.getElementById('pmApproveBtn');
+            const pmRejectBtn = document.getElementById('pmRejectBtn');
+            const customerApproveBtn = document.getElementById('customerApproveBtn');
+            const customerRejectBtn = document.getElementById('customerRejectBtn');
+            const specialistSignBtn = document.getElementById('specialistSignBtn'); // 新增按钮引用
+            
+            // 重置所有按钮
+            confirmBtn.classList.add('hidden');
+            savePlanBtn.classList.add('hidden');
+            submitPlanBtn.classList.add('hidden');
+            withdrawBtn.classList.add('hidden');
+            planStatusSelector.style.display = 'none';
+            pmApproveBtn.classList.add('hidden');
+            pmRejectBtn.classList.add('hidden');
+            customerApproveBtn.classList.add('hidden');
+            customerRejectBtn.classList.add('hidden');
+            specialistSignBtn.classList.add('hidden'); // 隐藏专业审核员按钮
+            
+            if (currentNodeIndex === 0) {
+                statusBadge.textContent = '审核任务确认中';
+                statusBadge.className = 'status-badge badge-processing';
+                confirmBtn.classList.remove('hidden');
+            } else if (currentNodeIndex === 1) {
+                planStatusSelector.style.display = 'flex';
+                planStatusDropdown.value = planStatus;
+                
+                // 根据流程步骤显示不同按钮
+                if (currentFlowStep === 0) {
+                    // 编制中
+                    statusBadge.textContent = '审核计划编制中';
+                    statusBadge.className = 'status-badge badge-processing';
+                    isEditable = true;
+                    savePlanBtn.classList.remove('hidden');
+                    submitPlanBtn.classList.remove('hidden');
+                    submitPlanBtn.innerHTML = '<i class="fas fa-check-circle text-xs"></i> 提交审核计划';
+                } else if (currentFlowStep === 1) {
+                    // 待专业审核员签字（新增状态）
+                    statusBadge.textContent = '等待专业审核员签字';
+                    statusBadge.className = 'status-badge badge-warning';
+                    isEditable = false;
+                    specialistSignBtn.classList.remove('hidden'); // 显示专业审核员签字按钮
+                    withdrawBtn.classList.remove('hidden');
+                    
+                    planStatus = 'pending';
+                    planStatusDropdown.value = 'pending';
+                } else if (currentFlowStep === 2) {
+                    // 待PM确认（调整后）
+                    statusBadge.textContent = '等待项目管理人员确认';
+                    statusBadge.className = 'status-badge badge-warning';
+                    isEditable = false;
+                    pmApproveBtn.classList.remove('hidden');
+                    pmRejectBtn.classList.remove('hidden');
+                    withdrawBtn.classList.remove('hidden');
+                    
+                    planStatus = 'pending';
+                    planStatusDropdown.value = 'pending';
+                } else if (currentFlowStep === 3) {
+                    // 待客户确认（调整后）
+                    statusBadge.textContent = '等待客户确认';
+                    statusBadge.className = 'status-badge badge-warning';
+                    isEditable = false;
+                    customerApproveBtn.classList.remove('hidden');
+                    customerRejectBtn.classList.remove('hidden');
+                    withdrawBtn.classList.remove('hidden');
+                    
+                    planStatus = 'pending';
+                    planStatusDropdown.value = 'pending';
+                } else if (currentFlowStep === 4) {
+                    // 已确认（调整后）
+                    statusBadge.textContent = '审核计划已确认';
+                    statusBadge.className = 'status-badge badge-success';
+                    isEditable = false;
+                    planStatus = 'confirmed';
+                    planStatusDropdown.value = 'confirmed';
+                } else if (currentFlowStep === -1) {
+                    // PM驳回（现在是在step 2被驳回）
+                    statusBadge.textContent = '审核计划被驳回';
+                    statusBadge.className = 'status-badge badge-error';
+                    isEditable = true;
+                    savePlanBtn.classList.remove('hidden');
+                    submitPlanBtn.classList.remove('hidden');
+                    planStatus = 'rejected';
+                    planStatusDropdown.value = 'rejected';
+                } else if (currentFlowStep === -2) {
+                    // 客户驳回（现在是在step 3被驳回）
+                    statusBadge.textContent = '审核计划被客户驳回';
+                    statusBadge.className = 'status-badge badge-error';
+                    isEditable = true;
+                    savePlanBtn.classList.remove('hidden');
+                    submitPlanBtn.classList.remove('hidden');
+                    planStatus = 'rejected';
+                    planStatusDropdown.value = 'rejected';
+                }
+                
+                updateFormEditable();
+            } else if (currentNodeIndex === 2) {
+                statusBadge.textContent = '审核进行中';
+                statusBadge.className = 'status-badge badge-warning';
+            } else if (currentNodeIndex === 3) {
+                statusBadge.textContent = '整改跟踪中';
+                statusBadge.className = 'status-badge badge-warning';
+            } else if (currentNodeIndex === 4) {
+                statusBadge.textContent = '已完成';
+                statusBadge.className = 'status-badge badge-success';
+            }
+        }
+
+        // 格式化日期时间
+        function formatDateTime(date) {
+            const pad = n => n < 10 ? '0' + n : n;
+            return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        }
+
+        // 改变状态下拉
+        function changePlanStatus(newStatus) {
+            planStatus = newStatus;
+            updateHeaderStatus();
+        }
+
+        // 撤回功能（增加对专业审核员签字状态的判断）
+        function withdrawPlan() {
+            if (confirm('确定撤回审核计划吗？撤回后将回到待提交状态。')) {
+                currentFlowStep = 0;
+                
+                // 添加撤回记录
+                const withdrawLog = {
+                    step: -1,
+                    title: '撤回审核计划',
+                    operator: '武荣刚',
+                    role: '组长',
+                    time: formatDateTime(new Date()),
+                    status: 'completed',
+                    description: '组长主动撤回审核计划，返回编辑状态',
+                    tag: { text: '已撤回', type: 'default' }
+                };
+                
+                // 重置日志
+                flowLogs = [withdrawLog, {
+                    step: 0,
+                    title: '编制审核计划',
+                    operator: '武荣刚',
+                    role: '组长',
+                    time: formatDateTime(new Date()),
+                    status: 'active',
+                    description: '重新编制审核计划',
+                    tag: { text: '进行中', type: 'primary' }
+                }];
+                
+                renderFlowLog();
+                updateHeaderStatus();
+                alert('审核计划已撤回');
+            }
+        }
+
+        // PM操作（确认/驳回，调整步骤编号）
+        function handlePMAction(action) {
+            if (action === 'approve') {
+                if (!confirm('确认通过该审核计划？')) return;
+                
+                currentFlowStep = 3; // 进入待客户确认（原2现3）
+                
+                // 更新前两步为已完成
+                flowLogs.forEach(log => {
+                    if (log.step === 0 || log.step === 1) {
+                        log.status = 'completed';
+                        log.tag = { text: log.step === 0 ? '已完成' : '已签字', type: 'success' };
+                        if (!log.time) log.time = formatDateTime(new Date());
+                    }
+                });
+                
+                // 添加PM确认记录
+                flowLogs.push({
+                    step: 2,
+                    title: '项目管理人员确认',
+                    operator: '张管理',
+                    role: '项目管理人员',
+                    time: formatDateTime(new Date()),
+                    status: 'completed',
+                    description: '审核计划已通过项目管理人员的审核，人员资质、时间安排及专业代码均符合要求',
+                    tag: { text: '已通过', type: 'success' }
+                });
+                
+                // 添加待客户确认记录
+                flowLogs.push({
+                    step: 3,
+                    title: '客户确认',
+                    operator: '北京市地铁运营有限公司',
+                    role: '客户',
+                    time: null,
+                    status: 'active',
+                    description: '等待客户确认审核计划，已发送邮件通知客户联系人',
+                    tag: { text: '进行中', type: 'primary' }
+                });
+                
+                renderFlowLog();
+                updateHeaderStatus();
+                alert('项目管理人员审核通过，已转交客户确认');
+            } else {
+                const reason = prompt('请输入驳回原因：\n（可输入如：1.人员资质不符 2.时间安排冲突 3.审核范围不清等）');
+                if (!reason) return;
+                
+                currentFlowStep = -1; // 驳回状态
+                
+                // 更新前两步为已完成
+                flowLogs.forEach(log => {
+                    if (log.step === 0 || log.step === 1) {
+                        log.status = 'completed';
+                        log.tag = { text: log.step === 0 ? '已完成' : '已签字', type: 'success' };
+                    }
+                });
+                
+                // 添加PM驳回记录
+                flowLogs.push({
+                    step: 2,
+                    title: '项目管理人员驳回',
+                    operator: '张管理',
+                    role: '项目管理人员',
+                    time: formatDateTime(new Date()),
+                    status: 'rejected',
+                    description: '审核计划未通过项目管理审核，需修改后重新提交',
+                    tag: { text: '已驳回', type: 'error' },
+                    rejectReason: reason
+                });
+                
+                renderFlowLog();
+                updateHeaderStatus();
+                alert(`项目管理人员已驳回，原因：${reason}`);
+            }
+        }
+
+        // 客户操作（确认/驳回，调整步骤编号）
+        function handleCustomerAction(action) {
+            if (action === 'approve') {
+                if (!confirm('客户确认通过该审核计划？')) return;
+                
+                currentFlowStep = 4; // 最终确认（原3现4）
+                
+                // 更新所有待办为已完成
+                flowLogs.forEach(log => {
+                    if (log.status === 'active') {
+                        log.status = 'completed';
+                        log.tag = { text: '已完成', type: 'success' };
+                        if (!log.time) log.time = formatDateTime(new Date());
+                    }
+                });
+                
+                // 添加客户确认记录
+                flowLogs.push({
+                    step: 4,
+                    title: '客户确认通过',
+                    operator: '北京市地铁运营有限公司',
+                    role: '客户',
+                    time: formatDateTime(new Date()),
+                    status: 'completed',
+                    description: '客户已确认审核计划，同意按此计划实施现场审核，计划正式生效',
+                    tag: { text: '已确认', type: 'success' }
+                });
+                
+                renderFlowLog();
+                updateHeaderStatus();
+                alert('客户确认成功，审核计划已生效！');
+            } else {
+                const reason = prompt('请输入客户驳回原因：\n（可输入如：1.日期冲突 2.人员变更要求 3.审核范围调整等）');
+                if (!reason) return;
+                
+                currentFlowStep = -2; // 客户驳回状态
+                
+                // 更新待客户确认为驳回
+                const lastLog = flowLogs[flowLogs.length - 1];
+                if (lastLog && lastLog.step === 3) {
+                    lastLog.status = 'rejected';
+                    lastLog.tag = { text: '已驳回', type: 'error' };
+                    lastLog.rejectReason = reason;
+                }
+                
+                renderFlowLog();
+                updateHeaderStatus();
+                alert(`客户已驳回，原因：${reason}`);
+            }
+        }
+
+        // 更新表单可编辑状态
+        function updateFormEditable() {
+            const inputs = document.querySelectorAll('#node-plan-confirm input:not(.readonly-field), #node-plan-confirm select:not(#shiftCount):not(.readonly-field), #node-plan-confirm textarea');
+            inputs.forEach(input => {
+                input.disabled = !isEditable;
+            });
+            
+            // 控制新增和删除按钮
+            const addBtn = document.querySelector('#node-plan-confirm .btn-primary.btn-sm');
+            const deleteBtns = document.querySelectorAll('#node-plan-confirm .btn-danger.btn-sm');
+            
+            if (addBtn) {
+                addBtn.style.display = isEditable ? 'inline-flex' : 'none';
+            }
+            deleteBtns.forEach(btn => {
+                btn.style.display = isEditable ? 'inline-flex' : 'none';
+            });
+        }
+
+        // 班次行生成
+        function updateShiftRows() {
+            const count = parseInt(document.getElementById('shiftCount').value);
+            const container = document.getElementById('shiftContainer');
+            const existingRows = container.querySelectorAll('.shift-row-compact');
+            const currentCount = existingRows.length;
+            
+            // 生成小时选项HTML
+            let hourOptions = '';
+            for (let i = 0; i < 24; i++) {
+                hourOptions += `<option value="${i}">${i.toString().padStart(2, '0')}</option>`;
+            }
+            
+            let minuteOptions = `
+                <option value="0">00</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="45">45</option>
+            `;
+            
+            if (count > currentCount) {
+                for (let i = currentCount + 1; i <= count; i++) {
+                    const row = document.createElement('div');
+                    row.className = 'shift-row-compact';
+                    row.dataset.shift = i;
+                    row.innerHTML = `
+                        <span class="text-sm font-medium text-gray-700 w-14">第${i}班次</span>
+                        <div class="flex items-center gap-1">
+                            <select class="time-select" onchange="calculateShiftDuration(${i})">
+                                ${hourOptions}
+                            </select>
+                            <span>:</span>
+                            <select class="time-select" style="width: 50px;" onchange="calculateShiftDuration(${i})">
+                                ${minuteOptions}
+                            </select>
+                        </div>
+                        <span class="text-gray-400">-</span>
+                        <div class="flex items-center gap-1">
+                            <select class="time-select" onchange="calculateShiftDuration(${i})">
+                                ${hourOptions}
+                            </select>
+                            <span>:</span>
+                            <select class="time-select" style="width: 50px;" onchange="calculateShiftDuration(${i})">
+                                ${minuteOptions}
+                            </select>
+                        </div>
+                        <span class="text-xs font-medium text-gray-600 ml-2" id="shift${i}Duration">0小时0分钟</span>
+                    `;
+                    container.appendChild(row);
+                }
+            } else if (count < currentCount) {
+                for (let i = currentCount - 1; i >= count; i--) {
+                    existingRows[i].remove();
+                }
+            }
+            
+            // 初始化新行的默认值
+            for (let i = currentCount + 1; i <= count; i++) {
+                const row = document.querySelector(`.shift-row-compact[data-shift="${i}"]`);
+                const selects = row.querySelectorAll('select');
+                selects[0].value = 8;  // 开始小时默认08
+                selects[2].value = 17; // 结束小时默认17
+                calculateShiftDuration(i);
+            }
+        }
+
+        // 计算班次时长
+        function calculateShiftDuration(shiftNum) {
+            const row = document.querySelector(`.shift-row-compact[data-shift="${shiftNum}"]`);
+            if (!row) return;
+            
+            const selects = row.querySelectorAll('select');
+            const startH = parseInt(selects[0].value) || 0;
+            const startM = parseInt(selects[1].value) || 0;
+            const endH = parseInt(selects[2].value) || 0;
+            const endM = parseInt(selects[3].value) || 0;
+            
+            let start = startH * 60 + startM;
+            let end = endH * 60 + endM;
+            
+            if (end < start) end += 24 * 60;
+            
+            const duration = end - start;
+            const hours = Math.floor(duration / 60);
+            const mins = duration % 60;
+            
+            const display = document.getElementById(`shift${shiftNum}Duration`);
+            if (display) {
+                if (duration === 480) {
+                    display.className = 'text-xs font-medium text-green-600 ml-2';
+                    display.textContent = '8小时0分钟';
+                } else {
+                    display.className = 'text-xs font-medium text-gray-600 ml-2';
+                    display.textContent = `${hours}小时${mins}分钟`;
+                }
+            }
+        }
+
+        // 添加审核活动行
+        function addActivityRow(data = null) {
+            const container = document.getElementById('activityContainer');
+            const rowId = 'act_' + Date.now();
+            
+            const div = document.createElement('div');
+            div.className = 'activity-row-single';
+            div.dataset.rowId = rowId;
+            
+            const date = data?.date || '2024-04-15';
+            const startTime = data?.startTime || '09:00';
+            const endTime = data?.endTime || '12:00';
+            const auditors = data?.auditors || [];
+            const process = data?.process || '';
+            const dept = data?.dept || '';
+            
+            div.innerHTML = `
+                <div>
+                    <input type="date" class="form-input" value="${date}" min="2024-04-15" max="2024-04-18" style="width: 120px;" onchange="updateAuditStats()">
+                </div>
+                <div class="flex items-center gap-1">
+                    <select class="time-select" style="width: 75px;" onchange="updateAuditStats()">
+                        ${generateTimeOptions(startTime)}
+                    </select>
+                    <span class="text-gray-400">-</span>
+                    <select class="time-select" style="width: 75px;" onchange="updateAuditStats()">
+                        ${generateTimeOptions(endTime)}
+                    </select>
+                </div>
+                <div class="auditor-select-container">
+                    <div class="auditor-tags" onclick="showAuditorDropdown('${rowId}')" id="tags-${rowId}">
+                        ${auditors.map(aid => {
+                            const auditor = auditTeam.find(a => a.id === aid);
+                            return auditor ? `<span class="auditor-tag" data-id="${aid}">${auditor.name}<span class="remove" onclick="removeAuditor('${rowId}', '${aid}', event)">×</span></span>` : '';
+                        }).join('') || '<span class="text-gray-400 text-xs">点击选择人员...</span>'}
+                    </div>
+                    <div class="auditor-dropdown" id="dropdown-${rowId}">
+                        ${auditTeam.map(t => `
+                            <div class="auditor-option" onclick="selectAuditor('${rowId}', '${t.id}')">
+                                <span class="w-2 h-2 rounded-full bg-${t.color}-500 inline-block mr-1"></span>
+                                ${t.name} (${t.maxHours}h)
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div>
+                    <input type="text" class="form-input" value="${process}" placeholder="如：组织环境 4.1-4.4" style="width: 100%;">
+                </div>
+                <div>
+                    <input type="text" class="form-input" value="${dept}" placeholder="如：管理层/中心职能" style="width: 100%;">
+                </div>
+                <div>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeActivityRow('${rowId}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(div);
+            updateAuditStats();
+        }
+
+        // 生成时间选项
+        function generateTimeOptions(selectedTime = '09:00') {
+            let html = '';
+            for (let h = 0; h < 24; h++) {
+                for (let m of ['00', '30']) {
+                    const time = `${h.toString().padStart(2, '0')}:${m}`;
+                    const selected = time === selectedTime ? 'selected' : '';
+                    html += `<option value="${time}" ${selected}>${time}</option>`;
+                }
+            }
+            return html;
+        }
+
+        // 显示人员下拉
+        function showAuditorDropdown(rowId) {
+            if (!isEditable) return;
+            
+            document.querySelectorAll('.auditor-dropdown').forEach(d => {
+                if (d.id !== `dropdown-${rowId}`) d.classList.remove('show');
+            });
+            
+            const dropdown = document.getElementById(`dropdown-${rowId}`);
+            dropdown.classList.toggle('show');
+            
+            const closeDropdown = (e) => {
+                if (!e.target.closest(`#tags-${rowId}`) && !e.target.closest(`#dropdown-${rowId}`)) {
+                    dropdown.classList.remove('show');
+                    document.removeEventListener('click', closeDropdown);
+                }
+            };
+            setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+        }
+
+        // 选择人员
+        function selectAuditor(rowId, auditorId) {
+            const tagsContainer = document.getElementById(`tags-${rowId}`);
+            const auditor = auditTeam.find(a => a.id === auditorId);
+            
+            if (tagsContainer.querySelector(`[data-id="${auditorId}"]`)) return;
+            
+            if (tagsContainer.querySelector('span.text-gray-400')) {
+                tagsContainer.innerHTML = '';
+            }
+            
+            const tag = document.createElement('span');
+            tag.className = 'auditor-tag';
+            tag.dataset.id = auditorId;
+            tag.innerHTML = `${auditor.name}<span class="remove" onclick="removeAuditor('${rowId}', '${auditorId}', event)">×</span>`;
+            tagsContainer.appendChild(tag);
+            
+            updateAuditStats();
+        }
+
+        // 移除人员
+        function removeAuditor(rowId, auditorId, event) {
+            event.stopPropagation();
+            const tagsContainer = document.getElementById(`tags-${rowId}`);
+            const tag = tagsContainer.querySelector(`[data-id="${auditorId}"]`);
+            if (tag) tag.remove();
+            
+            if (tagsContainer.children.length === 0) {
+                tagsContainer.innerHTML = '<span class="text-gray-400 text-xs">点击选择人员...</span>';
+            }
+            
+            updateAuditStats();
+        }
+
+        // 删除活动行
+        function removeActivityRow(rowId) {
+            const row = document.querySelector(`[data-row-id="${rowId}"]`);
+            if (row) {
+                row.remove();
+                updateAuditStats();
+            }
+        }
+
+        // 更新审核统计
+        function updateAuditStats() {
+            auditTeam.forEach(t => t.current = 0);
+            
+            document.querySelectorAll('.activity-row-single').forEach(row => {
+                const timeSelects = row.querySelectorAll('.time-select');
+                const start = timeSelects[0]?.value;
+                const end = timeSelects[1]?.value;
+                
+                if (start && end) {
+                    const [sh, sm] = start.split(':').map(Number);
+                    const [eh, em] = end.split(':').map(Number);
+                    let duration = (eh * 60 + em) - (sh * 60 + sm);
+                    if (duration < 0) duration += 24 * 60;
+                    const hours = duration / 60;
+                    
+                    const tags = row.querySelectorAll('.auditor-tag');
+                    tags.forEach(tag => {
+                        const auditorId = tag.dataset.id;
+                        const auditor = auditTeam.find(a => a.id === auditorId);
+                        if (auditor) auditor.current += hours;
+                    });
+                }
+            });
+            
+            auditTeam.forEach(t => {
+                const el = document.getElementById(`stat-${t.id}`);
+                if (el) {
+                    el.textContent = t.current.toFixed(1);
+                    el.className = t.current > t.maxHours ? 'font-bold text-red-600' : 'font-bold text-gray-900';
+                }
+            });
+        }
+
+        // Excel导入
+        function handleExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                    
+                    document.getElementById('activityContainer').innerHTML = '';
+                    
+                    jsonData.forEach(row => {
+                        const auditors = (row['审核人员'] || '').split(/[,，]/).map(s => {
+                            const name = s.trim();
+                            const found = auditTeam.find(a => a.name === name);
+                            return found ? found.id : '';
+                        }).filter(id => id);
+                        
+                        addActivityRow({
+                            date: row['日期'] || '2024-04-15',
+                            startTime: row['开始时间'] || '09:00',
+                            endTime: row['结束时间'] || '12:00',
+                            auditors: auditors,
+                            process: row['过程或活动'] || '',
+                            dept: row['部门/场所'] || ''
+                        });
+                    });
+                    
+                    updateAuditStats();
+                    alert(`成功导入 ${jsonData.length} 条记录`);
+                } catch (err) {
+                    alert('Excel解析失败，请检查文件格式');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            event.target.value = '';
+        }
+
+        // 保存计划
+        function savePlan() {
+            const shiftCount = parseInt(document.getElementById('shiftCount').value);
+            for (let i = 1; i <= shiftCount; i++) {
+                const durationText = document.getElementById(`shift${i}Duration`).textContent;
+                if (durationText.includes('需8h')) {
+                    alert(`第${i}班次时间不等于8小时，请调整`);
+                    return;
+                }
+            }
+            
+            // 更新日志时间
+            if (flowLogs[0] && flowLogs[0].step === 0) {
+                flowLogs[0].time = formatDateTime(new Date());
+            }
+            renderFlowLog();
+            
+            alert('审核计划已保存');
+        }
+
+        // 提交计划（修改为弹出电子签弹窗）
+        function submitPlan() {
+            const shiftCount = parseInt(document.getElementById('shiftCount').value);
+            for (let i = 1; i <= shiftCount; i++) {
+                const row = document.querySelector(`.shift-row-compact[data-shift="${i}"]`);
+                const selects = row.querySelectorAll('select');
+                const startH = parseInt(selects[0].value) || 0;
+                const startM = parseInt(selects[1].value) || 0;
+                const endH = parseInt(selects[2].value) || 0;
+                const endM = parseInt(selects[3].value) || 0;
+                
+                let start = startH * 60 + startM;
+                let end = endH * 60 + endM;
+                if (end < start) end += 24 * 60;
+                
+                if ((end - start) !== 480) {
+                    alert(`第${i}班次时间必须等于8小时`);
+                    return;
+                }
+            }
+            
+            let hasError = false;
+            auditTeam.forEach(t => {
+                if (t.current > t.maxHours) {
+                    alert(`${t.name}的累计审核时间(${t.current.toFixed(1)}h)超过限制(${t.maxHours}h)`);
+                    hasError = true;
+                }
+            });
+            if (hasError) return;
+            
+            // 弹出电子签签署弹窗（修改点3）
+            document.getElementById('esignModal').classList.add('show');
+            // 重新初始化画布大小
+            setTimeout(() => {
+                const canvas = document.getElementById('signatureCanvas');
+                const container = document.getElementById('canvasContainer');
+                canvas.width = container.offsetWidth;
+                canvas.height = 200;
+            }, 100);
+        }
+
+        // 其他原有函数
+        function confirmTaskAsLeader() {
+            if (confirm('确定接收该审核任务吗？确认后将进入审核计划编制阶段。')) {
+                alert('任务确认成功！');
+                switchNode(1);
+            }
+        }
+
+        function goBack() {
+            if (confirm('确定返回列表页？')) {
+                console.log('返回列表页');
+            }
+        }
+    </script>
+</body>
+</html>
