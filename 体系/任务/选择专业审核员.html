@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择专业审核员</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary:hover {
+            background: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .btn-default {
+            background: white;
+            border-color: #d9d9d9;
+            color: #595959;
+        }
+        
+        .btn-default:hover {
+            color: #40a9ff;
+            border-color: #40a9ff;
+        }
+
+        /* 弹窗样式 - 直接显示 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: flex; /* 直接显示 */
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            width: 600px;
+            max-width: 90%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #262626;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #e8e8e8;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* 专业审核员选择样式 */
+        .system-section {
+            margin-bottom: 16px;
+            border: 1px solid #e8e8e8;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .system-header {
+            background: #fafafa;
+            padding: 8px 12px;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .auditor-radio-list {
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .auditor-radio-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            color: #595959;
+        }
+        
+        .auditor-radio-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .auditor-radio-item input[type="radio"] {
+            cursor: pointer;
+        }
+
+        /* 专业代码提示样式 */
+        .professional-code-notice {
+            background: #fff7e6;
+            border: 1px solid #ffd591;
+            color: #d48806;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .professional-code-notice i {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 选择专业审核员弹窗 - 直接显示 -->
+    <div class="modal-overlay" id="submitModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fas fa-user-check text-blue-500"></i>
+                <span>选择专业审核员</span>
+            </div>
+            <div class="modal-body">
+                <p class="text-sm text-gray-600 mb-4">请为以下需要专业审核员确认的体系选择对应人员：</p>
+                
+                <!-- QMS体系 - 组长具备资质，显示提示 -->
+                <div class="system-section mb-4">
+                    <div class="system-header" style="background: #f6ffed; color: #52c41a;">
+                        <i class="fas fa-certificate text-blue-500"></i>
+                        <span>QMS-专业代码:19.01.01</span>
+                    </div>
+                    <div class="p-4">
+                        <div class="professional-code-notice">
+                            <i class="fas fa-check-circle text-green-500"></i>
+                            <span>该专业代码由审核组长（武荣刚）确认，无需额外选择专业审核员</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- EMS体系 - 需要选择 -->
+                <div class="system-section">
+                    <div class="system-header" style="background: #fff7e6;">
+                        <i class="fas fa-leaf text-green-500"></i>
+                        <span>EMS-专业代码:19.01.02</span>
+                    </div>
+                    <div class="auditor-radio-list">
+                        <label class="auditor-radio-item">
+                            <input type="radio" name="ems_auditor" value="张爱兵">
+                            <span>张爱兵 (CQC11045)</span>
+                        </label>
+                        <label class="auditor-radio-item">
+                            <input type="radio" name="ems_auditor" value="王洪伟">
+                            <span>王洪伟 (CQC10852)</span>
+                        </label>
+                    </div>
+                    <div class="px-4 pb-2 text-xs text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        请从具备EMS-19.01.02专业代码资质的审核员中选择一人
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeSubmitModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmSubmit()">
+                    <i class="fas fa-check mr-1"></i>
+                    确认提交
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 关闭弹窗
+        function closeSubmitModal() {
+            // 由于页面只有弹窗，关闭时可选择刷新页面或提示
+            if (confirm('确定取消选择？')) {
+                window.location.reload();
+            }
+        }
+
+        // 确认提交
+        function confirmSubmit() {
+            const emsAuditor = document.querySelector('input[name="ems_auditor"]:checked');
+            if (!emsAuditor) {
+                alert('请为EMS-专业代码:19.01.02选择专业审核员');
+                return;
+            }
+            
+            alert(`提交成功！\n\n已选择专业审核员：\nEMS：${emsAuditor.value}`);
+            
+            // 这里可以添加实际的提交逻辑，如：
+            // window.parent.postMessage({type: 'auditorSelected', auditor: emsAuditor.value}, '*');
+            // 或调用API提交数据
+        }
+    </script>
+</body>
+</html>
