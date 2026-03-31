@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>场所抽样与审核策划</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .form-label {
+            font-size: 13px;
+            color: #262626;
+            margin-bottom: 6px;
+            display: block;
+            font-weight: 500;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.3s;
+            background: white;
+            height: 32px;
+            box-sizing: border-box;
+        }
+        
+        .form-input:hover {
+            border-color: #40a9ff;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #1890ff;
+            box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
+        }
+        
+        .readonly-field {
+            background: #f5f5f5 !important;
+            color: #8c8c8c !important;
+            cursor: not-allowed;
+        }
+        
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .form-grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+        
+        .plan-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .data-table th {
+            background: #fafafa;
+            color: #262626;
+            font-weight: 600;
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e8e8e8;
+            white-space: nowrap;
+            border-top: 1px solid #e8e8e8;
+        }
+        
+        .data-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #e8e8e8;
+            color: #595959;
+        }
+        
+        .data-table tr:hover {
+            background: #e6f7ff;
+        }
+        
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            background: #1890ff;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        
+        .alert-info {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            color: #1890ff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+        
+        .plan-tab-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: #595959;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .plan-tab-btn:hover {
+            color: #1890ff;
+        }
+        
+        .plan-tab-btn.active {
+            color: #1890ff;
+            border-bottom-color: #1890ff;
+            background: #e6f7ff;
+        }
+        
+        .hidden-section {
+            display: none !important;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary:hover {
+            background: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        @media (max-width: 1200px) {
+            .form-grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid-4, .form-grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="padding: 24px; max-width: 1400px;">
+        <!-- 头部信息 -->
+        <div style="margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                <h2 style="font-size: 18px; font-weight: 600; color: #262626; margin: 0;">场所抽样与审核策划</h2>
+                <span style="font-size: 13px; color: #8c8c8c;">项目编号：PRJ-2024-00189-01</span>
+            </div>
+            
+            <!-- Tab导航 -->
+            <div style="border-bottom: 1px solid #e8e8e8; margin-bottom: 24px;">
+                <button class="plan-tab-btn active" data-tab="plan-tab-1" onclick="switchPlanTab('plan-tab-1', this)">
+                    <i class="fas fa-map-marker-alt" style="margin-right: 6px;"></i>场所抽样与审核策划
+                </button>
+                <button class="plan-tab-btn" data-tab="plan-tab-2" onclick="switchPlanTab('plan-tab-2', this)">
+                    <i class="fas fa-list-alt" style="margin-right: 6px;"></i>管理体系过程清单
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab 1: 场所抽样与审核策划 -->
+        <div id="plan-tab-1" class="plan-tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div class="plan-section-title" style="margin-bottom: 0;">场所抽样方案及实施情况</div>
+                <div class="alert-info" style="margin-bottom: 0;">
+                    <i class="fas fa-info-circle"></i>
+                    根据抽样规则，本次策划需要选择全部场所（共3个场所）
+                </div>
+            </div>
+
+            <!-- 总部信息 -->
+            <div style="margin-bottom: 24px; border: 1px solid #e8e8e8; border-radius: 4px;">
+                <div style="background: #e6f7ff; padding: 12px 16px; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; gap: 8px;">
+                    <span class="tag">总部</span>
+                    <span style="font-weight: 500; color: #262626;">运营地址（中心职能）</span>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="form-grid-4" style="margin-bottom: 16px;">
+                        <div>
+                            <label class="form-label">计划审核时间</label>
+                            <input type="text" class="form-input readonly-field" value="2024年04月" readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">实际审核时间</label>
+                            <input type="text" class="form-input readonly-field" value="----年--月" readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">班次信息</label>
+                            <div style="padding: 6px 12px; background: #f6ffed; border: 1px solid #b7eb8f; border-radius: 4px; font-size: 13px; color: #52c41a; height: 32px; display: flex; align-items: center;">
+                                <i class="fas fa-clock" style="margin-right: 6px;"></i>
+                                <span>班次：1，08:00-17:30</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">联系人/电话</label>
+                            <input type="text" class="form-input readonly-field" value="张先生/13800138000" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-grid-4" style="margin-bottom: 16px;">
+                        <div>
+                            <label class="form-label">地址</label>
+                            <input type="text" class="form-input readonly-field" value="北京市西城区北礼士路甲38号" readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">涉及产品/过程/活动</label>
+                            <input type="text" class="form-input readonly-field" value="轨道交通运营管理" readonly>
+                        </div>
+                        <div>
+                            <label class="form-label">专业代码</label>
+                            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                <span style="padding: 2px 8px; background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; border-radius: 4px; font-size: 12px;">Q01</span>
+                                <span style="padding: 2px 8px; background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; border-radius: 4px; font-size: 12px;">CNAS</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">人数(含承包方)</label>
+                            <input type="text" class="form-input readonly-field" value="200" readonly>
+                        </div>
+                    </div>
+
+                    <!-- 人天计算 -->
+                    <div style="border-top: 1px solid #e8e8e8; padding-top: 16px; margin-top: 16px;">
+                        <label class="form-label" style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-calculator" style="color: #1890ff;"></i>
+                            人天计算（AI底座）
+                        </label>
+                        <div class="form-grid-4" style="margin-bottom: 12px;">
+                            <div>
+                                <label class="form-label" style="font-size: 12px; color: #8c8c8c;">审核准备</label>
+                                <input type="text" class="form-input readonly-field" value="1.5" readonly>
+                            </div>
+                            <div>
+                                <label class="form-label" style="font-size: 12px; color: #8c8c8c;">第一阶段</label>
+                                <input type="text" class="form-input readonly-field" value="1.0" readonly>
+                            </div>
+                            <div>
+                                <label class="form-label" style="font-size: 12px; color: #8c8c8c;">二阶段现场</label>
+                                <input type="text" class="form-input readonly-field" value="4.0" readonly>
+                            </div>
+                            <div>
+                                <label class="form-label" style="font-size: 12px; color: #8c8c8c;">调整比例</label>
+                                <input type="text" class="form-input readonly-field" value="1.0" readonly>
+                            </div>
+                        </div>
+                        <div style="background: #e6f7ff; padding: 12px 16px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 13px; color: #595959;">调整后</span>
+                            <span style="font-size: 20px; font-weight: 700; color: #1890ff;">6.5 天</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 过程审核策划 -->
+            <div style="margin-top: 24px;">
+                <div class="plan-section-title">过程审核策划</div>
+                <table class="data-table" style="border: 1px solid #e8e8e8;">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px">序号</th>
+                            <th>过程名称</th>
+                            <th>主责部门</th>
+                            <th>相关部门</th>
+                            <th>涉及标准条款</th>
+                            <th>绩效参数/文件</th>
+                            <th style="width: 80px; text-align: center;">拟审核</th>
+                            <th style="width: 80px; text-align: center;">已审核</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td style="font-weight: 500; color: #262626;">组织环境</td>
+                            <td>管理层</td>
+                            <td>各部门</td>
+                            <td>4.1,4.2,4.3,4.4</td>
+                            <td>《组织环境分析表》</td>
+                            <td style="text-align: center;"><i class="fas fa-check-square" style="color: #1890ff; font-size: 16px;"></i></td>
+                            <td style="text-align: center;"><span style="color: #8c8c8c; font-size: 12px;">待审核</span></td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td style="font-weight: 500; color: #262626;">领导作用</td>
+                            <td>总经理</td>
+                            <td>管理层</td>
+                            <td>5.1,5.2,5.3</td>
+                            <td>质量方针、目标</td>
+                            <td style="text-align: center;"><i class="fas fa-check-square" style="color: #1890ff; font-size: 16px;"></i></td>
+                            <td style="text-align: center;"><span style="color: #8c8c8c; font-size: 12px;">待审核</span></td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td style="font-weight: 500; color: #262626;">策划</td>
+                            <td>质量部</td>
+                            <td>各部门</td>
+                            <td>6.1,6.2,6.3</td>
+                            <td>风险机遇清单、目标方案</td>
+                            <td style="text-align: center;"><i class="fas fa-check-square" style="color: #1890ff; font-size: 16px;"></i></td>
+                            <td style="text-align: center;"><span style="color: #8c8c8c; font-size: 12px;">待审核</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Tab 2: 管理体系过程清单 -->
+        <div id="plan-tab-2" class="plan-tab-content hidden-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-list-alt" style="color: #1890ff;"></i>
+                    <span style="font-weight: 600; color: #262626;">管理体系过程清单</span>
+                    <span style="font-size: 12px; color: #8c8c8c;">适用于初次认证、监督、再认证</span>
+                </div>
+                <button onclick="addProcessRow()" class="btn btn-primary" style="padding: 4px 12px; font-size: 12px; height: 28px;">
+                    <i class="fas fa-plus" style="margin-right: 4px;"></i>新增过程
+                </button>
+            </div>
+            
+            <div style="overflow-x-auto; border: 1px solid #e8e8e8; border-radius: 4px;">
+                <table class="data-table" id="processListTable">
+                    <thead style="background: #fafafa;">
+                        <tr>
+                            <th style="width: 60px; text-align: center;">序号</th>
+                            <th>过程名称</th>
+                            <th>主责部门</th>
+                            <th>相关部门</th>
+                            <th>涉及标准条款</th>
+                            <th>绩效参数或相关文件</th>
+                            <th style="width: 80px; text-align: center;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="processListBody">
+                        <tr data-row-id="1">
+                            <td style="text-align: center; color: #8c8c8c;">1</td>
+                            <td><input type="text" class="form-input" value="组织环境理解" placeholder="过程名称" style="width: 100%;"></td>
+                            <td><input type="text" class="form-input" value="管理层" placeholder="主责部门" style="width: 100%;"></td>
+                            <td><input type="text" class="form-input" value="各部门" placeholder="相关部门" style="width: 100%;"></td>
+                            <td><input type="text" class="form-input" value="4.1-4.4" placeholder="涉及标准条款" style="width: 100%;"></td>
+                            <td><input type="text" class="form-input" value="环境因素识别表" placeholder="绩效参数或相关文件" style="width: 100%;"></td>
+                            <td style="text-align: center;">
+                                <button onclick="deleteProcessRow(this)" style="color: #ff4d4f; border: none; background: none; cursor: pointer; padding: 4px;">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab切换功能
+        function switchPlanTab(tabId, btn) {
+            document.querySelectorAll('.plan-tab-content').forEach(el => {
+                el.classList.add('hidden-section');
+            });
+            document.getElementById(tabId).classList.remove('hidden-section');
+            
+            document.querySelectorAll('.plan-tab-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            btn.classList.add('active');
+        }
+        
+        // 新增过程行
+        function addProcessRow() {
+            const tbody = document.getElementById('processListBody');
+            const rowCount = tbody.children.length + 1;
+            
+            const newRow = document.createElement('tr');
+            newRow.setAttribute('data-row-id', rowCount);
+            newRow.innerHTML = `
+                <td style="text-align: center; color: #8c8c8c;">${rowCount}</td>
+                <td><input type="text" class="form-input" value="" placeholder="过程名称" style="width: 100%;"></td>
+                <td><input type="text" class="form-input" value="" placeholder="主责部门" style="width: 100%;"></td>
+                <td><input type="text" class="form-input" value="" placeholder="相关部门" style="width: 100%;"></td>
+                <td><input type="text" class="form-input" value="" placeholder="涉及标准条款" style="width: 100%;"></td>
+                <td><input type="text" class="form-input" value="" placeholder="绩效参数或相关文件" style="width: 100%;"></td>
+                <td style="text-align: center;">
+                    <button onclick="deleteProcessRow(this)" style="color: #ff4d4f; border: none; background: none; cursor: pointer; padding: 4px;">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            
+            tbody.appendChild(newRow);
+        }
+        
+        // 删除过程行
+        function deleteProcessRow(btn) {
+            const row = btn.closest('tr');
+            row.remove();
+            renumberProcessRows();
+        }
+        
+        // 重新编号
+        function renumberProcessRows() {
+            const rows = document.querySelectorAll('#processListBody tr');
+            rows.forEach((row, index) => {
+                row.setAttribute('data-row-id', index + 1);
+                row.cells[0].textContent = index + 1;
+            });
+        }
+    </script>
+</body>
+</html>
