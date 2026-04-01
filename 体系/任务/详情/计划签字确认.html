@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审核计划签字确认</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            padding-bottom: 100px; /* 为固定底部留空间 */
+        }
+
+        /* 电子印章动画 */
+        .seal-animation {
+            animation: seal-stamp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes seal-stamp {
+            0% { transform: scale(2) rotate(-10deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* 步骤条 */
+        .step-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .step-item.active {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .step-item.completed {
+            color: #10b981;
+        }
+
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* 卡片样式 */
+        .section-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 16px 20px;
+            background: #fafafa;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .section-header:hover {
+            background: #f1f5f9;
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        /* 信息网格 */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        /* 标签 */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .tag-blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+        .tag-green { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+        .tag-gray { background: #f5f5f5; color: #666; border-color: #e0e0e0; }
+
+        /* 表格 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            vertical-align: top;
+        }
+
+        /* 固定底部操作栏 */
+        .action-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+            z-index: 40;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* 签名模态框 */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 560px;
+            max-height: 90vh;
+            overflow: hidden;
+            animation: modal-in 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes modal-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .cert-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .cert-card:hover {
+            border-color: #3b82f6;
+        }
+
+        .cert-card.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .seal {
+            width: 140px;
+            height: 140px;
+            border: 4px solid #dc2626;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #dc2626;
+            font-weight: bold;
+            position: relative;
+            background: white;
+            margin: 0 auto;
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.15);
+        }
+
+        .seal::before {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border: 2px solid #dc2626;
+            border-radius: 50%;
+        }
+
+        .seal-name {
+            font-size: 24px;
+            letter-spacing: 4px;
+            font-weight: 900;
+        }
+
+        .seal-date {
+            font-size: 11px;
+            margin-top: 6px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航 -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                    <i class="fas fa-file-signature text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800 text-lg">审核计划签字确认</h1>
+                    <div class="step-bar mt-0.5">
+                        <div class="step-item completed">
+                            <div class="step-dot"></div>
+                            <span>编制</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-xs text-slate-300"></i>
+                        <div class="step-item active">
+                            <div class="step-dot"></div>
+                            <span>专业审核员签字</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-xs text-slate-300"></i>
+                        <div class="step-item">
+                            <div class="step-dot"></div>
+                            <span>项目管理</span>
+                        </div>
+                        <i class="fas fa-chevron-right text-xs text-slate-300"></i>
+                        <div class="step-item">
+                            <div class="step-dot"></div>
+                            <span>客户确认</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-100">
+                    <i class="fas fa-user-circle mr-2"></i>当前：张爱兵
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="max-w-5xl mx-auto px-6 py-8">
+        
+        <!-- 计划摘要警告框 -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+            <i class="fas fa-exclamation-circle text-amber-500 mt-0.5"></i>
+            <div class="flex-1">
+                <h3 class="font-semibold text-amber-900 mb-1">待确认审核计划</h3>
+                <p class="text-sm text-amber-800 leading-relaxed">
+                    请仔细核对以下审核计划内容，确认无误后点击底部"确认签名"按钮进行CA数字签名。一旦签署，计划将进入下一环节流转。
+                </p>
+            </div>
+            <span class="px-3 py-1 bg-white text-amber-700 rounded-lg text-sm font-medium border border-amber-200 whitespace-nowrap">
+                EMS体系确认
+            </span>
+        </div>
+
+        <!-- 基本信息 -->
+        <div class="section-card">
+            <div class="section-header" onclick="toggleSection(this)">
+                <i class="fas fa-chevron-down text-slate-400 transition-transform"></i>
+                <i class="fas fa-info-circle text-blue-500"></i>
+                <span>基本信息</span>
+                <span class="ml-auto text-xs text-slate-400 font-normal">计划编号：CQC-A2024-BJ-001856</span>
+            </div>
+            <div class="section-content">
+                <div class="info-grid mb-4">
+                    <div class="info-item">
+                        <span class="info-label">客户名称</span>
+                        <span class="info-value">北京轨道交通运营有限公司</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">审核类型</span>
+                        <span class="info-value"><span class="tag tag-blue">监督审核</span></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">认证体系</span>
+                        <span class="info-value">
+                            <span class="tag tag-blue">QMS</span>
+                            <span class="tag tag-green">EMS</span>
+                            <span class="tag tag-gray">OHSMS</span>
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">审核日期</span>
+                        <span class="info-value">2024-04-15 至 2024-04-18（4天）</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">专业代码</span>
+                        <span class="info-value">31.04.01, 31.04.02, 31.04.05</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">审核组长</span>
+                        <span class="info-value">武荣刚</span>
+                    </div>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                    <div class="text-sm font-semibold text-slate-700 mb-2">审核目的</div>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        评价客户管理体系的持续符合性和有效性，以确定是否推荐保持认证；确认客户对上次审核不符合项采取的纠正和纠正措施是否持续有效；评价客户管理体系在实现预期结果方面的持续适宜性、充分性和有效性。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 审核范围 -->
+        <div class="section-card">
+            <div class="section-header" onclick="toggleSection(this)">
+                <i class="fas fa-chevron-down text-slate-400 transition-transform"></i>
+                <i class="fas fa-map-marker-alt text-blue-500"></i>
+                <span>审核范围及场所</span>
+            </div>
+            <div class="section-content space-y-4">
+                <div class="border-l-4 border-blue-500 pl-4 py-2 bg-blue-50/50 rounded-r-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="font-bold text-slate-800">中心职能场所</span>
+                        <span class="tag tag-blue">总部</span>
+                    </div>
+                    <div class="text-sm text-slate-600 mb-2">
+                        <i class="fas fa-map-pin text-slate-400 mr-1"></i>
+                        北京市西城区北礼士路甲38号（地铁大厦）
+                    </div>
+                    <div class="text-sm text-blue-700 font-medium mb-1">
+                        QMS (31.04.01,31.04.02,31.04.05)：城市轨道交通运营服务、铁路客运服务、轨道交通设备维护
+                    </div>
+                    <div class="text-xs text-slate-500">
+                        审核时段：2023-04 至 2024-04-18 · 部门：管理层、OCC、安全技术部、设备管理部
+                    </div>
+                </div>
+
+                <div class="border-l-4 border-green-500 pl-4 py-2 bg-green-50/50 rounded-r-lg">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="font-bold text-slate-800">运营场所1</span>
+                        <span class="tag tag-gray">生产现场</span>
+                    </div>
+                    <div class="text-sm text-slate-600 mb-2">
+                        <i class="fas fa-map-pin text-slate-400 mr-1"></i>
+                        北京市东城区建国门南大街5号（建国门车辆段）
+                    </div>
+                    <div class="text-sm text-green-700 font-medium mb-1">
+                        EMS (31.04.01【2级】)：城市轨道交通运营环境管理
+                    </div>
+                    <div class="text-xs text-slate-500">
+                        审核时段：2023-04 至 2024-04-18 · 部门：车辆段管理部、维修车间、环保科
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 审核活动 -->
+        <div class="section-card">
+            <div class="section-header" onclick="toggleSection(this)">
+                <i class="fas fa-chevron-down text-slate-400 transition-transform"></i>
+                <i class="fas fa-calendar-alt text-blue-500"></i>
+                <span>审核活动安排</span>
+                <span class="ml-auto text-xs text-slate-400 font-normal">共12项活动</span>
+            </div>
+            <div class="section-content overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>时间</th>
+                            <th>审核人员</th>
+                            <th>审核内容</th>
+                            <th>场所</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="whitespace-nowrap font-semibold">04-15 <span class="text-slate-400 font-normal">周一</span></td>
+                            <td class="whitespace-nowrap text-slate-600">09:00-10:00</td>
+                            <td>
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="px-2 py-0.5 bg-slate-100 rounded text-xs border border-slate-200">武荣刚</span>
+                                    <span class="px-2 py-0.5 bg-slate-100 rounded text-xs border border-slate-200">王洪伟</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="font-medium text-slate-800">首次会议</div>
+                                <div class="text-xs text-slate-500 mt-1">介绍审核组、确认计划、保密承诺</div>
+                            </td>
+                            <td class="text-slate-600 text-sm">中心职能</td>
+                        </tr>
+                        <tr>
+                            <td class="whitespace-nowrap font-semibold">04-15 <span class="text-slate-400 font-normal">周一</span></td>
+                            <td class="whitespace-nowrap text-slate-600">10:00-12:00</td>
+                            <td>
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="px-2 py-0.5 bg-slate-100 rounded text-xs border border-slate-200">武荣刚</span>
+                                    <span class="px-2 py-0.5 bg-slate-100 rounded text-xs border border-slate-200">王洪伟</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="font-medium text-slate-800">组织环境及领导作用</div>
+                                <div class="text-xs text-slate-500 mt-1">EMS: 4.1-4.6, 5.1-5.3</div>
+                            </td>
+                            <td class="text-slate-600 text-sm">中心职能</td>
+                        </tr>
+                        <tr class="bg-slate-50/50">
+                            <td class="whitespace-nowrap font-semibold">04-16 <span class="text-slate-400 font-normal">周二</span></td>
+                            <td class="whitespace-nowrap text-slate-600">13:30-17:30</td>
+                            <td>
+                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs border border-blue-200">张爱兵（本人）</span>
+                            </td>
+                            <td>
+                                <div class="font-medium text-slate-800">环境因素识别与运行控制</div>
+                                <div class="text-xs text-slate-500 mt-1">EMS: 6.1.2, 8.1-8.2 · 废水/废气处理</div>
+                            </td>
+                            <td class="text-slate-600 text-sm">建国门车辆段</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 审核组 -->
+        <div class="section-card">
+            <div class="section-header" onclick="toggleSection(this)">
+                <i class="fas fa-chevron-down text-slate-400 transition-transform"></i>
+                <i class="fas fa-users text-blue-500"></i>
+                <span>审核组成员</span>
+            </div>
+            <div class="section-content overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>身份</th>
+                            <th>资格注册编号</th>
+                            <th>联系电话</th>
+                            <th>审核日期</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="font-semibold">武荣刚</td>
+                            <td><span class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs font-medium border border-amber-200">组长</span></td>
+                            <td class="text-xs font-mono text-slate-600">2022-N1QMS-6028373</td>
+                            <td class="text-sm text-slate-600">13661227694</td>
+                            <td class="text-sm text-slate-600">04-15 至 04-18</td>
+                        </tr>
+                        <tr class="bg-blue-50/30 border-l-4 border-blue-500">
+                            <td class="font-semibold">张爱兵</td>
+                            <td><span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium border border-blue-200">组员</span></td>
+                            <td class="text-xs font-mono text-slate-600">2021-N1EMS-5087654</td>
+                            <td class="text-sm text-slate-600">13800138001</td>
+                            <td class="text-sm text-slate-600">04-16 至 04-17</td>
+                        </tr>
+                        <tr>
+                            <td class="font-semibold">李明霞</td>
+                            <td><span class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium border border-slate-200">组员</span></td>
+                            <td class="text-xs font-mono text-slate-600">2023-N1OHSMS-7032156</td>
+                            <td class="text-sm text-slate-600">13911223344</td>
+                            <td class="text-sm text-slate-600">04-17 至 04-18</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部操作栏 -->
+    <div class="action-bar">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 text-sm text-slate-600">
+                <i class="fas fa-shield-alt text-blue-500"></i>
+                <span>本次操作将进行CA数字签名，具有法律效力</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="rejectPlan()" class="px-6 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition">
+                退回修改
+            </button>
+            <button onclick="openSignModal()" class="px-8 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 font-medium transition shadow-lg shadow-slate-200 flex items-center gap-2">
+                <i class="fas fa-signature"></i>
+                确认签名
+            </button>
+        </div>
+    </div>
+
+    <!-- CA签名模态框 -->
+    <div id="signModal" class="modal-overlay">
+        <div class="modal-content">
+            <!-- 模态框头部 -->
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg">数字证书签名</h3>
+                    <p class="text-xs text-slate-500 mt-1">使用USBKey进行CA电子签名</p>
+                </div>
+                <button onclick="closeSignModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 transition text-slate-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- 签名步骤容器 -->
+            <div id="signSteps" class="flex-1 overflow-y-auto">
+                
+                <!-- 步骤1：选择证书 -->
+                <div id="step1" class="p-6">
+                    <div class="flex items-center gap-2 mb-4 text-sm text-slate-600">
+                        <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span>
+                        <span>选择数字证书</span>
+                    </div>
+                    
+                    <div class="space-y-3 mb-4">
+                        <div class="cert-card selected" onclick="selectCert(this)">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                                    <i class="fas fa-id-card text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="font-bold text-slate-800">张爱兵</span>
+                                        <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium border border-green-200">已插入</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 font-mono">CN=ZhangAibing2024001, O=CQC, C=CN</p>
+                                    <p class="text-xs text-slate-400 mt-1">有效期至：2026-12-31</p>
+                                </div>
+                                <div class="text-blue-500 text-xl">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="goStep(2)" class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition">
+                        下一步：验证身份
+                    </button>
+                </div>
+
+                <!-- 步骤2：PIN验证 -->
+                <div id="step2" class="p-6 hidden">
+                    <div class="flex items-center gap-2 mb-4 text-sm text-slate-600">
+                        <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span>
+                        <span>证书身份验证</span>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">请输入USBKey PIN码</label>
+                        <input type="password" id="pinInput" maxlength="6" placeholder="6位数字密码"
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg text-center text-2xl tracking-widest focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition font-mono">
+                        <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                            <i class="fas fa-info-circle"></i>
+                            连续输错5次证书将被锁定，剩余尝试次数：<span class="text-amber-600 font-bold">5</span>
+                        </p>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button onclick="goStep(1)" class="flex-1 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition">
+                            上一步
+                        </button>
+                        <button onclick="verifyPIN()" class="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition">
+                            验证并签名
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 步骤3：签名确认 -->
+                <div id="step3" class="p-6 hidden">
+                    <div class="flex items-center gap-2 mb-4 text-sm text-slate-600">
+                        <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">3</span>
+                        <span>签名确认</span>
+                    </div>
+
+                    <div class="bg-slate-50 rounded-lg p-4 mb-4 space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500">签名人：</span>
+                            <span class="font-semibold text-slate-800">张爱兵</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500">证书颁发机构：</span>
+                            <span class="font-medium text-slate-800">中国质量认证中心（CQC）</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500">签名文档：</span>
+                            <span class="font-medium text-slate-800">审核计划（CQC-A2024-BJ-001856）</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500">时间戳：</span>
+                            <span class="font-mono text-slate-800" id="signTime">2024-03-31 09:15:00</span>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-6">
+                        <p class="text-xs text-amber-800 leading-relaxed">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            点击"确认签署"后，系统将使用您的私钥对审核计划进行数字签名，该操作不可撤销，签名结果具有法律效力。
+                        </p>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button onclick="goStep(2)" class="flex-1 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium transition">
+                            返回
+                        </button>
+                        <button onclick="confirmSign()" class="flex-1 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-800 font-medium transition flex items-center justify-center gap-2">
+                            <i class="fas fa-stamp"></i>
+                            确认签署
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 步骤4：签名成功 -->
+                <div id="step4" class="p-6 hidden text-center">
+                    <div class="seal seal-animation mb-6">
+                        <span class="seal-name">张爱兵</span>
+                        <span class="seal-date" id="sealDate">2024.03.31</span>
+                    </div>
+                    
+                    <h4 class="text-xl font-bold text-slate-800 mb-2">数字签名成功</h4>
+                    <p class="text-sm text-slate-600 mb-6">审核计划已通过CA认证签署，已生成电子印章</p>
+
+                    <div class="bg-slate-50 rounded-lg p-4 mb-6 text-left">
+                        <div class="text-xs font-mono text-slate-600 space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">签名算法：</span>
+                                <span>SM2withSM3</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">证书序列号：</span>
+                                <span>04:32:8A:F1...</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block mb-1">数字签名值：</span>
+                                <div class="break-all text-slate-500 bg-white p-2 rounded border border-slate-200 text-[10px] leading-relaxed">
+                                    3045022100a3b2c1d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="finishSign()" class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition">
+                        完成并流转至下一环节
+                    </button>
+                </div>
+
+                <!-- 加载状态 -->
+                <div id="stepLoading" class="p-12 hidden text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                    <p class="text-slate-600 font-medium" id="loadingText">正在连接CA服务器...</p>
+                    <p class="text-xs text-slate-400 mt-2">请保持USBKey插入状态</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 切换折叠
+        function toggleSection(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.fa-chevron-down');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.display = 'none';
+                icon.style.transform = 'rotate(-90deg)';
+            }
+        }
+
+        // 打开签名模态框
+        function openSignModal() {
+            document.getElementById('signModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            // 重置步骤
+            showStep('step1');
+        }
+
+        // 关闭签名模态框
+        function closeSignModal() {
+            document.getElementById('signModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // 步骤切换
+        function showStep(stepId) {
+            // 隐藏所有步骤
+            ['step1', 'step2', 'step3', 'step4', 'stepLoading'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            // 显示当前步骤
+            document.getElementById(stepId).classList.remove('hidden');
+        }
+
+        function goStep(stepNum) {
+            showStep('step' + stepNum);
+        }
+
+        // 选择证书
+        function selectCert(card) {
+            document.querySelectorAll('.cert-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+        }
+
+        // 验证PIN
+        function verifyPIN() {
+            const pin = document.getElementById('pinInput').value;
+            if (pin.length !== 6) {
+                alert('请输入6位PIN码');
+                return;
+            }
+            
+            showStep('stepLoading');
+            document.getElementById('loadingText').textContent = '正在验证证书...';
+            
+            setTimeout(() => {
+                // 更新时间戳
+                const now = new Date();
+                document.getElementById('signTime').textContent = now.toLocaleString('zh-CN');
+                showStep('step3');
+            }, 1500);
+        }
+
+        // 确认签名
+        function confirmSign() {
+            showStep('stepLoading');
+            document.getElementById('loadingText').textContent = '正在进行数字签名...';
+            
+            setTimeout(() => {
+                // 设置印章日期
+                const now = new Date();
+                document.getElementById('sealDate').textContent = now.toLocaleDateString('zh-CN').replace(/\//g, '.');
+                showStep('step4');
+            }, 2000);
+        }
+
+        // 完成签名
+        function finishSign() {
+            closeSignModal();
+            // 显示成功提示并刷新页面状态
+            setTimeout(() => {
+                alert('签名成功！审核计划已流转至下一环节（项目管理人员签字）');
+                // 实际项目中这里会提交到后端并刷新页面或跳转
+                location.reload();
+            }, 300);
+        }
+
+        // 退回修改
+        function rejectPlan() {
+            if (confirm('确定要退回此审核计划吗？')) {
+                alert('计划已退回修改');
+            }
+        }
+
+        // 初始化折叠状态（默认展开前两个）
+        document.addEventListener('DOMContentLoaded', () => {
+            const sections = document.querySelectorAll('.section-content');
+            sections.forEach((section, index) => {
+                if (index > 1) {
+                    section.style.display = 'none';
+                    section.previousElementSibling.querySelector('.fa-chevron-down').style.transform = 'rotate(-90deg)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
