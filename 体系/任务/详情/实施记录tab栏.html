@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审核任务实施记录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        /* 顶部状态栏容器 - 对应图中红框区域 */
+        .status-bar-container {
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        /* 标签导航 */
+        .tab-navigation {
+            display: flex;
+            background: linear-gradient(to right, #f8fafc, #f1f5f9);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 4px;
+            gap: 4px;
+        }
+        
+        /* 单个标签 */
+        .tab-item {
+            flex: 1;
+            position: relative;
+            padding: 16px 20px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .tab-item:hover {
+            background: rgba(255, 255, 255, 0.6);
+            border-color: #cbd5e1;
+        }
+        
+        .tab-item.active {
+            background: #fff;
+            border-color: #3b82f6;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -2px rgba(59, 130, 246, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        /* 标签头部：图标+标题+状态 */
+        .tab-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        
+        .tab-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tab-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        /* 不同状态的颜色 */
+        .tab-item.active .tab-icon {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+        
+        .tab-item.completed .tab-icon {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+        
+        .tab-item.pending .tab-icon {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .tab-item.empty .tab-icon {
+            background: #f1f5f9;
+            color: #94a3b8;
+        }
+        
+        .tab-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: #475569;
+            transition: color 0.3s;
+        }
+        
+        .tab-item.active .tab-text {
+            color: #1d4ed8;
+        }
+        
+        .tab-item.completed .tab-text {
+            color: #15803d;
+        }
+        
+        /* 状态标签 */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid;
+            transition: all 0.3s;
+        }
+        
+        .status-completed {
+            background: #f0fdf4;
+            color: #16a34a;
+            border-color: #86efac;
+        }
+        
+        .status-progress {
+            background: #eff6ff;
+            color: #2563eb;
+            border-color: #bfdbfe;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+            border-color: #fcd34d;
+        }
+        
+        .status-empty {
+            background: #f8fafc;
+            color: #94a3b8;
+            border-color: #e2e8f0;
+        }
+        
+        /* 进度信息 */
+        .tab-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 46px;
+        }
+        
+        .progress-bar-bg {
+            flex: 1;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+        
+        .progress-text {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 500;
+            min-width: 35px;
+            text-align: right;
+        }
+        
+        /* 统计信息 */
+        .tab-stats {
+            display: flex;
+            gap: 16px;
+            margin-left: 46px;
+            margin-top: 4px;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        .stat-value {
+            font-weight: 600;
+            color: #334155;
+        }
+        
+        /* 选中指示器 */
+
+        .tab-item.active .active-indicator {
+            opacity: 1;
+        }
+        
+        /* 内容区域 */
+        .content-area {
+            padding: 20px;
+            min-height: 400px;
+        }
+        
+        .module-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .module-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 提示条 */
+        .tips-bar {
+            background: #eff6ff;
+            border-left: 3px solid #3b82f6;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            border-radius: 0 6px 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #1d4ed8;
+        }
+    </style>
+</head>
+<body style="background: #f1f5f9;">
+
+    <!-- 顶部状态切换栏 -->
+    <div class="status-bar-container">
+        <div class="tab-navigation">
+            
+            <!-- 首次会议 -->
+            <div class="tab-item completed" onclick="switchModule('first', this)" data-module="first">
+                <div class="active-indicator"></div>
+                <div class="tab-header">
+                    <div class="tab-title-wrapper">
+                        <div class="tab-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <span class="tab-text">首次会议</span>
+                    </div>
+                    <span class="status-badge status-completed">
+                        <i class="fas fa-check-circle text-xs"></i>
+                        已完成
+                    </span>
+                </div>
+                <div class="tab-progress">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: 100%; background: #22c55e;"></div>
+                    </div>
+                    <span class="progress-text">3/3</span>
+                </div>
+                <div class="tab-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-check-square text-green-500 text-xs"></i>
+                        <span>签到表：<span class="stat-value text-green-600">已上传</span></span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-clipboard-check text-green-500 text-xs"></i>
+                        <span>确认项：<span class="stat-value text-green-600">7/7</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 现场审核 -->
+            <div class="tab-item active" onclick="switchModule('field', this)" data-module="field">
+                <div class="active-indicator"></div>
+                <div class="tab-header">
+                    <div class="tab-title-wrapper">
+                        <div class="tab-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <span class="tab-text">现场审核</span>
+                    </div>
+                    <span class="status-badge status-progress">
+                        <i class="fas fa-spinner fa-spin text-xs"></i>
+                        进行中
+                    </span>
+                </div>
+                <div class="tab-progress">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: 60%; background: #3b82f6;"></div>
+                    </div>
+                    <span class="progress-text">60%</span>
+                </div>
+                <div class="tab-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-users text-blue-500 text-xs"></i>
+                        <span>审核员：<span class="stat-value">4人</span></span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-file-alt text-blue-500 text-xs"></i>
+                        <span>记录：<span class="stat-value">12条</span></span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-exclamation-triangle text-orange-500 text-xs"></i>
+                        <span>不符合：<span class="stat-value text-orange-600">2项</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 末次会议 -->
+            <div class="tab-item pending" onclick="switchModule('last', this)" data-module="last">
+                <div class="active-indicator"></div>
+                <div class="tab-header">
+                    <div class="tab-title-wrapper">
+                        <div class="tab-icon">
+                            <i class="fas fa-flag-checkered"></i>
+                        </div>
+                        <span class="tab-text">末次会议</span>
+                    </div>
+                    <span class="status-badge status-pending">
+                        <i class="fas fa-clock text-xs"></i>
+                        待填报
+                    </span>
+                </div>
+                <div class="tab-progress">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: 0%; background: #eab308;"></div>
+                    </div>
+                    <span class="progress-text">0%</span>
+                </div>
+                <div class="tab-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-hourglass-start text-gray-400 text-xs"></i>
+                        <span>签到表：<span class="stat-value text-gray-400">未上传</span></span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-list-check text-gray-400 text-xs"></i>
+                        <span>确认项：<span class="stat-value text-gray-400">0/8</span></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+       
+        </div>
+    </div>
+
+    <script>
+        // 模块配置数据
+        const moduleConfig = {
+            first: {
+                name: '首次会议',
+                hint: '首次会议已完成，如需修改请联系管理员',
+                status: 'completed'
+            },
+            field: {
+                name: '现场审核',
+                hint: '当前正在进行现场审核阶段，请完成所有核查记录的填报和确认',
+                status: 'progress'
+            },
+            last: {
+                name: '末次会议',
+                hint: '请在现场审核全部完成后，再填写末次会议记录',
+                status: 'pending'
+            }
+        };
+
+        // 切换模块
+        function switchModule(module, element) {
+            // 移除所有active类
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 隐藏所有内容
+            document.querySelectorAll('.module-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 添加active类到当前标签
+            element.classList.add('active');
+            
+            // 显示对应内容
+            document.getElementById(module + '-content').classList.add('active');
+            
+            // 更新提示文本
+            document.getElementById('moduleHint').textContent = moduleConfig[module].hint;
+            
+            // 这里可以触发实际的数据加载
+            console.log('切换到：' + moduleConfig[module].name);
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('状态栏初始化完成');
+        });
+    </script>
+
+</body>
+</html>
