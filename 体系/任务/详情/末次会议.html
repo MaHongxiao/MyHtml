@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审核任务实施详情 - 末次会议</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+            min-width: 1800px;
+            color: #334155;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .container-fixed {
+            width: 1800px;
+            margin: 0 auto;
+            /* padding: 0 24px; */
+        }
+        
+        .project-header {
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            padding: 16px 0;
+        }
+
+        .project-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            letter-spacing: -0.025em;
+        }
+        
+        .timeline-section {
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px 0;
+            margin-bottom: 24px;
+        }
+        
+        .process-steps {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: relative;
+            padding: 20px 0 10px;
+        }
+        
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+            z-index: 2;
+            cursor: pointer;
+        }
+        
+        .step-item.disabled {
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #94a3b8;
+            transition: all 0.3s;
+            position: relative;
+            font-weight: 600;
+        }
+        
+        .step-item.pending .step-circle {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background: #fff;
+        }
+        
+        .step-item.active .step-circle {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+        
+        .step-item.completed .step-circle {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+        
+        .step-line {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            right: -50%;
+            height: 2px;
+            background: #e2e8f0;
+            z-index: 1;
+        }
+        
+        .step-item.completed .step-line {
+            background: #10b981;
+        }
+        
+        .step-item.active .step-line {
+            background: linear-gradient(to right, #10b981 50%, #e2e8f0 50%);
+        }
+        
+        .step-item:last-child .step-line {
+            display: none;
+        }
+        
+        .step-title {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .step-item.active .step-title,
+        .step-item.pending .step-title {
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+        
+        .step-item.completed .step-title {
+            color: #15803d;
+        }
+        
+        .step-item.disabled .step-title {
+            color: #94a3b8;
+        }
+        
+        .step-date {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .content-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+        
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.025em;
+        }
+
+        .card-title i {
+            color: #3b82f6;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+        
+        .btn-default {
+            background: white;
+            border-color: #d1d5db;
+            color: #374151;
+        }
+        
+        .btn-default:hover {
+            border-color: #9ca3af;
+            background: #f9fafb;
+        }
+        
+        .btn-lg {
+            padding: 8px 16px;
+            font-size: 14px;
+            height: 36px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.2s;
+            background: white;
+            height: 36px;
+            color: #334155;
+        }
+        
+        .form-input:hover {
+            border-color: #9ca3af;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-label {
+            font-size: 13px;
+            color: #475569;
+            margin-bottom: 6px;
+            display: block;
+            font-weight: 500;
+        }
+
+        .form-label .text-red-500 {
+            color: #dc2626;
+        }
+        
+        textarea.form-input {
+            height: auto;
+            min-height: 100px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .meeting-notice {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .notice-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1d4ed8;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .notice-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #334155;
+            line-height: 1.5;
+        }
+        
+        .notice-item input[type="checkbox"] {
+            margin-top: 3px;
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+
+        .notice-item label {
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            padding: 32px;
+            text-align: center;
+            background: #f8fafc;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .upload-area.has-file {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .sign-uploaded {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #15803d;
+            font-weight: 500;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <main class="container-fixed">
+        <div class="content-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-flag-checkered text-blue-500"></i>
+                    末次会议记录
+                </div>
+            </div>
+            <div class="p-5">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                    <div>
+                        <label class="form-label">会议日期</label>
+                        <input type="date" class="form-input" value="2024-04-18">
+                    </div>
+                    <div>
+                        <label class="form-label">开始时间</label>
+                        <input type="time" class="form-input" value="16:00">
+                    </div>
+                    <div>
+                        <label class="form-label">结束时间</label>
+                        <input type="time" class="form-input" value="17:00">
+                    </div>
+                </div>
+
+                <div class="meeting-notice">
+                    <div class="notice-title">
+                        <i class="fas fa-exclamation-circle"></i>
+                        末次会议注意事项（请逐项勾选确认）
+                    </div>
+                    <div class="notice-item">
+                        <input type="checkbox" id="ln1" checked>
+                        <label for="ln1">感谢受审核方的配合与支持</label>
+                    </div>
+                    <div class="notice-item">
+                        <input type="checkbox" id="ln2" checked>
+                        <label for="ln2">重申审核的抽样性质及局限性</label>
+                    </div>
+                    <div class="notice-item">
+                        <input type="checkbox" id="ln3" checked>
+                        <label for="ln3">报告审核发现，包括符合项和不符合项</label>
+                    </div>
+                    <div class="notice-item">
+                        <input type="checkbox" id="ln4" checked>
+                        <label for="ln4">确认不符合项的分类及后续整改要求</label>
+                    </div>
+                    <div class="notice-item">
+                        <input type="checkbox" id="ln5" checked>
+                        <label for="ln5">报告审核结论及推荐意见</label>
+                    </div>
+                    <div class="notice-item">
+                        <input type="checkbox" id="ln6" checked>
+                        <label for="ln6">说明审核后续活动安排及时间安排</label>
+                    </div>
+                    <div class="notice-item">
+                        <input type="checkbox" id="ln7" checked>
+                        <label for="ln7">就审核证据与受审核方达成一致意见</label>
+                    </div>
+                    <div class="notice-item">
+                        <input type="checkbox" id="ln8" checked>
+                        <label for="ln8">受审核方对审核结果的意见反馈</label>
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <label class="form-label">
+                        <i class="fas fa-file-signature text-orange-500 mr-1"></i>
+                        末次会议签到表扫描件
+                        <span class="text-red-500">*</span>
+                    </label>
+                    <div class="upload-area" id="lastMeetingUpload" onclick="uploadSignFile('last')">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: #3b82f6; margin-bottom: 8px;"></i>
+                        <div style="color: #475569; font-size: 13px; margin-bottom: 8px; font-weight: 500;">点击上传签到表扫描件</div>
+                        <div style="color: #94a3b8; font-size: 12px;">支持 PDF、JPG、PNG 格式，单个文件不超过 10MB</div>
+                    </div>
+                    <input type="file" id="lastMeetingFile" style="display: none;" accept=".pdf,.jpg,.jpeg,.png" onchange="handleSignUpload(event, 'last')">
+                    
+                    <div id="lastMeetingFileList" class="hidden"></div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <label class="form-label">末次会议记录摘要</label>
+                    <textarea class="form-input" rows="4" placeholder="记录末次会议的重要讨论内容、确认的不符合项、整改要求及双方达成的共识..."></textarea>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 会议签到表文件
+        let meetingFiles = {
+            last: null
+        };
+
+        // 切换节点
+        function switchNode(index) {
+            if (index !== 2) {
+                alert('当前示例仅展示"审核任务中"节点内容');
+                return;
+            }
+        }
+
+        // 返回
+        function goBack() {
+            if (confirm('确定返回列表页？未保存的数据将丢失。')) {
+                console.log('返回列表页');
+            }
+        }
+
+        // 保存
+        function saveAll() {
+            showToast('保存成功', 'success');
+        }
+
+        // 上传签到表
+        function uploadSignFile(type) {
+            document.getElementById(type + 'MeetingFile').click();
+        }
+
+        // 处理签到表上传
+        function handleSignUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+            if (!validTypes.includes(file.type)) {
+                alert('仅支持 PDF、JPG、PNG 格式文件');
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) {
+                alert('文件大小不能超过10MB');
+                return;
+            }
+            
+            meetingFiles[type] = {
+                name: file.name,
+                size: (file.size / 1024).toFixed(2) + 'KB',
+                type: file.type
+            };
+            
+            const uploadArea = document.getElementById(type + 'MeetingUpload');
+            const fileList = document.getElementById(type + 'MeetingFileList');
+            
+            uploadArea.classList.add('hidden');
+            fileList.classList.remove('hidden');
+            
+            let icon = 'fa-file-pdf';
+            if (file.type.startsWith('image/')) icon = 'fa-file-image';
+            
+            fileList.innerHTML = `
+                <div class="sign-uploaded">
+                    <i class="fas ${icon}"></i>
+                    <span style="flex: 1;">${file.name} (${(file.size / 1024).toFixed(2)}KB)</span>
+                    <button class="btn btn-default" onclick="previewSignFile('${type}')" style="padding: 4px 10px; font-size: 11px;">
+                        <i class="fas fa-eye text-xs"></i>预览
+                    </button>
+                    <button class="btn btn-default" onclick="deleteSignFile('${type}')" style="padding: 4px 10px; font-size: 11px; color: #dc2626; border-color: #fca5a5;">
+                        <i class="fas fa-trash text-xs"></i>删除
+                    </button>
+                </div>
+            `;
+            
+            showToast('签到表上传成功', 'success');
+        }
+
+        // 预览签到表
+        function previewSignFile(type) {
+            const file = meetingFiles[type];
+            if (file) {
+                showToast('预览: ' + file.name, 'info');
+            }
+        }
+
+        // 删除签到表
+        function deleteSignFile(type) {
+            if (!confirm('确定删除该签到表吗？')) return;
+            
+            meetingFiles[type] = null;
+            
+            const uploadArea = document.getElementById(type + 'MeetingUpload');
+            const fileList = document.getElementById(type + 'MeetingFileList');
+            
+            uploadArea.classList.remove('hidden');
+            uploadArea.classList.remove('has-file');
+            fileList.classList.add('hidden');
+            fileList.innerHTML = '';
+            
+            showToast('签到表已删除', 'success');
+        }
+
+        // 显示提示
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? '#10b981' : '#3b82f6';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+            
+            toast.style.cssText = `position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background: ${bgColor}; color: white; padding: 12px 24px; border-radius: 10px; z-index: 9999; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px; font-weight: 500; font-size: 14px;`;
+            toast.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
