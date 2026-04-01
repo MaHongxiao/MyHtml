@@ -7,84 +7,95 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f5f7fa;
+            font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: none!important;
             margin: 0;
             padding: 0;
         }
         
+        /* 现代化按钮样式 - 来自编制计划.html */
         .btn {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 12px;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid transparent;
             white-space: nowrap;
         }
         
         .btn-primary {
-            background: #1890ff;
+            background: #2563eb;
             color: white;
-            border-color: #1890ff;
+            border-color: #2563eb;
+            box-shadow: 0 1px 3px 0 rgba(37, 99, 235, 0.1), 0 1px 2px -1px rgba(37, 99, 235, 0.1);
         }
         
         .btn-primary:hover {
-            background: #40a9ff;
-            border-color: #40a9ff;
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2), 0 2px 4px -2px rgba(37, 99, 235, 0.1);
         }
         
         .btn-default {
             background: white;
-            border-color: #d9d9d9;
-            color: #595959;
+            border-color: #d1d5db;
+            color: #374151;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
         
         .btn-default:hover {
-            color: #40a9ff;
-            border-color: #40a9ff;
+            border-color: #9ca3af;
+            background: #f9fafb;
+            color: #111827;
         }
 
-        /* 弹窗样式 - 直接显示 */
+        /* 弹窗样式 - 现代化卡片设计 */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(15, 23, 42, 0.5);
             z-index: 1000;
-            display: flex; /* 直接显示 */
+            display: flex;
             align-items: center;
             justify-content: center;
+            backdrop-filter: blur(4px);
         }
         
         .modal-content {
             background: white;
-            border-radius: 8px;
+            border-radius: 12px;
             width: 600px;
             max-width: 90%;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
             max-height: 80vh;
             overflow-y: auto;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
+        /* 渐变头部 - 来自编制计划.html的section-header */
         .modal-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e2e8f0;
             padding: 16px 20px;
-            border-bottom: 1px solid #e8e8e8;
-            font-weight: 600;
-            font-size: 16px;
+            border-radius: 12px 12px 0 0;
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #262626;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #1e293b;
         }
         
         .modal-body {
@@ -92,98 +103,185 @@
         }
         
         .modal-footer {
-            padding: 12px 20px;
-            border-top: 1px solid #e8e8e8;
+            padding: 16px 20px;
+            border-top: 1px solid #e2e8f0;
             display: flex;
             justify-content: flex-end;
-            gap: 8px;
+            gap: 10px;
+            background: #fafafa;
+            border-radius: 0 0 12px 12px;
         }
 
-        /* 专业审核员选择样式 */
+        /* 体系卡片样式 - 参考form-section */
         .system-section {
             margin-bottom: 16px;
-            border: 1px solid #e8e8e8;
-            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
             overflow: hidden;
+            background: white;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
         
+        .system-section:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            border-color: #cbd5e1;
+        }
+        
+        /* 体系头部样式 - 带图标背景 */
         .system-header {
-            background: #fafafa;
-            padding: 8px 12px;
+            background: linear-gradient(135deg, #fafafa 0%, #f4f4f5 100%);
+            padding: 12px 16px;
             font-weight: 600;
             font-size: 13px;
-            border-bottom: 1px solid #e8e8e8;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
         
+        /* 专业代码提示样式 - 现代化提示框 */
+        .professional-code-notice {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 1px solid #86efac;
+            color: #15803d;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+        
+        .professional-code-notice i {
+            font-size: 18px;
+            color: #22c55e;
+        }
+
+        /* 单选列表样式 - 现代化 */
         .auditor-radio-list {
-            padding: 8px 12px;
+            padding: 12px 16px;
             display: flex;
             flex-direction: column;
             gap: 8px;
+            background: #fafafa;
         }
         
         .auditor-radio-item {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 10px;
             font-size: 13px;
             cursor: pointer;
-            padding: 6px;
-            border-radius: 4px;
-            transition: background 0.2s;
-            color: #595959;
+            padding: 10px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            color: #374151;
+            background: white;
+            border: 1px solid transparent;
+            font-weight: 500;
         }
         
         .auditor-radio-item:hover {
-            background: #f5f5f5;
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+            transform: translateX(2px);
         }
         
         .auditor-radio-item input[type="radio"] {
             cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: #2563eb;
         }
 
-        /* 专业代码提示样式 */
-        .professional-code-notice {
-            background: #fff7e6;
-            border: 1px solid #ffd591;
-            color: #d48806;
-            padding: 12px;
-            border-radius: 4px;
-            font-size: 13px;
+        /* 底部提示信息样式 */
+        .info-text {
+            font-size: 12px;
+            color: #64748b;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #f8fafc;
+            border-top: 1px solid #f1f5f9;
         }
         
-        .professional-code-notice i {
-            font-size: 16px;
+        /* 标签样式 - 参考编制计划中的tag样式 */
+        .system-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .tag-blue {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .tag-green {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+        
+        /* 图标容器 */
+        .icon-box {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+        }
+        
+        .icon-blue {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+        
+        .icon-green {
+            background: #dcfce7;
+            color: #16a34a;
         }
     </style>
 </head>
 <body>
 
-    <!-- 选择专业审核员弹窗 - 直接显示 -->
+    <!-- 选择专业审核员弹窗 -->
     <div class="modal-overlay" id="submitModal">
         <div class="modal-content">
             <div class="modal-header">
-                <i class="fas fa-user-check text-blue-500"></i>
+                <div class="icon-box icon-blue">
+                    <i class="fas fa-user-check"></i>
+                </div>
                 <span>选择专业审核员</span>
             </div>
             <div class="modal-body">
-                <p class="text-sm text-gray-600 mb-4">请为以下需要专业审核员确认的体系选择对应人员：</p>
+                <div class="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-800 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-blue-500"></i>
+                    <span>请为以下需要专业审核员确认的体系选择对应人员</span>
+                </div>
                 
                 <!-- QMS体系 - 组长具备资质，显示提示 -->
                 <div class="system-section mb-4">
-                    <div class="system-header" style="background: #f6ffed; color: #52c41a;">
-                        <i class="fas fa-certificate text-blue-500"></i>
+                    <div class="system-header" >
+                        <div class="icon-box icon-green">
+                            <i class="fas fa-certificate"></i>
+                        </div>
                         <span>QMS-专业代码:19.01.01</span>
+                        <span class="system-tag tag-green">已确认</span>
                     </div>
                     <div class="p-4">
                         <div class="professional-code-notice">
-                            <i class="fas fa-check-circle text-green-500"></i>
+                            <i class="fas fa-check-circle"></i>
                             <span>该专业代码由审核组长（武荣刚）确认，无需额外选择专业审核员</span>
                         </div>
                     </div>
@@ -191,9 +289,12 @@
                 
                 <!-- EMS体系 - 需要选择 -->
                 <div class="system-section">
-                    <div class="system-header" style="background: #fff7e6;">
-                        <i class="fas fa-leaf text-green-500"></i>
+                    <div class="system-header" >
+                        <div class="icon-box" style="background: #fef3c7; color: #d97706;">
+                            <i class="fas fa-leaf"></i>
+                        </div>
                         <span>EMS-专业代码:19.01.02</span>
+                        <span class="system-tag" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">待选择</span>
                     </div>
                     <div class="auditor-radio-list">
                         <label class="auditor-radio-item">
@@ -205,16 +306,19 @@
                             <span>王洪伟 (CQC10852)</span>
                         </label>
                     </div>
-                    <div class="px-4 pb-2 text-xs text-gray-500">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        请从具备EMS-19.01.02专业代码资质的审核员中选择一人
+                    <div class="info-text">
+                        <i class="fas fa-lightbulb text-amber-500"></i>
+                        <span>请从具备EMS-19.01.02专业代码资质的审核员中选择一人</span>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeSubmitModal()">取消</button>
+                <button class="btn btn-default" onclick="closeSubmitModal()">
+                    <i class="fas fa-times"></i>
+                    取消
+                </button>
                 <button class="btn btn-primary" onclick="confirmSubmit()">
-                    <i class="fas fa-check mr-1"></i>
+                    <i class="fas fa-check"></i>
                     确认提交
                 </button>
             </div>
@@ -224,7 +328,6 @@
     <script>
         // 关闭弹窗
         function closeSubmitModal() {
-            // 由于页面只有弹窗，关闭时可选择刷新页面或提示
             if (confirm('确定取消选择？')) {
                 window.location.reload();
             }
@@ -239,10 +342,6 @@
             }
             
             alert(`提交成功！\n\n已选择专业审核员：\nEMS：${emsAuditor.value}`);
-            
-            // 这里可以添加实际的提交逻辑，如：
-            // window.parent.postMessage({type: 'auditorSelected', auditor: emsAuditor.value}, '*');
-            // 或调用API提交数据
         }
     </script>
 </body>
