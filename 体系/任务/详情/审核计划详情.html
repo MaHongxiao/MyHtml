@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审核计划详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #ffffff;
+            color: #334155;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .page-container {
+            width: 100%;
+            padding-top: 60px; /* 为固定导航留空间 */
+        }
+
+        /* 固定锚点导航 - 圆角胶囊风格 */
+        .anchor-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border-bottom: 1px solid #f0f0f0;
+            padding: 12px 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .anchor-nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 圆角胶囊按钮 */
+        .nav-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 16px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #666;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .nav-pill:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .nav-pill.active {
+            background: #f0f5ff;
+            color: #2b6aff;
+            font-weight: 600;
+        }
+
+        /* 内容区块 */
+        .content-section {
+            padding: 20px;
+            scroll-margin-top: 60px; /* 锚点跳转预留导航高度 */
+        }
+
+        /* 区块标题 - 保留之前样式 */
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        /* 标签 - 保留之前样式 */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .tag-blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+        .tag-gray { background: #f5f5f5; color: #666; border-color: #e0e0e0; }
+        .tag-green { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+
+        /* 信息网格 */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 13px;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        /* 卡片 - 保留之前样式 */
+        .card {
+            background: #fafafa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .card-meta {
+            color: #475569;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        /* 表格 - 保留之前样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            vertical-align: top;
+        }
+
+        .data-table tr:hover {
+            background: #f8fafc;
+        }
+
+        /* 活动列表 - 保留之前样式 */
+        .activity-list {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .list-header {
+            display: grid;
+            grid-template-columns: 90px 80px 120px 1fr 140px;
+            gap: 12px;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            color: #64748b;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .activity-item {
+            display: grid;
+            grid-template-columns: 90px 80px 120px 1fr 140px;
+            gap: 12px;
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            align-items: flex-start;
+        }
+
+        .activity-item:hover {
+            background: #f8fafc;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .act-date {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .act-date span {
+            color: #94a3b8;
+            font-weight: normal;
+            margin-left: 4px;
+        }
+
+        .act-time {
+            color: #64748b;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .act-auditor {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .auditor-pill {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .act-content {
+            color: #334155;
+            line-height: 1.4;
+        }
+
+        .act-content strong {
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .act-dept {
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        /* 班次 - 保留之前样式 */
+        .shift-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .shift-row:last-child {
+            border-bottom: none;
+        }
+
+        .shift-label {
+            width: 80px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .shift-time {
+            flex: 1;
+            font-family: monospace;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .shift-duration {
+            color: #059669;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* 人员标签 - 保留之前样式 */
+        .person-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .person-tag.leader {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fcd34d;
+        }
+
+        .person-tag.member {
+            background: #eff6ff;
+            color: #1e40af;
+            border-color: #bfdbfe;
+        }
+
+        .person-tag.normal {
+            background: #f3e8ff;
+            color: #7c3aed;
+            border-color: #ddd6fe;
+        }
+
+        /* 标准标签 - 保留之前样式 */
+        .std-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin: 2px 4px 2px 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+        }
+
+        /* 场所卡片特殊样式 - 保留左边框 */
+        .place-card {
+            background: #fafafa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 3px solid #cbd5e1;
+        }
+
+        /* 滚动条 - 保留之前样式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-container">
+    <!-- 固定锚点导航 - 圆角胶囊风格 -->
+    <nav class="anchor-nav">
+        <!-- <a href="#basic" class="nav-pill active" onclick="setActive(this)">
+            不限
+        </a> -->
+        <a href="#basic" class="nav-pill active" onclick="setActive(this)">
+            基本信息
+        </a>
+        <a href="#criteria" class="nav-pill" onclick="setActive(this)">
+            审核准则
+        </a>
+        <a href="#scope" class="nav-pill" onclick="setActive(this)">
+            审核范围
+        </a>
+        <a href="#shift" class="nav-pill" onclick="setActive(this)">
+            班次时间
+        </a>
+        <a href="#activity" class="nav-pill" onclick="setActive(this)">
+            审核活动
+        </a>
+        <a href="#team" class="nav-pill" onclick="setActive(this)">
+            审核组
+        </a>
+    </nav>
+
+    <!-- 1. 基本信息 -->
+    <section id="basic" class="content-section">
+        <div class="section-title">
+            <i class="fas fa-info-circle"></i>基本信息
+        </div>
+
+        <div class="info-grid" style="margin-bottom: 20px;">
+            <div class="info-item">
+                <span class="info-label">计划编号</span>
+                <span class="info-value" style="font-family: monospace;">CQC-A2024-BJ-001856</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">审核类型</span>
+                <span class="info-value"><span class="tag tag-blue">监督审核</span></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">认证体系</span>
+                <span class="info-value">
+                    <span class="std-tag">QMS</span>
+                    <span class="std-tag">EMS</span>
+                    <span class="std-tag">OHSMS</span>
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">审核状态</span>
+                <span class="info-value"><span class="tag tag-green">已批准</span></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">审核日期</span>
+                <span class="info-value">2024-04-15 至 2024-04-18</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">审核天数</span>
+                <span class="info-value">4天</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">客户名称</span>
+                <span class="info-value">北京轨道交通运营有限公司</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">专业代码</span>
+                <span class="info-value">31.04.01, 31.04.02, 31.04.05</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">审核目的</div>
+            <div class="card-meta">
+                评价客户管理体系的持续符合性和有效性，以确定是否推荐保持认证；确认客户对上次审核不符合项采取的纠正和纠正措施是否持续有效；评价客户管理体系在实现预期结果方面的持续适宜性、充分性和有效性；确认客户的认证范围是否持续适宜。
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. 审核准则 -->
+    <section id="criteria" class="content-section">
+        <div class="section-title">
+            <i class="fas fa-check-square"></i>审核准则
+        </div>
+
+        <div class="card" style="background: #fff; border-color: #bfdbfe;">
+            <div class="card-title" style="display: flex; align-items: center; gap: 6px; color: #1e40af;">
+                <i class="fas fa-book" style="color: #3b82f6;"></i>管理体系标准
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <span class="std-tag">GB/T 19001-2016/ISO 9001:2015</span>
+                <span class="std-tag">GB/T 24001-2016/ISO 14001:2015</span>
+                <span class="std-tag">GB/T 45001-2020/ISO 45001:2018</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-file" style="color: #94a3b8;"></i>客户管理体系文件
+            </div>
+            <div class="card-meta">
+                《质量手册》C版、《环境管理手册》B版、《职业健康安全管理手册》B版、《文件控制程序》QP-01-2023、《内部审核程序》QP-08-2023、《管理评审程序》QP-09-2023
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" style="display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-gavel" style="color: #94a3b8;"></i>适用法律法规
+            </div>
+            <div class="card-meta">
+                《中华人民共和国安全生产法》（2021修订）、《中华人民共和国环境保护法》、《城市轨道交通运营管理规定》（交通运输部令2018年第8号）、《生产安全事故应急条例》
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. 审核范围 -->
+    <section id="scope" class="content-section">
+        <div class="section-title">
+            <i class="fas fa-sitemap"></i>审核范围及场所
+        </div>
+
+        <div class="place-card" style="border-left-color: #3b82f6;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span class="card-title" style="margin: 0;">中心职能场所</span>
+                <span class="tag tag-blue">总部</span>
+            </div>
+            <div style="color: #64748b; font-size: 12px; margin-bottom: 6px;">
+                <i class="fas fa-map-marker-alt" style="margin-right: 4px;"></i>北京市西城区北礼士路甲38号（地铁大厦）
+            </div>
+            <div style="color: #1d4ed8; font-size: 12px; line-height: 1.6; margin-bottom: 4px;">
+                <strong>QMS</strong> (31.04.01,31.04.02,31.04.05)：城市轨道交通运营服务、铁路客运服务、轨道交通设备维护
+            </div>
+            <div style="color: #94a3b8; font-size: 11px;">
+                审核时段：2023-04 至 2024-04-18 · 部门：管理层、OCC、安全技术部、设备管理部
+            </div>
+        </div>
+
+        <div class="place-card" style="border-left-color: #10b981;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span class="card-title" style="margin: 0;">运营场所1</span>
+                <span class="tag tag-gray">生产现场</span>
+            </div>
+            <div style="color: #64748b; font-size: 12px; margin-bottom: 6px;">
+                <i class="fas fa-map-marker-alt" style="margin-right: 4px;"></i>北京市东城区建国门南大街5号（建国门车辆段）
+            </div>
+            <div style="color: #059669; font-size: 12px; line-height: 1.6; margin-bottom: 4px;">
+                <strong>EMS</strong> (31.04.01【2级】)：城市轨道交通运营环境管理
+            </div>
+            <div style="color: #94a3b8; font-size: 11px;">
+                审核时段：2023-04 至 2024-04-18 · 部门：车辆段管理部、维修车间、环保科
+            </div>
+        </div>
+
+        <div class="place-card" style="border-left-color: #f59e0b;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span class="card-title" style="margin: 0;">运营场所2</span>
+                <span class="tag tag-gray">高风险区域</span>
+            </div>
+            <div style="color: #64748b; font-size: 12px; margin-bottom: 6px;">
+                <i class="fas fa-map-marker-alt" style="margin-right: 4px;"></i>北京市朝阳区望京北路9号（望京维修基地）
+            </div>
+            <div style="color: #d97706; font-size: 12px; line-height: 1.6; margin-bottom: 4px;">
+                <strong>OHSMS</strong> (31.04.01【2级】)：轨道交通职业健康安全管理
+            </div>
+            <div style="color: #94a3b8; font-size: 11px;">
+                审核时段：2023-04 至 2024-04-18 · 部门：安全监察部、人力资源部、维修班组
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. 班次时间 -->
+    <section id="shift" class="content-section">
+        <div class="section-title">
+            <i class="fas fa-clock"></i>班次和班次时间
+        </div>
+
+        <div class="card">
+            <div class="shift-row">
+                <span class="shift-label">白班</span>
+                <span class="shift-time">08:30 - 17:30</span>
+                <span class="shift-duration">9小时（含午休）</span>
+            </div>
+            <div class="shift-row">
+                <span class="shift-label">夜班</span>
+                <span class="shift-time">20:00 - 08:00</span>
+                <span class="shift-duration">12小时（OCC控制中心）</span>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 12px; background: #fffbeb; border-color: #fcd34d;">
+            <div style="font-size: 12px; color: #92400e; line-height: 1.5;">
+                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                夜班审核仅针对OCC运营控制中心进行，重点审核夜间行车调度、应急处置及安全监控；白班覆盖所有场所的日常运营管理。
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. 审核活动 -->
+    <section id="activity" class="content-section">
+        <div class="section-title">
+            <i class="fas fa-clipboard-list"></i>审核活动安排
+            <span style="margin-left: auto; font-size: 12px; color: #94a3b8; font-weight: 500;">共12项活动</span>
+        </div>
+
+        <div class="activity-list">
+            <div class="list-header">
+                <div>日期</div>
+                <div>时间</div>
+                <div>审核人员</div>
+                <div>审核内容</div>
+                <div>部门/场所</div>
+            </div>
+
+            <div class="activity-item">
+                <div class="act-date">04-15 <span>周一</span></div>
+                <div class="act-time">09:00-10:00</div>
+                <div class="act-auditor">
+                    <span class="auditor-pill">武荣刚</span>
+                    <span class="auditor-pill">王洪伟</span>
+                    <span class="auditor-pill">李明霞</span>
+                </div>
+                <div class="act-content">
+                    <strong>首次会议</strong><br>
+                    介绍审核组成员、确认审核计划、保密承诺
+                </div>
+                <div class="act-dept">管理层/中心职能</div>
+            </div>
+
+            <div class="activity-item">
+                <div class="act-date">04-15 <span>周一</span></div>
+                <div class="act-time">10:00-12:00</div>
+                <div class="act-auditor">
+                    <span class="auditor-pill">武荣刚</span>
+                    <span class="auditor-pill">王洪伟</span>
+                </div>
+                <div class="act-content">
+                    <strong>组织环境及领导作用</strong><br>
+                    QMS: 4.1-4.4, 5.1-5.3 / EMS: 4.1-4.6, 5.1-5.3
+                </div>
+                <div class="act-dept">管理层/中心职能</div>
+            </div>
+
+            <div class="activity-item">
+                <div class="act-date">04-15 <span>周一</span></div>
+                <div class="act-time">13:30-17:30</div>
+                <div class="act-auditor">
+                    <span class="auditor-pill">李明霞</span>
+                </div>
+                <div class="act-content">
+                    <strong>危险源辨识与风险评价</strong><br>
+                    OHSMS: 6.1.1-6.1.4, 8.1.3 · 现场安全标识、作业许可
+                </div>
+                <div class="act-dept">安全监察部/望京基地</div>
+            </div>
+
+            <div class="activity-item" style="background: #f8fafc;">
+                <div class="act-date">04-16 <span>周二</span></div>
+                <div class="act-time">08:30-12:00</div>
+                <div class="act-auditor">
+                    <span class="auditor-pill">武荣刚</span>
+                    <span class="auditor-pill">王洪伟</span>
+                </div>
+                <div class="act-content">
+                    <strong>运营服务提供过程</strong><br>
+                    QMS: 8.1-8.7 · 行车组织、客运服务、应急处置
+                </div>
+                <div class="act-dept">OCC/建国门车辆段</div>
+            </div>
+
+            <div class="activity-item" style="background: #f8fafc;">
+                <div class="act-date">04-16 <span>周二</span></div>
+                <div class="act-time">13:30-17:30</div>
+                <div class="act-auditor">
+                    <span class="auditor-pill">王洪伟</span>
+                </div>
+                <div class="act-content">
+                    <strong>环境因素识别与运行控制</strong><br>
+                    EMS: 6.1.2, 8.1-8.2 · 废水/废气处理、固废管理
+                </div>
+                <div class="act-dept">车辆段管理部/环保科</div>
+            </div>
+
+            <div class="activity-item">
+                <div class="act-date">04-17 <span>周三</span></div>
+                <div class="act-time">08:30-12:00</div>
+                <div class="act-auditor">
+                    <span class="auditor-pill">武荣刚</span>
+                    <span class="auditor-pill">李明霞</span>
+                </div>
+                <div class="act-content">
+                    <strong>设备维护与采购管理</strong><br>
+                    QMS: 8.4-8.5 · OHSMS: 8.1.4（采购管理）
+                </div>
+                <div class="act-dept">设备管理部/维修车间</div>
+            </div>
+
+            <div class="activity-item">
+                <div class="act-date">04-17 <span>周三</span></div>
+                <div class="act-time">13:30-17:30</div>
+                <div class="act-auditor">
+                    <span class="auditor-pill">李明霞</span>
+                </div>
+                <div class="act-content">
+                    <strong>应急准备与响应</strong><br>
+                    OHSMS: 8.2, EMS: 8.2 · 应急预案、演练记录、应急设施
+                </div>
+                <div class="act-dept">安全监察部/各场所</div>
+            </div>
+
+            <div class="activity-item">
+                <div class="act-date">04-17 <span>周三</span></div>
+                <div class="act-time">20:00-24:00</div>
+                <div class="act-auditor">
+                    <span class="auditor-pill">武荣刚</span>
+                </div>
+                <div class="act-content">
+                    <strong>夜间运营监控（夜班）</strong><br>
+                    QMS: 8.7 · OCC夜班调度、应急处置能力观察
+                </div>
+                <div class="act-dept">运营控制中心/夜班值班室</div>
+            </div>
+
+            <div class="activity-item" style="background: #f8fafc;">
+                <div class="act-date">04-18 <span>周四</span></div>
+                <div class="act-time">08:30-12:00</div>
+                <div class="act-auditor">
+                    <span class="auditor-pill">武荣刚</span>
+                    <span class="auditor-pill">李明霞</span>
+                </div>
+                <div class="act-content">
+                    <strong>监视测量分析与改进</strong><br>
+                    三体系：9.1-9.3, 10.1-10.3 · 内审、管评、纠正措施
+                </div>
+                <div class="act-dept">安全技术部</div>
+            </div>
+
+            <div class="activity-item" style="background: #f8fafc;">
+                <div class="act-date">04-18 <span>周四</span></div>
+                <div class="act-time">13:30-15:00</div>
+                <div class="act-auditor">
+                    <span class="auditor-pill">武荣刚</span>
+                    <span class="auditor-pill">王洪伟</span>
+                    <span class="auditor-pill">李明霞</span>
+                </div>
+                <div class="act-content">
+                    <strong>审核组内部会议</strong><br>
+                    汇总审核发现、讨论不符合项、准备审核结论
+                </div>
+                <div class="act-dept">审核组内部</div>
+            </div>
+
+            <div class="activity-item" style="background: #f8fafc;">
+                <div class="act-date">04-18 <span>周四</span></div>
+                <div class="act-time">15:00-16:30</div>
+                <div class="act-auditor">
+                    <span class="auditor-pill">武荣刚</span>
+                    <span class="auditor-pill">王洪伟</span>
+                    <span class="auditor-pill">李明霞</span>
+                </div>
+                <div class="act-content">
+                    <strong>末次会议</strong><br>
+                    报告审核发现、宣读不符合项、提出改进建议
+                </div>
+                <div class="act-dept">管理层/中心职能</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. 审核组 -->
+    <section id="team" class="content-section">
+        <div class="section-title">
+            <i class="fas fa-users"></i>审核组成员
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">姓名</th>
+                        <th style="width: 70px;">身份</th>
+                        <th style="width: 300px;">资格及注册编号</th>
+                        <th style="width: 90px;">CQC编号</th>
+                        <th style="width: 110px;">联系电话</th>
+                        <th style="width: 100px;">专兼职</th>
+                        <th>审核日期区间</th>
+                        <th style="width: 50px;">时长</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight: 600;">武荣刚</td>
+                        <td><span class="person-tag leader">组长</span></td>
+                        <td>Q高级审核员(2022-N1QMS-6028373)</td>
+                        <td style="font-family: monospace;">CQC21458</td>
+                        <td>13661227694</td>
+                        <td><span class="person-tag normal">专职</span></td>
+                        <td>2024-04-15 至 2024-04-18</td>
+                        <td style="text-align: center; font-weight: 600;">32h</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">王洪伟</td>
+                        <td><span class="person-tag member">组员</span></td>
+                        <td>Q审核员(2021-N1QMS-5012345)<br>E审核员(2021-N1EMS-5087654)</td>
+                        <td style="font-family: monospace;">CQC10852</td>
+                        <td>13800138001</td>
+                        <td><span class="person-tag normal">兼职</span></td>
+                        <td>2024-04-15 至 2024-04-16</td>
+                        <td style="text-align: center; font-weight: 600;">16h</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">李明霞</td>
+                        <td><span class="person-tag member">组员</span></td>
+                        <td>S审核员(2023-N1OHSMS-7032156)</td>
+                        <td style="font-family: monospace;">CQC35689</td>
+                        <td>13911223344</td>
+                        <td><span class="person-tag normal">兼职</span></td>
+                        <td>2024-04-17 至 2024-04-18</td>
+                        <td style="text-align: center; font-weight: 600;">16h</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<script>
+    // 锚点导航激活状态
+    function setActive(element) {
+        document.querySelectorAll('.nav-pill').forEach(pill => {
+            pill.classList.remove('active');
+        });
+        element.classList.add('active');
+    }
+
+    // 滚动时自动高亮当前section
+    const sections = document.querySelectorAll('.content-section');
+    const navPills = document.querySelectorAll('.nav-pill');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        const scrollPos = window.scrollY + 80;
+
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (scrollPos >= sectionTop && scrollPos < sectionTop + sectionHeight) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        // 更新导航高亮（跳过第一个"不限"）
+        navPills.forEach((pill, index) => {
+            if (index === 0) return; // 跳过"不限"
+            pill.classList.remove('active');
+            if (pill.getAttribute('href') === '#' + current) {
+                pill.classList.add('active');
+            }
+        });
+
+        // 如果没有匹配到任何section，高亮"不限"
+        if (!current) {
+            navPills.forEach(pill => pill.classList.remove('active'));
+            navPills[0].classList.add('active');
+        }
+    });
+
+    // 点击"不限"滚动到顶部
+    navPills[0].addEventListener('click', (e) => {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setActive(navPills[0]);
+    });
+</script>
+
+</body>
+</html>
