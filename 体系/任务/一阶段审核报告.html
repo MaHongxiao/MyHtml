@@ -7,26 +7,145 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f5f7fa;
-            min-width: 1800px;
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+            min-width: 1400px;
         }
-        
-        .container-fixed {
-            width: 1800px;
-            margin: 0 auto;
-            padding: 0 24px;
+
+        .form-section {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            scroll-margin-top: 140px;
         }
-        
-        .project-header {
-            background: #fff;
-            border-bottom: 1px solid #e8e8e8;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+        .form-section:hover {
+            box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.1);
         }
-        
+
+        .conditional-field {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+        }
+
+        .conditional-field.active {
+            max-height: 2000px;
+            opacity: 1;
+            margin-top: 0.75rem;
+        }
+
+        .nav-item {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #2563eb;
+            transition: width 0.3s ease;
+        }
+
+        .nav-item.active {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .nav-item.active::after {
+            width: 100%;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* 统一表单项高度 - 36px */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        input[type="month"],
+        select,
+        textarea {
+            min-height: 36px !important;
+            padding: 8px 10px !important;
+            font-size: 13px !important;
+            line-height: 20px !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 6px !important;
+            background: white !important;
+            transition: all 0.2s !important;
+            box-sizing: border-box !important;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        }
+
+        input:read-only,
+        input:disabled,
+        select:disabled,
+        textarea:disabled {
+            background: #f3f4f6 !important;
+            cursor: not-allowed !important;
+        }
+
+        select {
+            appearance: auto !important;
+            padding-right: 24px !important;
+        }
+
+        textarea {
+            min-height: 80px !important;
+            resize: vertical !important;
+        }
+
+        /* 小模块标题样式 */
+        .sub-section-title {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            border-left: 4px solid #3b82f6;
+            padding: 12px 16px;
+            margin: 16px 0 12px 0;
+            border-radius: 0 8px 8px 0;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sub-section-title i {
+            color: #3b82f6;
+        }
+
+        /* 状态徽章 */
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -36,378 +155,215 @@
             font-weight: 500;
             border: 1px solid;
         }
-        
+
         .badge-processing {
             background: #e6f7ff;
             color: #1890ff;
             border-color: #1890ff;
         }
-        
+
         .badge-success {
             background: #f6ffed;
             color: #52c41a;
             border-color: #52c41a;
         }
-        
+
         .badge-warning {
             background: #fff7e6;
             color: #fa8c16;
             border-color: #ffa940;
         }
-        
-        .badge-error {
-            background: #fff1f0;
-            color: #ff4d4f;
-            border-color: #ff4d4f;
-        }
-        
-        .badge-draft {
-            background: #f5f5f5;
-            color: #8c8c8c;
-            border-color: #d9d9d9;
-        }
-        
+
         .badge-info {
             background: #e6fffb;
             color: #13c2c2;
             border-color: #87e8de;
         }
-        
-        .timeline-section {
-            background: #fff;
-            border-bottom: 1px solid #e8e8e8;
-            padding: 20px 0;
-        }
-        
-        .process-steps {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            position: relative;
-            padding: 20px 0 10px;
-        }
-        
-        .step-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            flex: 1;
-            z-index: 2;
+
+        /* 审批建议选项卡片 */
+        .audit-advice-option {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
             cursor: pointer;
+            transition: all 0.3s;
+            background: white;
         }
-        
-        .step-circle {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #fff;
-            border: 2px solid #d9d9d9;
+
+        .audit-advice-option:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .audit-advice-option.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* 动态列表项 */
+        .dynamic-list-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .dynamic-list-item:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 14px;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
-            color: #d9d9d9;
-            transition: all 0.3s;
-            position: relative;
+            border-radius: 6px;
+            transition: all 0.2s;
         }
-        
-        .step-item.pending .step-circle {
-            border-color: #1890ff;
-            color: #1890ff;
-            background: #fff;
+
+        .remove-btn:hover {
+            background: #fee2e2;
+            color: #dc2626;
         }
-        
-        .step-item.active .step-circle {
-            background: #1890ff;
-            border-color: #1890ff;
-            color: white;
+
+        /* 文件上传卡片 */
+        .file-upload-card {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.2s ease;
         }
-        
-        .step-item.completed .step-circle {
-            background: #52c41a;
-            border-color: #52c41a;
-            color: white;
+
+        .file-upload-card.empty {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            border-style: dashed;
         }
-        
-        .step-line {
-            position: absolute;
-            top: 16px;
-            left: 50%;
-            right: -50%;
-            height: 2px;
-            background: #e8e8e8;
-            z-index: 1;
-        }
-        
-        .step-item.completed .step-line {
-            background: #52c41a;
-        }
-        
-        .step-item.active .step-line {
-            background: linear-gradient(to right, #52c41a 50%, #e8e8e8 50%);
-        }
-        
-        .step-item:last-child .step-line {
-            display: none;
-        }
-        
-        .step-title {
-            margin-top: 8px;
-            font-size: 14px;
-            color: #595959;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-        
-        .step-item.active .step-title,
-        .step-item.pending .step-title {
-            color: #1890ff;
-            font-weight: 600;
-        }
-        
-        .step-item.completed .step-title {
-            color: #52c41a;
-        }
-        
-        .step-date {
-            font-size: 12px;
-            color: #8c8c8c;
-            margin-top: 4px;
-        }
-        
-        .content-card {
-            background: white;
-            border-radius: 2px;
-            border: 1px solid #e8e8e8;
-            margin-bottom: 16px;
-        }
-        
-        .card-header {
-            padding: 12px 20px;
-            border-bottom: 1px solid #e8e8e8;
+
+        .file-upload-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: #fafafa;
+            margin-bottom: 12px;
         }
-        
-        .card-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #262626;
+
+        .file-upload-info {
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
+
+        .file-upload-icon {
+            width: 36px;
+            height: 36px;
+            background: #fef3c7;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f59e0b;
+            font-size: 16px;
         }
-        
-        .data-table th {
-            background: #fafafa;
-            color: #262626;
-            font-weight: 600;
-            padding: 10px 8px;
-            text-align: left;
-            border-bottom: 1px solid #e8e8e8;
-            white-space: nowrap;
+
+        .file-upload-icon.required {
+            background: #fee2e2;
+            color: #ef4444;
         }
-        
-        .data-table td {
-            padding: 8px;
-            border-bottom: 1px solid #e8e8e8;
-            color: #595959;
+
+        .file-upload-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e293b;
+            line-height: 1.4;
         }
-        
-        .data-table tr:hover {
-            background: #e6f7ff;
+
+        .file-upload-meta {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
         }
-        
-        .btn {
+
+        .file-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .file-tag {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 1px solid transparent;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-        
-        .btn-primary {
-            background: #1890ff;
-            color: white;
-            border-color: #1890ff;
-        }
-        
-        .btn-primary:hover {
-            background: #40a9ff;
-            border-color: #40a9ff;
-        }
-        
-        .btn-primary:disabled {
-            background: #bae7ff;
-            border-color: #bae7ff;
-            cursor: not-allowed;
-        }
-        
-        .btn-default {
-            background: white;
-            border-color: #d9d9d9;
-            color: #595959;
-        }
-        
-        .btn-default:hover {
-            color: #40a9ff;
-            border-color: #40a9ff;
-        }
-        
-        .btn-info {
-            background: white;
-            border-color: #91caff;
-            color: #1890ff;
-        }
-        
-        .btn-info:hover {
-            background: #e6f7ff;
-        }
-        
-        .btn-success {
-            color: #52c41a;
-            background: white;
-            border-color: #52c41a;
-        }
-        
-        .btn-success:hover {
-            background: #52c41a;
-            color: white;
-        }
-        
-        .btn-sm {
-            padding: 2px 8px;
-            font-size: 11px;
-            height: 24px;
-        }
-        
-        .btn-lg {
-            padding: 6px 16px;
-            font-size: 14px;
-            height: 32px;
-        }
-        
-        /* 操作按钮组 - 防止换行 */
-        .action-btns {
-            display: flex;
             gap: 6px;
-            flex-wrap: nowrap;
-            white-space: nowrap;
+            padding: 6px 12px;
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #166534;
+            transition: all 0.2s ease;
+            max-width: 200px;
         }
-        
-        .tab-container {
-            background: white;
-            border-bottom: 1px solid #e8e8e8;
-            padding: 0 20px;
+
+        .file-tag:hover {
+            background: #bbf7d0;
+            border-color: #4ade80;
+        }
+
+        .file-tag .file-tag-close {
+            width: 16px;
+            height: 16px;
             display: flex;
-            gap: 8px;
-        }
-        
-        .tab-btn {
-            padding: 12px 24px;
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid transparent;
-            color: #595959;
-            font-size: 14px;
-            font-weight: 500;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
             cursor: pointer;
-            transition: all 0.3s;
+            color: #16a34a;
+            font-size: 10px;
+            transition: all 0.2s;
         }
-        
-        .tab-btn.active {
-            color: #1890ff;
-            border-bottom-color: #1890ff;
+
+        .file-tag .file-tag-close:hover {
+            background: #16a34a;
+            color: white;
         }
-        
-        .tab-btn:hover {
-            color: #1890ff;
-        }
-        
-        .tab-content {
-            display: none;
-            padding: 20px;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .hidden-section {
-            display: none !important;
-        }
-        
-        .personnel-tag {
+
+        .upload-btn {
             display: inline-flex;
             align-items: center;
-            padding: 1px 5px;
-            border-radius: 4px;
-            font-size: 11px;
-            margin-right: 3px;
-        }
-        
-        .tag-fulltime { background: #f9f0ff; color: #722ed1; }
-        .tag-parttime { background: #fff0f6; color: #eb2f96; }
-        .tag-qms { background: #e6f7ff; color: #1890ff; }
-        .tag-leader { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
-        
-        .form-input {
-            width: 100%;
-            padding: 4px 10px;
-            border: 1px solid #d9d9d9;
-            border-radius: 4px;
+            gap: 6px;
+            padding: 6px 14px;
             font-size: 13px;
-            transition: all 0.3s;
-            background: white;
-            height: 28px;
-        }
-        
-        .form-input:hover {
-            border-color: #40a9ff;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: #1890ff;
-            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
-        }
-        
-        .form-input:disabled, .form-input[readonly] {
-            background: #f5f5f5;
-            color: #8c8c8c;
-            cursor: not-allowed;
-        }
-        
-        .form-label {
-            font-size: 12px;
-            color: #262626;
-            margin-bottom: 4px;
-            display: block;
             font-weight: 500;
+            color: #3b82f6;
+            background: white;
+            border: 1px solid #3b82f6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        
-        textarea.form-input {
-            height: auto;
-            min-height: 60px;
-            resize: vertical;
+
+        .upload-btn:hover {
+            background: #eff6ff;
         }
-        
+
+        .hidden-file-input {
+            display: none;
+        }
+
         /* 弹窗样式 */
         .modal-overlay {
             position: fixed;
@@ -416,43 +372,53 @@
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
             z-index: 1000;
             display: none;
             align-items: center;
             justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
-        
+
         .modal-overlay.show {
             display: flex;
+            opacity: 1;
         }
-        
+
         .modal-container {
             background: white;
-            border-radius: 4px;
+            border-radius: 16px;
             width: 90%;
-            max-width: 1400px;
+            max-width: 1200px;
             max-height: 90vh;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
         }
-        
+
+        .modal-overlay.show .modal-container {
+            transform: scale(1);
+        }
+
         .modal-header {
             padding: 16px 24px;
-            border-bottom: 1px solid #e8e8e8;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #fafafa;
+            background: #f8fafc;
         }
-        
+
         .modal-title {
             font-size: 16px;
             font-weight: 600;
-            color: #262626;
+            color: #1e293b;
         }
-        
+
         .modal-close {
             width: 32px;
             height: 32px;
@@ -462,15 +428,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
+            border-radius: 6px;
             transition: all 0.3s;
+            color: #64748b;
         }
-        
+
         .modal-close:hover {
-            background: #f5f5f5;
-            color: #ff4d4f;
+            background: #f1f5f9;
+            color: #ef4444;
         }
-        
+
         .modal-body {
             flex: 1;
             overflow-y: auto;
@@ -478,73 +445,149 @@
             display: flex;
             gap: 24px;
         }
-        
+
         .modal-sidebar {
             width: 250px;
             flex-shrink: 0;
-            border-right: 1px solid #e8e8e8;
+            border-right: 1px solid #e2e8f0;
             padding-right: 16px;
         }
-        
+
         .sidebar-title {
             font-size: 13px;
             font-weight: 600;
-            color: #262626;
+            color: #1e293b;
             margin-bottom: 12px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f1f5f9;
         }
-        
+
         .sidebar-item {
             padding: 8px 12px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
-            color: #595959;
+            color: #475569;
             margin-bottom: 4px;
             transition: all 0.3s;
         }
-        
+
         .sidebar-item:hover {
-            background: #f5f5f5;
-            color: #1890ff;
+            background: #f1f5f9;
+            color: #2563eb;
         }
-        
+
         .sidebar-item.active {
-            background: #e6f7ff;
-            color: #1890ff;
+            background: #eff6ff;
+            color: #2563eb;
             font-weight: 500;
         }
-        
+
         .modal-main {
             flex: 1;
             min-width: 0;
         }
-        
+
         .modal-footer {
             padding: 16px 24px;
-            border-top: 1px solid #e8e8e8;
+            border-top: 1px solid #e2e8f0;
             display: flex;
             justify-content: flex-end;
             gap: 12px;
-            background: #fafafa;
+            background: #f8fafc;
         }
-        
-        /* 富文本编辑器样式 */
+
+        /* 流程时间轴 */
+        .flow-timeline {
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .flow-timeline:before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #e2e8f0;
+        }
+
+        .flow-timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+            padding-left: 16px;
+        }
+
+        .flow-timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .flow-timeline-dot {
+            position: absolute;
+            left: -14px;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px #cbd5e1;
+            z-index: 1;
+        }
+
+        .flow-timeline-item.completed .flow-timeline-dot {
+            background: #22c55e;
+            box-shadow: 0 0 0 1px #22c55e;
+        }
+
+        .flow-timeline-item.active .flow-timeline-dot {
+            background: #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
+        }
+
+        .flow-timeline-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .flow-timeline-item.completed .flow-timeline-title {
+            color: #16a34a;
+        }
+
+        .flow-timeline-item.active .flow-timeline-title {
+            color: #2563eb;
+        }
+
+        .flow-timeline-time {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .flow-timeline-desc {
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        /* 富文本编辑器 */
         .rich-editor {
-            border: 1px solid #d9d9d9;
-            border-radius: 4px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
             overflow: hidden;
         }
-        
+
         .rich-editor-toolbar {
             padding: 8px;
-            background: #fafafa;
-            border-bottom: 1px solid #e8e8e8;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
             display: flex;
             gap: 4px;
         }
-        
+
         .toolbar-btn {
             width: 28px;
             height: 28px;
@@ -556,15 +599,15 @@
             align-items: center;
             justify-content: center;
             font-size: 12px;
-            color: #595959;
+            color: #475569;
             transition: all 0.3s;
         }
-        
+
         .toolbar-btn:hover {
-            border-color: #d9d9d9;
-            color: #1890ff;
+            border-color: #d1d5db;
+            color: #3b82f6;
         }
-        
+
         .rich-editor-content {
             min-height: 200px;
             padding: 12px;
@@ -572,507 +615,423 @@
             font-size: 13px;
             line-height: 1.6;
         }
-        
-        .rich-editor-content:empty:before {
-            content: '请输入审核记录...';
-            color: #bfbfbf;
-        }
-        
-        /* 附件列表样式 */
-        .attachment-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        
-        .attachment-item {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 8px;
-            background: #f6ffed;
-            border: 1px solid #b7eb8f;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #52c41a;
-        }
-        
-        .attachment-item i {
-            font-size: 14px;
-        }
-        
-        .attachment-item .remove {
-            cursor: pointer;
-            color: #8c8c8c;
-            margin-left: 4px;
-        }
-        
-        .attachment-item .remove:hover {
-            color: #ff4d4f;
-        }
-        
-        /* 空状态 */
-        .empty-state {
-            text-align: center;
-            padding: 48px;
-            color: #8c8c8c;
-        }
-        
-        .empty-state i {
-            font-size: 48px;
-            margin-bottom: 16px;
-            color: #d9d9d9;
-        }
-        
-        /* 流程日志时间轴样式 - 竖向 */
-        .flow-timeline {
-            position: relative;
-            padding-left: 20px;
-        }
-        
-        .flow-timeline:before {
-            content: '';
-            position: absolute;
-            left: 6px;
-            top: 8px;
-            bottom: 8px;
-            width: 2px;
-            background: #e8e8e8;
-        }
-        
-        .flow-timeline-item {
-            position: relative;
-            padding-bottom: 24px;
-            padding-left: 16px;
-        }
-        
-        .flow-timeline-item:last-child {
-            padding-bottom: 0;
-        }
-        
-        .flow-timeline-dot {
-            position: absolute;
-            left: -14px;
-            top: 4px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #d9d9d9;
-            border: 2px solid #fff;
-            box-shadow: 0 0 0 1px #d9d9d9;
-            z-index: 1;
-        }
-        
-        .flow-timeline-item.completed .flow-timeline-dot {
-            background: #52c41a;
-            box-shadow: 0 0 0 1px #52c41a;
-        }
-        
-        .flow-timeline-item.active .flow-timeline-dot {
-            background: #1890ff;
-            box-shadow: 0 0 0 1px #1890ff;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 1px #1890ff, 0 0 0 0 rgba(24,144,255,0.4); }
-            70% { box-shadow: 0 0 0 1px #1890ff, 0 0 0 6px rgba(24,144,255,0); }
-            100% { box-shadow: 0 0 0 1px #1890ff, 0 0 0 0 rgba(24,144,255,0); }
-        }
-        
-        .flow-timeline-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #262626;
-            margin-bottom: 4px;
-        }
-        
-        .flow-timeline-item.completed .flow-timeline-title {
-            color: #52c41a;
-        }
-        
-        .flow-timeline-item.active .flow-timeline-title {
-            color: #1890ff;
-        }
-        
-        .flow-timeline-time {
-            font-size: 11px;
-            color: #8c8c8c;
-            margin-bottom: 4px;
-        }
-        
-        .flow-timeline-desc {
-            font-size: 12px;
-            color: #595959;
-            line-height: 1.5;
-        }
-        
-        .flow-timeline-status {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 11px;
-            margin-top: 4px;
-        }
-        
-        .flow-timeline-status.completed {
-            background: #f6ffed;
-            color: #52c41a;
-            border: 1px solid #b7eb8f;
-        }
-        
-        .flow-timeline-status.processing {
-            background: #e6f7ff;
-            color: #1890ff;
-            border: 1px solid #91d5ff;
-        }
-        
-        .flow-timeline-header {
-            font-size: 14px;
-            font-weight: 600;
-            color: #262626;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e8e8e8;
+
+        /* Toast提示 */
+        #toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
             display: flex;
             align-items: center;
             gap: 8px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
         }
 
-        /* 一阶段审核报告特有样式 */
-        .section-grid {
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 信息行样式 */
+        .info-row {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 240px 1fr;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
             gap: 16px;
-            padding: 16px;
         }
-        
-        .form-group {
-            margin-bottom: 12px;
+
+        .info-row:last-child {
+            border-bottom: none;
         }
-        
-        .form-group-full {
-            grid-column: 1 / -1;
+
+        .info-label {
+            color: #475569;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 36px;
         }
-        
+
+        .info-value {
+            color: #1e293b;
+            font-size: 13px;
+        }
+
+        /* 复选框组 */
         .checkbox-group {
             display: flex;
             gap: 16px;
             flex-wrap: wrap;
         }
-        
+
         .checkbox-item {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             font-size: 13px;
-            color: #595959;
+            color: #475569;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
         }
-        
-        .info-row {
-            display: grid;
-            grid-template-columns: 200px 1fr;
-            padding: 8px 0;
-            border-bottom: 1px solid #f0f0f0;
+
+        .checkbox-item:hover {
+            background: #f1f5f9;
         }
-        
-        .info-row:last-child {
-            border-bottom: none;
+
+        /* 单选组 */
+        .radio-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
         }
-        
-        .info-label {
-            color: #8c8c8c;
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             font-size: 13px;
+            color: #475569;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
         }
-        
-        .info-value {
-            color: #262626;
-            font-size: 13px;
+
+        .radio-item:hover {
+            background: #f1f5f9;
+        }
+
+        /* 快速导航 */
+        .quick-nav-item {
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .quick-nav-item:hover {
+            background-color: #f1f5f9;
+            border-left-color: #3b82f6;
+            transform: translateX(2px);
+        }
+
+        .quick-nav-item.active {
+            background-color: #eff6ff;
+            border-left-color: #2563eb;
+            color: #2563eb;
             font-weight: 500;
         }
-        
+
+        /* 顶部进度步骤 */
+        .process-steps {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: relative;
+            padding: 20px 0 10px;
+        }
+
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #94a3b8;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .step-item.pending .step-circle {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background: #fff;
+        }
+
+        .step-item.active .step-circle {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        .step-item.completed .step-circle {
+            background: #22c55e;
+            border-color: #22c55e;
+            color: white;
+        }
+
+        .step-line {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            right: -50%;
+            height: 2px;
+            background: #e2e8f0;
+            z-index: 1;
+        }
+
+        .step-item.completed .step-line {
+            background: #22c55e;
+        }
+
+        .step-item.active .step-line {
+            background: linear-gradient(to right, #22c55e 50%, #e2e8f0 50%);
+        }
+
+        .step-item:last-child .step-line {
+            display: none;
+        }
+
+        .step-title {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .step-item.active .step-title,
+        .step-item.pending .step-title {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .step-item.completed .step-title {
+            color: #16a34a;
+        }
+
+        .step-date {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        /* 输入组 */
         .input-group {
             display: flex;
             gap: 8px;
             align-items: center;
         }
-        
-        .input-group-addon {
-            color: #8c8c8c;
-            font-size: 13px;
-        }
-        
-        .dynamic-list-item {
-            background: #f5f5f5;
-            border-radius: 4px;
-            padding: 12px;
-            margin-bottom: 8px;
-            position: relative;
-        }
-        
-        .remove-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            color: #ff4d4f;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .remove-btn:hover {
-            color: #ff7875;
-        }
-        
-        .file-list-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 12px;
-            background: #f5f5f5;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            font-size: 13px;
-        }
-        
-        .file-actions {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .audit-advice-option {
-            border: 1px solid #d9d9d9;
-            border-radius: 4px;
-            padding: 12px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .audit-advice-option:hover {
-            border-color: #1890ff;
-            background: #e6f7ff;
-        }
-        
-        .audit-advice-option.selected {
-            border-color: #1890ff;
-            background: #e6f7ff;
-        }
-        
-        .advice-radio {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-        }
-        
-        .advice-content {
-            flex: 1;
-        }
-        
-        .advice-title {
-            font-weight: 600;
-            color: #262626;
-            font-size: 13px;
-            margin-bottom: 4px;
-        }
-        
-        .advice-desc {
-            color: #8c8c8c;
-            font-size: 12px;
-            line-height: 1.5;
-        }
 
-        .hidden {
-            display: none !important;
-        }
-        
-        select.form-input {
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238c8c8c' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 8px center;
-            padding-right: 24px;
-        }
-        
-        textarea.form-input {
-            min-height: 80px;
-            resize: vertical;
+        .input-group-addon {
+            color: #64748b;
+            font-size: 13px;
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-slate-50">
 
     <!-- 顶部项目信息栏 -->
-    <div class="project-header sticky top-0 z-50">
-        <div class="container-fixed py-3">
-            <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-3">
-                    <span class="text-gray-500 text-sm">RW-202403240001</span>
-                    <h1 class="text-lg font-bold text-gray-900">一阶段审核报告</h1>
+    <div class="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-14">
+                <div class="flex items-center gap-4 overflow-x-auto custom-scrollbar">
+                    <span class="text-slate-500 text-sm font-mono">RW-202403240001</span>
+                    <h1 class="text-lg font-bold text-slate-900">一阶段审核报告</h1>
                     <span class="status-badge badge-warning" id="headerStatusBadge">审核进行中</span>
                     <span class="status-badge badge-info" id="phaseBadge">一阶段</span>
                 </div>
                 
-                <div class="flex items-center gap-2">
-                    <button class="btn btn-success btn-sm" onclick="submitAll()">
+                <div class="flex items-center gap-2 shrink-0">
+                    <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium shadow-md shadow-emerald-200 transition-all active:scale-95 flex items-center gap-2" onclick="submitAll()">
                         <i class="fas fa-check text-xs"></i>
                         提交
                     </button>
-                    <button class="btn btn-default btn-sm" onclick="goBack()">
+                    <button class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all active:scale-95 flex items-center gap-2" onclick="goBack()">
                         <i class="fas fa-arrow-left text-xs"></i>
                         返回
                     </button>
                 </div>
             </div>
-            
-            <div class="grid grid-cols-4 gap-x-8 gap-y-2 text-sm">
-                <div>
-                    <span class="text-gray-500">审核任务编码：</span>
-                    <span class="font-medium text-gray-900">RW-202403240001</span>
-                </div>
-                <div>
-                    <span class="text-gray-500">客户名称：</span>
-                    <span class="font-medium text-gray-900">北京市地铁运营有限公司</span>
-                </div>
-                <div>
-                    <span class="text-gray-500">认证领域：</span>
-                    <span class="font-medium text-gray-900">QMS, EMS, OHSMS</span>
-                </div>
-                <div>
-                    <span class="text-gray-500">审核阶段：</span>
-                    <span class="font-medium text-gray-900">一阶段</span>
-                </div>
-                <div>
-                    <span class="text-gray-500">组长：</span>
-                    <span class="font-medium text-gray-900">武荣刚</span>
-                </div>
-                <div>
-                    <span class="text-gray-500">审核日期：</span>
-                    <span class="font-medium text-gray-900">2024-04-15 至 2024-04-18</span>
-                </div>
-                <div>
-                    <span class="text-gray-500">当前节点：</span>
-                    <span class="font-medium text-blue-600">审核进行中</span>
-                </div>
-                <div>
-                    <span class="text-gray-500">项目状态：</span>
-                    <span class="font-medium text-orange-600">执行中</span>
-                </div>
-            </div>
+
+            <!-- 锚点导航 -->
+            <nav class="flex gap-6 text-sm text-slate-600 overflow-x-auto custom-scrollbar pb-1">
+                <a href="#section-basic" class="nav-item active py-2" data-section="section-basic">基本信息</a>
+                <a href="#section-evaluation" class="nav-item py-2" data-section="section-evaluation">评价内容</a>
+                <a href="#section-info" class="nav-item py-2" data-section="section-info">体系信息</a>
+                <a href="#section-adjust" class="nav-item py-2" data-section="section-adjust">待调整内容</a>
+                <a href="#section-other" class="nav-item py-2" data-section="section-other">其他内容</a>
+                <a href="#section-advice" class="nav-item py-2" data-section="section-advice">审核建议</a>
+                <a href="#section-problem" class="nav-item py-2" data-section="section-problem">问题清单</a>
+                <a href="#section-attachment" class="nav-item py-2" data-section="section-attachment">附件</a>
+            </nav>
         </div>
     </div>
 
-    <!-- 主内容区 -->
-    <main class="container-fixed py-4">
-        
-        <!-- Tab 2: 一阶段审核报告 -->
-        <div id="tab-report" class="tab-content active">
-            
-            <!-- 1. 基本信息 -->
-            <div class="content-card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-info-circle text-blue-500"></i>
-                        基本信息
-                    </div>
+    <!-- 主体布局：左侧表单，右侧快速导航 -->
+    <div class="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-32 flex gap-6">
+
+        <!-- 左侧：表单内容区 -->
+        <div class="flex-1 min-w-0 space-y-6" id="mainFormContainer">
+
+            <!-- 项目概要卡片 -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden p-6 grid grid-cols-4 gap-x-8 gap-y-3 text-sm">
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">审核任务编码</span>
+                    <span class="font-medium text-slate-900">RW-202403240001</span>
                 </div>
-                <div class="section-grid">
-                    <div class="form-group">
-                        <label class="form-label">客户名称</label>
-                        <input type="text" class="form-input" value="北京市地铁运营有限公司" disabled>
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">客户名称</span>
+                    <span class="font-medium text-slate-900">北京市地铁运营有限公司</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">认证领域</span>
+                    <span class="font-medium text-slate-900">QMS, EMS, OHSMS</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">审核阶段</span>
+                    <span class="font-medium text-slate-900">一阶段</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">组长</span>
+                    <span class="font-medium text-slate-900">武荣刚</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">审核日期</span>
+                    <span class="font-medium text-slate-900">2024-04-15 至 2024-04-18</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">当前节点</span>
+                    <span class="font-medium text-blue-600">审核进行中</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">项目状态</span>
+                    <span class="font-medium text-orange-600">执行中</span>
+                </div>
+            </div>
+
+            <!-- 1. 基本信息 -->
+            <div id="section-basic" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</div>
+                        <h3 class="font-semibold text-slate-900">基本信息</h3>
                     </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">地址</label>
-                        <input type="text" class="form-input" value="北京市西城区西直门外大街2号" disabled>
-                    </div>
-                    
-                    <div class="form-group form-group-full">
-                        <label class="form-label">审核目的</label>
-                        <textarea class="form-input" rows="2">收集客户管理体系范围内必要信息，评价客户基本情况和为管理体系策划、准备的情况，确定第二阶段审核的可行性和重点。</textarea>
-                    </div>
-                    
-                    <div class="form-group form-group-full">
-                        <label class="form-label">审核准则</label>
-                        <div class="checkbox-group mb-2">
-                            <label class="checkbox-item">
-                                <input type="checkbox" checked> 管理体系标准（规范性要求）
-                            </label>
-                            <label class="checkbox-item">
-                                <input type="checkbox" checked> 客户管理体系文件
-                            </label>
-                            <label class="checkbox-item">
-                                <input type="checkbox" checked> 适用法律法规
-                            </label>
-                            <label class="checkbox-item">
-                                <input type="checkbox"> 客户特殊要求
-                            </label>
-                            <label class="checkbox-item">
-                                <input type="checkbox"> 其他
-                            </label>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
+                </div>
+                <div class="p-6 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">客户名称</label>
+                            <input type="text" value="北京市地铁运营有限公司" disabled class="w-full px-3 py-2 text-sm bg-slate-100 border border-slate-300 rounded-lg text-slate-500 cursor-not-allowed">
                         </div>
-                        <textarea class="form-input" rows="2" placeholder="具体说明其他审核准则..."></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">一阶段审核的方式</label>
-                        <div class="radio-group">
-                            <label class="radio-item">
-                                <input type="radio" name="auditType" value="onsite" checked onchange="toggleAuditDate('onsite')"> 现场审核
-                            </label>
-                            <label class="radio-item">
-                                <input type="radio" name="auditType" value="offsite" onchange="toggleAuditDate('offsite')"> 非现场审核
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">审核日期区间</label>
-                        <div class="input-group">
-                            <input type="date" class="form-input" id="auditStartDate" value="2024-04-15">
-                            <span class="input-group-addon">至</span>
-                            <input type="date" class="form-input" id="auditEndDate" value="2024-04-18">
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">地址</label>
+                            <input type="text" value="北京市西城区西直门外大街2号" disabled class="w-full px-3 py-2 text-sm bg-slate-100 border border-slate-300 rounded-lg text-slate-500 cursor-not-allowed">
                         </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">审核组长</label>
-                        <input type="text" class="form-input" value="武荣刚" disabled>
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-slate-700 mb-1">审核目的</label>
+                        <textarea rows="2" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none">收集客户管理体系范围内必要信息，评价客户基本情况和为管理体系策划、准备的情况，确定第二阶段审核的可行性和重点。</textarea>
                     </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">组员</label>
-                        <input type="text" class="form-input" value="王洪伟、李明" disabled>
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-slate-700 mb-1">审核准则</label>
+                        <div class="checkbox-group mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked class="rounded text-blue-600"> 管理体系标准（规范性要求）
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked class="rounded text-blue-600"> 客户管理体系文件
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" checked class="rounded text-blue-600"> 适用法律法规
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" class="rounded text-blue-600"> 客户特殊要求
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" class="rounded text-blue-600"> 其他
+                            </label>
+                        </div>
+                        <textarea rows="2" placeholder="具体说明其他审核准则..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">一阶段审核的方式</label>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="auditType" value="onsite" checked class="text-blue-600" onchange="toggleAuditDate('onsite')"> 现场审核
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="auditType" value="offsite" class="text-blue-600" onchange="toggleAuditDate('offsite')"> 非现场审核
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">审核日期区间</label>
+                            <div class="input-group">
+                                <input type="date" id="auditStartDate" value="2024-04-15" class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                                <span class="input-group-addon">至</span>
+                                <input type="date" id="auditEndDate" value="2024-04-18" class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">审核组长</label>
+                            <input type="text" value="武荣刚" disabled class="w-full px-3 py-2 text-sm bg-slate-100 border border-slate-300 rounded-lg text-slate-500 cursor-not-allowed">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">组员</label>
+                            <input type="text" value="王洪伟、李明" disabled class="w-full px-3 py-2 text-sm bg-slate-100 border border-slate-300 rounded-lg text-slate-500 cursor-not-allowed">
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- 2. 评价内容填报 -->
-            <div class="content-card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-clipboard-check text-orange-500"></i>
-                        评价内容填报
+            <div id="section-evaluation" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</div>
+                        <h3 class="font-semibold text-slate-900">评价内容填报</h3>
                     </div>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
                 </div>
-                <div class="p-4">
+                <div class="p-6 transition-all duration-300" style="max-height: 4000px; overflow: visible;">
                     <!-- 管理体系运行时间 -->
                     <div class="info-row">
                         <div class="info-label">管理体系运行超过3个月</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px;">
+                            <div class="radio-group">
                                 <label class="radio-item">
-                                    <input type="radio" name="systemRun3M" value="yes" checked onchange="toggleSystemRunDate(true)"> 符合
+                                    <input type="radio" name="systemRun3M" value="yes" checked class="text-blue-600" onchange="toggleSystemRunDate(true)"> 符合
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="systemRun3M" value="no" onchange="toggleSystemRunDate(false)"> 不符合
+                                    <input type="radio" name="systemRun3M" value="no" class="text-blue-600" onchange="toggleSystemRunDate(false)"> 不符合
                                 </label>
                             </div>
-                            <div id="systemRunDate" style="margin-top: 8px;">
-                                <span style="font-size: 12px; color: #8c8c8c; margin-right: 8px;">体系开始运行时间：</span>
-                                <input type="date" class="form-input" style="width: 150px; display: inline-block;" value="2024-01-01">
+                            <div id="systemRunDate" class="mt-2 flex items-center gap-2">
+                                <span class="text-xs text-slate-500">体系开始运行时间：</span>
+                                <input type="date" value="2024-01-01" class="w-40 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
                             </div>
                         </div>
                     </div>
@@ -1081,295 +1040,295 @@
                     <div class="info-row">
                         <div class="info-label form-label-required">管理体系文件化信息与认证标准的符合性及与实际运作情况的一致性</div>
                         <div class="info-value">
-                            <div style="margin-bottom: 8px;">
-                                <span style="font-size: 12px; color: #8c8c8c;">对客户</span>
-                                <input type="text" class="form-input" style="width: 200px; display: inline-block; margin: 0 4px;" placeholder="客户名称" maxlength="100">
-                                <span style="font-size: 12px; color: #8c8c8c;">文件（包括版本号或发布日期）进行了评审</span>
+                            <div class="mb-2 flex items-center gap-2">
+                                <span class="text-xs text-slate-500">对客户</span>
+                                <input type="text" placeholder="客户名称" maxlength="100" class="w-48 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                                <span class="text-xs text-slate-500">文件（包括版本号或发布日期）进行了评审</span>
                             </div>
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="docConformity" value="conform" checked onchange="toggleDocConformity(true)"> 符合
+                                    <input type="radio" name="docConformity" value="conform" checked class="text-blue-600" onchange="toggleDocConformity(true)"> 符合
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="docConformity" value="nonconform" onchange="toggleDocConformity(false)"> 不符合
+                                    <input type="radio" name="docConformity" value="nonconform" class="text-blue-600" onchange="toggleDocConformity(false)"> 不符合
                                 </label>
                             </div>
-                            <div id="docNonconformDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            <div id="docNonconformDesc" class="hidden conditional-field active">
+                                <textarea rows="2" placeholder="请填写不符合说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- QMS特有：不适用条款合理性 -->
                     <div class="info-row qms-field">
-                        <div class="info-label form-label-required">组织确定的标准不适用条款或要求的合理性（QMS）</div>
+                        <div class="info-label">组织确定的标准不适用条款或要求的合理性（QMS）</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="qmsExclusion" value="reasonable" checked onchange="toggleQmsExclusion('reasonable')"> 合理，不适用的具体条款或要求
+                                    <input type="radio" name="qmsExclusion" value="reasonable" checked class="text-blue-600" onchange="toggleQmsExclusion('reasonable')"> 合理，不适用的具体条款或要求
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="qmsExclusion" value="unreasonable" onchange="toggleQmsExclusion('unreasonable')"> 不合理
+                                    <input type="radio" name="qmsExclusion" value="unreasonable" class="text-blue-600" onchange="toggleQmsExclusion('unreasonable')"> 不合理
                                 </label>
                             </div>
-                            <div id="qmsExclusionReason">
-                                <textarea class="form-input" rows="2" placeholder="请填写理由..."></textarea>
+                            <div id="qmsExclusionReason" class="conditional-field active">
+                                <textarea rows="2" placeholder="请填写理由..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
-                            <div id="qmsExclusionUnreasonable" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写说明..."></textarea>
+                            <div id="qmsExclusionUnreasonable" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- ISMS特有 -->
                     <div class="info-row isms-field hidden">
-                        <div class="info-label form-label-required">ISMS范围与边界的描述、适用性声明的版本及发布日期（ISMS）</div>
+                        <div class="info-label">ISMS范围与边界的描述、适用性声明的版本及发布日期（ISMS）</div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                            <textarea rows="2" placeholder="请填写..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                         </div>
                     </div>
 
                     <!-- ITSMS特有 -->
                     <div class="info-row itsms-field hidden">
-                        <div class="info-label form-label-required">ITSMS范围的描述、服务目录\SLA\相关方接口\服务点概况（ITSMS）</div>
+                        <div class="info-label">ITSMS范围的描述、服务目录\SLA\相关方接口\服务点概况（ITSMS）</div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                            <textarea rows="2" placeholder="请填写..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                         </div>
                     </div>
 
                     <!-- 方针和目标适宜性 -->
                     <div class="info-row">
-                        <div class="info-label form-label-required">方针和目标的适宜性以及对管理体系关键绩效的识别情况</div>
+                        <div class="info-label">方针和目标的适宜性以及对管理体系关键绩效的识别情况</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="policySuitability" value="conform" checked onchange="togglePolicySuitability(true)"> 符合
+                                    <input type="radio" name="policySuitability" value="conform" checked class="text-blue-600" onchange="togglePolicySuitability(true)"> 符合
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="policySuitability" value="nonconform" onchange="togglePolicySuitability(false)"> 不符合
+                                    <input type="radio" name="policySuitability" value="nonconform" class="text-blue-600" onchange="togglePolicySuitability(false)"> 不符合
                                 </label>
                             </div>
-                            <div id="policyNonconformDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            <div id="policyNonconformDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写不符合说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- 法律法规识别 -->
                     <div class="info-row">
-                        <div class="info-label form-label-required">适用法律法规和其他要求的识别</div>
+                        <div class="info-label">适用法律法规和其他要求的识别</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="legalIdentify" value="conform" checked onchange="toggleLegalIdentify(true)"> 符合
+                                    <input type="radio" name="legalIdentify" value="conform" checked class="text-blue-600" onchange="toggleLegalIdentify(true)"> 符合
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="legalIdentify" value="nonconform" onchange="toggleLegalIdentify(false)"> 不符合
+                                    <input type="radio" name="legalIdentify" value="nonconform" class="text-blue-600" onchange="toggleLegalIdentify(false)"> 不符合
                                 </label>
                             </div>
-                            <div id="legalNonconformDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            <div id="legalNonconformDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写不符合说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- 违反法律法规情况 -->
                     <div class="info-row">
-                        <div class="info-label form-label-required">是否存在违反法律法规和强制性标准的情况</div>
+                        <div class="info-label">是否存在违反法律法规和强制性标准的情况</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="legalViolation" value="none" checked onchange="toggleLegalViolation(false)"> 未发现
+                                    <input type="radio" name="legalViolation" value="none" checked class="text-blue-600" onchange="toggleLegalViolation(false)"> 未发现
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="legalViolation" value="exist" onchange="toggleLegalViolation(true)"> 存在
+                                    <input type="radio" name="legalViolation" value="exist" class="text-blue-600" onchange="toggleLegalViolation(true)"> 存在
                                 </label>
                             </div>
-                            <div id="legalViolationDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写具体说明..."></textarea>
+                            <div id="legalViolationDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写具体说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- 过程确定的充分性 -->
                     <div class="info-row">
-                        <div class="info-label form-label-required">管理体系过程（包括外部提供服务和过程）确定的充分性</div>
+                        <div class="info-label">管理体系过程（包括外部提供服务和过程）确定的充分性</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="processAdequacy" value="conform" checked onchange="toggleProcessAdequacy(true)"> 符合
+                                    <input type="radio" name="processAdequacy" value="conform" checked class="text-blue-600" onchange="toggleProcessAdequacy(true)"> 符合
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="processAdequacy" value="nonconform" onchange="toggleProcessAdequacy(false)"> 不符合
+                                    <input type="radio" name="processAdequacy" value="nonconform" class="text-blue-600" onchange="toggleProcessAdequacy(false)"> 不符合
                                 </label>
                             </div>
-                            <div id="processNonconformDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            <div id="processNonconformDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写不符合说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- E/S/F/H特有：风险因素识别 -->
                     <div class="info-row esfh-field">
-                        <div class="info-label form-label-required">认证范围内风险因素（如环境因素、危险源、食品安全危害）识别的全面性和重要因素/风险确定的合理性（E/S/F/H）</div>
+                        <div class="info-label">认证范围内风险因素识别的全面性和重要因素/风险确定的合理性（E/S/F/H）</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="riskIdentify" value="conform" checked onchange="toggleRiskIdentify(true)"> 符合
+                                    <input type="radio" name="riskIdentify" value="conform" checked class="text-blue-600" onchange="toggleRiskIdentify(true)"> 符合
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="riskIdentify" value="nonconform" onchange="toggleRiskIdentify(false)"> 不符合
+                                    <input type="radio" name="riskIdentify" value="nonconform" class="text-blue-600" onchange="toggleRiskIdentify(false)"> 不符合
                                 </label>
                             </div>
-                            <div id="riskNonconformDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            <div id="riskNonconformDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写不符合说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- E/S/F/H特有：风险控制策划 -->
                     <div class="info-row esfh-field">
-                        <div class="info-label form-label-required">针对风险因素控制策划（方案、计划、过程、运行控制等）的充分性和适宜性（E/S/F/H）<br><span style="font-size: 11px; color: #8c8c8c;">注:F/H包含危害分析/前提方案/HACCP计划的评价</span></div>
+                        <div class="info-label">针对风险因素控制策划的充分性和适宜性（E/S/F/H）<br><span class="text-xs text-slate-500">注:F/H包含危害分析/前提方案/HACCP计划的评价</span></div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="riskControl" value="conform" checked onchange="toggleRiskControl(true)"> 符合
+                                    <input type="radio" name="riskControl" value="conform" checked class="text-blue-600" onchange="toggleRiskControl(true)"> 符合
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="riskControl" value="nonconform" onchange="toggleRiskControl(false)"> 不符合
+                                    <input type="radio" name="riskControl" value="nonconform" class="text-blue-600" onchange="toggleRiskControl(false)"> 不符合
                                 </label>
                             </div>
-                            <div id="riskControlNonconformDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            <div id="riskControlNonconformDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写不符合说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- F/H特有：确认活动实施 -->
                     <div class="info-row fh-field hidden">
-                        <div class="info-label form-label-required">确认活动实施的有效性和验证策划的充分性、合理性（F/H）</div>
+                        <div class="info-label">确认活动实施的有效性和验证策划的充分性、合理性（F/H）</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="confirmActivity" value="conform" checked onchange="toggleConfirmActivity(true)"> 符合
+                                    <input type="radio" name="confirmActivity" value="conform" checked class="text-blue-600" onchange="toggleConfirmActivity(true)"> 符合
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="confirmActivity" value="nonconform" onchange="toggleConfirmActivity(false)"> 不符合
+                                    <input type="radio" name="confirmActivity" value="nonconform" class="text-blue-600" onchange="toggleConfirmActivity(false)"> 不符合
                                 </label>
                             </div>
-                            <div id="confirmNonconformDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            <div id="confirmNonconformDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写不符合说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- Q/E/S特有：风险和机遇 -->
                     <div class="info-row qes-field">
-                        <div class="info-label form-label-required">"需要应对的风险和机遇"及策划的措施（Q/E/S）</div>
+                        <div class="info-label">"需要应对的风险和机遇"及策划的措施（Q/E/S）</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="riskOpportunity" value="conform" checked onchange="toggleRiskOpportunity(true)"> 符合
+                                    <input type="radio" name="riskOpportunity" value="conform" checked class="text-blue-600" onchange="toggleRiskOpportunity(true)"> 符合
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="riskOpportunity" value="nonconform" onchange="toggleRiskOpportunity(false)"> 不符合
+                                    <input type="radio" name="riskOpportunity" value="nonconform" class="text-blue-600" onchange="toggleRiskOpportunity(false)"> 不符合
                                 </label>
                             </div>
-                            <div id="riskOppNonconformDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            <div id="riskOppNonconformDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写不符合说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- E/S特有：应急准备 -->
                     <div class="info-row es-field">
-                        <div class="info-label form-label-required">潜在紧急情况的识别及应急准备和响应措施的策划情况（E/S）</div>
+                        <div class="info-label">潜在紧急情况的识别及应急准备和响应措施的策划情况（E/S）</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="emergencyPrep" value="conform" checked onchange="toggleEmergencyPrep(true)"> 符合
+                                    <input type="radio" name="emergencyPrep" value="conform" checked class="text-blue-600" onchange="toggleEmergencyPrep(true)"> 符合
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="emergencyPrep" value="nonconform" onchange="toggleEmergencyPrep(false)"> 不符合
+                                    <input type="radio" name="emergencyPrep" value="nonconform" class="text-blue-600" onchange="toggleEmergencyPrep(false)"> 不符合
                                 </label>
                             </div>
-                            <div id="emergencyNonconformDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            <div id="emergencyNonconformDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写不符合说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- IS特有：信息安全风险评估 -->
                     <div class="info-row is-field hidden">
-                        <div class="info-label form-label-required">信息安全风险评估方法的适宜性，风险评价的充分性，风险控制措施及措施删减的适宜性（IS）</div>
+                        <div class="info-label">信息安全风险评估方法的适宜性，风险评价的充分性，风险控制措施及措施删减的适宜性（IS）</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="infoSecurity" value="conform" checked onchange="toggleInfoSecurity(true)"> 符合
+                                    <input type="radio" name="infoSecurity" value="conform" checked class="text-blue-600" onchange="toggleInfoSecurity(true)"> 符合
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="infoSecurity" value="nonconform" onchange="toggleInfoSecurity(false)"> 不符合
+                                    <input type="radio" name="infoSecurity" value="nonconform" class="text-blue-600" onchange="toggleInfoSecurity(false)"> 不符合
                                 </label>
                             </div>
-                            <div id="infoSecNonconformDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写不符合说明..."></textarea>
+                            <div id="infoSecNonconformDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写不符合说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- 内审和管评 -->
                     <div class="info-row">
-                        <div class="info-label form-label-required">是否实施了内部审核和管理评审</div>
+                        <div class="info-label">是否实施了内部审核和管理评审</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="internalAudit" value="yes" checked onchange="toggleInternalAudit(true)"> 是
+                                    <input type="radio" name="internalAudit" value="yes" checked class="text-blue-600" onchange="toggleInternalAudit(true)"> 是
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="internalAudit" value="no" onchange="toggleInternalAudit(false)"> 否
+                                    <input type="radio" name="internalAudit" value="no" class="text-blue-600" onchange="toggleInternalAudit(false)"> 否
                                 </label>
                             </div>
-                            <div id="internalAuditDate" style="margin-top: 8px;">
-                                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                                    <div>
-                                        <span style="font-size: 12px; color: #8c8c8c; margin-right: 4px;">内审时间：</span>
-                                        <input type="date" class="form-input" style="width: 130px; display: inline-block;">
+                            <div id="internalAuditDate" class="conditional-field active mt-2">
+                                <div class="flex gap-4 flex-wrap">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs text-slate-500">内审时间：</span>
+                                        <input type="date" class="w-36 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
                                     </div>
-                                    <div>
-                                        <span style="font-size: 12px; color: #8c8c8c; margin-right: 4px;">管评时间：</span>
-                                        <input type="date" class="form-input" style="width: 130px; display: inline-block;">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs text-slate-500">管评时间：</span>
+                                        <input type="date" class="w-36 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
                                     </div>
                                 </div>
                             </div>
-                            <div id="internalAuditDesc" class="hidden" style="margin-top: 8px;">
-                                <textarea class="form-input" rows="2" placeholder="请填写说明..."></textarea>
+                            <div id="internalAuditDesc" class="hidden conditional-field mt-2">
+                                <textarea rows="2" placeholder="请填写说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- 事故投诉 -->
                     <div class="info-row">
-                        <div class="info-label form-label-required">一年内是否发生事故、职业病、投诉、行政监管处罚及处理和回应</div>
+                        <div class="info-label">一年内是否发生事故、职业病、投诉、行政监管处罚及处理和回应</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="incident" value="none" checked onchange="toggleIncident(false)"> 无
+                                    <input type="radio" name="incident" value="none" checked class="text-blue-600" onchange="toggleIncident(false)"> 无
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="incident" value="exist" onchange="toggleIncident(true)"> 有
+                                    <input type="radio" name="incident" value="exist" class="text-blue-600" onchange="toggleIncident(true)"> 有
                                 </label>
                             </div>
-                            <div id="incidentDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写具体说明..."></textarea>
+                            <div id="incidentDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写具体说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
 
                     <!-- 乳GMP特有：生鲜乳匹配 -->
                     <div class="info-row dairygmp-field hidden">
-                        <div class="info-label form-label-required">生鲜乳日供应与企业日加工能力的匹配程度（乳GMP）</div>
+                        <div class="info-label">生鲜乳日供应与企业日加工能力的匹配程度（乳GMP）</div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                            <textarea rows="2" placeholder="请填写..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                         </div>
                     </div>
 
@@ -1377,63 +1336,62 @@
                     <div class="info-row">
                         <div class="info-label">其他</div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2" placeholder="非必填项..."></textarea>
+                            <textarea rows="2" placeholder="非必填项..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- 3. 经确认的组织建立的管理体系的相关信息 -->
-            <div class="content-card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-building text-green-500"></i>
-                        经确认的组织建立的管理体系的相关信息
+            <div id="section-info" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">3</div>
+                        <h3 class="font-semibold text-slate-900">经确认的组织建立的管理体系的相关信息</h3>
                     </div>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
                 </div>
-                <div class="p-4">
+                <div class="p-6 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
                     <div class="info-row">
-                        <div class="info-label form-label-required">管理体系覆盖的产品/服务、活动的内容<br><span style="font-size: 11px; color: #8c8c8c;">（即认证范围，如各管理体系不同，请分别描述）</span></div>
+                        <div class="info-label">管理体系覆盖的产品/服务、活动的内容<br><span class="text-xs text-slate-500">（即认证范围，如各管理体系不同，请分别描述）</span></div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="3">QMS：城市轨道交通运营管理服务&#10;EMS：城市轨道交通运营管理服务及相关管理活动&#10;OHSMS：城市轨道交通运营管理服务及相关管理活动</textarea>
+                            <textarea rows="3" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none">QMS：城市轨道交通运营管理服务&#10;EMS：城市轨道交通运营管理服务及相关管理活动&#10;OHSMS：城市轨道交通运营管理服务及相关管理活动</textarea>
                         </div>
                     </div>
                     
                     <div class="info-row">
-                        <div class="info-label form-label-required">管理体系范围内的场所（地址）</div>
+                        <div class="info-label">管理体系范围内的场所（地址）</div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2">中心职能：北京市西城区西直门外大街2号&#10;多场所：北京市各运营线路站点</textarea>
+                            <textarea rows="2" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none">中心职能：北京市西城区西直门外大街2号&#10;多场所：北京市各运营线路站点</textarea>
                         </div>
                     </div>
                     
                     <div class="info-row">
                         <div class="info-label">临时服务现场信息</div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2" placeholder="如存在临时场所，请填写..."></textarea>
+                            <textarea rows="2" placeholder="如存在临时场所，请填写..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                         </div>
                     </div>
                     
                     <div class="info-row">
                         <div class="info-label">外部提供的职能或过程（外包）</div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2" placeholder="自动带入认证申请单中的信息，可修改..."></textarea>
+                            <textarea rows="2" placeholder="自动带入认证申请单中的信息，可修改..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                         </div>
                     </div>
                     
                     <div class="info-row s-field hidden">
-                        <div class="info-label form-label-required">组织人员在其他组织场所提供的服务（S）</div>
+                        <div class="info-label">组织人员在其他组织场所提供的服务（S）</div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                            <textarea rows="2" placeholder="请填写..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                         </div>
                     </div>
                     
                     <div class="info-row">
-                        <div class="info-label form-label-required">管理体系范围内的有效人数</div>
+                        <div class="info-label">管理体系范围内的有效人数</div>
                         <div class="info-value">
-                            <div style="margin-bottom: 8px; font-size: 12px; color: #8c8c8c;">
-                                如与《认证申请评审表》中的不同，请列明重新计算的方法
-                            </div>
-                            <textarea class="form-input" rows="2">QMS：850人&#10;EMS：850人&#10;OHSMS：850人</textarea>
+                            <p class="text-xs text-slate-500 mb-2">如与《认证申请评审表》中的不同，请列明重新计算的方法</p>
+                            <textarea rows="2" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none">QMS：850人&#10;EMS：850人&#10;OHSMS：850人</textarea>
                         </div>
                     </div>
                     
@@ -1441,9 +1399,9 @@
                         <div class="info-label">整合管理体系（IMS）的整合程度</div>
                         <div class="info-value">
                             <div class="input-group">
-                                <input type="number" class="form-input" style="width: 100px;" placeholder="百分比" min="0" max="100">
+                                <input type="number" placeholder="百分比" min="0" max="100" class="w-24 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all text-center">
                                 <span class="input-group-addon">%</span>
-                                <span style="font-size: 12px; color: #8c8c8c; margin-left: 8px;">（需列明整合程度百分比）</span>
+                                <span class="text-xs text-slate-500 ml-2">（需列明整合程度百分比）</span>
                             </div>
                         </div>
                     </div>
@@ -1451,27 +1409,28 @@
             </div>
 
             <!-- 4. 待调整内容 -->
-            <div class="content-card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-sliders-h text-purple-500"></i>
-                        待调整内容
+            <div id="section-adjust" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">4</div>
+                        <h3 class="font-semibold text-slate-900">待调整内容</h3>
                     </div>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
                 </div>
-                <div class="p-4">
+                <div class="p-6 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
                     <div class="info-row">
                         <div class="info-label">审核方案是否需要调整</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="schemeAdjust" value="no" checked onchange="toggleSchemeAdjust(false)"> 不需要调整
+                                    <input type="radio" name="schemeAdjust" value="no" checked class="text-blue-600" onchange="toggleSchemeAdjust(false)"> 不需要调整
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="schemeAdjust" value="yes" onchange="toggleSchemeAdjust(true)"> 需要调整，调整原因及如何调整
+                                    <input type="radio" name="schemeAdjust" value="yes" class="text-blue-600" onchange="toggleSchemeAdjust(true)"> 需要调整，调整原因及如何调整
                                 </label>
                             </div>
-                            <div id="schemeAdjustDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写调整原因及如何调整..."></textarea>
+                            <div id="schemeAdjustDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写调整原因及如何调整..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
@@ -1479,16 +1438,16 @@
                     <div class="info-row">
                         <div class="info-label">专业判定是否需要调整</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="professionalAdjust" value="no" checked onchange="toggleProfessionalAdjust(false)"> 不需要调整
+                                    <input type="radio" name="professionalAdjust" value="no" checked class="text-blue-600" onchange="toggleProfessionalAdjust(false)"> 不需要调整
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="professionalAdjust" value="yes" onchange="toggleProfessionalAdjust(true)"> 需要调整，调整原因及如何调整
+                                    <input type="radio" name="professionalAdjust" value="yes" class="text-blue-600" onchange="toggleProfessionalAdjust(true)"> 需要调整，调整原因及如何调整
                                 </label>
                             </div>
-                            <div id="professionalAdjustDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写调整原因及如何调整..."></textarea>
+                            <div id="professionalAdjustDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写调整原因及如何调整..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
@@ -1496,16 +1455,16 @@
                     <div class="info-row">
                         <div class="info-label">二阶段审核人天数是否需相应调整</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="mandayAdjust" value="no" checked onchange="toggleMandayAdjust(false)"> 不需要调整
+                                    <input type="radio" name="mandayAdjust" value="no" checked class="text-blue-600" onchange="toggleMandayAdjust(false)"> 不需要调整
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="mandayAdjust" value="yes" onchange="toggleMandayAdjust(true)"> 需要调整，调整原因及如何调整
+                                    <input type="radio" name="mandayAdjust" value="yes" class="text-blue-600" onchange="toggleMandayAdjust(true)"> 需要调整，调整原因及如何调整
                                 </label>
                             </div>
-                            <div id="mandayAdjustDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="请填写调整原因及如何调整..."></textarea>
+                            <div id="mandayAdjustDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="请填写调整原因及如何调整..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
@@ -1513,103 +1472,105 @@
             </div>
 
             <!-- 5. 其他内容 -->
-            <div class="content-card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-ellipsis-h text-gray-500"></i>
-                        其他内容
+            <div id="section-other" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">5</div>
+                        <h3 class="font-semibold text-slate-900">其他内容</h3>
                     </div>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
                 </div>
-                <div class="p-4">
+                <div class="p-6 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
                     <div class="info-row es-field">
-                        <div class="info-label form-label-required">组织应执行的污染物排放标准（E）和（或）排放总量或作业环境危害因素标准（S）</div>
+                        <div class="info-label">组织应执行的污染物排放标准（E）和（或）排放总量或作业环境危害因素标准（S）</div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                            <textarea rows="2" placeholder="请填写..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                         </div>
                     </div>
                     
                     <div class="info-row">
-                        <div class="info-label form-label-required">经确认的生产（或服务）班次和时间为</div>
+                        <div class="info-label">经确认的生产（或服务）班次和时间为</div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2" placeholder="自动带入认证申请表中的班次和时间信息，可修改...">三班倒：早班 06:00-14:00，中班 14:00-22:00，晚班 22:00-06:00</textarea>
+                            <textarea rows="2" placeholder="自动带入认证申请表中的班次和时间信息，可修改..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none">三班倒：早班 06:00-14:00，中班 14:00-22:00，晚班 22:00-06:00</textarea>
                         </div>
                     </div>
                     
                     <div class="info-row">
-                        <div class="info-label form-label-required">二阶段是否拟对所有班次进行审核</div>
+                        <div class="info-label">二阶段是否拟对所有班次进行审核</div>
                         <div class="info-value">
-                            <div class="radio-group" style="flex-direction: row; gap: 20px; margin-bottom: 8px;">
+                            <div class="radio-group mb-2">
                                 <label class="radio-item">
-                                    <input type="radio" name="allShiftAudit" value="yes" checked onchange="toggleAllShiftAudit(true)"> 是
+                                    <input type="radio" name="allShiftAudit" value="yes" checked class="text-blue-600" onchange="toggleAllShiftAudit(true)"> 是
                                 </label>
                                 <label class="radio-item">
-                                    <input type="radio" name="allShiftAudit" value="no" onchange="toggleAllShiftAudit(false)"> 否
+                                    <input type="radio" name="allShiftAudit" value="no" class="text-blue-600" onchange="toggleAllShiftAudit(false)"> 否
                                 </label>
                             </div>
-                            <div id="allShiftAuditDesc" class="hidden">
-                                <textarea class="form-input" rows="2" placeholder="选择否情况下需要填写说明..."></textarea>
+                            <div id="allShiftAuditDesc" class="hidden conditional-field">
+                                <textarea rows="2" placeholder="选择否情况下需要填写说明..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                             </div>
                         </div>
                     </div>
                     
                     <div class="info-row qms-field">
-                        <div class="info-label form-label-required">经识别的对质量目标的实现具有重要影响的关键点为(QMS适用）</div>
+                        <div class="info-label">经识别的对质量目标的实现具有重要影响的关键点为(QMS适用）</div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2" placeholder="请填写..."></textarea>
+                            <textarea rows="2" placeholder="请填写..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                         </div>
                     </div>
                     
                     <div class="info-row">
-                        <div class="info-label form-label-required">确定的二阶段审核的重要审核点如下<br><span style="font-size: 11px; color: #8c8c8c;">（包括对场所审核安排的建议）</span></div>
+                        <div class="info-label">确定的二阶段审核的重要审核点如下<br><span class="text-xs text-slate-500">（包括对场所审核安排的建议）</span></div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="3" placeholder="请填写..."></textarea>
+                            <textarea rows="3" placeholder="请填写..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                         </div>
                     </div>
                     
                     <div class="info-row">
-                        <div class="info-label">对二阶段审核审核组组成的建议<br><span style="font-size: 11px; color: #8c8c8c;">（尤其是专业人员的配备）（适用时）</span></div>
+                        <div class="info-label">对二阶段审核审核组组成的建议<br><span class="text-xs text-slate-500">（尤其是专业人员的配备）（适用时）</span></div>
                         <div class="info-value">
-                            <textarea class="form-input" rows="2" placeholder="非必填项..."></textarea>
+                            <textarea rows="2" placeholder="非必填项..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- 6. 审核组对下一阶段审核的建议 -->
-            <div class="content-card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-chart-line text-blue-600"></i>
-                        审核组对下一阶段审核的建议
+            <div id="section-advice" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">6</div>
+                        <h3 class="font-semibold text-slate-900">审核组对下一阶段审核的建议</h3>
                     </div>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
                 </div>
-                <div class="p-4">
+                <div class="p-6 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
                     <div class="audit-advice-option selected" onclick="selectAdvice(0)" id="advice0">
-                        <div class="advice-radio">
-                            <input type="radio" name="auditAdvice" value="proceed" checked onchange="changeAdvice(0)">
-                            <div class="advice-content">
-                                <div class="advice-title">可进入第二阶段审核</div>
-                                <div class="advice-desc">选择该选项提交且客户确认完毕后，自动关联相同审核项目创建二阶段审核任务，任务为待提交状态可保存，但5天后才可提交</div>
+                        <div class="flex items-start gap-3">
+                            <input type="radio" name="auditAdvice" value="proceed" checked class="mt-1 text-blue-600" onchange="changeAdvice(0)">
+                            <div class="flex-1">
+                                <div class="font-semibold text-slate-900 text-sm mb-1">可进入第二阶段审核</div>
+                                <div class="text-xs text-slate-500">选择该选项提交且客户确认完毕后，自动关联相同审核项目创建二阶段审核任务，任务为待提交状态可保存，但5天后才可提交</div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="audit-advice-option" onclick="selectAdvice(1)" id="advice1">
-                        <div class="advice-radio">
-                            <input type="radio" name="auditAdvice" value="conditional" onchange="changeAdvice(1)">
-                            <div class="advice-content">
-                                <div class="advice-title">待《第一阶段审核问题清单》中"需完成整改后方可进入第二阶段审核的问题"得到整改并经审核组确认接受后，可进入第二阶段审核</div>
-                                <div class="advice-desc">清单中的其他问题将在第二阶段审核中继续关注。注：若"需完成整改后方可进入第二阶段审核的问题"在六个月内仍未得到整改并经审核组确认，或在进入第二阶段审核前，客户管理体系出现重大变化而导致所收集的信息失去意义或已做出的审核结论面临风险时，应重新实施第一阶段审核。</div>
+                        <div class="flex items-start gap-3">
+                            <input type="radio" name="auditAdvice" value="conditional" class="mt-1 text-blue-600" onchange="changeAdvice(1)">
+                            <div class="flex-1">
+                                <div class="font-semibold text-slate-900 text-sm mb-1">待《第一阶段审核问题清单》中"需完成整改后方可进入第二阶段审核的问题"得到整改并经审核组确认接受后，可进入第二阶段审核</div>
+                                <div class="text-xs text-slate-500">清单中的其他问题将在第二阶段审核中继续关注。注：若"需完成整改后方可进入第二阶段审核的问题"在六个月内仍未得到整改并经审核组确认，或在进入第二阶段审核前，客户管理体系出现重大变化而导致所收集的信息失去意义或已做出的审核结论面临风险时，应重新实施第一阶段审核。</div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="audit-advice-option" onclick="selectAdvice(2)" id="advice2">
-                        <div class="advice-radio">
-                            <input type="radio" name="auditAdvice" value="reject" onchange="changeAdvice(2)">
-                            <div class="advice-content">
-                                <div class="advice-title">尚不具备进入第二阶段审核的条件</div>
-                                <div class="advice-desc">若继续申请认证，应在体系改进后重新实施第一阶段审核。选择该选项提交且客户确认完毕后，流程结束。</div>
+                        <div class="flex items-start gap-3">
+                            <input type="radio" name="auditAdvice" value="reject" class="mt-1 text-blue-600" onchange="changeAdvice(2)">
+                            <div class="flex-1">
+                                <div class="font-semibold text-slate-900 text-sm mb-1">尚不具备进入第二阶段审核的条件</div>
+                                <div class="text-xs text-slate-500">若继续申请认证，应在体系改进后重新实施第一阶段审核。选择该选项提交且客户确认完毕后，流程结束。</div>
                             </div>
                         </div>
                     </div>
@@ -1617,26 +1578,25 @@
             </div>
 
             <!-- 7. 第一阶段审核问题清单（默认隐藏，选择第二个建议选项时显示） -->
-            <div class="content-card hidden" id="problemListCard">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-list-check text-red-500"></i>
-                        第一阶段审核问题清单
+            <div class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hidden" id="problemListCard">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs font-bold">7</div>
+                        <h3 class="font-semibold text-slate-900">第一阶段审核问题清单</h3>
                     </div>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
                 </div>
-                <div class="p-4">
+                <div class="p-6 transition-all duration-300" style="max-height: 3000px; overflow: visible;">
                     <!-- 需完成整改后方可进入第二阶段审核的问题 -->
-                    <div style="margin-bottom: 24px;">
-                        <div style="font-size: 14px; font-weight: 600; color: #262626; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-4 text-sm font-semibold text-slate-900">
                             <i class="fas fa-exclamation-triangle text-red-500"></i>
                             需完成整改后方可进入第二阶段审核的问题
                         </div>
                         
-                        <div id="majorProblemList">
-                            <!-- 动态生成 -->
-                        </div>
+                        <div id="majorProblemList" class="space-y-3"></div>
                         
-                        <button class="btn btn-primary btn-sm" onclick="addMajorProblem()">
+                        <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-md shadow-blue-200 transition-all active:scale-95 flex items-center gap-2" onclick="addMajorProblem()">
                             <i class="fas fa-plus text-xs"></i>
                             新增行
                         </button>
@@ -1644,16 +1604,14 @@
                     
                     <!-- 其他应关注的问题 -->
                     <div>
-                        <div style="font-size: 14px; font-weight: 600; color: #262626; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <div class="flex items-center gap-2 mb-4 text-sm font-semibold text-slate-900">
                             <i class="fas fa-info-circle text-blue-500"></i>
                             其他应关注的问题
                         </div>
                         
-                        <div id="minorProblemList">
-                            <!-- 动态生成 -->
-                        </div>
+                        <div id="minorProblemList" class="space-y-3"></div>
                         
-                        <button class="btn btn-primary btn-sm" onclick="addMinorProblem()">
+                        <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-md shadow-blue-200 transition-all active:scale-95 flex items-center gap-2" onclick="addMinorProblem()">
                             <i class="fas fa-plus text-xs"></i>
                             新增行
                         </button>
@@ -1662,56 +1620,76 @@
             </div>
 
             <!-- 8. 上传附件 -->
-            <div class="content-card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-paperclip text-gray-600"></i>
-                        上传附件
+            <div id="section-attachment" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">8</div>
+                        <h3 class="font-semibold text-slate-900">上传附件</h3>
                     </div>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
                 </div>
-                <div class="p-4">
-                    <div style="border: 2px dashed #d9d9d9; border-radius: 4px; padding: 24px; text-align: center; margin-bottom: 16px;">
-                        <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: #1890ff; margin-bottom: 8px;"></i>
-                        <div style="color: #595959; font-size: 13px; margin-bottom: 8px;">点击或拖拽文件到此区域上传</div>
-                        <div style="color: #8c8c8c; font-size: 12px;">支持 PDF 格式，单个文件不超过 20MB</div>
-                        <input type="file" accept=".pdf" style="display: none;" id="fileInput" onchange="handleFileSelect(event)">
-                        <button class="btn btn-default btn-sm" style="margin-top: 8px;" onclick="document.getElementById('fileInput').click()">
-                            选择文件
-                        </button>
-                    </div>
-                    
-                    <div id="fileList">
-                        <!-- 已上传文件列表 -->
+                <div class="p-6 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
+                    <div class="file-upload-card empty" id="attachmentUploadCard">
+                        <div class="file-upload-header">
+                            <div class="file-upload-info">
+                                <div class="file-upload-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="file-upload-title">上传附件</div>
+                                    <div class="file-upload-meta">
+                                        <span>支持 PDF 格式，单个文件不超过 20MB</span>
+                                        <span id="attachmentCount" class="hidden ml-2 text-emerald-600 font-medium"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="upload-btn" id="attachmentUploadBtn" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>选择文件</span>
+                                </button>
+                                <button class="upload-btn continue hidden" id="attachmentContinueBtn" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-plus"></i>
+                                    <span>继续上传</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="file-tags-container hidden" id="attachmentFileTags"></div>
+                        <input type="file" accept=".pdf" class="hidden-file-input" id="fileInput" onchange="handleFileSelect(event)">
                     </div>
                 </div>
             </div>
 
             <!-- 提交按钮区域 -->
-            <div class="content-card" style="background: transparent; border: none;">
-                <div class="p-4 flex justify-center gap-4">
-                    <button class="btn btn-success btn-lg" onclick="submitReport()">
-                        <i class="fas fa-check text-sm"></i>
-                        提交审核报告
-                    </button>
-                    <button class="btn btn-primary btn-lg" onclick="saveReport()">
-                        <i class="fas fa-save text-sm"></i>
-                        保存
-                    </button>
-                </div>
-            </div>
+            <!-- <div class="flex justify-center gap-4 py-8">
+                <button class="px-6 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium shadow-md shadow-emerald-200 transition-all active:scale-95 flex items-center gap-2" onclick="submitReport()">
+                    <i class="fas fa-check text-sm"></i>
+                    提交审核报告
+                </button>
+                <button class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-md shadow-blue-200 transition-all active:scale-95 flex items-center gap-2" onclick="saveReport()">
+                    <i class="fas fa-save text-sm"></i>
+                    保存
+                </button>
+            </div> -->
 
         </div>
 
-    </main>
+    </div>
 
-    <!-- 核查记录确认/查看弹窗 -->
+    <!-- Toast提示 -->
+    <div id="toast">
+        <i id="toastIcon" class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMessage">操作成功</span>
+    </div>
+
+    <!-- 原有的核查记录弹窗，样式已更新 -->
     <div class="modal-overlay" id="verificationModal">
-        <div class="modal-container" style="max-width: 1600px;">
+        <div class="modal-container">
             <div class="modal-header">
                 <div class="modal-title">
                     <i class="fas fa-clipboard-check text-blue-500 mr-2"></i>
                     <span id="modalTitle">核查记录确认</span> - <span id="modalAuditorName">审核人员</span>
-                    <span id="modalReadOnlyTag" class="ml-2 px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-xs font-medium" style="display: none;">只读模式</span>
+                    <span id="modalReadOnlyTag" class="ml-2 px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-xs font-medium hidden">只读模式</span>
                 </div>
                 <button class="modal-close" onclick="closeVerificationModal()">
                     <i class="fas fa-times"></i>
@@ -1725,41 +1703,35 @@
                         <i class="fas fa-list-ul mr-2"></i>
                         审核活动列表
                     </div>
-                    <div id="sidebarContent">
-                        <!-- 动态生成 -->
-                    </div>
+                    <div id="sidebarContent"></div>
                 </div>
                 
                 <!-- 右侧主内容：核查记录填报 -->
                 <div class="modal-main">
-                    <div id="verificationForms">
-                        <!-- 动态生成表单 -->
-                    </div>
+                    <div id="verificationForms"></div>
                     
                     <!-- 附件上传区域 -->
-                    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e8e8e8;">
+                    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <span class="form-label" style="margin-bottom: 0;">附件资料</span>
-                            <button class="btn btn-default btn-sm" id="uploadBtn" onclick="uploadAttachment()">
+                            <span class="text-xs font-medium text-slate-700">附件资料</span>
+                            <button class="upload-btn" id="uploadBtn" onclick="uploadAttachment()">
                                 <i class="fas fa-upload text-xs"></i>
                                 上传附件
                             </button>
                         </div>
-                        <div class="attachment-list" id="attachmentList">
-                            <!-- 动态生成 -->
-                        </div>
+                        <div class="file-tags-container" id="attachmentList"></div>
                         <input type="file" id="fileInputModal" style="display: none;" accept=".doc,.docx,.pdf,.jpg,.jpeg,.png,.gif" onchange="handleFileSelectModal(event)" multiple>
                     </div>
                 </div>
             </div>
             
             <div class="modal-footer">
-                <span class="text-sm text-gray-500 mr-auto" id="modalHint">
+                <span class="text-xs text-slate-500 mr-auto" id="modalHint">
                     <i class="fas fa-info-circle text-blue-500 mr-1"></i>
                     确认后该核查记录将不可再次修改
                 </span>
-                <button class="btn btn-default" onclick="closeVerificationModal()">取消</button>
-                <button class="btn btn-primary" id="confirmBtn" onclick="confirmVerification()">
+                <button class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-medium text-slate-700 transition-colors" onclick="closeVerificationModal()">取消</button>
+                <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-md shadow-blue-200 transition-all active:scale-95" id="confirmBtn" onclick="confirmVerification()">
                     <i class="fas fa-check text-xs"></i>
                     确认核查记录
                 </button>
@@ -1849,6 +1821,93 @@
         let uploadedFiles = [];
         let currentAdvice = 0;
 
+        // 填写说明数据
+        const helpData = {
+            'section-basic': {
+                title: '基本信息',
+                icon: 'fa-info-circle',
+                description: [
+                    '<strong>客户名称：</strong>自动带入项目信息，不可修改',
+                    '<strong>审核目的：</strong>默认为一阶段审核的标准目的，可根据实际情况微调',
+                    '<strong>审核准则：</strong>包括管理体系标准、客户文件、适用法律法规等',
+                    '<strong>审核方式：</strong>可选择现场审核或非现场审核，影响后续审核日期填写'
+                ],
+                tip: '一阶段审核通常采用现场审核方式，除非客户为远程办公或有特殊约定'
+            },
+            'section-evaluation': {
+                title: '评价内容填报',
+                icon: 'fa-clipboard-check',
+                description: [
+                    '<strong>管理体系运行时间：</strong>必须超过3个月才能进入一阶段审核',
+                    '<strong>文件化信息符合性：</strong>评审客户管理体系文件与标准的符合性',
+                    '<strong>内审和管评：</strong>一阶段审核前必须至少完成一次内审和管评',
+                    '<strong>事故投诉：</strong>一年内的事故、职业病、投诉情况需要详细说明'
+                ],
+                tip: '如选择"不符合"或"存在"，必须填写具体说明，该内容将作为审核发现的重要组成部分'
+            },
+            'section-info': {
+                title: '体系信息',
+                icon: 'fa-building',
+                description: [
+                    '<strong>认证范围：</strong>如各管理体系不同，请分别描述（QMS/EMS/OHSMS等）',
+                    '<strong>场所信息：</strong>包括中心职能和多场所地址',
+                    '<strong>有效人数：</strong>如与申请评审表不同，需说明重新计算方法',
+                    '<strong>整合程度：</strong>多体系认证需填写整合程度百分比（0-100%）'
+                ],
+                tip: '认证范围一经确定，后续二阶段审核不得超出此范围，请仔细核对'
+            },
+            'section-adjust': {
+                title: '待调整内容',
+                icon: 'fa-sliders-h',
+                description: [
+                    '<strong>审核方案：</strong>根据一阶段发现，判断是否需要调整审核方案',
+                    '<strong>专业判定：</strong>如发现有新的专业领域，需调整专业判定',
+                    '<strong>人天数：</strong>根据客户实际情况，可能需要调整二阶段审核人天数'
+                ],
+                tip: '如需调整，必须详细说明调整原因及如何调整，供认证决定人员参考'
+            },
+            'section-other': {
+                title: '其他内容',
+                icon: 'fa-ellipsis-h',
+                description: [
+                    '<strong>班次信息：</strong>二阶段审核需要覆盖所有班次（如选择"是"）',
+                    '<strong>重要审核点：</strong>为二阶段审核提供重点关注建议',
+                    '<strong>审核组组成：</strong>对专业人员配备的建议'
+                ],
+                tip: '如选择对所有班次进行审核"否"，必须说明理由，否则无法通过审核报告确认'
+            },
+            'section-advice': {
+                title: '审核建议',
+                icon: 'fa-chart-line',
+                description: [
+                    '<strong>可进入二阶段：</strong>选择后将自动创建二阶段审核任务',
+                    '<strong>待整改后进入：</strong>需填写问题清单，整改确认后才能进入二阶段',
+                    '<strong>尚不具备条件：</strong>流程结束，如需认证需重新实施一阶段'
+                ],
+                tip: '如选择"待整改后进入"，必须至少添加一个需完成整改的问题到问题清单中'
+            },
+            'section-problem': {
+                title: '问题清单',
+                icon: 'fa-list-check',
+                description: [
+                    '<strong>需整改问题：</strong>必须完成整改并经审核组确认后才能进入二阶段',
+                    '<strong>其他关注问题：</strong>将在二阶段审核中继续关注',
+                    '<strong>整改情况：</strong>客户整改后填写，审核组确认'
+                ],
+                tip: '问题清单中的问题将在二阶段审核时进行验证，确保整改有效'
+            },
+            'section-attachment': {
+                title: '上传附件',
+                icon: 'fa-paperclip',
+                description: [
+                    '<strong>支持格式：</strong>仅支持PDF格式',
+                    '<strong>文件大小：</strong>单个文件不超过20MB',
+                    '<strong>附件类型：</strong>一阶段审核记录、相关证明文件等'
+                ],
+                tip: '建议上传一阶段审核的完整记录，包括首末次会议签到表等'
+            }
+        };
+
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             // 根据认证领域显示/隐藏字段
@@ -1856,6 +1915,10 @@
             // 初始化问题清单
             addMajorProblem();
             addMinorProblem();
+            // 初始化导航
+            initScrollSpy();
+            // 初始化帮助面板
+            initHelpPanel();
         });
 
         // 根据认证领域显示字段
@@ -1866,10 +1929,122 @@
             });
         }
 
+        // 区块折叠展开
+        function toggleSection(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.fa-chevron-down');
+            
+            if (!content) return;
+            
+            const isCollapsed = content.style.maxHeight === '0px';
+            
+            if (isCollapsed) {
+                content.style.maxHeight = '4000px';
+                content.style.overflow = 'visible';
+                content.style.paddingTop = '';
+                content.style.paddingBottom = '';
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.maxHeight = '0px';
+                content.style.overflow = 'hidden';
+                content.style.paddingTop = '0';
+                content.style.paddingBottom = '0';
+                if (icon) icon.style.transform = 'rotate(-90deg)';
+            }
+        }
+
+        // 切换条件字段显示
+        function toggleField(elementId, show) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            if (show) {
+                el.classList.remove('hidden');
+                el.classList.add('active');
+            } else {
+                el.classList.add('hidden');
+                el.classList.remove('active');
+            }
+        }
+
+        // 初始化填写说明面板
+        function initHelpPanel() {
+            const sections = document.querySelectorAll('.form-section');
+            sections.forEach(section => {
+                section.addEventListener('mouseenter', function() {
+                    const sectionId = this.id;
+                    updateHelpContent(sectionId);
+                });
+            });
+        }
+
+        // 更新填写说明内容
+        function updateHelpContent(sectionId) {
+            const data = helpData[sectionId];
+            if (!data) return;
+
+            const defaultText = document.getElementById('defaultHelpText');
+            const sectionContent = document.getElementById('sectionHelpContent');
+            const helpTitle = document.getElementById('helpTitle');
+            const helpDescription = document.getElementById('helpDescription');
+            const helpTipText = document.getElementById('helpTipText');
+            const helpIconTitle = document.getElementById('helpIconTitle');
+
+            defaultText.classList.add('hidden');
+            sectionContent.classList.remove('hidden');
+
+            helpTitle.textContent = data.title;
+            helpIconTitle.innerHTML = `<i class="fas ${data.icon} text-blue-500"></i><span class="font-medium text-slate-900">${data.title}</span>`;
+
+            helpDescription.innerHTML = data.description.map(desc => `<p>${desc}</p>`).join('');
+
+            helpTipText.textContent = data.tip;
+        }
+
+        // 滚动监听
+        function initScrollSpy() {
+            const sections = document.querySelectorAll('.form-section[id]');
+            const navItems = document.querySelectorAll('.nav-item');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        navItems.forEach(item => {
+                            item.classList.remove('active');
+                            if (item.getAttribute('data-section') === id) {
+                                item.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: '-20% 0px -80% 0px', threshold: 0 });
+
+            sections.forEach(section => observer.observe(section));
+        }
+
+        // Toast提示
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const msg = document.getElementById('toastMessage');
+
+            msg.textContent = message;
+            icon.className = type === 'error' ? 'fas fa-exclamation-circle text-red-400' : 
+                            type === 'warning' ? 'fas fa-exclamation-triangle text-yellow-400' : 
+                            type === 'info' ? 'fas fa-info-circle text-blue-400' :
+                            'fas fa-check-circle text-green-400';
+
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
         // 切换节点
         function switchNode(index) {
             if (index !== 2) {
-                alert('当前示例仅展示"审核进行中"节点内容');
+                showToast('当前示例仅展示"审核进行中"节点内容', 'info');
                 return;
             }
         }
@@ -1914,8 +2089,10 @@
             const desc = document.getElementById('docNonconformDesc');
             if (conform) {
                 desc.classList.add('hidden');
+                desc.classList.remove('active');
             } else {
                 desc.classList.remove('hidden');
+                desc.classList.add('active');
             }
         }
 
@@ -1924,71 +2101,65 @@
             const unreasonableDiv = document.getElementById('qmsExclusionUnreasonable');
             if (type === 'reasonable') {
                 reasonDiv.classList.remove('hidden');
+                reasonDiv.classList.add('active');
                 unreasonableDiv.classList.add('hidden');
+                unreasonableDiv.classList.remove('active');
             } else {
                 reasonDiv.classList.add('hidden');
+                reasonDiv.classList.remove('active');
                 unreasonableDiv.classList.remove('hidden');
+                unreasonableDiv.classList.add('active');
             }
         }
 
         function togglePolicySuitability(conform) {
             const desc = document.getElementById('policyNonconformDesc');
-            if (conform) desc.classList.add('hidden');
-            else desc.classList.remove('hidden');
+            toggleField('policyNonconformDesc', !conform);
         }
 
         function toggleLegalIdentify(conform) {
             const desc = document.getElementById('legalNonconformDesc');
-            if (conform) desc.classList.add('hidden');
-            else desc.classList.remove('hidden');
+            toggleField('legalNonconformDesc', !conform);
         }
 
         function toggleLegalViolation(exist) {
             const desc = document.getElementById('legalViolationDesc');
-            if (exist) desc.classList.remove('hidden');
-            else desc.classList.add('hidden');
+            toggleField('legalViolationDesc', exist);
         }
 
         function toggleProcessAdequacy(conform) {
             const desc = document.getElementById('processNonconformDesc');
-            if (conform) desc.classList.add('hidden');
-            else desc.classList.remove('hidden');
+            toggleField('processNonconformDesc', !conform);
         }
 
         function toggleRiskIdentify(conform) {
             const desc = document.getElementById('riskNonconformDesc');
-            if (conform) desc.classList.add('hidden');
-            else desc.classList.remove('hidden');
+            toggleField('riskNonconformDesc', !conform);
         }
 
         function toggleRiskControl(conform) {
             const desc = document.getElementById('riskControlNonconformDesc');
-            if (conform) desc.classList.add('hidden');
-            else desc.classList.remove('hidden');
+            toggleField('riskControlNonconformDesc', !conform);
         }
 
         function toggleConfirmActivity(conform) {
             const desc = document.getElementById('confirmNonconformDesc');
-            if (conform) desc.classList.add('hidden');
-            else desc.classList.remove('hidden');
+            toggleField('confirmNonconformDesc', !conform);
         }
 
         function toggleRiskOpportunity(conform) {
             const desc = document.getElementById('riskOppNonconformDesc');
-            if (conform) desc.classList.add('hidden');
-            else desc.classList.remove('hidden');
+            toggleField('riskOppNonconformDesc', !conform);
         }
 
         function toggleEmergencyPrep(conform) {
             const desc = document.getElementById('emergencyNonconformDesc');
-            if (conform) desc.classList.add('hidden');
-            else desc.classList.remove('hidden');
+            toggleField('emergencyNonconformDesc', !conform);
         }
 
         function toggleInfoSecurity(conform) {
             const desc = document.getElementById('infoSecNonconformDesc');
-            if (conform) desc.classList.add('hidden');
-            else desc.classList.remove('hidden');
+            toggleField('infoSecNonconformDesc', !conform);
         }
 
         function toggleInternalAudit(yes) {
@@ -1996,41 +2167,40 @@
             const descDiv = document.getElementById('internalAuditDesc');
             if (yes) {
                 dateDiv.classList.remove('hidden');
+                dateDiv.classList.add('active');
                 descDiv.classList.add('hidden');
+                descDiv.classList.remove('active');
             } else {
                 dateDiv.classList.add('hidden');
+                dateDiv.classList.remove('active');
                 descDiv.classList.remove('hidden');
+                descDiv.classList.add('active');
             }
         }
 
         function toggleIncident(exist) {
             const desc = document.getElementById('incidentDesc');
-            if (exist) desc.classList.remove('hidden');
-            else desc.classList.add('hidden');
+            toggleField('incidentDesc', exist);
         }
 
         function toggleSchemeAdjust(yes) {
             const desc = document.getElementById('schemeAdjustDesc');
-            if (yes) desc.classList.remove('hidden');
-            else desc.classList.add('hidden');
+            toggleField('schemeAdjustDesc', yes);
         }
 
         function toggleProfessionalAdjust(yes) {
             const desc = document.getElementById('professionalAdjustDesc');
-            if (yes) desc.classList.remove('hidden');
-            else desc.classList.add('hidden');
+            toggleField('professionalAdjustDesc', yes);
         }
 
         function toggleMandayAdjust(yes) {
             const desc = document.getElementById('mandayAdjustDesc');
-            if (yes) desc.classList.remove('hidden');
-            else desc.classList.add('hidden');
+            toggleField('mandayAdjustDesc', yes);
         }
 
         function toggleAllShiftAudit(yes) {
             const desc = document.getElementById('allShiftAuditDesc');
-            if (yes) desc.classList.add('hidden');
-            else desc.classList.remove('hidden');
+            toggleField('allShiftAuditDesc', !yes);
         }
 
         function selectAdvice(index) {
@@ -2056,7 +2226,7 @@
             selectAdvice(index);
         }
 
-        // 修改后的问题清单 - 增加整改情况和跟踪情况字段
+        // 问题清单渲染
         function addMajorProblem() {
             const id = majorProblems.length + 1;
             majorProblems.push({ id: id, problem: '', rectification: '', tracking: '' });
@@ -2074,24 +2244,22 @@
             container.innerHTML = majorProblems.map((p, index) => `
                 <div class="dynamic-list-item">
                     <span class="remove-btn" onclick="removeMajorProblem(${index})"><i class="fas fa-times"></i></span>
-                    <div style="display: grid; grid-template-columns: 60px 1fr; gap: 12px; align-items: start;">
-                        <div>
-                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">序号</div>
-                            <input type="text" class="form-input" value="${p.id}" disabled style="width: 50px;">
+                    <div class="grid grid-cols-12 gap-3">
+                        <div class="col-span-1">
+                            <label class="block text-xs text-slate-500 mb-1">序号</label>
+                            <input type="text" value="${p.id}" disabled class="w-full px-2 py-1.5 text-sm bg-slate-100 border border-slate-300 rounded text-center">
                         </div>
-                        <div>
-                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">需完成整改后方可进入第二阶段审核的问题</div>
-                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.problem}</textarea>
+                        <div class="col-span-11">
+                            <label class="block text-xs text-slate-500 mb-1">需完成整改后方可进入第二阶段审核的问题</label>
+                            <textarea rows="2" placeholder="手动录入" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none">${p.problem}</textarea>
                         </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
-                        <div>
-                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">整改情况</div>
-                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.rectification}</textarea>
+                        <div class="col-span-6">
+                            <label class="block text-xs text-slate-500 mb-1">整改情况</label>
+                            <textarea rows="2" placeholder="手动录入" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none">${p.rectification}</textarea>
                         </div>
-                        <div>
-                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">跟踪情况</div>
-                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.tracking}</textarea>
+                        <div class="col-span-6">
+                            <label class="block text-xs text-slate-500 mb-1">跟踪情况</label>
+                            <textarea rows="2" placeholder="手动录入" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none">${p.tracking}</textarea>
                         </div>
                     </div>
                 </div>
@@ -2115,35 +2283,34 @@
             container.innerHTML = minorProblems.map((p, index) => `
                 <div class="dynamic-list-item">
                     <span class="remove-btn" onclick="removeMinorProblem(${index})"><i class="fas fa-times"></i></span>
-                    <div style="display: grid; grid-template-columns: 60px 1fr; gap: 12px; align-items: start;">
-                        <div>
-                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">序号</div>
-                            <input type="text" class="form-input" value="${p.id}" disabled style="width: 50px;">
+                    <div class="grid grid-cols-12 gap-3">
+                        <div class="col-span-1">
+                            <label class="block text-xs text-slate-500 mb-1">序号</label>
+                            <input type="text" value="${p.id}" disabled class="w-full px-2 py-1.5 text-sm bg-slate-100 border border-slate-300 rounded text-center">
                         </div>
-                        <div>
-                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">其他应关注的问题</div>
-                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.problem}</textarea>
+                        <div class="col-span-11">
+                            <label class="block text-xs text-slate-500 mb-1">其他应关注的问题</label>
+                            <textarea rows="2" placeholder="手动录入" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none">${p.problem}</textarea>
                         </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
-                        <div>
-                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">整改情况</div>
-                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.rectification}</textarea>
+                        <div class="col-span-6">
+                            <label class="block text-xs text-slate-500 mb-1">整改情况</label>
+                            <textarea rows="2" placeholder="手动录入" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none">${p.rectification}</textarea>
                         </div>
-                        <div>
-                            <div style="font-size: 12px; color: #8c8c8c; margin-bottom: 4px;">跟踪情况</div>
-                            <textarea class="form-input" rows="2" placeholder="手动录入">${p.tracking}</textarea>
+                        <div class="col-span-6">
+                            <label class="block text-xs text-slate-500 mb-1">跟踪情况</label>
+                            <textarea rows="2" placeholder="手动录入" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none">${p.tracking}</textarea>
                         </div>
                     </div>
                 </div>
             `).join('');
         }
 
+        // 附件上传处理
         function handleFileSelect(event) {
             const file = event.target.files[0];
             if (file) {
                 if (file.type !== 'application/pdf') {
-                    alert('仅支持PDF文件');
+                    showToast('仅支持PDF文件', 'error');
                     return;
                 }
                 uploadedFiles.push({
@@ -2151,52 +2318,48 @@
                     size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
                     time: new Date().toLocaleString('zh-CN')
                 });
-                renderFileList();
+                renderAttachmentFiles();
             }
         }
 
-        function renderFileList() {
-            const container = document.getElementById('fileList');
+        function renderAttachmentFiles() {
+            const container = document.getElementById('attachmentFileTags');
+            const count = document.getElementById('attachmentCount');
+            const card = document.getElementById('attachmentUploadCard');
+            const uploadBtn = document.getElementById('attachmentUploadBtn');
+            const continueBtn = document.getElementById('attachmentContinueBtn');
+
             if (uploadedFiles.length === 0) {
-                container.innerHTML = '';
+                container.classList.add('hidden');
+                card.classList.add('empty');
+                count.classList.add('hidden');
+                uploadBtn.classList.remove('hidden');
+                continueBtn.classList.add('hidden');
                 return;
             }
-            
+
+            card.classList.remove('empty');
+            count.textContent = `(${uploadedFiles.length}个文件)`;
+            count.classList.remove('hidden');
+            uploadBtn.classList.add('hidden');
+            continueBtn.classList.remove('hidden');
+            container.classList.remove('hidden');
+
             container.innerHTML = uploadedFiles.map((f, index) => `
-                <div class="file-list-item">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <i class="fas fa-file-pdf text-red-500"></i>
-                        <span>${f.name}</span>
-                        <span style="color: #8c8c8c; font-size: 12px;">(${f.size})</span>
-                        <span style="color: #bfbfbf; font-size: 12px;">${f.time}</span>
-                    </div>
-                    <div class="file-actions">
-                        <button class="btn btn-default btn-sm" onclick="previewFile(${index})">
-                            <i class="fas fa-eye text-xs"></i>预览
-                        </button>
-                        <button class="btn btn-default btn-sm" onclick="downloadFile(${index})">
-                            <i class="fas fa-download text-xs"></i>下载
-                        </button>
-                        <button class="btn btn-default btn-sm" onclick="deleteFile(${index})" style="color: #ff4d4f; border-color: #ff4d4f;">
-                            <i class="fas fa-trash text-xs"></i>删除
-                        </button>
-                    </div>
+                <div class="file-tag" title="${f.name} (${f.size})">
+                    <i class="fas fa-file-pdf file-tag-icon"></i>
+                    <span class="file-tag-name">${f.name}</span>
+                    <span class="file-tag-close" onclick="deleteFile(${index})">
+                        <i class="fas fa-times"></i>
+                    </span>
                 </div>
             `).join('');
-        }
-
-        function previewFile(index) {
-            showToast('预览功能：' + uploadedFiles[index].name, 'info');
-        }
-
-        function downloadFile(index) {
-            showToast('开始下载：' + uploadedFiles[index].name, 'success');
         }
 
         function deleteFile(index) {
             if (confirm('确定删除该附件吗？')) {
                 uploadedFiles.splice(index, 1);
-                renderFileList();
+                renderAttachmentFiles();
                 showToast('附件已删除', 'success');
             }
         }
@@ -2232,16 +2395,6 @@
 
         function validateReport() {
             return true;
-        }
-
-        // 显示提示
-        function showToast(message, type) {
-            const toast = document.createElement('div');
-            const bgColor = type === 'success' ? '#52c41a' : (type === 'warning' ? '#fa8c16' : '#1890ff');
-            toast.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${bgColor}; color: white; padding: 10px 20px; border-radius: 4px; z-index: 9999; box-shadow: 0 2px 8px rgba(0,0,0,0.15);`;
-            toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2000);
         }
 
         // 点击弹窗外部关闭
