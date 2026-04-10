@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>不符合项整改跟踪 - 体系认证平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f7fa;
+        }
+        
+        .deadline-warning {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        .modal-enter {
+            animation: modalIn 0.3s ease-out;
+        }
+        .px-2 {
+            padding-left: 0.3rem!important;
+            padding-right: 0.3rem!important;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .table-row:hover {
+            background-color: #f8fafc;
+        }
+        
+        /* 自定义滚动条 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- 顶部导航栏 -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div class="max-w-full mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h1 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-tasks text-blue-600"></i>
+                        不符合项整改跟踪
+                    </h1>
+                </div>
+                
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                        <i class="fas fa-clock"></i>
+                        <span>当前时间：<span id="currentTime">2026-04-10 08:15</span></span>
+                    </div>
+                    
+                    <!-- 筛选条件 -->
+                    <select id="statusFilter" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px]">
+                        <option value="all">全部状态</option>
+                        <option value="pending_customer">待客户确认</option>
+                        <option value="pending_leader">待组长确认</option>
+                    </select>
+                    
+                    <select id="typeFilter" class="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px]">
+                        <option value="all">全部性质</option>
+                        <option value="serious">严重</option>
+                        <option value="minor">轻微</option>
+                    </select>
+                    
+                    <button onclick="refreshList()" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-200 transition text-sm border border-gray-300">
+                        <i class="fas fa-sync-alt"></i>
+                        刷新
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体内容 - 全宽表格 -->
+    <main class="max-w-full mx-auto px-6 py-6">
+        
+        <!-- 预警提示栏 -->
+        <div id="warningBanner" class="hidden mb-4 bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center gap-3 text-orange-800">
+            <i class="fas fa-exclamation-triangle text-orange-500 text-xl"></i>
+            <div class="flex-1">
+                <span class="font-semibold">预警提示：</span>
+                <span id="warningText">您有 X 个不符合项即将到期或已逾期，请尽快处理！</span>
+            </div>
+            <button onclick="filterUrgent()" class="text-sm bg-orange-100 hover:bg-orange-200 px-3 py-1 rounded border border-orange-300 transition">
+                查看紧急项
+            </button>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                            <th class="px-6 py-4 w-32">不符合项编号</th>
+                            <th class="px-6 py-4 w-24">性质</th>
+                            <th class="px-6 py-4">受审核部门/过程</th>
+                            <th class="px-6 py-4 w-48">标准条款</th>
+                            <th class="px-6 py-4 w-28">提交人</th>
+                            <th class="px-6 py-4 w-36">整改完成期限</th>
+                            <th class="px-6 py-4 min-w-[100px] whitespace-nowrap">当前状态</th>
+                            <th class="px-6 py-4 min-w-[140px] text-center whitespace-nowrap">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ncTableBody" class="divide-y divide-gray-100 text-sm">
+                        <!-- 数据行将由JS动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50/50">
+                <div class="text-sm text-gray-600">
+                    共 <span id="totalCount" class="font-semibold">0</span> 条记录
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 text-sm disabled:opacity-50" disabled>
+                        上一页
+                    </button>
+                    <span class="text-sm text-gray-600">第 <span class="font-semibold">1</span> 页</span>
+                    <button class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 text-sm disabled:opacity-50" disabled>
+                        下一页
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 弹窗：客户填报 -->
+    <div id="customerModal" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col modal-enter">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                        <i class="fas fa-user-edit"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">不符合项整改填报</h2>
+                        <p class="text-sm text-gray-500">编号：<span id="customerModalNcNo"></span> | 当前阶段：客户原因分析和纠正措施</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('customerModal')" class="text-gray-400 hover:text-gray-600 transition w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                <!-- 基本信息展示 -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+                    <div class="grid grid-cols-3 gap-4 text-sm mb-3 pb-3 border-b border-gray-200">
+                        <div>
+                            <span class="text-gray-500">受审核部门：</span>
+                            <span class="font-medium text-gray-800" id="customerModalDept">运营管理部门/文件控制过程</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">标准条款：</span>
+                            <span class="font-medium text-gray-800" id="customerModalStandard">GB/T 19001-2016 标准 7.5 条款</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">性质：</span>
+                            <span class="font-medium" id="customerModalType">轻微</span>
+                        </div>
+                    </div>
+                    <div class="bg-red-50 rounded p-3 border border-red-100">
+                        <div class="text-red-700 font-semibold mb-1 text-sm"><i class="fas fa-exclamation-circle mr-1"></i>不符合项描述</div>
+                        <p class="text-gray-700 text-sm leading-relaxed" id="customerModalDesc">
+                            审核发现运营管理部门的现场作业指导书未更新，与实际操作不符。
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 整改期限提醒 -->
+                <div id="customerDeadlineAlert" class="mb-4 p-3 rounded-lg border hidden">
+                    <div class="flex items-center gap-2 font-semibold text-sm mb-1">
+                        <i class="fas fa-clock"></i>
+                        <span id="customerDeadlineText"></span>
+                    </div>
+                    <div class="text-xs opacity-80">请在整改完成期限前提交，否则将影响认证进度</div>
+                </div>
+
+                <!-- 填写表单 -->
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-search text-blue-500 mr-1"></i>
+                            原因分析 <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="customerCause" rows="8" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" placeholder="请详细描述产生不符合的根本原因..."></textarea>
+                        <div class="mt-1 text-xs text-gray-400 text-right"><span id="customerCauseCount">0</span>/500字</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-wrench text-blue-500 mr-1"></i>
+                            纠正、纠正措施或纠正措施计划 <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="customerAction" rows="8" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none" placeholder="请描述已采取或计划采取的纠正措施..."></textarea>
+                        <div class="mt-1 text-xs text-gray-400 text-right"><span id="customerActionCount">0</span>/500字</div>
+                    </div>
+                </div>
+
+                <!-- 附件上传 -->
+                <div class="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50/50">
+                    <div class="flex items-center gap-2 mb-3 text-sm font-medium text-gray-700">
+                        <i class="fas fa-paperclip"></i>
+                        相关证明材料（选填）
+                    </div>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50/30 transition cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                        <div class="text-sm text-gray-600">点击上传文件，或拖拽文件到此处</div>
+                        <div class="text-xs text-gray-400 mt-1">支持 PDF、Word、图片格式，单个文件不超过 20MB</div>
+                        <input type="file" id="fileInput" class="hidden" multiple>
+                    </div>
+                    <div id="fileList" class="mt-3 space-y-2"></div>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                    <i class="fas fa-info-circle"></i>
+                    <span>提交后将流转至组长进行确认</span>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeModal('customerModal')" class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium">
+                        取消
+                    </button>
+                    <button onclick="saveCustomerDraft()" class="px-5 py-2 border border-blue-300 text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition font-medium">
+                        <i class="fas fa-save mr-1"></i>保存草稿
+                    </button>
+                    <button onclick="submitCustomerForm()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center gap-2">
+                        <i class="fas fa-check-circle"></i>提交至组长确认
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗：组长确认 -->
+    <div id="leaderModal" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col modal-enter">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-purple-50 to-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">组长跟踪确认</h2>
+                        <p class="text-sm text-gray-500">编号：<span id="leaderModalNcNo"></span> | 当前阶段：跟踪确认</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('leaderModal')" class="text-gray-400 hover:text-gray-600 transition w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                <!-- 基本信息 -->
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div class="grid grid-cols-3 gap-4 text-sm mb-3 pb-3 border-b border-gray-200">
+                        <div>
+                            <span class="text-gray-500">受审核部门：</span>
+                            <span class="font-medium text-gray-800" id="leaderModalDept">质量管理部门/检验过程</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">标准条款：</span>
+                            <span class="font-medium text-gray-800" id="leaderModalStandard">GB/T 19001-2016 标准 8.6 条款</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">性质：</span>
+                            <span class="font-medium" id="leaderModalType">轻微</span>
+                        </div>
+                    </div>
+                    <div class="bg-red-50 rounded p-3 border border-red-100 mb-3">
+                        <div class="text-red-700 font-semibold mb-1 text-sm"><i class="fas fa-exclamation-circle mr-1"></i>不符合项描述</div>
+                        <p class="text-gray-700 text-sm" id="leaderModalDesc">审核发现质量管理部门的检验记录不完整...</p>
+                    </div>
+                </div>
+
+                <!-- 客户提交内容展示（只读） -->
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <div class="bg-green-50 px-4 py-3 border-b border-green-100 flex items-center gap-2 text-green-800 font-semibold text-sm">
+                        <i class="fas fa-check-circle"></i>
+                        客户已提交的整改内容
+                        <span class="ml-auto text-xs font-normal text-gray-500" id="leaderModalSubmitTime">提交时间：2026-04-16 09:20</span>
+                    </div>
+                    <div class="p-4 grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-xs text-gray-500 mb-1">原因分析</div>
+                            <div class="bg-gray-50 rounded p-3 text-sm text-gray-800 border border-gray-200" id="leaderModalCause">
+                                因春节期间人员交接不当，导致部分检验记录未及时归档。
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500 mb-1">纠正、纠正措施或纠正措施计划</div>
+                            <div class="bg-gray-50 rounded p-3 text-sm text-gray-800 border border-gray-200" id="leaderModalAction">
+                                1. 补录缺失的检验记录；2. 建立节假日期间的工作交接制度。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 跟踪结论选择 -->
+                <div class="bg-purple-50 rounded-lg border border-purple-200 p-4">
+                    <div class="flex items-center gap-2 text-purple-900 font-semibold mb-4 text-sm">
+                        <i class="fas fa-tasks"></i>
+                        请选择跟踪结论 <span class="text-red-500">*</span>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-transparent hover:border-green-400 cursor-pointer transition shadow-sm group">
+                            <input type="radio" name="leaderDecision" value="accepted" class="mt-1 w-4 h-4 text-green-600 focus:ring-green-500">
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-900 group-hover:text-green-700">纠正和纠正措施可以接受且证实有效</div>
+                                <div class="text-xs text-gray-500 mt-1">适用于整改已完成且验证有效的情况</div>
+                            </div>
+                            <i class="fas fa-check-circle text-green-500 text-xl opacity-0 group-hover:opacity-100 transition"></i>
+                        </label>
+                        
+                        <label class="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-transparent hover:border-blue-400 cursor-pointer transition shadow-sm group">
+                            <input type="radio" name="leaderDecision" value="plan_accepted" class="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500">
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-900 group-hover:text-blue-700">纠正和纠正措施计划可以接受，将在下次审核中验证有效性</div>
+                                <div class="text-xs text-gray-500 mt-1">仅针对轻微不符合，整改计划可接受但需后续验证</div>
+                            </div>
+                            <i class="fas fa-clock text-blue-500 text-xl opacity-0 group-hover:opacity-100 transition"></i>
+                        </label>
+                        
+                        <label class="flex items-start gap-3 p-4 bg-white rounded-lg border-2 border-transparent hover:border-red-400 cursor-pointer transition shadow-sm group">
+                            <input type="radio" name="leaderDecision" value="rejected" class="mt-1 w-4 h-4 text-red-600 focus:ring-red-500">
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-900 group-hover:text-red-700">纠正和纠正措施不能接受，或纠正措施未有效实施</div>
+                                <div class="text-xs text-gray-500 mt-1">整改不充分或无效，需退回客户重新整改</div>
+                            </div>
+                            <i class="fas fa-times-circle text-red-500 text-xl opacity-0 group-hover:opacity-100 transition"></i>
+                        </label>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">跟踪结论补充说明（选填）</label>
+                        <textarea id="leaderRemark" rows="3" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none" placeholder="如有需要，请补充说明跟踪结论的依据或建议..."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+                <button onclick="returnToCustomer()" class="text-orange-600 hover:text-orange-700 text-sm font-medium flex items-center gap-1 px-3 py-2 rounded hover:bg-orange-50 transition">
+                    <i class="fas fa-undo"></i>
+                    退回客户修改
+                </button>
+                <div class="flex gap-3">
+                    <button onclick="closeModal('leaderModal')" class="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition font-medium">
+                        取消
+                    </button>
+                    <button onclick="submitLeaderDecision()" class="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium flex items-center gap-2">
+                        <i class="fas fa-check-circle"></i>提交确认
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹窗：查看详情（根据状态展示） -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col modal-enter">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">不符合项详情</h2>
+                        <p class="text-sm text-gray-500">编号：<span id="detailModalNcNo"></span></p>
+                    </div>
+                </div>
+                <button onclick="closeModal('detailModal')" class="text-gray-400 hover:text-gray-600 transition w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                <!-- 根据状态动态展示内容 -->
+                <div id="detailContent" class="space-y-6">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                <button onclick="closeModal('detailModal')" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-medium">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 当前日期（根据meta timestamp）
+        const CURRENT_DATE = new Date('2026-04-10');
+        
+        // 模拟数据（2026年时间，无已关闭状态）
+        let ncData = [
+            {
+                id: 'NC-2026-001',
+                dept: '运营管理部门/文件控制过程',
+                standard: 'GB/T 19001-2016 标准 7.5 条款',
+                type: 'minor',
+                typeName: '轻微',
+                submitter: '武荣刚',
+                deadline: '2026-04-05',  // 逾期（已逾期5天）
+                status: 'pending_customer',
+                statusName: '待客户确认',
+                desc: '审核发现运营管理部门的现场作业指导书未更新，与实际操作不符。具体表现为2026年3月修订的设备维护流程未在作业指导书中体现。',
+                cause: '',
+                action: '',
+                submitTime: '2026-04-02 10:15'
+            },
+            {
+                id: 'NC-2026-002',
+                dept: '质量管理部门/检验过程',
+                standard: 'GB/T 19001-2016 标准 8.6 条款',
+                type: 'minor',
+                typeName: '轻微',
+                submitter: '王洪伟',
+                deadline: '2026-04-12',  // 临期预警（剩余2天）
+                status: 'pending_leader',
+                statusName: '待组长确认',
+                desc: '审核发现质量管理部门的检验记录不完整，缺少2026年2月份的部分原材料检验记录。抽查批次2026-02-15的钢筋进场检验记录缺失。',
+                cause: '因春节期间人员交接不当，导致部分检验记录未及时归档。已找到原始检验数据，正在补录系统。',
+                action: '1. 补录缺失的检验记录；2. 建立节假日期间的工作交接制度；3. 每月进行记录完整性检查。',
+                submitTime: '2026-04-08 14:30',
+                customerSubmitTime: '2026-04-09 16:20'
+            },
+            {
+                id: 'NC-2026-003',
+                dept: '环境管理部门/废弃物管理',
+                standard: 'GB/T 24001-2016 标准 8.1 条款',
+                type: 'serious',
+                typeName: '严重',
+                submitter: '李建华',
+                deadline: '2026-04-25',  // 正常（剩余15天）
+                status: 'pending_customer',
+                statusName: '待客户确认',
+                desc: '审核发现环境管理部门的危险废物贮存场所未设置明显的危险废物识别标志，且未建立危险废物管理台账。',
+                cause: '',
+                action: '',
+                submitTime: '2026-04-09 09:00'
+            },
+            {
+                id: 'NC-2026-004',
+                dept: '生产部门/设备维护',
+                standard: 'GB/T 45001-2020 标准 6.1.2 条款',
+                type: 'minor',
+                typeName: '轻微',
+                submitter: '张明',
+                deadline: '2026-05-10',  // 正常（剩余30天）
+                status: 'pending_leader',
+                statusName: '待组长确认',
+                desc: '生产现场发现部分设备的安全操作规程未更新，与现行设备型号不匹配，存在操作风险。',
+                cause: '设备更新后未及时修订操作规程，设备管理部门与生产部门沟通不畅。',
+                action: '1. 立即修订所有设备的安全操作规程；2. 组织全员安全操作培训；3. 建立设备变更管理流程。',
+                submitTime: '2026-04-05 11:20',
+                customerSubmitTime: '2026-04-08 14:00'
+            },
+            {
+                id: 'NC-2026-005',
+                dept: '采购部门/供应商管理',
+                standard: 'GB/T 19001-2016 标准 8.4 条款',
+                type: 'minor',
+                typeName: '轻微',
+                submitter: '赵敏',
+                deadline: '2026-04-08',  // 已到期并完成
+                status: 'completed',
+                statusName: '已完成',
+                desc: '审核发现采购部门未对关键供应商进行定期绩效评价，缺少2025年第四季度供应商评估记录。',
+                cause: '供应商管理流程执行不到位，相关人员对评估周期要求理解不清。',
+                action: '1. 补充完成2025年第四季度供应商绩效评价；2. 建立供应商评估日历提醒机制；3. 修订供应商管理程序文件，明确评估频次。',
+                submitTime: '2026-04-01 09:30',
+                customerSubmitTime: '2026-04-05 16:45',
+                leaderConfirmTime: '2026-04-08 10:20',
+                leaderConclusion: 'accepted',
+                leaderRemark: '整改措施充分有效，相关记录完整'
+            }
+        ];
+
+        let currentEditingId = null;
+
+        // 计算日期差
+        function getDaysRemaining(deadlineStr) {
+            const deadline = new Date(deadlineStr);
+            const diffTime = deadline - CURRENT_DATE;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+        // 获取期限样式和文本
+        function getDeadlineInfo(deadlineStr) {
+            const days = getDaysRemaining(deadlineStr);
+            
+            if (days < 0) {
+                return {
+                    class: 'text-red-600 font-bold deadline-warning',
+                    badge: 'bg-red-100 text-red-700 border-red-200',
+                    text: `已逾期 ${Math.abs(days)} 天`,
+                    icon: 'fa-exclamation-circle',
+                    urgent: true
+                };
+            } else if (days <= 3) {
+                return {
+                    class: 'text-red-600 font-semibold',
+                    badge: 'bg-red-50 text-red-600 border-red-200',
+                    text: `剩余 ${days} 天`,
+                    icon: 'fa-clock',
+                    urgent: true
+                };
+            } else if (days <= 7) {
+                return {
+                    class: 'text-orange-600 font-semibold',
+                    badge: 'bg-orange-50 text-orange-600 border-orange-200',
+                    text: `剩余 ${days} 天`,
+                    icon: 'fa-clock',
+                    urgent: false
+                };
+            } else {
+                return {
+                    class: 'text-gray-600',
+                    badge: 'bg-gray-100 text-gray-600 border-gray-200',
+                    text: `剩余 ${days} 天`,
+                    icon: 'fa-calendar',
+                    urgent: false
+                };
+            }
+        }
+
+        // 渲染列表
+        function renderTable() {
+            const tbody = document.getElementById('ncTableBody');
+            const statusFilter = document.getElementById('statusFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            
+            let filtered = ncData.filter(item => {
+                const statusMatch = statusFilter === 'all' || item.status === statusFilter;
+                const typeMatch = typeFilter === 'all' || item.type === typeFilter;
+                return statusMatch && typeMatch;
+            });
+            
+            // 排序：逾期的放前面，然后临期，然后按日期倒序
+            filtered.sort((a, b) => {
+                const daysA = getDaysRemaining(a.deadline);
+                const daysB = getDaysRemaining(b.deadline);
+                
+                if (daysA < 0 && daysB >= 0) return -1;
+                if (daysB < 0 && daysA >= 0) return 1;
+                if (daysA <= 3 && daysB > 3) return -1;
+                if (daysB <= 3 && daysA > 3) return 1;
+                return new Date(b.submitTime) - new Date(a.submitTime);
+            });
+            
+            document.getElementById('totalCount').textContent = filtered.length;
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
+                            <p>暂无不符合项记录</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = filtered.map(item => {
+                const deadlineInfo = getDeadlineInfo(item.deadline);
+                const statusColors = {
+                    'pending_customer': 'bg-orange-100 text-orange-700 border-orange-200',
+                    'pending_leader': 'bg-blue-100 text-blue-700 border-blue-200',
+                    'completed': 'bg-green-100 text-green-700 border-green-200'
+                };
+                
+                // 操作按钮（查看详情改为统一风格）
+                let actions = '';
+                if (item.status === 'pending_customer') {
+                    actions = `
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="openCustomerModal('${item.id}')" class="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-xs font-medium whitespace-nowrap" title="填报">
+                                填报
+                            </button>
+                            <button onclick="openDetailModal('${item.id}')" class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition text-xs font-medium border border-gray-300 whitespace-nowrap" title="查看详情">
+                                详情
+                            </button>
+                        </div>
+                    `;
+                } else if (item.status === 'pending_leader') {
+                    actions = `
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="openLeaderModal('${item.id}')" class="px-3 py-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 transition text-xs font-medium whitespace-nowrap" title="确认">
+                                确认
+                            </button>
+                            <button onclick="openDetailModal('${item.id}')" class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition text-xs font-medium border border-gray-300 whitespace-nowrap" title="查看详情">
+                                详情
+                            </button>
+                        </div>
+                    `;
+                } else if (item.status === 'completed') {
+                    actions = `
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="openDetailModal('${item.id}')" class="px-3 py-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200 transition text-xs font-medium border border-green-300 whitespace-nowrap" title="查看完成详情">
+                                查看
+                            </button>
+                        </div>
+                    `;
+                }
+                
+                const rowClass = deadlineInfo.urgent ? 'bg-red-50/30' : '';
+                
+                return `
+                    <tr class="table-row border-b border-gray-100 ${rowClass}" data-id="${item.id}">
+                        <td class="px-6 py-4 font-mono font-semibold text-gray-800">${item.id}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded text-xs font-medium border ${item.type === 'serious' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}">
+                                ${item.typeName}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-gray-800 font-medium">${item.dept}</td>
+                        <td class="px-6 py-4 text-gray-600 text-xs">${item.standard}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <span class="text-gray-700">${item.submitter}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col gap-1">
+                                <span class="text-sm ${deadlineInfo.class}">${item.deadline}</span>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border ${deadlineInfo.badge} w-fit">
+                                    <i class="fas ${deadlineInfo.icon}"></i>
+                                    ${deadlineInfo.text}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium border ${statusColors[item.status]} whitespace-nowrap inline-block">
+                                ${item.statusName}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            ${actions}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // 更新预警横幅
+            updateWarningBanner();
+        }
+
+        // 更新预警提示
+        function updateWarningBanner() {
+            const urgentCount = ncData.filter(item => {
+                const days = getDaysRemaining(item.deadline);
+                return days <= 3; // 临期3天内或逾期
+            }).length;
+            
+            const banner = document.getElementById('warningBanner');
+            if (urgentCount > 0) {
+                document.getElementById('warningText').textContent = `您有 ${urgentCount} 个不符合项即将到期（3天内）或已逾期，请尽快处理！`;
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        // 筛选临期
+        function filterUrgent() {
+            document.getElementById('statusFilter').value = 'all';
+            renderTable();
+            const firstUrgent = document.querySelector('.deadline-warning');
+            if (firstUrgent) {
+                firstUrgent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // 打开客户填报弹窗
+        function openCustomerModal(id) {
+            const item = ncData.find(i => i.id === id);
+            if (!item) return;
+            
+            currentEditingId = id;
+            document.getElementById('customerModalNcNo').textContent = item.id;
+            document.getElementById('customerModalDept').textContent = item.dept;
+            document.getElementById('customerModalStandard').textContent = item.standard;
+            document.getElementById('customerModalType').textContent = item.typeName;
+            document.getElementById('customerModalDesc').textContent = item.desc;
+            
+            // 整改期限提醒
+            const days = getDaysRemaining(item.deadline);
+            const alertBox = document.getElementById('customerDeadlineAlert');
+            const alertText = document.getElementById('customerDeadlineText');
+            
+            if (days < 0) {
+                alertBox.className = 'mb-4 p-3 rounded-lg border bg-red-50 border-red-200 text-red-800';
+                alertText.innerHTML = `<i class="fas fa-exclamation-circle"></i> 已逾期 ${Math.abs(days)} 天，请尽快提交！`;
+                alertBox.classList.remove('hidden');
+            } else if (days <= 7) {
+                alertBox.className = 'mb-4 p-3 rounded-lg border bg-orange-50 border-orange-200 text-orange-800';
+                alertText.innerHTML = `<i class="fas fa-clock"></i> 剩余 ${days} 天，临期预警`;
+                alertBox.classList.remove('hidden');
+            } else {
+                alertBox.className = 'mb-4 p-3 rounded-lg border bg-blue-50 border-blue-200 text-blue-800';
+                alertText.innerHTML = `<i class="fas fa-info-circle"></i> 剩余 ${days} 天`;
+                alertBox.classList.remove('hidden');
+            }
+            
+            // 恢复草稿
+            const draft = localStorage.getItem(`nc_${id}_draft`);
+            if (draft) {
+                const data = JSON.parse(draft);
+                document.getElementById('customerCause').value = data.cause || '';
+                document.getElementById('customerAction').value = data.action || '';
+            } else {
+                document.getElementById('customerCause').value = item.cause || '';
+                document.getElementById('customerAction').value = item.action || '';
+            }
+            
+            updateCharCount();
+            document.getElementById('customerModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 打开组长确认弹窗
+        function openLeaderModal(id) {
+            const item = ncData.find(i => i.id === id);
+            if (!item) return;
+            
+            currentEditingId = id;
+            document.getElementById('leaderModalNcNo').textContent = item.id;
+            document.getElementById('leaderModalDept').textContent = item.dept;
+            document.getElementById('leaderModalStandard').textContent = item.standard;
+            document.getElementById('leaderModalType').textContent = item.typeName;
+            document.getElementById('leaderModalDesc').textContent = item.desc;
+            document.getElementById('leaderModalCause').textContent = item.cause || '';
+            document.getElementById('leaderModalAction').textContent = item.action || '';
+            document.getElementById('leaderModalSubmitTime').textContent = `提交时间：${item.customerSubmitTime || '2026-04-09 16:20'}`;
+            
+            // 重置表单
+            document.querySelectorAll('input[name="leaderDecision"]').forEach(r => r.checked = false);
+            document.getElementById('leaderRemark').value = '';
+            
+            document.getElementById('leaderModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 打开详情弹窗（根据状态展示对应信息）
+        function openDetailModal(id) {
+            const item = ncData.find(i => i.id === id);
+            if (!item) return;
+            
+            document.getElementById('detailModalNcNo').textContent = item.id;
+            
+            const content = document.getElementById('detailContent');
+            
+            // 根据状态构建不同的详情视图
+            if (item.status === 'pending_customer') {
+                // 待客户确认：只显示第一阶段
+                content.innerHTML = `
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+                            <span class="text-sm font-semibold text-gray-700">当前进度：待客户确认</span>
+                            <span class="text-xs text-gray-500">整改期限：${item.deadline}</span>
+                        </div>
+                        <div class="relative pl-8 pb-4 border-l-2 border-blue-200">
+                            <div class="absolute left-0 top-0 w-6 h-6 -translate-x-1/2 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="mb-4">
+                                <div class="text-sm font-semibold text-gray-800">提交不符合描述</div>
+                                <div class="text-xs text-gray-500 mb-2">${item.submitter} · ${item.submitTime}</div>
+                                <div class="bg-white rounded p-3 border border-gray-200 text-sm">
+                                    <div class="text-red-700 font-medium mb-1">不符合项描述：</div>
+                                    <div class="text-gray-700">${item.desc}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pl-8 text-gray-400 text-sm">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs">
+                                    <i class="fas fa-user-edit"></i>
+                                </div>
+                                <span>客户原因分析和纠正措施（等待客户填报）</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <span>组长跟踪确认</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (item.status === 'pending_leader') {
+                // 待组长确认：显示前两阶段
+                content.innerHTML = `
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+                            <span class="text-sm font-semibold text-gray-700">当前进度：待组长确认</span>
+                            <span class="text-xs text-gray-500">整改期限：${item.deadline}</span>
+                        </div>
+                        
+                        <!-- 第一阶段 -->
+                        <div class="relative pl-8 pb-6 border-l-2 border-green-200">
+                            <div class="absolute left-0 top-0 w-6 h-6 -translate-x-1/2 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="mb-2">
+                                <div class="text-sm font-semibold text-gray-800">提交不符合描述</div>
+                                <div class="text-xs text-gray-500">${item.submitter} · ${item.submitTime}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 第二阶段（当前） -->
+                        <div class="relative pl-8 pb-4 border-l-2 border-blue-500">
+                            <div class="absolute left-0 top-0 w-6 h-6 -translate-x-1/2 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
+                                <i class="fas fa-user-edit"></i>
+                            </div>
+                            <div class="mb-4">
+                                <div class="text-sm font-semibold text-gray-800">客户原因分析和纠正措施</div>
+                                <div class="text-xs text-gray-500 mb-2">客户代表 · ${item.customerSubmitTime || '2026-04-09 16:20'}</div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="bg-white rounded p-3 border border-gray-200 text-sm">
+                                        <div class="text-xs text-gray-500 mb-1">原因分析</div>
+                                        <div class="text-gray-800">${item.cause}</div>
+                                    </div>
+                                    <div class="bg-white rounded p-3 border border-gray-200 text-sm">
+                                        <div class="text-xs text-gray-500 mb-1">纠正、纠正措施或纠正措施计划</div>
+                                        <div class="text-gray-800">${item.action}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 第三阶段（等待） -->
+                        <div class="pl-8 text-gray-400 text-sm">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <span>组长跟踪确认（等待确认）</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (item.status === 'completed') {
+                // 已完成：显示完整流程
+                const conclusionText = {
+                    'accepted': '纠正和纠正措施可以接受且证实有效',
+                    'plan_accepted': '纠正和纠正措施计划可以接受，将在下次审核中验证有效性',
+                    'rejected': '纠正和纠正措施不能接受'
+                };
+                content.innerHTML = `
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+                            <span class="text-sm font-semibold text-green-700 flex items-center gap-2">
+                                <i class="fas fa-check-circle"></i>当前进度：已完成
+                            </span>
+                            <span class="text-xs text-gray-500">完成时间：${item.leaderConfirmTime || '2026-04-08 10:20'}</span>
+                        </div>
+
+                        <!-- 第一阶段 -->
+                        <div class="relative pl-8 pb-6 border-l-2 border-green-200">
+                            <div class="absolute left-0 top-0 w-6 h-6 -translate-x-1/2 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="mb-2">
+                                <div class="text-sm font-semibold text-gray-800">提交不符合描述</div>
+                                <div class="text-xs text-gray-500">${item.submitter} · ${item.submitTime}</div>
+                            </div>
+                        </div>
+
+                        <!-- 第二阶段 -->
+                        <div class="relative pl-8 pb-6 border-l-2 border-green-200">
+                            <div class="absolute left-0 top-0 w-6 h-6 -translate-x-1/2 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="mb-2">
+                                <div class="text-sm font-semibold text-gray-800">客户原因分析和纠正措施</div>
+                                <div class="text-xs text-gray-500">客户代表 · ${item.customerSubmitTime || '2026-04-05 16:45'}</div>
+                            </div>
+                        </div>
+
+                        <!-- 第三阶段（已完成） -->
+                        <div class="relative pl-8 pb-4">
+                            <div class="absolute left-0 top-0 w-6 h-6 -translate-x-1/2 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="mb-2">
+                                <div class="text-sm font-semibold text-gray-800">组长跟踪确认</div>
+                                <div class="text-xs text-gray-500 mb-2">组长 · ${item.leaderConfirmTime || '2026-04-08 10:20'}</div>
+                                <div class="bg-green-50 rounded p-3 border border-green-200 text-sm">
+                                    <div class="text-green-800 font-medium mb-1">
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        ${conclusionText[item.leaderConclusion] || '纠正和纠正措施可以接受且证实有效'}
+                                    </div>
+                                    ${item.leaderRemark ? `<div class="text-gray-600 mt-1">备注：${item.leaderRemark}</div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 整改内容展示 -->
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-white rounded p-3 border border-gray-200 text-sm">
+                                    <div class="text-xs text-gray-500 mb-1">原因分析</div>
+                                    <div class="text-gray-800">${item.cause}</div>
+                                </div>
+                                <div class="bg-white rounded p-3 border border-gray-200 text-sm">
+                                    <div class="text-xs text-gray-500 mb-1">纠正、纠正措施</div>
+                                    <div class="text-gray-800">${item.action}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('detailModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 关闭弹窗
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            currentEditingId = null;
+            
+            if (modalId === 'customerModal') {
+                document.getElementById('fileList').innerHTML = '';
+            }
+        }
+
+        // 字数统计
+        document.getElementById('customerCause')?.addEventListener('input', function() {
+            document.getElementById('customerCauseCount').textContent = this.value.length;
+        });
+        document.getElementById('customerAction')?.addEventListener('input', function() {
+            document.getElementById('customerActionCount').textContent = this.value.length;
+        });
+
+        function updateCharCount() {
+            const cause = document.getElementById('customerCause')?.value || '';
+            const action = document.getElementById('customerAction')?.value || '';
+            document.getElementById('customerCauseCount').textContent = cause.length;
+            document.getElementById('customerActionCount').textContent = action.length;
+        }
+
+        // 保存草稿
+        function saveCustomerDraft() {
+            if (!currentEditingId) return;
+            
+            const cause = document.getElementById('customerCause').value;
+            const action = document.getElementById('customerAction').value;
+            
+            localStorage.setItem(`nc_${currentEditingId}_draft`, JSON.stringify({ cause, action }));
+            showToast('草稿已保存', 'success');
+        }
+
+        // 客户提交
+        function submitCustomerForm() {
+            const cause = document.getElementById('customerCause').value.trim();
+            const action = document.getElementById('customerAction').value.trim();
+            
+            if (!cause || !action) {
+                showToast('请填写完整的原因分析和纠正措施', 'error');
+                return;
+            }
+            
+            if (confirm('确定提交整改内容？提交后将流转至组长确认。')) {
+                const item = ncData.find(i => i.id === currentEditingId);
+                if (item) {
+                    item.cause = cause;
+                    item.action = action;
+                    item.status = 'pending_leader';
+                    item.statusName = '待组长确认';
+                    item.customerSubmitTime = '2026-04-10 10:30'; // 使用当前时间
+                    
+                    localStorage.removeItem(`nc_${currentEditingId}_draft`);
+                }
+                
+                showToast('提交成功，已流转至组长确认', 'success');
+                closeModal('customerModal');
+                renderTable();
+            }
+        }
+
+        // 退回客户
+        function returnToCustomer() {
+            const remark = document.getElementById('leaderRemark').value.trim();
+            
+            if (!remark) {
+                showToast('退回时请填写原因说明', 'error');
+                return;
+            }
+            
+            if (confirm('确定退回给客户重新修改？')) {
+                const item = ncData.find(i => i.id === currentEditingId);
+                if (item) {
+                    item.status = 'pending_customer';
+                    item.statusName = '待客户确认';
+                    // 可选：清空客户填的内容或保留
+                }
+                
+                showToast('已退回客户修改', 'warning');
+                closeModal('leaderModal');
+                renderTable();
+            }
+        }
+
+        // 组长提交确认
+        function submitLeaderDecision() {
+            const selected = document.querySelector('input[name="leaderDecision"]:checked');
+            
+            if (!selected) {
+                showToast('请选择跟踪结论', 'error');
+                return;
+            }
+            
+            const conclusion = selected.value;
+            const remark = document.getElementById('leaderRemark').value.trim();
+            
+            let msg = '';
+            if (conclusion === 'accepted') msg = '确认：整改有效';
+            else if (conclusion === 'plan_accepted') msg = '确认：整改计划可接受';
+            else msg = '确认：退回客户重新整改';
+            
+            if (confirm(msg + '，是否继续？')) {
+                const item = ncData.find(i => i.id === currentEditingId);
+                if (item) {
+                    if (conclusion === 'rejected') {
+                        item.status = 'pending_customer';
+                        item.statusName = '待客户确认';
+                        showToast('已退回客户修改', 'warning');
+                    } else {
+                        // 由于没有已关闭状态，这里可以模拟一个"已完成"状态或保持现状
+                        // 根据需求"没有已关闭的状态"，这里改为保持pending_leader但标记为已确认
+                        // 或者可以添加一个"completed"状态但不在筛选中显示？
+                        // 根据需求理解，应该是流转结束，但用户说没有已关闭状态，所以这里改为提示已确认但状态不变，或改为"已确认"状态
+                        item.statusName = '已确认（待关闭）'; // 临时状态
+                        showToast('确认成功', 'success');
+                    }
+                }
+                
+                closeModal('leaderModal');
+                renderTable();
+            }
+        }
+
+        // 文件上传模拟
+        document.getElementById('fileInput')?.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            const list = document.getElementById('fileList');
+            
+            files.forEach(file => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between bg-white p-2 rounded border text-sm';
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-file text-blue-500"></i>
+                        <span class="text-gray-700">${file.name}</span>
+                        <span class="text-xs text-gray-400">(${(file.size/1024/1024).toFixed(2)}MB)</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                list.appendChild(item);
+            });
+        });
+
+        // 刷新列表
+        function refreshList() {
+            renderTable();
+            showToast('列表已刷新', 'success');
+        }
+
+        // Toast 提示
+        function showToast(message, type = 'info') {
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-orange-500',
+                info: 'bg-blue-500'
+            };
+            
+            const icons = {
+                success: 'check-circle',
+                error: 'exclamation-circle',
+                warning: 'exclamation-triangle',
+                info: 'info-circle'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `fixed top-20 right-6 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 fade-in`;
+            toast.innerHTML = `
+                <i class="fas fa-${icons[type]}"></i>
+                <span class="font-medium">${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // 筛选监听
+        document.getElementById('statusFilter').addEventListener('change', renderTable);
+        document.getElementById('typeFilter').addEventListener('change', renderTable);
+
+        // 初始化
+        window.addEventListener('load', function() {
+            renderTable();
+        });
+
+        // ESC 关闭弹窗
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                ['customerModal', 'leaderModal', 'detailModal'].forEach(id => {
+                    if (!document.getElementById(id).classList.contains('hidden')) {
+                        closeModal(id);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
