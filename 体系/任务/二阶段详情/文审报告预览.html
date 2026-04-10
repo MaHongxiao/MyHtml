@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -7,178 +8,186 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
         body {
-            font-family: 'Inter', 'Noto Sans SC', 'SimSun', serif;
-            background-color: #f8fafc;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            color: #1f2937;
         }
 
-        /* 审批水印 */
-        .watermark {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 120px;
-            font-weight: bold;
-            color: rgba(34, 197, 94, 0.08);
-            z-index: 0;
-            pointer-events: none;
-            user-select: none;
-            letter-spacing: 20px;
-        }
-
-        /* 报告容器 */
         .report-container {
+            max-width: 1200px;
+            margin: 0 auto;
             background: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        /* CQC Header Style */
+        .cqc-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
             position: relative;
-            z-index: 1;
+            overflow: hidden;
         }
 
-        /* 正式报告头部 */
-        .report-header {
-            border-bottom: 3px double #1e40af;
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
+        .cqc-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
         }
 
-        .report-title {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: #1e293b;
-            letter-spacing: 0.1em;
-            text-align: center;
-            margin-bottom: 0.5rem;
+        .cqc-logo {
+            font-weight: 800;
+            letter-spacing: 2px;
+            font-size: 1.5rem;
+            border: 3px solid white;
+            padding: 0.5rem 1rem;
+            display: inline-block;
+            border-radius: 8px;
         }
 
-        .report-subtitle {
-            text-align: center;
-            color: #64748b;
-            font-size: 0.875rem;
-            letter-spacing: 0.05em;
-        }
-
-        .report-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 1.5rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .meta-item {
-            font-size: 0.875rem;
-            color: #475569;
-        }
-
-        .meta-label {
-            color: #94a3b8;
-            margin-right: 0.5rem;
-        }
-
-        /* 章节标题 */
+        /* Section Headers */
         .section-title {
-            background: linear-gradient(to right, #eff6ff, #ffffff);
-            border-left: 4px solid #2563eb;
+            background: #f8fafc;
+            border-left: 4px solid #1e40af;
             padding: 0.75rem 1rem;
             font-weight: 600;
-            color: #1e40af;
-            margin: 1.5rem 0 1rem 0;
-            font-size: 1rem;
+            color: #1e3a8a;
+            margin: 2rem 0 1rem 0;
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        .section-number {
-            background: #2563eb;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
-
-        /* 内容区块 */
-        .content-block {
-            margin-bottom: 1.5rem;
-            padding: 0 0.5rem;
-        }
-
-        .field-row {
-            display: flex;
-            margin-bottom: 0.75rem;
-            align-items: flex-start;
-        }
-
-        .field-label {
-            font-weight: 500;
-            color: #374151;
-            min-width: 120px;
-            flex-shrink: 0;
-            font-size: 0.9375rem;
-        }
-
-        .field-value {
-            flex: 1;
-            color: #1f2937;
-            font-size: 0.9375rem;
-            line-height: 1.6;
-            padding-left: 0.5rem;
-        }
-
-        .field-value.highlight {
-            background: #fef3c7;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-
-        /* 表格样式 */
-        .data-table {
+        /* Table Styles */
+        .report-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 1rem 0;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
         }
 
-        .data-table th {
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
+        .report-table th {
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
             padding: 0.75rem;
             text-align: left;
-            font-weight: 600;
-            color: #475569;
+            border: 1px solid #e2e8f0;
         }
 
-        .data-table td {
-            border: 1px solid #e2e8f0;
+        .report-table td {
             padding: 0.75rem;
+            border: 1px solid #e2e8f0;
             color: #334155;
             vertical-align: top;
         }
 
-        .data-table tr:nth-child(even) {
+        .report-table tr:nth-child(even) {
             background: #fafafa;
         }
 
-        /* 结论区域 */
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .info-label {
+            background: #f8fafc;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-value {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            border-left: 1px solid #e2e8f0;
+            color: #1e293b;
+            font-size: 0.9rem;
+        }
+
+        .info-grid > div:last-child,
+        .info-grid > div:nth-last-child(2) {
+            border-bottom: none;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .tag-blue {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .tag-green {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .tag-orange {
+            background: #ffedd5;
+            color: #9a3412;
+            border: 1px solid #fdba74;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-approved {
+            background: #dcfce7;
+            color: #166534;
+            border: 2px solid #86efac;
+        }
+
+        /* Conclusion Box */
         .conclusion-box {
             border: 2px solid #22c55e;
             background: #f0fdf4;
             border-radius: 8px;
             padding: 1.5rem;
             margin: 1rem 0;
-            position: relative;
         }
 
         .conclusion-box.non-conform {
@@ -210,43 +219,23 @@
             color: #92400e;
         }
 
-        /* 签名区域 */
-        .signature-section {
+        /* Signature Area */
+        .signature-area {
             margin-top: 3rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 3rem;
-            page-break-inside: avoid;
-        }
-
-        .signature-box {
-            border-top: 1px solid #94a3b8;
-            padding-top: 0.5rem;
-            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px solid #e2e8f0;
         }
 
         .signature-line {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
+            border-bottom: 1px solid #94a3b8;
+            min-width: 200px;
+            display: inline-block;
+            margin: 0 1rem;
+            height: 40px;
+            vertical-align: bottom;
         }
 
-        .signature-label {
-            color: #475569;
-            font-weight: 500;
-        }
-
-        .signature-value {
-            border-bottom: 1px solid #cbd5e1;
-            min-width: 150px;
-            text-align: center;
-            color: #1e293b;
-            font-weight: 500;
-            padding-bottom: 0.25rem;
-        }
-
-        /* 附件列表 */
+        /* Attachment List */
         .attachment-list {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -258,32 +247,59 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.5rem 0;
+            padding: 0.75rem 0;
             border-bottom: 1px dashed #e2e8f0;
+            transition: all 0.2s;
         }
 
         .attachment-item:last-child {
             border-bottom: none;
         }
 
-        /* 状态徽章 */
-        .status-badge {
+        .attachment-item:hover {
+            background: #f1f5f9;
+            margin: 0 -1rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            border-radius: 4px;
+        }
+
+        /* Navigation */
+        .nav-pills {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 50;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.5rem 0;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .nav-pill {
             display: inline-flex;
             align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            border: 2px solid;
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
         }
 
-        .badge-approved {
-            background: #dcfce7;
-            color: #166534;
-            border-color: #22c55e;
+        .nav-pill:hover {
+            background: #f1f5f9;
+            color: #1e40af;
         }
 
-        /* 备注 */
+        .nav-pill.active {
+            background: #1e40af;
+            color: white;
+        }
+
+        /* Note Section */
         .note-section {
             background: #fefce8;
             border: 1px solid #fde047;
@@ -302,368 +318,1078 @@
             gap: 0.5rem;
         }
 
-        /* 打印优化 */
+        /* Print Styles */
         @media print {
             body {
                 background: white;
             }
-
             .report-container {
                 box-shadow: none;
                 max-width: 100%;
-                padding: 0;
             }
-
             .no-print {
                 display: none !important;
             }
-
-            .watermark {
-                display: block !important;
-            }
-
             .page-break {
                 page-break-before: always;
             }
-
+            .cqc-header {
+                background: #1e3a8a !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
             .section-title {
-                background: #f1f5f9 !important;
+                background: #f8fafc !important;
                 -webkit-print-color-adjust: exact;
             }
-
             .conclusion-box {
                 background: #f0fdf4 !important;
                 -webkit-print-color-adjust: exact;
             }
-
-            .data-table th {
-                background: #f8fafc !important;
+            .report-table th {
+                background: #f1f5f9 !important;
                 -webkit-print-color-adjust: exact;
             }
         }
 
-        /* 响应式优化 */
+        /* Mobile Responsive */
         @media (max-width: 768px) {
-            .report-container {
-                padding: 1.5rem;
-            }
-
-            .field-row {
-                flex-direction: column;
-            }
-
-            .field-label {
-                min-width: auto;
-                margin-bottom: 0.25rem;
-            }
-
-            .signature-section {
+            .info-grid {
                 grid-template-columns: 1fr;
-                gap: 1.5rem;
             }
-
-            .report-title {
-                font-size: 1.5rem;
+            .info-value {
+                border-left: none;
             }
-
-            .data-table {
-                font-size: 0.8125rem;
+            .cqc-logo {
+                font-size: 1.2rem;
             }
-
-            .data-table th,
-            .data-table td {
+            .report-table {
+                font-size: 0.8rem;
+            }
+            .report-table th,
+            .report-table td {
                 padding: 0.5rem;
             }
         }
 
+        /* Checkbox styles */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .checkbox-item:hover {
+            background: #f1f5f9;
+        }
+
+        .checkbox-item i {
+            color: #94a3b8;
+        }
+
+        .checkbox-item.checked i {
+            color: #1e40af;
+        }
+
+        .checkbox-item.checked {
+            color: #1e40af;
+            font-weight: 500;
+        }
+
+        /* Floating Action Buttons */
+        .fab-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 50;
+        }
+
+        .fab-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+            font-size: 1.25rem;
+        }
+
+        .fab-btn:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .fab-btn.primary {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        }
+
+        .fab-btn.secondary {
+            background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+        }
+
+        .fab-btn .label {
+            position: absolute;
+            right: 70px;
+            background: #1e293b;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            opacity: 0;
+            transform: translateX(10px);
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .fab-btn:hover .label {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Content Blocks */
+        .content-block {
+            line-height: 1.8;
+            color: #374151;
+        }
+
+        /* Smooth scroll offset */
+        .scroll-mt-20 {
+            scroll-margin-top: 80px;
+        }
+
+        /* Enhanced Attachment Styles */
+        .attachment-list {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.5rem;
+        }
+
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .attachment-item:last-child {
+            border-bottom: none;
+        }
+
+        .attachment-item:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .attachment-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+
+        .attachment-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .attachment-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .attachment-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .attachment-size {
+            background: #e2e8f0;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .attachment-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            outline: none;
+        }
+
+        .preview-btn {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .preview-btn:hover {
+            background: #dbeafe;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(30, 64, 175, 0.1);
+        }
+
+        .download-btn {
+            background: #1e40af;
+            color: white;
+        }
+
+        .download-btn:hover {
+            background: #1e3a8a;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+        }
+
+        .action-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Preview Modal */
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-modal.active {
+            display: flex;
+        }
+
+        .preview-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        .preview-container {
+            position: relative;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .preview-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .preview-action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            border: none;
+            background: #e2e8f0;
+            color: #475569;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .preview-action-btn:hover {
+            background: #cbd5e1;
+            color: #1e293b;
+        }
+
+        .preview-action-btn.close:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .preview-body {
+            flex: 1;
+            overflow: auto;
+            padding: 1.5rem;
+            background: #f1f5f9;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-content {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+        }
+
+        .preview-placeholder {
+            text-align: center;
+            color: #64748b;
+        }
+
+        .preview-placeholder i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 60vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Download Toast */
+        .download-toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1e293b;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .download-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast-content {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Mobile Responsive for attachments */
         @media (max-width: 640px) {
-            .report-meta {
-                flex-direction: column;
-                gap: 0.5rem;
-                align-items: flex-start;
+            .attachment-item {
+                flex-wrap: wrap;
+                gap: 0.75rem;
             }
 
-            .data-table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
+            .attachment-actions {
+                width: 100%;
+                justify-content: flex-end;
+                margin-top: 0.5rem;
+                padding-top: 0.75rem;
+                border-top: 1px dashed #e2e8f0;
+            }
+
+            .action-btn span {
+                display: none;
+            }
+
+            .action-btn {
+                padding: 0.5rem;
+            }
+
+            .preview-container {
+                width: 95%;
+                max-height: 90vh;
+            }
+
+            .preview-body {
+                padding: 1rem;
             }
         }
     </style>
 </head>
-<body class="min-h-screen ">
-    <!-- 审批水印 -->
-    <!-- <div class="watermark">已审核</div> -->
+<body class="antialiased">
 
+    <!-- Floating Action Buttons -->
+    <div class="fab-container no-print">
+        <button class="fab-btn secondary" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+            <i class="fas fa-arrow-up"></i>
+            <span class="label">返回顶部</span>
+        </button>
+        <button class="fab-btn primary" onclick="window.print()">
+            <i class="fas fa-print"></i>
+            <span class="label">打印报告</span>
+        </button>
+    </div>
 
-    <!-- 报告主体 -->
-    <div class="report-container  mx-auto p-8 sm:p-12 rounded-lg">
-        <!-- 报告头部 -->
-        <div class="report-header">
-            <div class="flex justify-end mb-4">
-                <span class="status-badge badge-approved">
-                    <i class="fas fa-check-circle mr-1"></i>
-                    已审核通过
-                </span>
-            </div>
+    <div class="report-container min-h-screen">
 
-            <h1 class="report-title">文件评审报告</h1>
-            <p class="report-subtitle">Document Review Report</p>
-
-            <div class="report-meta">
-                <div class="meta-item">
-                    <span class="meta-label">报告编号：</span>
-                    <span class="font-mono font-medium">RW-202403240001</span>
+        <!-- CQC Official Header -->
+        <div class="cqc-header px-6 py-8 sm:px-12 sm:py-10">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <div class="cqc-logo mb-2">CQC</div>
+                    <div class="text-sm opacity-90 mt-2">中国质量认证中心</div>
+                    <div class="text-xs opacity-75">CHINA QUALITY CERTIFICATION CENTRE</div>
                 </div>
-                <div class="meta-item">
-                    <span class="meta-label">审核日期：</span>
-                    <span>2024-03-24</span>
-                </div>
-                <div class="meta-item">
-                    <span class="meta-label">版本：</span>
-                    <span>MSF11-21</span>
+                <div class="text-right">
+                    <h1 class="text-2xl sm:text-3xl font-bold tracking-wide">文件评审报告</h1>
+                    <div class="mt-2 text-sm opacity-90">文件编号：MSF11-21</div>
+                    <div class="mt-1 text-xs opacity-75">版本：2015版 | 实施日期：2022-01-20</div>
                 </div>
             </div>
         </div>
 
-        <!-- 1. 基本信息 -->
-        <div class="content-block">
-            <div class="section-title">
-                <span class="section-number">1</span>
-                基本信息
-            </div>
-
-            <div class="field-row">
-                <span class="field-label">客户名称：</span>
-                <span class="field-value highlight">北京市地铁运营有限公司</span>
-            </div>
-
-            <div class="field-row">
-                <span class="field-label">评审目的：</span>
-                <span class="field-value">初步评价客户文件的符合性、充分性和适宜性。</span>
-            </div>
-
-            <div class="field-row">
-                <span class="field-label">审核类型：</span>
-                <span class="field-value">
-                    <i class="fas fa-check-square text-blue-600 mr-1"></i>
-                    初次认证 
-                    <span class="text-slate-400 mx-2">|</span>
-                    <span class="text-slate-400"><i class="far fa-square mr-1"></i>再认证</span>
-                    <span class="text-slate-400 mx-2">|</span>
-                    <span class="text-slate-400"><i class="far fa-square mr-1"></i>监督</span>
-                    <span class="text-slate-400 mx-2">|</span>
-                    <span class="text-slate-400"><i class="far fa-square mr-1"></i>证书变更</span>
-                </span>
-            </div>
+        <!-- Navigation -->
+        <div class="nav-pills px-6 no-print">
+            <a href="#basic-info" class="nav-pill active"><i class="fas fa-info-circle mr-2"></i>基本信息</a>
+            <a href="#review-criteria" class="nav-pill"><i class="fas fa-clipboard-check mr-2"></i>评审准则</a>
+            <a href="#documents" class="nav-pill"><i class="fas fa-folder-open mr-2"></i>体系文件</a>
+            <a href="#conclusion" class="nav-pill"><i class="fas fa-gavel mr-2"></i>评审结论</a>
+            <a href="#attachments" class="nav-pill"><i class="fas fa-paperclip mr-2"></i>附件资料</a>
         </div>
 
-        <!-- 2. 评审准则 -->
-        <div class="content-block">
-            <div class="section-title">
-                <span class="section-number">2</span>
-                评审准则
-            </div>
+        <!-- Report Content -->
+        <div class="p-6 sm:p-10">
 
-            <div class="field-row">
-                <span class="field-label">管理体系标准：</span>
-                <span class="field-value">GB/T 19001-2016 / ISO 9001:2015《质量管理体系 要求》</span>
-            </div>
-
-            <div class="field-row">
-                <span class="field-label">适用法律法规：</span>
-                <span class="field-value">《中华人民共和国产品质量法》、《中华人民共和国标准化法》及相关行业法规</span>
-            </div>
-
-            <div class="field-row">
-                <span class="field-label">其他准则：</span>
-                <span class="field-value">客户提供的管理体系文件、组织内部管理制度</span>
-            </div>
-        </div>
-
-        <!-- 3. 管理体系文件 -->
-        <div class="content-block">
-            <div class="section-title">
-                <span class="section-number">3</span>
-                管理体系文件
-            </div>
-
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th style="width: 60px;">序号</th>
-                        <th style="width: 35%;">文件名称</th>
-                        <th style="width: 25%;">编号</th>
-                        <th>版本号/发布日期</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>质量管理手册</td>
-                        <td>QMM-01</td>
-                        <td>V3.0 / 2024-01-15</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>文件控制程序</td>
-                        <td>QP-01</td>
-                        <td>V2.1 / 2024-02-01</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>记录控制程序</td>
-                        <td>QP-02</td>
-                        <td>V2.0 / 2024-02-01</td>
-                    </tr>
-                    <tr>
-                        <td>4</td>
-                        <td>内部审核程序</td>
-                        <td>QP-08</td>
-                        <td>V3.2 / 2024-01-20</td>
-                    </tr>
-                    <tr>
-                        <td>5</td>
-                        <td>不合格品控制程序</td>
-                        <td>QP-13</td>
-                        <td>V2.5 / 2024-01-10</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- 4. 评审结论 -->
-        <div class="content-block">
-            <div class="section-title">
-                <span class="section-number">4</span>
-                评审结论
-            </div>
-
-            <div class="conclusion-box">
-                <div class="conclusion-title">
-                    <i class="fas fa-check-circle"></i>
-                    符合要求
+            <!-- Report Meta -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-gray-200">
+                <div class="space-y-1">
+                    <div class="text-sm text-gray-500">报告编号</div>
+                    <div class="font-mono font-bold text-lg text-blue-900">RW-202403240001</div>
                 </div>
-                <div class="conclusion-text">
-                    经评审，客户提交的管理体系文件符合 GB/T 19001-2016 标准要求，文件内容充分、适宜，可进行现场审核。
+                <div class="mt-4 sm:mt-0 text-right">
+                    <div class="status-badge badge-approved">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        已审核通过
+                    </div>
+                    <div class="text-sm text-gray-500 mt-2">审核日期：2024-03-24</div>
                 </div>
             </div>
 
-            <!-- 如果不符合要求时显示以下内容（示例中隐藏） -->
-            <!--
-            <div class="conclusion-box non-conform">
-                <div class="conclusion-title">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    不符合要求
+            <!-- Section 1: Basic Info -->
+            <div id="basic-info" class="scroll-mt-20">
+                <div class="section-title">
+                    <i class="fas fa-building mr-2"></i>一、基本信息
                 </div>
-                <div class="conclusion-text">
-                    文件存在以下问题，需修改后再次提交：
-                    <div class="mt-3 ml-0 space-y-2">
-                        <div class="bg-white/60 p-3 rounded border border-orange-200">
-                            <strong>存在的问题：</strong><br>
-                            1. 质量手册中4.3条款关于体系范围描述不够明确；<br>
-                            2. 缺少《风险和机遇应对措施表》相关记录。
-                        </div>
-                        <div class="bg-white/60 p-3 rounded border border-orange-200">
-                            <strong>修改确认：</strong><br>
-                            已按要求修改完成，补充了体系范围说明和风险应对措施记录表。
+
+                <div class="info-grid">
+                    <div class="info-label"><i class="fas fa-user-tie mr-2 text-blue-600"></i>客户名称</div>
+                    <div class="info-value font-semibold text-lg text-blue-900">北京市地铁运营有限公司</div>
+
+                    <div class="info-label"><i class="fas fa-bullseye mr-2 text-blue-600"></i>评审目的</div>
+                    <div class="info-value">初步评价客户文件的符合性、充分性和适宜性。</div>
+
+                    <div class="info-label"><i class="fas fa-tasks mr-2 text-blue-600"></i>审核类型</div>
+                    <div class="info-value">
+                        <div class="checkbox-group">
+                            <div class="checkbox-item checked">
+                                <i class="fas fa-check-square text-lg"></i>
+                                <span>初次认证</span>
+                            </div>
+                            <div class="checkbox-item">
+                                <i class="far fa-square text-lg"></i>
+                                <span>再认证</span>
+                            </div>
+                            <div class="checkbox-item">
+                                <i class="far fa-square text-lg"></i>
+                                <span>监督</span>
+                            </div>
+                            <div class="checkbox-item">
+                                <i class="far fa-square text-lg"></i>
+                                <span>证书变更</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            -->
-        </div>
 
-        <!-- 5. 附件资料 -->
-        <div class="content-block">
-            <div class="section-title">
-                <span class="section-number">5</span>
-                附件资料
-            </div>
-
-            <div class="attachment-list">
-                <div class="attachment-item">
-                    <i class="fas fa-file-pdf text-red-500 text-lg"></i>
-                    <span class="flex-1">质量管理手册（完整版）.pdf</span>
-                    <span class="text-slate-400 text-sm">2.4 MB</span>
-                </div>
-                <div class="attachment-item">
-                    <i class="fas fa-file-word text-blue-500 text-lg"></i>
-                    <span class="flex-1">程序文件汇编.docx</span>
-                    <span class="text-slate-400 text-sm">1.8 MB</span>
-                </div>
-                <div class="attachment-item">
-                    <i class="fas fa-file-image text-purple-500 text-lg"></i>
-                    <span class="flex-1">组织架构图.png</span>
-                    <span class="text-slate-400 text-sm">856 KB</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 备注 -->
-        <div class="note-section">
-            <div class="note-title">
-                <i class="fas fa-info-circle"></i>
-                备注说明
-            </div>
-            <p>管理体系文件可以是手册、程序文件、流程图、作业文件等，至少应包括标准所要求的文件。本次评审仅针对客户提交的书面文件进行，现场审核时将对文件的实际运行情况进行验证。</p>
-        </div>
-
-        <!-- 签名区域 -->
-        <div class="signature-section">
-            <div>
-                <div class="field-row" style="margin-bottom: 2rem;">
-                    <span class="field-label">评审人：</span>
-                    <span class="field-value" style="border-bottom: 1px solid #1e293b; padding-bottom: 0.25rem; display: inline-block; min-width: 150px;">
-                        张建军
-                    </span>
-                    <span class="ml-4 text-slate-500">日期：2024-03-24</span>
+            <!-- Section 2: Review Criteria -->
+            <div id="review-criteria" class="scroll-mt-20">
+                <div class="section-title">
+                    <i class="fas fa-clipboard-check mr-2"></i>二、评审准则
                 </div>
 
-                <div class="text-sm text-slate-500 mt-8">
-                    <p>签名：</p>
-                    <div style="height: 60px; border-bottom: 1px solid #94a3b8; margin-top: 0.5rem;"></div>
+                <div class="info-grid">
+                    <div class="info-label"><i class="fas fa-book mr-2 text-blue-600"></i>管理体系标准</div>
+                    <div class="info-value">GB/T 19001-2016 / ISO 9001:2015《质量管理体系 要求》</div>
+
+                    <div class="info-label"><i class="fas fa-balance-scale mr-2 text-blue-600"></i>适用法律法规</div>
+                    <div class="info-value">《中华人民共和国产品质量法》、《中华人民共和国标准化法》及相关行业法规</div>
+
+                    <div class="info-label"><i class="fas fa-file-alt mr-2 text-blue-600"></i>其他准则</div>
+                    <div class="info-value">客户提供的管理体系文件、组织内部管理制度</div>
                 </div>
             </div>
 
-            <div>
-                <div class="field-row" style="margin-bottom: 2rem;">
-                    <span class="field-label">确认人：</span>
-                    <span class="field-value" style="border-bottom: 1px solid #1e293b; padding-bottom: 0.25rem; display: inline-block; min-width: 150px;">
-                        李明华
-                    </span>
-                    <span class="ml-4 text-slate-500">日期：2024-03-24</span>
+            <!-- Section 3: Documents -->
+            <div id="documents" class="scroll-mt-20">
+                <div class="section-title">
+                    <i class="fas fa-folder-open mr-2"></i>三、管理体系文件
                 </div>
 
-                <div class="text-sm text-slate-500 mt-8">
-                    <p>签名：</p>
-                    <div style="height: 60px; border-bottom: 1px solid #94a3b8; margin-top: 0.5rem;"></div>
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">序号</th>
+                            <th style="width: 35%;">文件名称</th>
+                            <th style="width: 25%;">编号</th>
+                            <th>版本号/发布日期</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center font-medium">1</td>
+                            <td><i class="fas fa-book text-blue-500 mr-2"></i>质量管理手册</td>
+                            <td><code class="bg-gray-100 px-2 py-1 rounded text-sm">QMM-01</code></td>
+                            <td>V3.0 / 2024-01-15</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center font-medium">2</td>
+                            <td><i class="fas fa-file-alt text-blue-500 mr-2"></i>文件控制程序</td>
+                            <td><code class="bg-gray-100 px-2 py-1 rounded text-sm">QP-01</code></td>
+                            <td>V2.1 / 2024-02-01</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center font-medium">3</td>
+                            <td><i class="fas fa-file-alt text-blue-500 mr-2"></i>记录控制程序</td>
+                            <td><code class="bg-gray-100 px-2 py-1 rounded text-sm">QP-02</code></td>
+                            <td>V2.0 / 2024-02-01</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center font-medium">4</td>
+                            <td><i class="fas fa-file-alt text-blue-500 mr-2"></i>内部审核程序</td>
+                            <td><code class="bg-gray-100 px-2 py-1 rounded text-sm">QP-08</code></td>
+                            <td>V3.2 / 2024-01-20</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center font-medium">5</td>
+                            <td><i class="fas fa-file-alt text-blue-500 mr-2"></i>不合格品控制程序</td>
+                            <td><code class="bg-gray-100 px-2 py-1 rounded text-sm">QP-13</code></td>
+                            <td>V2.5 / 2024-01-10</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Section 4: Conclusion -->
+            <div id="conclusion" class="scroll-mt-20">
+                <div class="section-title">
+                    <i class="fas fa-gavel mr-2"></i>四、评审结论
+                </div>
+
+                <div class="conclusion-box">
+                    <div class="conclusion-title">
+                        <i class="fas fa-check-circle text-2xl"></i>
+                        符合要求
+                    </div>
+                    <div class="conclusion-text">
+                        经评审，客户提交的管理体系文件符合 GB/T 19001-2016 标准要求，文件内容充分、适宜，可进行现场审核。
+                    </div>
+                </div>
+
+                <!-- 如果不符合要求时显示以下内容（默认隐藏） -->
+                <div class="conclusion-box non-conform hidden">
+                    <div class="conclusion-title">
+                        <i class="fas fa-exclamation-triangle text-2xl"></i>
+                        不符合要求
+                    </div>
+                    <div class="conclusion-text">
+                        文件存在以下问题，需修改后再次提交：
+                        <div class="mt-3 ml-0 space-y-2">
+                            <div class="bg-white/60 p-3 rounded border border-orange-200">
+                                <strong>存在的问题：</strong><br>
+                                1. 质量手册中4.3条款关于体系范围描述不够明确；<br>
+                                2. 缺少《风险和机遇应对措施表》相关记录。
+                            </div>
+                            <div class="bg-white/60 p-3 rounded border border-orange-200">
+                                <strong>修改确认：</strong><br>
+                                已按要求修改完成，补充了体系范围说明和风险应对措施记录表。
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 页脚 -->
-        <div class="mt-12 pt-4 border-t border-slate-200 text-center text-xs text-slate-400">
-            <p>文件编号：MSF11-21 | 版本：2015版 | 发布/修订日期：2022-01-13 | 实施日期：2022-01-20</p>
-            <p class="mt-1">本报告一式两份，认证机构与客户各执一份</p>
+            <!-- Section 5: Attachments -->
+            <div id="attachments" class="scroll-mt-20">
+                <div class="section-title">
+                    <i class="fas fa-paperclip mr-2"></i>五、附件资料
+                </div>
+
+                <div class="attachment-list">
+                    <!-- PDF 文件 -->
+                    <div class="attachment-item" data-type="pdf" data-name="质量管理手册（完整版）.pdf" data-size="2.4 MB">
+                        <div class="attachment-icon">
+                            <i class="fas fa-file-pdf text-red-500 text-2xl"></i>
+                        </div>
+                        <div class="attachment-info">
+                            <div class="attachment-name">质量管理手册（完整版）.pdf</div>
+                            <div class="attachment-meta">
+                                <span class="attachment-size">2.4 MB</span>
+                                <span class="attachment-date">2024-03-24 上传</span>
+                            </div>
+                        </div>
+                        <div class="attachment-actions">
+                            <button class="action-btn preview-btn" onclick="previewFile(this, 'pdf')" title="预览">
+                                <i class="fas fa-eye"></i>
+                                <span>预览</span>
+                            </button>
+                            <button class="action-btn download-btn" onclick="downloadFile(this, '质量管理手册（完整版）.pdf')" title="下载">
+                                <i class="fas fa-download"></i>
+                                <span>下载</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Word 文件 -->
+                    <div class="attachment-item" data-type="word" data-name="程序文件汇编.docx" data-size="1.8 MB">
+                        <div class="attachment-icon">
+                            <i class="fas fa-file-word text-blue-500 text-2xl"></i>
+                        </div>
+                        <div class="attachment-info">
+                            <div class="attachment-name">程序文件汇编.docx</div>
+                            <div class="attachment-meta">
+                                <span class="attachment-size">1.8 MB</span>
+                                <span class="attachment-date">2024-03-24 上传</span>
+                            </div>
+                        </div>
+                        <div class="attachment-actions">
+                            <button class="action-btn preview-btn" onclick="previewFile(this, 'word')" title="预览">
+                                <i class="fas fa-eye"></i>
+                                <span>预览</span>
+                            </button>
+                            <button class="action-btn download-btn" onclick="downloadFile(this, '程序文件汇编.docx')" title="下载">
+                                <i class="fas fa-download"></i>
+                                <span>下载</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 图片文件 -->
+                    <div class="attachment-item" data-type="image" data-name="组织架构图.png" data-size="856 KB">
+                        <div class="attachment-icon">
+                            <i class="fas fa-file-image text-purple-500 text-2xl"></i>
+                        </div>
+                        <div class="attachment-info">
+                            <div class="attachment-name">组织架构图.png</div>
+                            <div class="attachment-meta">
+                                <span class="attachment-size">856 KB</span>
+                                <span class="attachment-date">2024-03-24 上传</span>
+                            </div>
+                        </div>
+                        <div class="attachment-actions">
+                            <button class="action-btn preview-btn" onclick="previewFile(this, 'image')" title="预览">
+                                <i class="fas fa-eye"></i>
+                                <span>预览</span>
+                            </button>
+                            <button class="action-btn download-btn" onclick="downloadFile(this, '组织架构图.png')" title="下载">
+                                <i class="fas fa-download"></i>
+                                <span>下载</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 预览模态框 -->
+            <div id="previewModal" class="preview-modal">
+                <div class="preview-overlay" onclick="closePreview()"></div>
+                <div class="preview-container">
+                    <div class="preview-header">
+                        <h3 class="preview-title">
+                            <i class="fas fa-file-alt mr-2"></i>
+                            <span id="previewFileName">文件预览</span>
+                        </h3>
+                        <div class="preview-actions">
+                            <button class="preview-action-btn" onclick="downloadCurrentFile()" title="下载">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="preview-action-btn close" onclick="closePreview()" title="关闭">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="preview-body" id="previewBody">
+                        <!-- 预览内容将动态插入 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下载进度提示 -->
+            <div id="downloadToast" class="download-toast">
+                <div class="toast-content">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span id="toastMessage">正在下载...</span>
+                </div>
+            </div>
+
+            <!-- Note Section -->
+            <div class="note-section">
+                <div class="note-title">
+                    <i class="fas fa-info-circle text-yellow-600"></i>
+                    备注说明
+                </div>
+                <p class="leading-relaxed">管理体系文件可以是手册、程序文件、流程图、作业文件等，至少应包括标准所要求的文件。本次评审仅针对客户提交的书面文件进行，现场审核时将对文件的实际运行情况进行验证。</p>
+            </div>
+
+            <!-- Signature Area -->
+            <div class="signature-area">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                        <div class="text-sm text-gray-600 mb-4 font-semibold">评审人</div>
+                        <div class="flex items-center gap-4 mb-4">
+                            <span class="text-gray-500">姓名：</span>
+                            <span class="font-semibold text-lg border-b-2 border-gray-400 pb-1 flex-1">张建军</span>
+                        </div>
+                        <div class="flex items-center gap-4 mb-4">
+                            <span class="text-gray-500">日期：</span>
+                            <span class="font-medium">2024-03-24</span>
+                        </div>
+                        <div class="mt-4">
+                            <span class="text-sm text-gray-500">签名：</span>
+                            <div class="h-16 border-b-2 border-gray-400 mt-2 flex items-end justify-center">
+                                <span class="text-gray-400 italic text-sm">请在此处签名</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                        <div class="text-sm text-gray-600 mb-4 font-semibold">确认人</div>
+                        <div class="flex items-center gap-4 mb-4">
+                            <span class="text-gray-500">姓名：</span>
+                            <span class="font-semibold text-lg border-b-2 border-gray-400 pb-1 flex-1">李明华</span>
+                        </div>
+                        <div class="flex items-center gap-4 mb-4">
+                            <span class="text-gray-500">日期：</span>
+                            <span class="font-medium">2024-03-24</span>
+                        </div>
+                        <div class="mt-4">
+                            <span class="text-sm text-gray-500">签名：</span>
+                            <div class="h-16 border-b-2 border-gray-400 mt-2 flex items-end justify-center">
+                                <span class="text-gray-400 italic text-sm">请在此处签名</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-12 pt-6 border-t border-gray-300 text-center text-xs text-gray-500 space-y-1">
+                <p>文件编号：MSF11-21 | 版本：2015版 | 发布/修订日期：2022-01-13 | 实施日期：2022-01-20</p>
+                <p class="font-semibold mt-2">本报告一式两份，认证机构与客户各执一份</p>
+            </div>
+
         </div>
     </div>
 
     <script>
-        // 页面加载完成后的处理
-        document.addEventListener('DOMContentLoaded', function() {
-            // 从URL参数获取数据（如果有的话）
-            const urlParams = new URLSearchParams(window.location.search);
-            const conclusion = urlParams.get('conclusion');
+        // Navigation active state
+        const sections = document.querySelectorAll('div[id]');
+        const navPills = document.querySelectorAll('.nav-pill');
 
-            if (conclusion === 'non-conform') {
-                // 这里可以动态切换显示不符合要求的版本
-                console.log('显示不符合要求版本');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= (sectionTop - 200)) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navPills.forEach(pill => {
+                pill.classList.remove('active');
+                if (pill.getAttribute('href') === '#' + current) {
+                    pill.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Checkbox interaction
+        document.querySelectorAll('.checkbox-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (this.classList.contains('checked')) {
+                    this.classList.remove('checked');
+                    icon.classList.remove('fa-check-square');
+                    icon.classList.add('fa-square');
+                } else {
+                    // Uncheck others if it's radio-like behavior
+                    document.querySelectorAll('.checkbox-item').forEach(other => {
+                        other.classList.remove('checked');
+                        other.querySelector('i').classList.remove('fa-check-square');
+                        other.querySelector('i').classList.add('fa-square');
+                    });
+                    this.classList.add('checked');
+                    icon.classList.remove('fa-square');
+                    icon.classList.add('fa-check-square');
+                }
+            });
+        });
+
+        // Toggle conclusion type (for demo purposes)
+        function toggleConclusion(type) {
+            const conformBox = document.querySelector('.conclusion-box:not(.non-conform)');
+            const nonConformBox = document.querySelector('.conclusion-box.non-conform');
+
+            if (type === 'non-conform') {
+                conformBox.classList.add('hidden');
+                nonConformBox.classList.remove('hidden');
+            } else {
+                conformBox.classList.remove('hidden');
+                nonConformBox.classList.add('hidden');
+            }
+        }
+
+        // Add keyboard shortcut for print
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+        });
+
+        // Preview and Download Functions
+        let currentFile = null;
+
+        function previewFile(btn, type) {
+            const item = btn.closest('.attachment-item');
+            const fileName = item.dataset.name;
+            const fileSize = item.dataset.size;
+            currentFile = { name: fileName, type: type };
+
+            const modal = document.getElementById('previewModal');
+            const fileNameEl = document.getElementById('previewFileName');
+            const body = document.getElementById('previewBody');
+
+            fileNameEl.textContent = fileName;
+
+            // 根据文件类型生成预览内容
+            let previewContent = '';
+            if (type === 'pdf') {
+                previewContent = `
+                    <div class="preview-placeholder">
+                        <i class="fas fa-file-pdf text-red-500"></i>
+                        <h3 class="text-lg font-semibold mb-2">PDF 文件预览</h3>
+                        <p class="text-sm mb-4">${fileName}</p>
+                        <p class="text-xs text-gray-400 mb-4">文件大小: ${fileSize}</p>
+                        <div class="bg-gray-100 rounded-lg p-8 max-w-md">
+                            <p class="text-sm text-gray-600 mb-4">由于浏览器安全限制，PDF 预览需要在新窗口中打开。</p>
+                            <button onclick="openInNewWindow('pdf')" class="action-btn download-btn">
+                                <i class="fas fa-external-link-alt"></i>
+                                <span>在新窗口中打开</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'word') {
+                previewContent = `
+                    <div class="preview-placeholder">
+                        <i class="fas fa-file-word text-blue-500"></i>
+                        <h3 class="text-lg font-semibold mb-2">Word 文档预览</h3>
+                        <p class="text-sm mb-4">${fileName}</p>
+                        <p class="text-xs text-gray-400 mb-4">文件大小: ${fileSize}</p>
+                        <div class="bg-gray-100 rounded-lg p-8 max-w-md">
+                            <p class="text-sm text-gray-600 mb-4">Word 文档需要下载后使用 Microsoft Word 或 WPS 打开查看。</p>
+                            <button onclick="downloadCurrentFile()" class="action-btn download-btn">
+                                <i class="fas fa-download"></i>
+                                <span>立即下载</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'image') {
+                // 模拟图片预览
+                previewContent = `
+                    <div class="text-center">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-700">${fileName}</h3>
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Crect fill='%23e2e8f0' width='600' height='400'/%3E%3Ctext x='50%25' y='50%25' font-family='Arial' font-size='20' fill='%2364748b' text-anchor='middle' dy='.3em'%3E组织架构图预览%3C/text%3E%3C/svg%3E" 
+                             alt="${fileName}" 
+                             class="preview-image"
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27600%27 height=%27400%27%3E%3Crect fill=%27%23f1f5f9%27 width=%27600%27 height=%27400%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 font-family=%27Arial%27 font-size=%2718%27 fill=%27%2364748b%27 text-anchor=%27middle%27%3E图片预览区域%3C/text%3E%3C/svg%27"">
+                        <p class="text-sm text-gray-500 mt-4">点击下载按钮保存原图</p>
+                    </div>
+                `;
             }
 
-            // 添加当前日期
-            const today = new Date().toLocaleDateString('zh-CN');
-            console.log('Report generated on:', today);
+            body.innerHTML = previewContent;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePreview() {
+            const modal = document.getElementById('previewModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function downloadFile(btn, fileName) {
+            showToast(`正在下载 ${fileName}...`);
+
+            // 模拟下载过程
+            setTimeout(() => {
+                // 创建模拟下载
+                const blob = new Blob(['模拟文件内容'], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showToast(`${fileName} 下载完成！`, 'success');
+            }, 1500);
+        }
+
+        function downloadCurrentFile() {
+            if (currentFile) {
+                downloadFile(null, currentFile.name);
+            }
+        }
+
+        function openInNewWindow(type) {
+            if (currentFile) {
+                showToast(`正在打开 ${currentFile.name}...`);
+                // 实际应用中这里会打开真实的文件URL
+                setTimeout(() => {
+                    showToast('已在新窗口中打开', 'success');
+                }, 1000);
+            }
+        }
+
+        function showToast(message, type = 'loading') {
+            const toast = document.getElementById('downloadToast');
+            const messageEl = document.getElementById('toastMessage');
+            const icon = toast.querySelector('i');
+
+            messageEl.textContent = message;
+
+            if (type === 'success') {
+                icon.className = 'fas fa-check-circle';
+                toast.style.background = '#166534';
+            } else {
+                icon.className = 'fas fa-spinner fa-spin';
+                toast.style.background = '#1e293b';
+            }
+
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // ESC 键关闭预览
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePreview();
+            }
+        });
+
+        // 点击模态框外部关闭
+        document.getElementById('previewModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget || e.target.classList.contains('preview-overlay')) {
+                closePreview();
+            }
         });
     </script>
 </body>
