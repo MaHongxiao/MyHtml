@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件评审报告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .form-section {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            scroll-margin-top: 140px;
+        }
+
+        .form-section:hover {
+            box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        .conditional-field {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+        }
+
+        .conditional-field.active {
+            max-height: 500px;
+            opacity: 1;
+            margin-top: 0.75rem;
+        }
+
+        .nav-item {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #2563eb;
+            transition: width 0.3s ease;
+        }
+
+        .nav-item.active {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .nav-item.active::after {
+            width: 100%;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* 统一表单项高度 - 36px */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        select,
+        textarea {
+            min-height: 36px !important;
+            padding: 8px 10px !important;
+            font-size: 13px !important;
+            line-height: 20px !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 6px !important;
+            background: white !important;
+            transition: all 0.2s !important;
+            box-sizing: border-box !important;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        }
+
+        input:read-only,
+        input:disabled,
+        select:disabled,
+        textarea:disabled {
+            background: #f3f4f6 !important;
+            cursor: not-allowed !important;
+        }
+
+        select {
+            appearance: auto !important;
+            padding-right: 24px !important;
+        }
+
+        textarea {
+            min-height: 80px !important;
+            resize: vertical !important;
+        }
+
+        /* 状态徽章 */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .badge-processing {
+            background: #e6f7ff;
+            color: #1890ff;
+            border-color: #1890ff;
+        }
+
+        .badge-success {
+            background: #f6ffed;
+            color: #52c41a;
+            border-color: #52c41a;
+        }
+
+        .badge-warning {
+            background: #fff7e6;
+            color: #fa8c16;
+            border-color: #ffa940;
+        }
+
+        .badge-draft {
+            background: #f5f5f5;
+            color: #8c8c8c;
+            border-color: #d9d9d9;
+        }
+
+        /* Toast提示 */
+        #toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* 文件列表样式 */
+        .file-list-item {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+        }
+
+        .file-list-item:hover {
+            background: #dcfce7;
+            border-color: #4ade80;
+        }
+
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            background: #f9fafb;
+            color: #374151;
+            font-weight: 600;
+            padding: 10px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: top;
+        }
+
+        .data-table tr:hover td {
+            background: #fafafa;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 单选卡片 */
+        .radio-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .radio-card:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .radio-card.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .radio-card.selected .radio-icon {
+            background: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .radio-card.selected .radio-icon i {
+            opacity: 1;
+        }
+
+        .radio-icon {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .radio-icon i {
+            color: white;
+            font-size: 10px;
+            opacity: 0;
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <!-- 顶部导航栏 -->
+    <div class="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-14">
+                <div class="flex items-center gap-4">
+                    <span class="text-slate-500 text-sm font-mono">RW-202403240001</span>
+                    <h1 class="text-lg font-bold text-slate-900">文件评审报告</h1>
+                    <span class="status-badge badge-draft" id="headerStatusBadge">待提交</span>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button id="saveBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-md shadow-blue-200 transition-all active:scale-95 flex items-center gap-2" onclick="saveDraft()">
+                        <i class="fas fa-save text-xs"></i>
+                        保存草稿
+                    </button>
+                    <button id="submitBtn" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium shadow-md shadow-emerald-200 transition-all active:scale-95 flex items-center gap-2" onclick="submitReport()">
+                        <i class="fas fa-check text-xs"></i>
+                        提交报告
+                    </button>
+                    <button id="withdrawBtn" class="hidden px-4 py-2 bg-orange-100 text-orange-700 border border-orange-300 rounded-lg hover:bg-orange-200 text-sm font-medium transition-all active:scale-95 flex items-center gap-2" onclick="withdrawReport()">
+                        <i class="fas fa-undo text-xs"></i>
+                        撤回
+                    </button>
+                </div>
+            </div>
+
+            <!-- 锚点导航 -->
+            <nav class="flex gap-6 text-sm text-slate-600 overflow-x-auto custom-scrollbar pb-1">
+                <a href="#section-basic" class="nav-item active py-2" data-section="section-basic">基本信息</a>
+                <a href="#section-criteria" class="nav-item py-2" data-section="section-criteria">评审准则</a>
+                <a href="#section-files" class="nav-item py-2" data-section="section-files">体系文件</a>
+                <a href="#section-conclusion" class="nav-item py-2" data-section="section-conclusion">评审结论</a>
+                <a href="#section-attachment" class="nav-item py-2" data-section="section-attachment">附件</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 主体内容 -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
+
+        <!-- 项目概要卡片 -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden p-6 mb-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white">
+                    <i class="fas fa-file-contract text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">文件评审报告</h2>
+                    <p class="text-sm text-slate-500">Document Review Report</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-3 text-sm">
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">审核任务编码</span>
+                    <span class="font-medium text-slate-900">RW-202403240001</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">客户名称</span>
+                    <span class="font-medium text-slate-900">北京市地铁运营有限公司</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">提交时间</span>
+                    <span class="font-medium text-slate-900" id="submitTimeDisplay">-</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 block text-xs mb-1">当前状态</span>
+                    <span class="font-medium text-slate-900" id="statusText">待提交</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. 基本信息 -->
+        <div id="section-basic" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</div>
+                    <h3 class="font-semibold text-slate-900">基本信息</h3>
+                </div>
+                <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
+            </div>
+            <div class="p-6 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">客户名称</label>
+                        <input type="text" value="北京市地铁运营有限公司" disabled class="w-full bg-slate-100 text-slate-500 cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">评审目的</label>
+                        <input type="text" value="初步评价客户文件的符合性、充分性和适宜性。" disabled class="w-full bg-slate-100 text-slate-500 cursor-not-allowed">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 评审准则 -->
+        <div id="section-criteria" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</div>
+                    <h3 class="font-semibold text-slate-900">评审准则</h3>
+                </div>
+                <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
+            </div>
+            <div class="p-6 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">管理体系标准（规范性要求）</label>
+                        <input type="text" id="docReviewStandard" placeholder="请输入管理体系标准，如：GB/T 19001-2016" class="w-full">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">适用法律法规</label>
+                        <input type="text" id="docReviewLaws" placeholder="请输入适用法律法规" class="w-full">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">其他</label>
+                        <input type="text" id="docReviewOther" placeholder="请输入其他评审准则" class="w-full">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 管理体系文件 -->
+        <div id="section-files" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">3</div>
+                    <h3 class="font-semibold text-slate-900">管理体系文件</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="event.stopPropagation(); addFileRow()" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium flex items-center gap-1 transition-all active:scale-95">
+                        <i class="fas fa-plus"></i>
+                        添加文件
+                    </button>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs ml-2"></i>
+                </div>
+            </div>
+            <div class="p-6 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
+                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                    <table class="data-table" id="fileTable">
+                        <thead>
+                            <tr>
+                                <th class="w-16">序号</th>
+                                <th>文件名称</th>
+                                <th>编号</th>
+                                <th>版本号/发布日期</th>
+                                <th class="w-20">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-slate-600">1</td>
+                                <td><input type="text" class="w-full" placeholder="请输入文件名称"></td>
+                                <td><input type="text" class="w-full" placeholder="请输入编号"></td>
+                                <td><input type="text" class="w-full" placeholder="版本号/发布日期"></td>
+                                <td>
+                                    <button onclick="deleteFileRow(this)" class="text-red-500 hover:text-red-700 transition p-2 rounded-lg hover:bg-red-50">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 评审结论 -->
+        <div id="section-conclusion" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">4</div>
+                    <h3 class="font-semibold text-slate-900">评审结论</h3>
+                </div>
+                <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
+            </div>
+            <div class="p-6 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="radio-card selected" onclick="selectConclusion(this, 'conform')">
+                        <div class="flex items-start gap-3">
+                            <div class="radio-icon mt-0.5">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold text-slate-800 mb-1">符合要求</div>
+                                <div class="text-sm text-slate-500">可进行现场审核</div>
+                            </div>
+                            <!-- <i class="fas fa-check-circle text-blue-500 text-xl"></i> -->
+                        </div>
+                    </div>
+
+                    <div class="radio-card" onclick="selectConclusion(this, 'non-conform')">
+                        <div class="flex items-start gap-3">
+                            <div class="radio-icon mt-0.5">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold text-slate-800 mb-1">不符合要求</div>
+                                <div class="text-sm text-slate-500">需修改后再次提交</div>
+                            </div>
+                            <!-- <i class="fas fa-exclamation-circle text-orange-500 text-xl"></i> -->
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="conclusionValue" value="conform">
+
+                <div id="nonConformSection" class="conditional-field">
+                    <div class="bg-orange-50 rounded-lg p-4 border border-orange-200 space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">存在的问题（可附页）</label>
+                            <textarea id="issuesText" rows="3" placeholder="请详细描述存在的问题..." class="w-full bg-white"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">修改情况的确认</label>
+                            <textarea id="modificationText" rows="2" placeholder="请描述修改情况的确认..." class="w-full bg-white"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 bg-emerald-50 rounded-lg p-4 border border-emerald-200">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-info-circle text-emerald-600 mt-0.5"></i>
+                        <div class="text-sm text-slate-700 leading-relaxed">
+                            <span class="font-semibold">备注说明：</span>管理体系文件可以是手册、程序文件、流程图、作业文件等，至少应包括标准所要求的文件。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. 附件上传 -->
+        <div id="section-attachment" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">5</div>
+                    <h3 class="font-semibold text-slate-900">附件资料</h3>
+                </div>
+                <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
+            </div>
+            <div class="p-6 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
+                <div class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-blue-50/30 transition cursor-pointer" onclick="document.getElementById('fileInput').click()">
+                    <div class="w-16 h-16 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-cloud-upload-alt text-2xl"></i>
+                    </div>
+                    <p class="text-slate-700 font-medium mb-2">点击上传文件，或拖拽文件到此处</p>
+                    <p class="text-sm text-slate-400">支持 PDF、Word、图片等格式，单个文件不超过 20MB</p>
+                    <input type="file" id="fileInput" class="hidden" accept=".doc,.docx,.pdf,.jpg,.jpeg,.png,.gif" multiple onchange="handleFileSelect(event)">
+                </div>
+
+                <div id="attachmentList" class="mt-4 space-y-2">
+                    <!-- 动态生成附件列表 -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast提示 -->
+    <div id="toast">
+        <i id="toastIcon" class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMessage">操作成功</span>
+    </div>
+
+    <script>
+        let attachments = [];
+        let isSubmitted = false;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDraft();
+            renderAttachments();
+            initScrollSpy();
+        });
+
+        // 滚动监听
+        function initScrollSpy() {
+            const sections = document.querySelectorAll('.form-section[id]');
+            const navItems = document.querySelectorAll('.nav-item');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        navItems.forEach(item => {
+                            item.classList.remove('active');
+                            if (item.getAttribute('data-section') === id) {
+                                item.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: '-20% 0px -80% 0px', threshold: 0 });
+
+            sections.forEach(section => observer.observe(section));
+        }
+
+        // 区块折叠展开
+        function toggleSection(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.fa-chevron-down');
+
+            if (!content) return;
+
+            const isCollapsed = content.style.maxHeight === '0px';
+
+            if (isCollapsed) {
+                content.style.maxHeight = '4000px';
+                content.style.overflow = 'visible';
+                content.style.paddingTop = '';
+                content.style.paddingBottom = '';
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.maxHeight = '0px';
+                content.style.overflow = 'hidden';
+                content.style.paddingTop = '0';
+                content.style.paddingBottom = '0';
+                if (icon) icon.style.transform = 'rotate(-90deg)';
+            }
+        }
+
+        // 添加文件行
+        function addFileRow() {
+            if (isSubmitted) {
+                showToast('已提交状态下不可编辑', 'warning');
+                return;
+            }
+
+            const tbody = document.querySelector('#fileTable tbody');
+            const rowCount = tbody.rows.length + 1;
+
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td class="text-slate-600">${rowCount}</td>
+                <td><input type="text" class="w-full" placeholder="请输入文件名称"></td>
+                <td><input type="text" class="w-full" placeholder="请输入编号"></td>
+                <td><input type="text" class="w-full" placeholder="版本号/发布日期"></td>
+                <td>
+                    <button onclick="deleteFileRow(this)" class="text-red-500 hover:text-red-700 transition p-2 rounded-lg hover:bg-red-50">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+        }
+
+        // 删除文件行
+        function deleteFileRow(btn) {
+            if (isSubmitted) {
+                showToast('已提交状态下不可删除', 'warning');
+                return;
+            }
+
+            const tbody = document.querySelector('#fileTable tbody');
+            if (tbody.rows.length <= 1) {
+                showToast('至少保留一条记录', 'warning');
+                return;
+            }
+
+            btn.closest('tr').remove();
+            updateRowNumbers();
+            showToast('已删除', 'success');
+        }
+
+        // 更新行号
+        function updateRowNumbers() {
+            const rows = document.querySelectorAll('#fileTable tbody tr');
+            rows.forEach((row, index) => {
+                row.cells[0].textContent = index + 1;
+            });
+        }
+
+        // 选择评审结论
+        function selectConclusion(element, value) {
+            if (isSubmitted) return;
+
+            document.querySelectorAll('.radio-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            document.getElementById('conclusionValue').value = value;
+
+            const nonConformSection = document.getElementById('nonConformSection');
+            if (value === 'non-conform') {
+                nonConformSection.classList.remove('hidden');
+                setTimeout(() => nonConformSection.classList.add('active'), 10);
+            } else {
+                nonConformSection.classList.remove('active');
+                setTimeout(() => nonConformSection.classList.add('hidden'), 300);
+            }
+        }
+
+        // 处理文件选择
+        function handleFileSelect(event) {
+            if (isSubmitted) {
+                showToast('已提交状态下不可上传附件', 'warning');
+                return;
+            }
+
+            const files = event.target.files;
+            for (let file of files) {
+                let type = 'file';
+                let icon = 'fa-file';
+                let color = 'text-gray-500';
+
+                if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+                    type = 'word';
+                    icon = 'fa-file-word';
+                    color = 'text-blue-500';
+                } else if (file.name.endsWith('.pdf')) {
+                    type = 'pdf';
+                    icon = 'fa-file-pdf';
+                    color = 'text-red-500';
+                } else if (file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
+                    type = 'image';
+                    icon = 'fa-file-image';
+                    color = 'text-purple-500';
+                }
+
+                attachments.push({ 
+                    name: file.name, 
+                    type: type, 
+                    icon: icon,
+                    color: color,
+                    size: (file.size / 1024 / 1024).toFixed(2) + 'MB'
+                });
+            }
+            renderAttachments();
+            event.target.value = '';
+        }
+
+        // 渲染附件列表
+        function renderAttachments() {
+            const container = document.getElementById('attachmentList');
+            container.innerHTML = '';
+
+            if (attachments.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">暂无附件</p>';
+                return;
+            }
+
+            attachments.forEach((att, index) => {
+                const item = document.createElement('div');
+                item.className = 'file-list-item';
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <i class="fas ${att.icon} ${att.color} text-lg"></i>
+                        <div>
+                            <div class="text-sm font-medium text-slate-700">${att.name}</div>
+                            <div class="text-xs text-slate-400">${att.size}</div>
+                        </div>
+                    </div>
+                    ${!isSubmitted ? `
+                    <button onclick="removeAttachment(${index})" class="text-slate-400 hover:text-red-500 transition p-2 rounded-lg hover:bg-red-50">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    ` : ''}
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // 删除附件
+        function removeAttachment(index) {
+            if (isSubmitted) return;
+            attachments.splice(index, 1);
+            renderAttachments();
+            showToast('附件已删除', 'success');
+        }
+
+        // 保存草稿
+        function saveDraft() {
+            if (isSubmitted) {
+                showToast('已提交状态下不可保存', 'warning');
+                return;
+            }
+
+            const data = collectData();
+            localStorage.setItem('docReviewDraft', JSON.stringify(data));
+            showToast('草稿已保存', 'success');
+        }
+
+        // 提交报告
+        function submitReport() {
+            if (isSubmitted) return;
+
+            const standard = document.getElementById('docReviewStandard').value.trim();
+            if (!standard) {
+                showToast('请填写管理体系标准', 'error');
+                document.getElementById('docReviewStandard').focus();
+                return;
+            }
+
+            if (confirm('确定提交文件评审报告吗？提交后将不可再修改。')) {
+                isSubmitted = true;
+                const now = new Date().toLocaleString('zh-CN', { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                }).replace(/\//g, '-');
+
+                document.getElementById('submitTimeDisplay').textContent = now;
+                document.getElementById('statusText').textContent = '已提交';
+                document.getElementById('headerStatusBadge').textContent = '已提交';
+                document.getElementById('headerStatusBadge').className = 'status-badge badge-success';
+                document.getElementById('submitBtn').classList.add('hidden');
+                document.getElementById('saveBtn').classList.add('hidden');
+                document.getElementById('withdrawBtn').classList.remove('hidden');
+
+                toggleInputs(false);
+                showToast('报告提交成功', 'success');
+            }
+        }
+
+        // 撤回报告
+        function withdrawReport() {
+            if (!isSubmitted) return;
+
+            if (confirm('确定撤回文件评审报告吗？撤回后将变为待提交状态。')) {
+                isSubmitted = false;
+                document.getElementById('submitTimeDisplay').textContent = '-';
+                document.getElementById('statusText').textContent = '待提交';
+                document.getElementById('headerStatusBadge').textContent = '待提交';
+                document.getElementById('headerStatusBadge').className = 'status-badge badge-draft';
+                document.getElementById('submitBtn').classList.remove('hidden');
+                document.getElementById('saveBtn').classList.remove('hidden');
+                document.getElementById('withdrawBtn').classList.add('hidden');
+
+                toggleInputs(true);
+                showToast('报告已撤回', 'warning');
+            }
+        }
+
+        // 切换输入框状态
+        function toggleInputs(enabled) {
+            const inputs = document.querySelectorAll('input:not([readonly]), textarea, select');
+            inputs.forEach(input => {
+                if (enabled) {
+                    input.removeAttribute('disabled');
+                    input.classList.remove('bg-slate-100', 'cursor-not-allowed');
+                } else {
+                    input.setAttribute('disabled', 'disabled');
+                    input.classList.add('bg-slate-100', 'cursor-not-allowed');
+                }
+            });
+
+            document.querySelectorAll('.radio-card').forEach(card => {
+                card.style.pointerEvents = enabled ? 'auto' : 'none';
+                card.style.opacity = enabled ? '1' : '0.7';
+            });
+        }
+
+        // 收集数据
+        function collectData() {
+            const files = [];
+            document.querySelectorAll('#fileTable tbody tr').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                files.push({
+                    name: inputs[0].value,
+                    code: inputs[1].value,
+                    version: inputs[2].value
+                });
+            });
+
+            return {
+                standard: document.getElementById('docReviewStandard').value,
+                laws: document.getElementById('docReviewLaws').value,
+                other: document.getElementById('docReviewOther').value,
+                conclusion: document.getElementById('conclusionValue').value,
+                issues: document.getElementById('issuesText').value,
+                modification: document.getElementById('modificationText').value,
+                files: files,
+                attachments: attachments
+            };
+        }
+
+        // 加载草稿
+        function loadDraft() {
+            const draft = localStorage.getItem('docReviewDraft');
+            if (draft) {
+                const data = JSON.parse(draft);
+                document.getElementById('docReviewStandard').value = data.standard || '';
+                document.getElementById('docReviewLaws').value = data.laws || '';
+                document.getElementById('docReviewOther').value = data.other || '';
+
+                if (data.conclusion === 'non-conform') {
+                    document.querySelectorAll('.radio-card')[1].click();
+                }
+
+                document.getElementById('issuesText').value = data.issues || '';
+                document.getElementById('modificationText').value = data.modification || '';
+
+                if (data.files && data.files.length > 0) {
+                    const tbody = document.querySelector('#fileTable tbody');
+                    tbody.innerHTML = '';
+                    data.files.forEach((file, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="text-slate-600">${index + 1}</td>
+                            <td><input type="text" class="w-full" value="${file.name || ''}" placeholder="请输入文件名称"></td>
+                            <td><input type="text" class="w-full" value="${file.code || ''}" placeholder="请输入编号"></td>
+                            <td><input type="text" class="w-full" value="${file.version || ''}" placeholder="版本号/发布日期"></td>
+                            <td>
+                                <button onclick="deleteFileRow(this)" class="text-red-500 hover:text-red-700 transition p-2 rounded-lg hover:bg-red-50">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+
+                if (data.attachments) {
+                    attachments = data.attachments;
+                }
+            }
+        }
+
+        // 显示提示
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const msg = document.getElementById('toastMessage');
+
+            msg.textContent = message;
+            icon.className = type === 'error' ? 'fas fa-exclamation-circle text-red-400' : 
+                            type === 'warning' ? 'fas fa-exclamation-triangle text-yellow-400' : 
+                            type === 'info' ? 'fas fa-info-circle text-blue-400' :
+                            'fas fa-check-circle text-green-400';
+
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 自动保存草稿（每30秒）
+        setInterval(() => {
+            if (!isSubmitted) {
+                const data = collectData();
+                localStorage.setItem('docReviewDraft', JSON.stringify(data));
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
