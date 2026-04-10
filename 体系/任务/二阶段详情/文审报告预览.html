@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件评审报告 - 已审核</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', 'SimSun', serif;
+            background-color: #f8fafc;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* 审批水印 */
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 120px;
+            font-weight: bold;
+            color: rgba(34, 197, 94, 0.08);
+            z-index: 0;
+            pointer-events: none;
+            user-select: none;
+            letter-spacing: 20px;
+        }
+
+        /* 报告容器 */
+        .report-container {
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 正式报告头部 */
+        .report-header {
+            border-bottom: 3px double #1e40af;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .report-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: 0.1em;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .report-subtitle {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.875rem;
+            letter-spacing: 0.05em;
+        }
+
+        .report-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .meta-item {
+            font-size: 0.875rem;
+            color: #475569;
+        }
+
+        .meta-label {
+            color: #94a3b8;
+            margin-right: 0.5rem;
+        }
+
+        /* 章节标题 */
+        .section-title {
+            background: linear-gradient(to right, #eff6ff, #ffffff);
+            border-left: 4px solid #2563eb;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: #1e40af;
+            margin: 1.5rem 0 1rem 0;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-number {
+            background: #2563eb;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* 内容区块 */
+        .content-block {
+            margin-bottom: 1.5rem;
+            padding: 0 0.5rem;
+        }
+
+        .field-row {
+            display: flex;
+            margin-bottom: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .field-label {
+            font-weight: 500;
+            color: #374151;
+            min-width: 120px;
+            flex-shrink: 0;
+            font-size: 0.9375rem;
+        }
+
+        .field-value {
+            flex: 1;
+            color: #1f2937;
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            padding-left: 0.5rem;
+        }
+
+        .field-value.highlight {
+            background: #fef3c7;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .data-table td {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem;
+            color: #334155;
+            vertical-align: top;
+        }
+
+        .data-table tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        /* 结论区域 */
+        .conclusion-box {
+            border: 2px solid #22c55e;
+            background: #f0fdf4;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        .conclusion-box.non-conform {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .conclusion-title {
+            font-weight: 700;
+            color: #15803d;
+            font-size: 1.125rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .conclusion-box.non-conform .conclusion-title {
+            color: #b45309;
+        }
+
+        .conclusion-text {
+            color: #166534;
+            font-size: 1rem;
+            margin-left: 1.75rem;
+        }
+
+        .conclusion-box.non-conform .conclusion-text {
+            color: #92400e;
+        }
+
+        /* 签名区域 */
+        .signature-section {
+            margin-top: 3rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            page-break-inside: avoid;
+        }
+
+        .signature-box {
+            border-top: 1px solid #94a3b8;
+            padding-top: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .signature-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .signature-label {
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .signature-value {
+            border-bottom: 1px solid #cbd5e1;
+            min-width: 150px;
+            text-align: center;
+            color: #1e293b;
+            font-weight: 500;
+            padding-bottom: 0.25rem;
+        }
+
+        /* 附件列表 */
+        .attachment-list {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1rem;
+        }
+
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .attachment-item:last-child {
+            border-bottom: none;
+        }
+
+        /* 状态徽章 */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 2px solid;
+        }
+
+        .badge-approved {
+            background: #dcfce7;
+            color: #166534;
+            border-color: #22c55e;
+        }
+
+        /* 备注 */
+        .note-section {
+            background: #fefce8;
+            border: 1px solid #fde047;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            color: #854d0e;
+        }
+
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* 打印优化 */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .report-container {
+                box-shadow: none;
+                max-width: 100%;
+                padding: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .watermark {
+                display: block !important;
+            }
+
+            .page-break {
+                page-break-before: always;
+            }
+
+            .section-title {
+                background: #f1f5f9 !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .conclusion-box {
+                background: #f0fdf4 !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .data-table th {
+                background: #f8fafc !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+
+        /* 响应式优化 */
+        @media (max-width: 768px) {
+            .report-container {
+                padding: 1.5rem;
+            }
+
+            .field-row {
+                flex-direction: column;
+            }
+
+            .field-label {
+                min-width: auto;
+                margin-bottom: 0.25rem;
+            }
+
+            .signature-section {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .report-title {
+                font-size: 1.5rem;
+            }
+
+            .data-table {
+                font-size: 0.8125rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .report-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+
+            .data-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen ">
+    <!-- 审批水印 -->
+    <!-- <div class="watermark">已审核</div> -->
+
+
+    <!-- 报告主体 -->
+    <div class="report-container  mx-auto p-8 sm:p-12 rounded-lg">
+        <!-- 报告头部 -->
+        <div class="report-header">
+            <div class="flex justify-end mb-4">
+                <span class="status-badge badge-approved">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    已审核通过
+                </span>
+            </div>
+
+            <h1 class="report-title">文件评审报告</h1>
+            <p class="report-subtitle">Document Review Report</p>
+
+            <div class="report-meta">
+                <div class="meta-item">
+                    <span class="meta-label">报告编号：</span>
+                    <span class="font-mono font-medium">RW-202403240001</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">审核日期：</span>
+                    <span>2024-03-24</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">版本：</span>
+                    <span>MSF11-21</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. 基本信息 -->
+        <div class="content-block">
+            <div class="section-title">
+                <span class="section-number">1</span>
+                基本信息
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">客户名称：</span>
+                <span class="field-value highlight">北京市地铁运营有限公司</span>
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">评审目的：</span>
+                <span class="field-value">初步评价客户文件的符合性、充分性和适宜性。</span>
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">审核类型：</span>
+                <span class="field-value">
+                    <i class="fas fa-check-square text-blue-600 mr-1"></i>
+                    初次认证 
+                    <span class="text-slate-400 mx-2">|</span>
+                    <span class="text-slate-400"><i class="far fa-square mr-1"></i>再认证</span>
+                    <span class="text-slate-400 mx-2">|</span>
+                    <span class="text-slate-400"><i class="far fa-square mr-1"></i>监督</span>
+                    <span class="text-slate-400 mx-2">|</span>
+                    <span class="text-slate-400"><i class="far fa-square mr-1"></i>证书变更</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- 2. 评审准则 -->
+        <div class="content-block">
+            <div class="section-title">
+                <span class="section-number">2</span>
+                评审准则
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">管理体系标准：</span>
+                <span class="field-value">GB/T 19001-2016 / ISO 9001:2015《质量管理体系 要求》</span>
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">适用法律法规：</span>
+                <span class="field-value">《中华人民共和国产品质量法》、《中华人民共和国标准化法》及相关行业法规</span>
+            </div>
+
+            <div class="field-row">
+                <span class="field-label">其他准则：</span>
+                <span class="field-value">客户提供的管理体系文件、组织内部管理制度</span>
+            </div>
+        </div>
+
+        <!-- 3. 管理体系文件 -->
+        <div class="content-block">
+            <div class="section-title">
+                <span class="section-number">3</span>
+                管理体系文件
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">序号</th>
+                        <th style="width: 35%;">文件名称</th>
+                        <th style="width: 25%;">编号</th>
+                        <th>版本号/发布日期</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>质量管理手册</td>
+                        <td>QMM-01</td>
+                        <td>V3.0 / 2024-01-15</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>文件控制程序</td>
+                        <td>QP-01</td>
+                        <td>V2.1 / 2024-02-01</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>记录控制程序</td>
+                        <td>QP-02</td>
+                        <td>V2.0 / 2024-02-01</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>内部审核程序</td>
+                        <td>QP-08</td>
+                        <td>V3.2 / 2024-01-20</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>不合格品控制程序</td>
+                        <td>QP-13</td>
+                        <td>V2.5 / 2024-01-10</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 4. 评审结论 -->
+        <div class="content-block">
+            <div class="section-title">
+                <span class="section-number">4</span>
+                评审结论
+            </div>
+
+            <div class="conclusion-box">
+                <div class="conclusion-title">
+                    <i class="fas fa-check-circle"></i>
+                    符合要求
+                </div>
+                <div class="conclusion-text">
+                    经评审，客户提交的管理体系文件符合 GB/T 19001-2016 标准要求，文件内容充分、适宜，可进行现场审核。
+                </div>
+            </div>
+
+            <!-- 如果不符合要求时显示以下内容（示例中隐藏） -->
+            <!--
+            <div class="conclusion-box non-conform">
+                <div class="conclusion-title">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    不符合要求
+                </div>
+                <div class="conclusion-text">
+                    文件存在以下问题，需修改后再次提交：
+                    <div class="mt-3 ml-0 space-y-2">
+                        <div class="bg-white/60 p-3 rounded border border-orange-200">
+                            <strong>存在的问题：</strong><br>
+                            1. 质量手册中4.3条款关于体系范围描述不够明确；<br>
+                            2. 缺少《风险和机遇应对措施表》相关记录。
+                        </div>
+                        <div class="bg-white/60 p-3 rounded border border-orange-200">
+                            <strong>修改确认：</strong><br>
+                            已按要求修改完成，补充了体系范围说明和风险应对措施记录表。
+                        </div>
+                    </div>
+                </div>
+            </div>
+            -->
+        </div>
+
+        <!-- 5. 附件资料 -->
+        <div class="content-block">
+            <div class="section-title">
+                <span class="section-number">5</span>
+                附件资料
+            </div>
+
+            <div class="attachment-list">
+                <div class="attachment-item">
+                    <i class="fas fa-file-pdf text-red-500 text-lg"></i>
+                    <span class="flex-1">质量管理手册（完整版）.pdf</span>
+                    <span class="text-slate-400 text-sm">2.4 MB</span>
+                </div>
+                <div class="attachment-item">
+                    <i class="fas fa-file-word text-blue-500 text-lg"></i>
+                    <span class="flex-1">程序文件汇编.docx</span>
+                    <span class="text-slate-400 text-sm">1.8 MB</span>
+                </div>
+                <div class="attachment-item">
+                    <i class="fas fa-file-image text-purple-500 text-lg"></i>
+                    <span class="flex-1">组织架构图.png</span>
+                    <span class="text-slate-400 text-sm">856 KB</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 备注 -->
+        <div class="note-section">
+            <div class="note-title">
+                <i class="fas fa-info-circle"></i>
+                备注说明
+            </div>
+            <p>管理体系文件可以是手册、程序文件、流程图、作业文件等，至少应包括标准所要求的文件。本次评审仅针对客户提交的书面文件进行，现场审核时将对文件的实际运行情况进行验证。</p>
+        </div>
+
+        <!-- 签名区域 -->
+        <div class="signature-section">
+            <div>
+                <div class="field-row" style="margin-bottom: 2rem;">
+                    <span class="field-label">评审人：</span>
+                    <span class="field-value" style="border-bottom: 1px solid #1e293b; padding-bottom: 0.25rem; display: inline-block; min-width: 150px;">
+                        张建军
+                    </span>
+                    <span class="ml-4 text-slate-500">日期：2024-03-24</span>
+                </div>
+
+                <div class="text-sm text-slate-500 mt-8">
+                    <p>签名：</p>
+                    <div style="height: 60px; border-bottom: 1px solid #94a3b8; margin-top: 0.5rem;"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="field-row" style="margin-bottom: 2rem;">
+                    <span class="field-label">确认人：</span>
+                    <span class="field-value" style="border-bottom: 1px solid #1e293b; padding-bottom: 0.25rem; display: inline-block; min-width: 150px;">
+                        李明华
+                    </span>
+                    <span class="ml-4 text-slate-500">日期：2024-03-24</span>
+                </div>
+
+                <div class="text-sm text-slate-500 mt-8">
+                    <p>签名：</p>
+                    <div style="height: 60px; border-bottom: 1px solid #94a3b8; margin-top: 0.5rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="mt-12 pt-4 border-t border-slate-200 text-center text-xs text-slate-400">
+            <p>文件编号：MSF11-21 | 版本：2015版 | 发布/修订日期：2022-01-13 | 实施日期：2022-01-20</p>
+            <p class="mt-1">本报告一式两份，认证机构与客户各执一份</p>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载完成后的处理
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从URL参数获取数据（如果有的话）
+            const urlParams = new URLSearchParams(window.location.search);
+            const conclusion = urlParams.get('conclusion');
+
+            if (conclusion === 'non-conform') {
+                // 这里可以动态切换显示不符合要求的版本
+                console.log('显示不符合要求版本');
+            }
+
+            // 添加当前日期
+            const today = new Date().toLocaleDateString('zh-CN');
+            console.log('Report generated on:', today);
+        });
+    </script>
+</body>
+</html>
