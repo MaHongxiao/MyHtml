@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1910,6 +1911,7 @@
         let isMultiLocation = false; // 是否多场所
         let hasTransferType = false; // 是否有认证转换类型
         let applicationFiles = []; // 申请表附件
+        let linkedContract = null; // 当前关联的合同信息，包含systems数组
 
         // 体系配置
         const systemConfig = {
@@ -1937,9 +1939,9 @@
                     {name: '李四', dept: '行政部', position: '主任', phone: '13900139000', email: 'lisi@example.com'}
                 ],
                 contracts: [
-                    {no: 'HT202403230001', name: '质量管理体系认证合同', amount: '100000', startDate: '2024-01-01', endDate: '2024-12-31'},
-                    {no: 'HT202403230002', name: '环境管理体系认证合同', amount: '80000', startDate: '2024-02-01', endDate: '2025-01-31'},
-                    {no: 'HT202403230003', name: '职业健康安全管理体系认证合同', amount: '75000', startDate: '2024-03-01', endDate: '2025-02-28'}
+                    {no: 'HT202403230001', name: '质量管理体系认证合同', amount: '100000', startDate: '2024-01-01', endDate: '2024-12-31', systems: ['QMS']},
+                    {no: 'HT202403230002', name: '环境管理体系认证合同', amount: '80000', startDate: '2024-02-01', endDate: '2025-01-31', systems: ['EMS']},
+                    {no: 'HT202403230003', name: '三体系整合认证合同', amount: '200000', startDate: '2024-03-01', endDate: '2025-02-28', systems: ['QMS', 'EMS', 'OHSMS']}
                 ]
             },
             { 
@@ -1952,8 +1954,8 @@
                     {name: '王五', dept: '工程部', position: '总工程师', phone: '13700137000', email: 'wangwu@example.com'}
                 ],
                 contracts: [
-                    {no: 'HT202403230004', name: '建筑施工质量管理体系认证合同', amount: '150000', startDate: '2024-01-15', endDate: '2024-12-31'},
-                    {no: 'HT202403230005', name: '工程建设企业质量管理体系认证合同', amount: '120000', startDate: '2024-04-01', endDate: '2025-03-31'}
+                    {no: 'HT202403230004', name: '建筑施工质量管理体系认证合同', amount: '150000', startDate: '2024-01-15', endDate: '2024-12-31', systems: ['QMS']},
+                    {no: 'HT202403230005', name: '工程建设企业质量管理体系认证合同', amount: '120000', startDate: '2024-04-01', endDate: '2025-03-31', systems: ['QMS']}
                 ]
             },
             { 
@@ -1966,8 +1968,8 @@
                     {name: '赵六', dept: '食品安全部', position: '食品安全总监', phone: '13600136000', email: 'zhaoliu@example.com'}
                 ],
                 contracts: [
-                    {no: 'HT202403230006', name: '食品安全管理体系认证合同', amount: '90000', startDate: '2024-02-15', endDate: '2025-02-14'},
-                    {no: 'HT202403230007', name: 'HACCP体系认证合同', amount: '85000', startDate: '2024-03-15', endDate: '2025-03-14'}
+                    {no: 'HT202403230006', name: '食品安全管理体系认证合同', amount: '90000', startDate: '2024-02-15', endDate: '2025-02-14', systems: ['FSMS']},
+                    {no: 'HT202403230007', name: 'HACCP体系认证合同', amount: '85000', startDate: '2024-03-15', endDate: '2025-03-14', systems: ['HACCP']}
                 ]
             }
         ];
@@ -2267,6 +2269,12 @@
 
         // 修改后的addSystem函数
         function addSystem() {
+            // 检查是否有关联的合同
+            if (linkedContract) {
+                showToast('已关联合同，无法手动添加认证领域。如需修改，请先取消合同关联。', 'warning');
+                return;
+            }
+
             if (batchSelectedSystems.length === 0) {
                 showToast('请从下拉列表中选择认证体系', 'error');
                 return;
@@ -2723,6 +2731,23 @@
             const contractInput = document.getElementById('contractNo');
             const clearBtn = document.getElementById('contractClearBtn');
 
+            // 查找合同详情获取认证体系信息
+            let contractSystems = [];
+            if (selectedCustomer && selectedCustomer.contracts) {
+                const contract = selectedCustomer.contracts.find(c => c.no === no);
+                if (contract && contract.systems) {
+                    contractSystems = contract.systems;
+                }
+            }
+
+            // 记录关联的合同信息
+            linkedContract = {
+                no: no,
+                name: name,
+                amount: amount,
+                systems: contractSystems
+            };
+
             if (contractInput) {
                 contractInput.value = no + ' - ' + name;
             }
@@ -2732,12 +2757,281 @@
             }
 
             closeContractModal();
-            showToast('合同选择成功');
+
+            // 自动添加合同关联的认证体系
+            if (contractSystems.length > 0) {
+                addContractSystems(contractSystems);
+            }
+
+            showToast('合同选择成功，已自动关联认证领域');
+        }
+
+        // 添加合同关联的认证体系（带锁定标记）
+        function addContractSystems(systems) {
+            // 先清空现有非合同关联的体系（可选，根据业务需求）
+            // 这里保留现有体系，只添加合同中包含的
+
+            systems.forEach(systemKey => {
+                // 检查是否已存在该体系
+                const exists = selectedSystems.some(s => s.key === systemKey && s.fromContract);
+                if (!exists) {
+                    systemCounter++;
+                    const sys = systemConfig[systemKey];
+                    const uniqueId = `CONTRACT_${systemKey}_${systemCounter}_${Date.now()}`;
+
+                    selectedSystems.push({
+                        key: systemKey,
+                        id: uniqueId,
+                        index: systemCounter,
+                        selected: false,
+                        certType: 'initial',
+                        fromContract: true, // 标记为来自合同
+                        contractNo: linkedContract.no
+                    });
+
+                    renderContractSystemCard(systemKey, uniqueId, systemCounter);
+                }
+            });
+
+            updateQuickNav();
+            updateSystemCount();
+            updateIntegrationVisibility();
+            checkAttachmentConditions();
+            checkFoodSpecialSection();
+
+            // 禁用批量添加按钮
+            updateBatchSelectState();
+        }
+
+        // 渲染合同关联的体系卡片（带锁定标记）
+        function renderContractSystemCard(systemKey, uniqueId, index) {
+            const sys = systemConfig[systemKey];
+            const emptyTip = document.getElementById('emptySystemTip');
+            const cardsList = document.getElementById('systemCardsList');
+
+            emptyTip.style.display = 'none';
+            cardsList.classList.remove('hidden');
+
+            const card = document.createElement('div');
+            card.className = `system-card p-4 mb-4 border-amber-300`;
+            card.id = `system-card-${uniqueId}`;
+            card.dataset.systemId = uniqueId;
+            card.dataset.system = systemKey;
+            card.dataset.fromContract = "true";
+
+            const isOHSMS = systemKey === 'OHSMS';
+            const isFood = ['FSMS', 'HACCP'].includes(systemKey);
+
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" class="rounded text-blue-600 focus:ring-blue-500 mr-2" onchange="toggleSystemSelection('${uniqueId}', this.checked)">
+                        <div class="w-10 h-10 rounded-lg bg-${sys.color}-100 text-${sys.color}-600 flex items-center justify-center">
+                            <i class="fas ${sys.icon}"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-slate-900">${sys.name} <span class="text-slate-400">#${index}</span></div>
+                            <div class="text-xs text-slate-500">${systemKey}</div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-amber-100 text-amber-700 border border-amber-200 mt-1">
+                                <i class="fas fa-lock text-[8px]"></i>来自合同
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="showContractLockTip()" class="text-xs text-amber-600 hover:bg-amber-50 px-2 py-1 rounded transition-colors flex items-center gap-1" title="该领域来自关联合同，不能删除">
+                            <i class="fas fa-lock"></i> 锁定
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-blue-700"><i class="fas fa-certificate mr-2"></i>认证类型：初次认证</span>
+                            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">首次申请</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">认证标准</label>
+                            <div class="space-y-1 bg-slate-50 p-2 rounded border border-slate-200">
+                                ${sys.standards.map((std, idx) => `
+                                    <label class="flex items-center gap-2 text-xs">
+                                        <input type="checkbox" ${idx === 0 ? 'checked disabled' : ''} class="rounded text-blue-600 ${idx === 0 ? 'opacity-60' : ''}">
+                                        <span class="${idx === 0 ? 'font-medium' : ''}">${std} ${idx === 0 ? '<span class="text-slate-400">（必选）</span>' : ''}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">认可机构（多选）</label>
+                            <div class="flex gap-2 flex-wrap">
+                                ${['CNAS', 'DAKKS', 'UKAS'].map(acc => `
+                                    <label class="flex items-center gap-1 text-xs bg-slate-50 px-2 py-1 rounded border border-slate-200">
+                                        <input type="checkbox" class="rounded text-blue-600">
+                                        <span>${acc}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-1">注：中心已通过多家认可机构多个认证领域的认可，详细认可范围可登录CQC官网查询</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">认证范围</label>
+                            <textarea maxlength="500" rows="2" placeholder="请详细描述认证范围（产品/服务/活动）..." class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">是否需要纸质证书</label>
+                            <div class="flex gap-4 mt-2">
+                                <label class="flex items-center gap-1 text-xs cursor-pointer">
+                                    <input type="radio" name="paper_${uniqueId}" value="yes" class="text-blue-600">
+                                    <span>是</span>
+                                </label>
+                                <label class="flex items-center gap-1 text-xs cursor-pointer">
+                                    <input type="radio" name="paper_${uniqueId}" value="no" checked class="text-blue-600">
+                                    <span>否（电子证书）</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">其他对认证（及审核）的要求</label>
+                        <textarea maxlength="200" rows="2" placeholder="200字以内，非必填" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all resize-none"></textarea>
+                    </div>
+
+                    <div class="border-t border-slate-200 pt-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="block text-xs font-medium text-slate-700 required">认证场所</label>
+                            <div class="flex gap-2">
+                                <button onclick="openLocationSelectModal('${uniqueId}')" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1">
+                                    <i class="fas fa-list"></i>选择场所
+                                </button>
+                                <button onclick="openTempLocationModal('${uniqueId}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1">
+                                    <i class="fas fa-plus"></i>新增临时场所
+                                </button>
+                            </div>
+                        </div>
+                        <div id="locations_${uniqueId}" class="space-y-3 mb-3"></div>
+                        <div id="emptyLocationTip_${uniqueId}" class="text-center py-6 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                            <i class="fas fa-map-marker-alt text-2xl text-slate-300 mb-2"></i>
+                            <p class="text-xs text-slate-500">暂无认证场所，请选择或新增</p>
+                        </div>
+                    </div>
+
+                    ${isOHSMS ? `
+                    <div class="bg-orange-50 rounded-lg p-3 border border-orange-100">
+                        <h5 class="font-medium text-orange-900 mb-2 text-xs">OHSMS特殊要求</h5>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs text-slate-700 mb-1">在其他组织的场所提供服务的工作人员</label>
+                                <div class="flex gap-1">
+                                    <input type="number" placeholder="人数" class="w-16 px-2 py-1 text-xs border border-slate-300 rounded">
+                                    <input type="text" placeholder="从事活动描述（200字以内）" maxlength="200" class="flex-1 px-2 py-1 text-xs border border-slate-300 rounded">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-700 mb-1">承包商/分包方人员</label>
+                                <div class="flex gap-1">
+                                    <input type="number" placeholder="人数" class="w-16 px-2 py-1 text-xs border border-slate-300 rounded">
+                                    <input type="text" placeholder="从事工作描述（200字以内）" maxlength="200" class="flex-1 px-2 py-1 text-xs border border-slate-300 rounded">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            cardsList.appendChild(card);
+        }
+
+        // 显示合同锁定提示
+        function showContractLockTip() {
+            showToast('该认证领域来自关联合同，请先取消合同关联后再删除', 'warning');
+        }
+
+        // 更新批量选择按钮状态
+        function updateBatchSelectState() {
+            const batchBtn = document.querySelector('[onclick="toggleBatchSelect()"]');
+            const addBtn = document.querySelector('[onclick="addSystem()"]');
+
+            if (linkedContract) {
+                // 有关联合同时，禁用批量添加
+                if (batchBtn) {
+                    batchBtn.disabled = true;
+                    batchBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('batchSelectText').textContent = '已关联合同，无法手动添加';
+                }
+                if (addBtn) {
+                    addBtn.disabled = true;
+                    addBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            } else {
+                // 无关联合同时，启用批量添加
+                if (batchBtn) {
+                    batchBtn.disabled = false;
+                    batchBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('batchSelectText').textContent = '请选择认证体系（支持多选）';
+                }
+                if (addBtn) {
+                    addBtn.disabled = false;
+                    addBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
         }
 
         function clearContract() {
             const contractInput = document.getElementById('contractNo');
             const clearBtn = document.getElementById('contractClearBtn');
+
+            // 如果有关联的合同，先确认是否释放领域信息
+            if (linkedContract) {
+                const contractSystems = selectedSystems.filter(s => s.fromContract);
+                if (contractSystems.length > 0) {
+                    if (!confirm(`取消关联合同将同时删除 ${contractSystems.length} 个来自合同的认证领域，是否继续？`)) {
+                        return;
+                    }
+
+                    // 删除所有来自合同的体系
+                    contractSystems.forEach(system => {
+                        const element = document.getElementById(`system-card-${system.id}`);
+                        if (element) {
+                            element.style.opacity = '0';
+                            element.style.transform = 'translateX(20px)';
+                            setTimeout(() => element.remove(), 200);
+                        }
+                    });
+
+                    // 从数组中移除
+                    selectedSystems = selectedSystems.filter(s => !s.fromContract);
+
+                    // 检查是否还有剩余体系
+                    if (selectedSystems.length === 0) {
+                        document.getElementById('emptySystemTip').style.display = 'block';
+                        document.getElementById('systemCardsList').classList.add('hidden');
+                    }
+
+                    // 更新导航和计数
+                    updateQuickNav();
+                    updateSystemCount();
+                    updateIntegrationVisibility();
+                    checkAttachmentConditions();
+                    checkFoodSpecialSection();
+                }
+
+                // 清除合同关联状态
+                linkedContract = null;
+
+                // 恢复批量添加按钮状态
+                updateBatchSelectState();
+
+                showToast('已取消合同关联，认证领域已释放', 'info');
+            }
 
             if (contractInput) {
                 contractInput.value = '';
@@ -2755,6 +3049,13 @@
 
         // 认证领域相关
         function deleteSystem(uniqueId) {
+            // 检查是否来自合同
+            const system = selectedSystems.find(s => s.id === uniqueId);
+            if (system && system.fromContract) {
+                showToast('该认证领域来自关联合同，请先取消合同关联后再删除', 'warning');
+                return;
+            }
+
             if (!confirm('确定要删除此认证领域吗？')) return;
 
             const card = document.getElementById(`system-card-${uniqueId}`);
@@ -2815,6 +3116,13 @@
                 return;
             }
 
+            // 检查是否有来自合同的体系
+            const contractSystems = selected.filter(s => s.fromContract);
+            if (contractSystems.length > 0) {
+                showToast('选中的领域包含来自合同的认证领域，无法删除', 'warning');
+                return;
+            }
+
             if (!confirm(`确定要删除选中的 ${selected.length} 个认证领域吗？`)) return;
 
             selected.forEach(system => {
@@ -2862,6 +3170,7 @@
 
             container.innerHTML = selectedSystems.map(sys => {
                 const config = systemConfig[sys.key];
+                const isFromContract = sys.fromContract;
                 return `
                     <div class="quick-nav-item flex items-center justify-between p-3 rounded-lg cursor-pointer mb-1 group" onclick="scrollToSystem('${sys.id}')">
                         <div class="flex items-center gap-3 overflow-hidden">
@@ -2870,11 +3179,14 @@
                             </div>
                             <div class="min-w-0">
                                 <p class="text-sm font-medium text-slate-700 truncate">${config.name}</p>
-                                <p class="text-xs text-slate-400">#${sys.index}</p>
+                                <div class="flex items-center gap-1">
+                                    <p class="text-xs text-slate-400">#${sys.index}</p>
+                                    ${isFromContract ? '<span class="text-[10px] text-amber-600"><i class="fas fa-lock text-[8px]"></i>合同</span>' : ''}
+                                </div>
                             </div>
                         </div>
-                        <button onclick="event.stopPropagation(); deleteSystem('${sys.id}')" class="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all">
-                            <i class="fas fa-times text-xs"></i>
+                        <button onclick="event.stopPropagation(); ${isFromContract ? 'showContractLockTip()' : `deleteSystem('${sys.id}')`}" class="opacity-0 group-hover:opacity-100 p-1.5 ${isFromContract ? 'text-amber-400 hover:text-amber-600 hover:bg-amber-50' : 'text-slate-400 hover:text-red-600 hover:bg-red-50'} rounded transition-all">
+                            <i class="fas ${isFromContract ? 'fa-lock' : 'fa-times'} text-xs"></i>
                         </button>
                     </div>
                 `;
