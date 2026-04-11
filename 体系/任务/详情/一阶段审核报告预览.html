@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一阶段审核报告 - 预览</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f5f5f5;
+            color: #1f2937;
+        }
+
+        .report-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        /* CQC Header Style */
+        .cqc-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cqc-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
+        }
+
+        .cqc-logo {
+            font-weight: 800;
+            letter-spacing: 2px;
+            font-size: 1.5rem;
+            border: 3px solid white;
+            padding: 0.5rem 1rem;
+            display: inline-block;
+            border-radius: 8px;
+        }
+
+        /* Section Headers */
+        .section-title {
+            background: #f8fafc;
+            border-left: 4px solid #1e40af;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: #1e3a8a;
+            margin: 2rem 0 1rem 0;
+            font-size: 1.1rem;
+        }
+
+        /* Table Styles */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .report-table th {
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+
+        .report-table td {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            vertical-align: top;
+        }
+
+        .report-table tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .info-label {
+            background: #f8fafc;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-value {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            border-left: 1px solid #e2e8f0;
+            color: #1e293b;
+            font-size: 0.9rem;
+        }
+
+        .info-grid > div:last-child,
+        .info-grid > div:nth-last-child(2) {
+            border-bottom: none;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .badge-blue {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .badge-green {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .badge-orange {
+            background: #ffedd5;
+            color: #9a3412;
+            border: 1px solid #fdba74;
+        }
+
+        .badge-red {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .badge-purple {
+            background: #f3e8ff;
+            color: #6b21a8;
+            border: 1px solid #d8b4fe;
+        }
+
+        /* Result Badge */
+        .result-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .result-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 2px solid #86efac;
+        }
+
+        .result-warning {
+            background: #ffedd5;
+            color: #9a3412;
+            border: 2px solid #fdba74;
+        }
+
+        /* Signature Area */
+        .signature-area {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #94a3b8;
+            min-width: 200px;
+            display: inline-block;
+            margin: 0 1rem;
+            height: 40px;
+            vertical-align: bottom;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+            }
+            .report-container {
+                box-shadow: none;
+                max-width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            .cqc-header {
+                background: #1e3a8a !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .info-value {
+                border-left: none;
+            }
+            .cqc-logo {
+                font-size: 1.2rem;
+            }
+            .report-table {
+                font-size: 0.8rem;
+            }
+            .report-table th,
+            .report-table td {
+                padding: 0.5rem;
+            }
+        }
+
+        /* Navigation */
+        .nav-pills {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 50;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.5rem 0;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .nav-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .nav-pill:hover {
+            background: #f1f5f9;
+            color: #1e40af;
+        }
+
+        .nav-pill.active {
+            background: #1e40af;
+            color: white;
+        }
+
+        /* Content Blocks */
+        .content-block {
+            line-height: 1.8;
+            color: #374151;
+            text-align: justify;
+        }
+
+        /* Problem Card */
+        .problem-card {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-left: 4px solid #f97316;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .problem-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #c2410c;
+        }
+
+        /* Attachment List */
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .attachment-icon {
+            width: 36px;
+            height: 36px;
+            background: #fef3c7;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f59e0b;
+            margin-right: 12px;
+        }
+
+        .record-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+
+        .record-badge.auto {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .record-badge.manual {
+            background: #f0fdf4;
+            color: #15803d;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Floating Action Buttons -->
+    <div class="fixed bottom-6 right-6 flex gap-2 no-print z-50">
+        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all hover:scale-110 flex items-center gap-2">
+            <i class="fas fa-print"></i>
+            <span class="hidden sm:inline font-medium">打印报告</span>
+        </button>
+        <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="bg-gray-700 hover:bg-gray-800 text-white p-4 rounded-full shadow-lg transition-all hover:scale-110">
+            <i class="fas fa-arrow-up"></i>
+        </button>
+    </div>
+
+    <div class="report-container min-h-screen">
+
+        <!-- CQC Official Header -->
+        <div class="cqc-header px-6 py-8 sm:px-12 sm:py-10">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <div class="cqc-logo mb-2">CQC</div>
+                    <div class="text-sm opacity-90 mt-2">中国质量认证中心</div>
+                    <div class="text-xs opacity-75">CHINA QUALITY CERTIFICATION CENTRE</div>
+                </div>
+                <div class="text-right">
+                    <h1 class="text-2xl sm:text-3xl font-bold tracking-wide">一阶段审核报告</h1>
+                    <div class="mt-2 text-sm opacity-90">文件编号：MSF11-16</div>
+                    <div class="mt-1 text-xs opacity-75">版本：2015版 | 实施日期：2022-01-20</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-pills px-6 no-print">
+            <a href="#basic-info" class="nav-pill active"><i class="fas fa-info-circle mr-2"></i>基本信息</a>
+            <a href="#evaluation" class="nav-pill"><i class="fas fa-clipboard-check mr-2"></i>评价内容</a>
+            <a href="#system-info" class="nav-pill"><i class="fas fa-sitemap mr-2"></i>体系信息</a>
+            <a href="#adjustment" class="nav-pill"><i class="fas fa-sliders-h mr-2"></i>待调整内容</a>
+            <a href="#other" class="nav-pill"><i class="fas fa-ellipsis-h mr-2"></i>其他内容</a>
+            <a href="#problems" class="nav-pill"><i class="fas fa-exclamation-triangle mr-2"></i>问题清单</a>
+            <a href="#attachments" class="nav-pill"><i class="fas fa-paperclip mr-2"></i>附件</a>
+        </div>
+
+        <!-- Report Content -->
+        <div class="p-6 sm:p-10">
+
+            <!-- Report Meta -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-gray-200">
+                <div class="space-y-1">
+                    <div class="text-sm text-gray-500">审核任务编码</div>
+                    <div class="font-mono font-bold text-lg text-blue-900">RW-202403240001</div>
+                </div>
+                <div class="mt-4 sm:mt-0 text-right">
+                    <div class="result-badge result-success">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        一阶段审核完成
+                    </div>
+                    <div class="text-sm text-gray-500 mt-2">报告提交日期：2024年4月20日</div>
+                </div>
+            </div>
+
+            <!-- Section 1: Basic Info -->
+            <div id="basic-info" class="scroll-mt-20">
+                <div class="section-title">
+                    <i class="fas fa-building mr-2"></i>一、基本信息
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-label">客户名称</div>
+                    <div class="info-value font-semibold text-lg">北京市地铁运营有限公司</div>
+
+                    <div class="info-label">地 址</div>
+                    <div class="info-value">北京市西城区西直门外大街2号</div>
+
+                    <div class="info-label">审核目的</div>
+                    <div class="info-value">收集客户管理体系范围内必要信息，评价客户基本情况和为管理体系策划、准备的情况，确定第二阶段审核的可行性和重点。</div>
+
+                    <div class="info-label">审核准则</div>
+                    <div class="info-value">
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <span class="badge-blue">管理体系标准</span>
+                            <span class="badge-blue">客户管理体系文件</span>
+                            <span class="badge-blue">适用法律法规</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            GB/T 19001-2016（idt ISO 9001:2015）、GB/T 24001-2016（idt ISO 14001:2015）、GB/T 45001-2020（idt ISO 45001:2018）
+                        </div>
+                    </div>
+
+                    <div class="info-label">一阶段审核方式</div>
+                    <div class="info-value">
+                        <span class="badge-green"><i class="fas fa-building mr-1"></i>现场审核</span>
+                    </div>
+
+                    <div class="info-label">审核日期区间</div>
+                    <div class="info-value">2024年4月15日 至 2024年4月18日</div>
+
+                    <div class="info-label">审核组</div>
+                    <div class="info-value">
+                        <div class="flex items-center gap-4">
+                            <div><strong>组长：</strong>武荣刚</div>
+                            <div><strong>组员：</strong>王洪伟、李明</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Evaluation Content -->
+            <div id="evaluation" class="scroll-mt-20 page-break">
+                <div class="section-title">
+                    <i class="fas fa-clipboard-list mr-2"></i>二、评价内容
+                </div>
+
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">评价项目</th>
+                            <th style="width: 15%;">评价结果</th>
+                            <th>详细说明/备注</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>管理体系运行超过3个月</strong></td>
+                            <td><span class="badge-green">✓ 符合</span></td>
+                            <td>体系开始运行时间：2024年1月1日</td>
+                        </tr>
+                        <tr>
+                            <td><strong>文件化信息与认证标准的符合性及与实际运作情况的一致性</strong></td>
+                            <td><span class="badge-green">✓ 符合</span></td>
+                            <td>对客户《质量管理手册》（版本V3.0，发布日期2024-01-15）进行了评审，文件基本符合标准要求，能够指导组织的管理体系运行。</td>
+                        </tr>
+                        <tr>
+                            <td><strong>方针和目标的适宜性以及对管理体系关键绩效的识别情况</strong></td>
+                            <td><span class="badge-green">✓ 符合</span></td>
+                            <td>质量方针"安全准时、优质服务、持续改进"适宜组织实际，目标指标可测量并分解到各部门。</td>
+                        </tr>
+                        <tr>
+                            <td><strong>适用法律法规和其他要求的识别</strong></td>
+                            <td><span class="badge-green">✓ 符合</span></td>
+                            <td>建立了法律法规清单，识别了《安全生产法》《环境保护法》等适用法规要求。</td>
+                        </tr>
+                        <tr>
+                            <td><strong>是否存在违反法律法规和强制性标准的情况</strong></td>
+                            <td><span class="badge-green">✓ 未发现</span></td>
+                            <td>近一年内未发现违反法律法规和强制性标准的情况，无行政处罚记录。</td>
+                        </tr>
+                        <tr>
+                            <td><strong>管理体系过程（包括外部提供服务和过程）确定的充分性</strong></td>
+                            <td><span class="badge-green">✓ 符合</span></td>
+                            <td>过程识别充分，涵盖了地铁运营的主要过程，外包过程（设备维护、保洁服务）已识别并控制。</td>
+                        </tr>
+                        <tr>
+                            <td><strong>是否实施了内部审核和管理评审</strong></td>
+                            <td><span class="badge-green">✓ 是</span></td>
+                            <td>内审时间：2024年3月15-18日；管评时间：2024年3月20日。内审发现的不符合已整改。</td>
+                        </tr>
+                        <tr>
+                            <td><strong>一年内是否发生事故、职业病、投诉、行政监管处罚</strong></td>
+                            <td><span class="badge-green">✓ 无</span></td>
+                            <td>近一年内未发生质量事故、环境事故、安全事故、相关方投诉及行政处罚。</td>
+                        </tr>
+                        <tr>
+                            <td><strong>其他需要关注的事项</strong></td>
+                            <td>-</td>
+                            <td>建议关注二阶段审核时对新开通线路的抽样。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Section 3: System Info -->
+            <div id="system-info" class="scroll-mt-20">
+                <div class="section-title">
+                    <i class="fas fa-sitemap mr-2"></i>三、经确认的管理体系相关信息
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-label">管理体系覆盖的产品/服务/活动内容<br><span class="text-xs text-gray-500">（认证范围）</span></div>
+                    <div class="info-value">
+                        <div class="mb-2"><strong>QMS：</strong>城市轨道交通运营管理服务</div>
+                        <div class="mb-2"><strong>EMS：</strong>城市轨道交通运营管理服务及相关管理活动</div>
+                        <div><strong>OHSMS：</strong>城市轨道交通运营管理服务及相关管理活动</div>
+                    </div>
+
+                    <div class="info-label">管理体系范围内的场所（地址）</div>
+                    <div class="info-value">
+                        <div class="mb-1"><strong>中心职能：</strong>北京市西城区西直门外大街2号</div>
+                        <div><strong>多场所：</strong>北京市各运营线路站点（1号线、2号线、4号线等）</div>
+                    </div>
+
+                    <div class="info-label">临时服务现场信息</div>
+                    <div class="info-value text-gray-500">无临时服务现场</div>
+
+                    <div class="info-label">外部提供的职能或过程（外包）</div>
+                    <div class="info-value">
+                        <div class="flex flex-wrap gap-2">
+                            <span class="badge-orange">设备维护保养</span>
+                            <span class="badge-orange">保洁服务</span>
+                            <span class="badge-orange">安保服务</span>
+                            <span class="badge-orange">部分检测服务</span>
+                        </div>
+                    </div>
+
+                    <div class="info-label">管理体系范围内的有效人数</div>
+                    <div class="info-value">
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>QMS：<strong>850人</strong></div>
+                            <div>EMS：<strong>850人</strong></div>
+                            <div>OHSMS：<strong>850人</strong></div>
+                        </div>
+                        <div class="text-sm text-gray-500 mt-2">与《认证申请评审表》中人数一致</div>
+                    </div>
+
+                    <div class="info-label">整合管理体系（IMS）的整合程度</div>
+                    <div class="info-value">
+                        <div class="flex items-center gap-2">
+                            <div class="w-32 bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: 85%"></div>
+                            </div>
+                            <span class="font-bold text-blue-600">85%</span>
+                        </div>
+                        <div class="text-sm text-gray-500 mt-1">三体系文件整合度高，共用程序文件和管理手册，内审管评一并实施。</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Adjustment -->
+            <div id="adjustment" class="scroll-mt-20 page-break">
+                <div class="section-title">
+                    <i class="fas fa-sliders-h mr-2"></i>四、待调整内容
+                </div>
+
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">调整项目</th>
+                            <th style="width: 15%;">是否需要调整</th>
+                            <th>调整说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>审核方案是否需要调整</strong></td>
+                            <td><span class="badge-green">不需要</span></td>
+                            <td>原计划审核方案可行，无需调整</td>
+                        </tr>
+                        <tr>
+                            <td><strong>专业判定是否需要调整</strong></td>
+                            <td><span class="badge-green">不需要</span></td>
+                            <td>专业判定准确，无需调整</td>
+                        </tr>
+                        <tr>
+                            <td><strong>二阶段审核人天数是否需相应调整</strong></td>
+                            <td><span class="badge-green">不需要</span></td>
+                            <td>原策划的人天数满足审核需求</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Section 5: Other Content -->
+            <div id="other" class="scroll-mt-20">
+                <div class="section-title">
+                    <i class="fas fa-ellipsis-h mr-2"></i>五、其他内容
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-label">生产（或服务）班次和时间</div>
+                    <div class="info-value">
+                        <div class="mb-2"><strong>三班倒：</strong></div>
+                        <div class="grid grid-cols-1 gap-1 text-sm">
+                            <div><span class="badge-blue">早班</span> 06:00-14:00</div>
+                            <div><span class="badge-blue">中班</span> 14:00-22:00</div>
+                            <div><span class="badge-blue">晚班</span> 22:00-06:00（次日）</div>
+                        </div>
+                    </div>
+
+                    <div class="info-label">二阶段是否拟对所有班次进行审核</div>
+                    <div class="info-value">
+                        <span class="badge-green">✓ 是</span>
+                        <div class="text-sm text-gray-500 mt-1">二阶段审核将覆盖所有三个班次的运行情况</div>
+                    </div>
+
+                    <div class="info-label">确定的二阶段审核的重要审核点<br><span class="text-xs text-gray-500">（场所审核安排建议）</span></div>
+                    <div class="info-value">
+                        <div class="space-y-2">
+                            <div><strong>1. 控制中心（OCC）</strong> - 调度指挥、应急响应</div>
+                            <div><strong>2. 车辆段</strong> - 车辆维护、检修过程</div>
+                            <div><strong>3. 车站现场</strong> - 客运服务、设备运行</div>
+                            <div><strong>4. 主变电所</strong> - 能源管理、环境安全</div>
+                        </div>
+                    </div>
+
+                    <div class="info-label">对二阶段审核审核组组成的建议<br><span class="text-xs text-gray-500">（专业人员配备）</span></div>
+                    <div class="info-value">
+                        建议二阶段审核组保持一阶段专业审核员配置，确保覆盖轨道交通专业领域（代码：19.01.01）。建议配备具有地铁运营经验的审核员。
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6: Problem List -->
+            <div id="problems" class="scroll-mt-20 page-break">
+                <div class="section-title">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>六、问题清单
+                    <span class="badge-green ml-2" style="font-size: 0.7rem;">整改完成</span>
+                </div>
+
+                <!-- 需整改问题清单 -->
+                <div class="mb-8">
+                    <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-wrench text-orange-500"></i>
+                        需完成整改后方可进入第二阶段审核的问题
+                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded ml-auto">3项</span>
+                    </h3>
+
+                    <div class="space-y-4">
+                        <!-- Problem 1 -->
+                        <div class="problem-card">
+                            <div class="problem-header">
+                                <div class="flex items-center gap-2">
+                                    <span class="record-badge auto">
+                                        <i class="fas fa-link"></i> CR-20240415-001
+                                    </span>
+                                    <span>环境因素识别不充分</span>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-700 bg-white bg-opacity-60 p-3 rounded mb-2">
+                                <strong>问题描述：</strong>组织的环境因素识别不充分，未包含新开通线路的环境影响评价。
+                            </div>
+                            <div class="text-sm text-gray-600 bg-green-50 border border-green-200 p-3 rounded">
+                                <strong class="text-green-700"><i class="fas fa-check-circle mr-1"></i>整改情况：</strong>已补充新开通线路的环境影响评价报告，更新了环境因素识别清单。
+                                <div class="text-xs text-gray-500 mt-2 text-right">确认时间：2024/4/9 15:14:18</div>
+                            </div>
+                        </div>
+
+                        <!-- Problem 2 -->
+                        <div class="problem-card">
+                            <div class="problem-header">
+                                <div class="flex items-center gap-2">
+                                    <span class="record-badge auto">
+                                        <i class="fas fa-link"></i> CR-20240416-002
+                                    </span>
+                                    <span>危险源辨识不完整</span>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-700 bg-white bg-opacity-60 p-3 rounded mb-2">
+                                <strong>问题描述：</strong>危险源辨识缺少对地铁施工期间交叉作业的风险评估。
+                            </div>
+                            <div class="text-sm text-gray-600 bg-green-50 border border-green-200 p-3 rounded">
+                                <strong class="text-green-700"><i class="fas fa-check-circle mr-1"></i>整改情况：</strong>已完成地铁施工期间交叉作业的风险评估，制定了专项安全管理方案。
+                                <div class="text-xs text-gray-500 mt-2 text-right">确认时间：2024/4/9 15:14:18</div>
+                            </div>
+                        </div>
+
+                        <!-- Problem 3 -->
+                        <div class="problem-card">
+                            <div class="problem-header">
+                                <div class="flex items-center gap-2">
+                                    <span class="record-badge manual">
+                                        <i class="fas fa-edit"></i> 手动添加
+                                    </span>
+                                    <span>应急演练记录不完整</span>
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-700 bg-white bg-opacity-60 p-3 rounded mb-2">
+                                <strong>问题描述：</strong>应急预案演练记录不完整，缺少2024年第一季度演练记录。
+                            </div>
+                            <div class="text-sm text-gray-600 bg-green-50 border border-green-200 p-3 rounded">
+                                <strong class="text-green-700"><i class="fas fa-check-circle mr-1"></i>整改情况：</strong>已补充2024年第一季度应急演练记录，包括演练方案、照片和总结报告。
+                                <div class="text-xs text-gray-500 mt-2 text-right">确认时间：2024/4/9 15:14:18</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 其他关注项 -->
+                <div class="mt-8">
+                    <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-eye text-blue-500"></i>
+                        其他应关注的问题
+                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded ml-auto">2项</span>
+                    </h3>
+
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">序号</th>
+                                <th>关注内容</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-center font-medium text-gray-500">1</td>
+                                <td>建议关注员工心理健康管理，特别是高压岗位（如调度员、司机）的心理疏导机制建立情况。</td>
+                            </tr>
+                            <tr>
+                                <td class="text-center font-medium text-gray-500">2</td>
+                                <td>建议完善供应商管理体系，特别是对关键零部件供应商（如信号系统、车辆零部件）的二方审核频次和深度。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 7: Attachments -->
+            <div id="attachments" class="scroll-mt-20">
+                <div class="section-title">
+                    <i class="fas fa-paperclip mr-2"></i>七、附件清单
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="attachment-item">
+                        <div class="attachment-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-sm text-gray-900">一阶段审核计划.pdf</div>
+                            <div class="text-xs text-gray-500">2.3 MB · 2024-04-10上传</div>
+                        </div>
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+
+                    <div class="attachment-item">
+                        <div class="attachment-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-sm text-gray-900">文件评审记录.pdf</div>
+                            <div class="text-xs text-gray-500">1.8 MB · 2024-04-12上传</div>
+                        </div>
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+
+                    <div class="attachment-item">
+                        <div class="attachment-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-sm text-gray-900">首末次会议签到表.pdf</div>
+                            <div class="text-xs text-gray-500">856 KB · 2024-04-18上传</div>
+                        </div>
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+
+                    <div class="attachment-item">
+                        <div class="attachment-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-sm text-gray-900">不符合项整改证据.pdf</div>
+                            <div class="text-xs text-gray-500">3.2 MB · 2024-04-20上传</div>
+                        </div>
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conclusion -->
+            <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6 page-break">
+                <h3 class="font-bold text-blue-900 mb-3 text-lg flex items-center gap-2">
+                    <i class="fas fa-clipboard-check"></i>
+                    审核结论
+                </h3>
+                <div class="text-gray-700 leading-relaxed space-y-3">
+                    <p>经一阶段现场审核确认，<strong>北京市地铁运营有限公司</strong>的质量、环境、职业健康安全管理体系：</p>
+                    <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+                        <li>基本符合GB/T 19001-2016、GB/T 24001-2016、GB/T 45001-2020标准要求</li>
+                        <li>体系运行超过3个月，运行记录基本齐全</li>
+                        <li>内审和管理评审已实施，发现的问题已整改</li>
+                        <li>一阶段发现的问题已全部整改完成</li>
+                    </ul>
+                    <div class="flex items-center gap-2 mt-4 text-green-700 font-semibold bg-white bg-opacity-60 p-3 rounded">
+                        <i class="fas fa-check-circle text-xl"></i>
+                        <span>具备开展第二阶段审核的条件，建议实施二阶段审核。</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signature Area -->
+            <div class="signature-area">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <div class="text-sm text-gray-600 mb-4">审核组长（签字）：</div>
+                        <div class="border-b-2 border-gray-400 pb-2 mb-2 h-16 flex items-end">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='60'%3E%3Ctext x='10' y='45' font-family='cursive' font-size='30' fill='%23333'%3E武荣刚%3C/text%3E%3C/svg%3E" alt="签名" class="h-12 opacity-80">
+                        </div>
+                        <div class="text-sm text-gray-500">日期：2024年4月18日</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-600 mb-4">审核派出机构意见：</div>
+                        <div class="mb-4">
+                            <span class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">
+                                <i class="fas fa-check mr-2"></i>同意审核组意见
+                            </span>
+                        </div>
+                        <div class="border-b-2 border-gray-400 pb-2 mb-2 h-16 flex items-end">
+                            <span class="text-gray-400 italic">已通过系统审批</span>
+                        </div>
+                        <div class="text-sm text-gray-500">授权人（签字）/ 日期</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Stage Info -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <h4 class="font-semibold text-gray-800 mb-3">二阶段审核建议</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="bg-gray-50 p-3 rounded border border-gray-200">
+                        <div class="text-gray-500 mb-1">建议审核时间</div>
+                        <div class="font-medium text-gray-800">2024年5月15日 - 5月18日</div>
+                        <div class="text-xs text-gray-500 mt-1">建议在一阶段完成后4周内进行</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded border border-gray-200">
+                        <div class="text-gray-500 mb-1">审核类型</div>
+                        <div class="font-medium text-gray-800">初次认证二阶段</div>
+                        <div class="text-xs text-gray-500 mt-1">QMS + EMS + OHSMS结合审核</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded border border-gray-200">
+                        <div class="text-gray-500 mb-1">重点关注</div>
+                        <div class="font-medium text-gray-800">1. 运营现场抽样<br>2. 夜班班次审核<br>3. 应急响应验证</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-12 pt-6 border-t border-gray-300 text-center text-xs text-gray-500 space-y-1">
+                <p>注1：本报告附件包括首末次会议签到表、审核计划、必要的用于相关事实的证据或记录。</p>
+                <p>注2：一阶段审核为抽样审核，审核发现和结论具有一定的不确定性。</p>
+                <p>注3：若对本报告或审核人员的工作有异议，可在收到本报告之日起30日内向中国质量认证中心提出申诉/投诉。</p>
+                <p class="font-semibold mt-2">本报告所有权属于CQC，未经书面同意不得向第三方泄露。</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Navigation active state
+        const sections = document.querySelectorAll('div[id]');
+        const navPills = document.querySelectorAll('.nav-pill');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= (sectionTop - 200)) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navPills.forEach(pill => {
+                pill.classList.remove('active');
+                if (pill.getAttribute('href') === '#' + current) {
+                    pill.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
