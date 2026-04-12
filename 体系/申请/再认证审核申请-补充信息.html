@@ -1,0 +1,2431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>再认证申请</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .form-section {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            scroll-margin-top: 160px;
+        }
+
+        .form-section:hover {
+            box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        .conditional-field {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+        }
+
+        .conditional-field.active {
+            max-height: 2000px;
+            opacity: 1;
+            margin-top: 0.75rem;
+        }
+
+        .nav-item {
+            position: relative;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #2563eb;
+            transition: width 0.3s ease;
+        }
+
+        .nav-item.active {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .nav-item.active::after {
+            width: 100%;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .system-card {
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .system-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        }
+
+        .system-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 8px 30px -8px rgba(59, 130, 246, 0.25);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }
+
+        .data-table tr:hover td {
+            background: #f8fafc;
+        }
+
+        .sub-section-title {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            border-left: 4px solid #3b82f6;
+            padding: 12px 16px;
+            margin: 20px 0 12px 0;
+            border-radius: 0 8px 8px 0;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sub-section-title i {
+            color: #3b82f6;
+        }
+
+        .batch-actions {
+            position: sticky;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid #e2e8f0;
+            padding: 0.75rem 1rem;
+            z-index: 30;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .batch-actions.active {
+            transform: translateY(0);
+        }
+
+        .file-upload-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .file-upload-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.15);
+        }
+
+        .file-upload-card.has-files {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .attachment-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .attachment-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.15);
+        }
+
+        .attachment-card.has-files {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .attachment-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .attachment-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .attachment-icon.pdf-icon {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .attachment-icon.doc-icon {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .attachment-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .attachment-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .attachment-title .title-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .required-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            background: #fef2f2;
+            color: #dc2626;
+            font-size: 11px;
+            font-weight: 500;
+            border-radius: 4px;
+            border: 1px solid #fecaca;
+        }
+
+        .optional-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            background: #f3f4f6;
+            color: #6b7280;
+            font-size: 11px;
+            font-weight: 500;
+            border-radius: 4px;
+        }
+
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #ffffff;
+            border: 1px solid #3b82f6;
+            border-radius: 6px;
+            color: #3b82f6;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .upload-btn:hover {
+            background: #eff6ff;
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+        .file-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #166534;
+            max-width: 100%;
+        }
+
+        .modal {
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            transform: scale(0.95);
+            transition: all 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .cqc-seal {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            display: inline-block;
+        }
+
+        #cqcSealCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.3);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .shift-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .shift-row:last-child {
+            border-bottom: none;
+        }
+
+        .shift-label {
+            min-width: 80px;
+            font-size: 13px;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .shift-time-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .shift-time-group select {
+            width: 70px;
+            padding: 4px 8px;
+            font-size: 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .system-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .system-option:hover {
+            background: #f8fafc;
+        }
+
+        .system-option.selected {
+            background: #eff6ff;
+        }
+
+        .process-name-wrapper {
+            position: relative;
+        }
+
+        .process-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 50;
+            margin-top: 4px;
+        }
+
+        .process-dropdown.hidden {
+            display: none;
+        }
+
+        .process-dropdown-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #374151;
+            border-bottom: 1px solid #f3f4f6;
+            transition: all 0.2s;
+        }
+
+        .process-dropdown-item:hover,
+        .process-dropdown-item.highlighted {
+            background-color: #eff6ff;
+            color: #2563eb;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        input[type="month"],
+        select,
+        textarea {
+            min-height: 36px !important;
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+            line-height: 20px !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 6px !important;
+            background: white !important;
+            transition: all 0.2s !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        }
+
+        input:read-only,
+        input:disabled,
+        select:disabled {
+            background: #f3f4f6 !important;
+            cursor: not-allowed !important;
+        }
+
+        .change-item-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .change-item-card:hover {
+            border-color: #cbd5e1;
+            background: #f1f5f9;
+        }
+
+        .attachment-conditional {
+            display: none;
+        }
+
+        .attachment-conditional.visible {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-field label.required::after {
+            content: '*';
+            color: #dc2626;
+            margin-left: 2px;
+        }
+
+        .history-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 1024px) {
+            .form-grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .form-grid-4 {
+                grid-template-columns: 1fr;
+            }
+            
+            .shift-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .shift-time-group {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 bg-slate-50 pb-32">
+
+    <!-- 顶部固定导航 -->
+    <div class="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-14">
+                <div class="flex items-center gap-4 overflow-x-auto custom-scrollbar">
+                    <button onclick="history.back()" class="text-slate-600 hover:text-slate-900 flex items-center gap-2 text-sm shrink-0 transition-colors">
+                        <i class="fas fa-arrow-left"></i>
+                        <span class="hidden sm:inline">返回</span>
+                    </button>
+                    <div class="h-4 w-px bg-slate-300 shrink-0"></div>
+                    <h1 class="text-lg font-bold text-slate-900 truncate">再认证申请</h1>
+                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-200 ml-2">再认证</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 shrink-0">待提交</span>
+                </div>
+                <div class="flex gap-2 shrink-0">
+                    <button onclick="openReNoticeModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium shadow-md shadow-indigo-200 transition-all active:scale-95 flex items-center gap-2">
+                        <i class="fas fa-file-alt mr-1.5"></i>再认证通知书
+                    </button>
+                    <button onclick="openSurveyModal()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium shadow-md shadow-purple-200 transition-all active:scale-95 flex items-center gap-2">
+                        <i class="fas fa-clipboard-check mr-1.5"></i>获证方情况调查表
+                    </button>
+                    <button onclick="saveDraft()" class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 text-sm font-medium text-slate-700 transition-all active:scale-95">
+                        <i class="fas fa-save mr-1.5"></i>保存
+                    </button>
+                    <button onclick="submitForm()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-md shadow-blue-200 transition-all active:scale-95">
+                        <i class="fas fa-paper-plane mr-1.5"></i>提交
+                    </button>
+                </div>
+            </div>
+
+            <!-- 锚点导航 -->
+            <nav class="flex gap-6 text-sm text-slate-600 overflow-x-auto custom-scrollbar pb-1">
+                <a href="#section-basic" class="nav-item active py-2" data-section="section-basic">申请单信息</a>
+                <a href="#section-customer" class="nav-item py-2" data-section="section-customer">客户信息</a>
+                <a href="#section-system" class="nav-item py-2" data-section="section-system">认证领域</a>
+                <a href="#section-org" class="nav-item py-2" data-section="section-org">组织信息</a>
+                <a href="#section-attachment" class="nav-item py-2" data-section="section-attachment">应附文件</a>
+                <a href="#section-process" class="nav-item py-2" data-section="section-process">管理体系过程清单</a>
+                <!-- <a href="#section-locations" class="nav-item py-2" data-section="section-locations">认证场所清单</a> -->
+            </nav>
+        </div>
+    </div>
+
+    <!-- 主体内容区 -->
+    <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 pt-32 space-y-6 max-w-[1920px]">
+
+        <!-- 1. 申请单信息（来自初次认证，客户名称和受理机构不可修改） -->
+        <div id="section-basic" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</div>
+                    <h3 class="font-semibold text-slate-900">申请单信息</h3>
+                </div>
+                <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
+            </div>
+            <div class="p-6 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 transition-all duration-300" style="max-height: 2000px; overflow: visible;">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">认证申请编号</label>
+                    <input type="text" id="appNo" readonly class="w-full px-3 py-2 text-sm bg-slate-100 border border-slate-300 rounded-lg text-slate-500 cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">申请人</label>
+                    <input type="text" id="applicant" readonly class="w-full px-3 py-2 text-sm bg-slate-100 border border-slate-300 rounded-lg text-slate-500 cursor-not-allowed" value="当前登录用户">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">申请时间</label>
+                    <input type="text" id="applyTime" readonly class="w-full px-3 py-2 text-sm bg-slate-100 border border-slate-300 rounded-lg text-slate-500 cursor-not-allowed" value="2026-04-11">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1 required">CQC受理机构</label>
+                    <select class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-slate-100 cursor-not-allowed" disabled>
+                        <option value="">北京中心</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1 required">客户名称</label>
+                    <input type="text" id="customerNameDisplay" value="示例科技有限公司" readonly class="w-full px-3 py-2 text-sm bg-slate-100 border border-slate-300 rounded-lg text-slate-500 cursor-not-allowed">
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 客户基本信息（来自初次认证，客户名称和受理机构不可修改，其他可编辑） -->
+        <div id="section-customer" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</div>
+                    <h3 class="font-semibold text-slate-900">客户基本信息</h3>
+                </div>
+                <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
+            </div>
+            <div class="p-6 transition-all duration-300" style="max-height: 3000px; overflow: visible;">
+                <!-- 客户选择（展示状态，不可修改） -->
+                <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-medium text-slate-700 required">客户名称</label>
+                        <span class="text-xs text-slate-500 bg-white px-2 py-1 rounded border">已锁定</span>
+                    </div>
+                    <input type="text" id="customerName" value="示例科技有限公司" readonly class="w-full px-3 py-2 text-sm bg-slate-100 border border-slate-300 rounded-lg cursor-not-allowed font-medium">
+                </div>
+
+                <!-- 地址信息 -->
+                <div class="sub-section-title">
+                    <i class="fas fa-map-marker-alt"></i>
+                    地址信息
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="form-field col-span-2">
+                        <label class="required">注册地址</label>
+                        <input type="text" id="regAddress" value="北京市朝阳区xxx路xxx号">
+                    </div>
+                    <div class="form-field">
+                        <label class="required">注册地邮编</label>
+                        <input type="text" id="regZip" value="100000">
+                    </div>
+                    <div class="form-field">
+                        <label>传真</label>
+                        <input type="text" id="fax" value="010-87654321">
+                    </div>
+                    <div class="form-field col-span-2">
+                        <label class="required">运营地址</label>
+                        <input type="text" id="opAddress" value="北京市海淀区xxx路xxx号">
+                    </div>
+                    <div class="form-field">
+                        <label class="required">运营地邮编</label>
+                        <input type="text" id="opZip" value="100080">
+                    </div>
+                </div>
+
+                <!-- 联系信息 -->
+                <div class="sub-section-title">
+                    <i class="fas fa-address-card"></i>
+                    联系信息
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="form-field">
+                        <label class="required">联系人</label>
+                        <select id="contactPerson" onchange="fillContactInfo(this.value)">
+                            <option value="0" selected>张三（经理）</option>
+                            <option value="1">李四（主任）</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label class="required">所在部门</label>
+                        <input type="text" id="dept" value="质量管理部">
+                    </div>
+                    <div class="form-field">
+                        <label class="required">职务</label>
+                        <input type="text" id="position" value="经理">
+                    </div>
+                    <div class="form-field">
+                        <label class="required">电话</label>
+                        <input type="tel" id="phone" value="13800138000">
+                    </div>
+                    <div class="form-field">
+                        <label class="required">E-mail</label>
+                        <input type="email" id="email" value="zhangsan@example.com">
+                    </div>
+                </div>
+
+                <!-- 关联合同（展示已有合同） -->
+                <div class="sub-section-title">
+                    <i class="fas fa-file-contract"></i>
+                    关联合同
+                </div>
+                <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="flex-1">
+                            <input type="text" id="contractNo" value="HT202403230001 - 质量管理体系认证合同" readonly class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg cursor-not-allowed text-slate-700 font-medium">
+                        </div>
+                        <button disabled class="px-4 py-2 bg-slate-300 text-white rounded-lg text-sm font-medium cursor-not-allowed flex items-center gap-2">
+                            <i class="fas fa-lock"></i>
+                            已关联
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-500">当前关联合同：HT202403230001 | 金额：¥100,000 | 有效期：2024-01-01 至 2024-12-31</p>
+                </div>
+
+                <!-- 工作语言 -->
+                <div class="sub-section-title">
+                    <i class="fas fa-language"></i>
+                    工作语言
+                </div>
+                <div class="flex flex-wrap gap-4 items-center">
+                    <label class="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors text-sm">
+                        <input type="radio" name="language" value="chinese" checked class="text-blue-600" onchange="toggleLanguage(false)">
+                        <span>汉语</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors text-sm">
+                        <input type="radio" name="language" value="other" class="text-blue-600" onchange="toggleLanguage(true)">
+                        <span>其他</span>
+                    </label>
+                    <input type="text" id="otherLanguage" placeholder="请输入语言" class="hidden px-3 py-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 w-40">
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 认证体系需求信息（来自初次认证） -->
+        <div id="section-system" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">3</div>
+                        <h3 class="font-semibold text-slate-900">认证领域需求信息</h3>
+                    </div>
+                    <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full" id="systemCount">已添加 2 个认证领域</span>
+                </div>
+                <p class="text-xs text-slate-500">支持添加多个认证领域，不可重复添加同一体系</p>
+            </div>
+
+            <!-- 悬浮添加栏 -->
+            <div class="sticky top-14 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 p-4">
+                <div class="flex gap-3 items-end">
+                    <div class="flex-1 relative">
+                        <label class="block text-xs font-medium text-slate-700 mb-1">批量选择认证体系</label>
+                        <div class="relative">
+                            <button onclick="toggleBatchSelect()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-left flex items-center justify-between hover:border-blue-500 transition-all">
+                                <span id="batchSelectText">请选择认证体系（支持多选）</span>
+                                <i class="fas fa-chevron-down text-slate-400"></i>
+                            </button>
+                            <div id="batchSelectDropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                                <div class="p-2 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                                    <span class="text-xs font-medium text-slate-600">点击选择多个体系</span>
+                                    <button onclick="confirmBatchAdd()" class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors">
+                                        确认添加
+                                    </button>
+                                </div>
+                                <div class="batch-select-dropdown">
+                                    <div class="system-option" data-system="QMS" onclick="toggleSystemOption(this)">
+                                        <input type="checkbox" class="rounded text-blue-600 mr-2">
+                                        <span class="text-sm">QMS（质量管理体系）</span>
+                                    </div>
+                                    <div class="system-option" data-system="EMS" onclick="toggleSystemOption(this)">
+                                        <input type="checkbox" class="rounded text-blue-600 mr-2">
+                                        <span class="text-sm">EMS（环境管理体系）</span>
+                                    </div>
+                                    <div class="system-option" data-system="OHSMS" onclick="toggleSystemOption(this)">
+                                        <input type="checkbox" class="rounded text-blue-600 mr-2">
+                                        <span class="text-sm">OHSMS（职业健康安全管理体系）</span>
+                                    </div>
+                                    <div class="system-option" data-system="FSMS" onclick="toggleSystemOption(this)">
+                                        <input type="checkbox" class="rounded text-blue-600 mr-2">
+                                        <span class="text-sm">FSMS（食品安全管理体系）</span>
+                                    </div>
+                                    <div class="system-option" data-system="ISMS" onclick="toggleSystemOption(this)">
+                                        <input type="checkbox" class="rounded text-blue-600 mr-2">
+                                        <span class="text-sm">ISMS（信息安全管理体系）</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="addSystem()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium shadow-md shadow-blue-200 transition-all active:scale-95 flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        添加
+                    </button>
+                </div>
+                <div id="selectedSystemsTags" class="flex flex-wrap gap-2 mt-2 hidden"></div>
+            </div>
+
+            <!-- 批量操作栏 -->
+            <div id="batchActionsBar" class="batch-actions">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 p-1 rounded transition-colors">
+                            <input type="checkbox" id="selectAllSystems" onchange="toggleSelectAll(this.checked)" class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-slate-700 font-medium">全选</span>
+                        </label>
+                        <span class="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full" id="selectedCount">已选择 0 项</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="batchDelete()" class="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1 border border-red-200">
+                            <i class="fas fa-trash-alt"></i>删除选中
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 已选体系详情区域 -->
+            <div id="selectedSystemsContainer" class="relative min-h-[200px] p-4">
+                <div id="emptySystemTip" class="p-12 text-center text-slate-400 hidden">
+                    <div class="mb-4">
+                        <div class="w-20 h-20 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-3 shadow-inner">
+                            <i class="fas fa-clipboard-list text-3xl text-slate-300"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm font-medium text-slate-600 mb-1">暂未添加认证领域</p>
+                    <p class="text-xs text-slate-400 mb-6">请从上方选择要申请的认证体系</p>
+                </div>
+
+                <!-- 认证领域卡片列表 -->
+                <div id="systemCardsList" class="space-y-4">
+                    <!-- 动态生成认证领域卡片，初始包含QMS和EMS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 组织/人员及其他认证信息（来自初次认证） -->
+        <div id="section-org" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">4</div>
+                    <h3 class="font-semibold text-slate-900">组织/人员及其他认证信息</h3>
+                </div>
+                <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
+            </div>
+            <div class="p-6 space-y-6 transition-all duration-300" style="max-height: 4000px; overflow: visible;">
+                <!-- 人员数量 -->
+                <div class="bg-blue-50/80 rounded-lg p-4 border border-blue-100">
+                    <h4 class="font-medium text-blue-900 mb-3 text-sm flex items-center gap-2">
+                        <i class="fas fa-users text-blue-600"></i>
+                        管理体系范围内人员数量情况
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">公司总人数</label>
+                            <input type="number" id="totalStaff" value="165" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">全职人员</label>
+                            <input type="number" id="fullTime" value="150" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">兼职人员</label>
+                            <input type="number" id="partTime" value="15" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">兼职工作时间(小时/天)</label>
+                            <input type="number" id="partTimeHours" value="4" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 隶属组织 -->
+                <div class="border-t border-slate-100 pt-4">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" id="hasParentOrg" class="rounded text-blue-600 focus:ring-blue-500 transition-all" onchange="toggleField('parentOrgFields', this.checked)">
+                        <span class="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">如隶属于某个更大的组织(如集团公司、上级机关等)，请说明</span>
+                    </label>
+                    <div id="parentOrgFields" class="conditional-field space-y-3 pl-4 border-l-2 border-slate-200 mt-2">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1 required">该组织名称</label>
+                                <input type="text" maxlength="100" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" placeholder="如：XX集团公司">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1 required">与该组织的关系</label>
+                                <input type="text" maxlength="100" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" placeholder="如：全资子公司">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">该组织负责哪些与认证相关的职能</label>
+                            <textarea maxlength="200" rows="2" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg resize-none" placeholder="例如采购、供应商批准、质量保证等"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 外包过程 -->
+                <div class="border-t border-slate-100 pt-4">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" id="hasOutsource" class="rounded text-blue-600 focus:ring-blue-500 transition-all" onchange="toggleField('outsourceFields', this.checked)">
+                        <span class="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">如申请认证的管理体系有外包（外委）过程或业务，请说明</span>
+                    </label>
+                    <div id="outsourceFields" class="conditional-field space-y-3 pl-4 border-l-2 border-slate-200 mt-2">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">外包（外委）过程或业务及承担方</label>
+                            <input type="text" maxlength="100" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" placeholder="如：产品运输-XX物流公司">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 历史认证 -->
+                <div class="border-t border-slate-100 pt-4">
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" id="hasHistory" checked class="rounded text-blue-600 focus:ring-blue-500 transition-all" onchange="toggleField('historyFields', this.checked)">
+                        <span class="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">如客户曾获得过其他认证机构的管理体系认证，请说明</span>
+                    </label>
+                    <div id="historyFields" class="conditional-field active space-y-3 pl-4 border-l-2 border-slate-200 mt-2">
+                        <div id="historyList" class="space-y-3">
+                            <div class="history-item bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1 required">认证机构的名称</label>
+                                        <input type="text" maxlength="100" value="原XX认证机构" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1 required">认证标准</label>
+                                        <select class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                                            <option value="Q" selected>Q</option>
+                                            <option value="E">E</option>
+                                            <option value="OHS">OHS</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1 required">证书有效期</label>
+                                        <input type="date" value="2025-06-30" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1 required">最近一次审核日期</label>
+                                        <input type="date" value="2025-03-15" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1 required">管理体系开始运行时间</label>
+                                        <input type="date" value="2022-01-01" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-slate-700 mb-1 required">最近一次内审时间</label>
+                                        <input type="date" value="2025-02-20" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                                    </div>
+                                </div>
+                                <div class="flex justify-end gap-2">
+                                    <button onclick="copyHistory(this)" class="px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                                        <i class="fas fa-copy mr-1"></i>复制
+                                    </button>
+                                    <button onclick="this.closest('.history-item').remove()" class="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded transition-colors">
+                                        <i class="fas fa-trash-alt mr-1"></i>删除
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="addHistoryRow()" class="w-full py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors text-sm font-medium">
+                            <i class="fas fa-plus mr-2"></i>添加历史认证记录
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 现场审核时间 -->
+                <div class="border-t border-slate-100 pt-4">
+                    <label class="block text-xs font-medium text-slate-700 mb-2 required">希望现场审核的时间</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-md">
+                        <input type="month" value="2026-05" class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                        <select class="px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                            <option value="early">上旬</option>
+                            <option value="middle" selected>中旬</option>
+                            <option value="late">下旬</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 生产/服务班次情况 -->
+                <div class="border-t border-slate-100 pt-4">
+                    <div class="sub-section-title">
+                        <i class="fas fa-clock"></i>
+                        生产（服务）班次情况
+                    </div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <span class="text-sm text-slate-600">共</span>
+                        <select id="shiftCount" class="w-20 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all" onchange="updateShiftTimeInputs(this.value)">
+                            <option value="1" selected>1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                        </select>
+                        <span class="text-sm text-slate-600">班次</span>
+                    </div>
+
+                    <div id="shiftTimesContainer" class="space-y-2 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <!-- 动态生成班次时间输入 -->
+                    </div>
+
+                    <div class="mt-4">
+                        <label class="block text-xs font-medium text-slate-700 mb-2 required">各班次的过程、控制方法是否相同？</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="shiftSame" value="yes" checked class="text-blue-600" onchange="toggleField('shiftDifferentDesc', false)">
+                                <span class="text-sm text-slate-700">相同</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="shiftSame" value="no" class="text-blue-600" onchange="toggleField('shiftDifferentDesc', true)">
+                                <span class="text-sm text-slate-700">不同</span>
+                            </label>
+                        </div>
+                        <div id="shiftDifferentDesc" class="conditional-field mt-2">
+                            <textarea maxlength="500" rows="2" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg resize-none" placeholder="请说明各班次情况"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 生产线情况 -->
+                <div class="border-t border-slate-100 pt-4">
+                    <div class="sub-section-title">
+                        <i class="fas fa-industry"></i>
+                        生产线情况
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">生产线总数</label>
+                            <input type="number" value="5" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">相同生产线数量</label>
+                            <input type="number" value="3" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">涉及人数</label>
+                            <input type="number" value="80" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 作息时间 -->
+                <div class="border-t border-slate-100 pt-4">
+                    <div class="sub-section-title">
+                        <i class="fas fa-business-time"></i>
+                        作息时间（管理人员）
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-slate-600 w-12">上午</span>
+                            <input type="time" class="px-2 py-1.5 text-sm border border-slate-300 rounded-lg w-24 bg-white focus:ring-2 focus:ring-blue-500" value="09:00">
+                            <span class="text-slate-400">-</span>
+                            <input type="time" class="px-2 py-1.5 text-sm border border-slate-300 rounded-lg w-24 bg-white focus:ring-2 focus:ring-blue-500" value="12:00">
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm text-slate-600 w-12">下午</span>
+                            <input type="time" class="px-2 py-1.5 text-sm border border-slate-300 rounded-lg w-24 bg-white focus:ring-2 focus:ring-blue-500" value="13:00">
+                            <span class="text-slate-400">-</span>
+                            <input type="time" class="px-2 py-1.5 text-sm border border-slate-300 rounded-lg w-24 bg-white focus:ring-2 focus:ring-blue-500" value="18:00">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. 应附文件和材料（合并初次认证和再认证的附件） -->
+        <div id="section-attachment" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">5</div>
+                    <h3 class="font-semibold text-slate-900">应附文件和材料</h3>
+                </div>
+                <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
+            </div>
+            <div class="p-6 space-y-6 transition-all duration-300" style="max-height: 4000px; overflow: visible;">
+                
+                <!-- 通用认证材料 -->
+                <div>
+                    <h4 class="font-medium text-slate-900 mb-3 flex items-center gap-2 text-sm bg-yellow-50 p-2 rounded border border-yellow-200">
+                        <i class="fas fa-folder text-yellow-500"></i>
+                        通用认证材料
+                    </h4>
+                    <div class="space-y-3">
+                        <div class="file-upload-card" id="card_common_1">
+                            <div class="file-upload-header flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-semibold text-slate-900">法律地位证明文件的复印件（营业执照等）</span>
+                                            <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-medium">必填</span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 mt-0.5">支持PDF、图片格式</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-slate-500 mr-2 file-count" id="count_common_1">已上传 1 个文件</span>
+                                    <button onclick="document.getElementById('file_common_1').click()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                        <i class="fas fa-upload"></i>上传/追加
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-3" id="tags_common_1">
+                                <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs">
+                                    <i class="fas fa-check-circle"></i>
+                                    营业执照.pdf
+                                    <button onclick="removeFile('common_1', 0)" class="hover:text-red-600 ml-1"><i class="fas fa-times"></i></button>
+                                </span>
+                            </div>
+                            <input type="file" id="file_common_1" multiple class="hidden" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileUpload(this, 'common_1')">
+                        </div>
+
+                        <div class="file-upload-card" id="card_common_2">
+                            <div class="file-upload-header flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-semibold text-slate-900">组织机构图</span>
+                                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">选填</span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 mt-0.5">对多场所组织，需注明中心职能</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-slate-500 mr-2 file-count" id="count_common_2">已上传 1 个文件</span>
+                                    <button onclick="document.getElementById('file_common_2').click()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                        <i class="fas fa-upload"></i>上传/追加
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-3" id="tags_common_2">
+                                <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs">
+                                    <i class="fas fa-check-circle"></i>
+                                    组织架构图.pdf
+                                    <button onclick="removeFile('common_2', 0)" class="hover:text-red-600 ml-1"><i class="fas fa-times"></i></button>
+                                </span>
+                            </div>
+                            <input type="file" id="file_common_2" multiple class="hidden" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileUpload(this, 'common_2')">
+                        </div>
+
+                        <div class="file-upload-card" id="card_common_3">
+                            <div class="file-upload-header flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-semibold text-slate-900">认证范围内的所有生产/服务流程说明</span>
+                                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">选填</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-slate-500 mr-2 file-count" id="count_common_3">已上传 0 个文件</span>
+                                    <button onclick="document.getElementById('file_common_3').click()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                        <i class="fas fa-upload"></i>上传/追加
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-3" id="tags_common_3"></div>
+                            <input type="file" id="file_common_3" multiple class="hidden" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileUpload(this, 'common_3')">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 再认证专项材料 -->
+                <div class="border-t border-slate-200 pt-6">
+                    <h4 class="font-medium text-slate-900 mb-3 flex items-center gap-2 text-sm bg-indigo-50 p-2 rounded border border-indigo-200">
+                        <i class="fas fa-folder text-indigo-500"></i>
+                        再认证专项材料
+                    </h4>
+                    <div class="space-y-3">
+                        <div class="attachment-card" id="card_1">
+                            <div class="attachment-main">
+                                <div class="attachment-icon pdf-icon">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="attachment-info">
+                                    <div class="attachment-title">
+                                        <span class="title-text">有效版本的管理体系文件</span>
+                                        <span class="required-badge">必填</span>
+                                    </div>
+                                    <div class="attachment-meta">
+                                        <span class="file-count" id="meta_1">0 个文件</span>
+                                    </div>
+                                </div>
+                                <button class="upload-btn" onclick="document.getElementById('file_1').click()">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>上传</span>
+                                </button>
+                            </div>
+                            <div class="attachment-files" id="files_1"></div>
+                            <input type="file" id="file_1" multiple class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleMultiFileUpload(this, 1)">
+                        </div>
+
+                        <div class="attachment-card" id="card_2">
+                            <div class="attachment-main">
+                                <div class="attachment-icon doc-icon">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <div class="attachment-info">
+                                    <div class="attachment-title">
+                                        <span class="title-text">过程清单（QES）</span>
+                                        <span class="optional-badge">选填</span>
+                                    </div>
+                                    <div class="attachment-meta">
+                                        <span class="file-count" id="meta_2">0 个文件</span>
+                                    </div>
+                                </div>
+                                <button class="upload-btn" onclick="document.getElementById('file_2').click()">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>上传</span>
+                                </button>
+                            </div>
+                            <div class="attachment-files" id="files_2"></div>
+                            <input type="file" id="file_2" multiple class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleMultiFileUpload(this, 2)">
+                        </div>
+
+                        <div class="attachment-card" id="card_5">
+                            <div class="attachment-main">
+                                <div class="attachment-icon pdf-icon">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="attachment-info">
+                                    <div class="attachment-title">
+                                        <span class="title-text">营业执照（副本）复印件</span>
+                                        <span class="required-badge">必填</span>
+                                    </div>
+                                    <div class="attachment-meta">
+                                        <span class="file-count" id="meta_5">0 个文件</span>
+                                    </div>
+                                </div>
+                                <button class="upload-btn" onclick="document.getElementById('file_5').click()">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>上传</span>
+                                </button>
+                            </div>
+                            <div class="attachment-files" id="files_5"></div>
+                            <input type="file" id="file_5" multiple class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleMultiFileUpload(this, 5)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. 管理体系过程清单（原有再认证内容） -->
+        <div id="section-process" class="form-section bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors" onclick="toggleSection(this)">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">6</div>
+                    <h3 class="font-semibold text-slate-900">管理体系过程清单</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">自动带入上一周期内容</span>
+                    <i class="fas fa-chevron-down text-slate-400 transition-transform duration-300 text-xs"></i>
+                </div>
+            </div>
+            
+            <div class="p-6 transition-all duration-300" style="max-height: 4000px; overflow: visible;">
+                <div class="flex justify-end mb-4">
+                    <button onclick="addProcessRow()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2">
+                        <i class="fas fa-plus"></i>新增过程
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto rounded-lg border border-slate-200">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="w-16">序号</th>
+                                <th class="w-48 required">过程名称</th>
+                                <th class="w-32 required">主责部门</th>
+                                <th class="w-32">相关部门</th>
+                                <th class="w-32 required">涉及标准条款</th>
+                                <th>绩效参数或相关文件</th>
+                                <th class="w-24 text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="processList">
+                            <!-- 动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100 text-xs text-blue-700 space-y-1">
+                    <p class="font-medium mb-2">填写说明：</p>
+                    <p>（1）本表由审核组根据组织的实际情况完成填写：初次认证应在一阶段审核中完成；结合监督、再认证进行的转版审核，可在现场审核中确认完成；</p>
+                    <p>（2）组织所确定的、管理体系标准所要求的过程都应列出，确定的过程应覆盖标准的全部要求，必要时应明确过程包含的子过程或活动；</p>
+                    <p>（3）对于QMS：产品制造过程和服务提供过程可在基于制造工艺和服务提供流程图的基础上，对于制造和服务过程仅写一个总的即可；</p>
+                    <p>（4）对于EMS：需要将与组织重要环境因素和需要应对的风险/机遇相关的具体子过程列出；</p>
+                    <p>（5）对于OHSMS：需要将主要危险源和OHS风险相关的具体子过程列出；</p>
+                    <p>（6）涉及标准条款：对于结合管理体系，只有当不同标准的同一条款号有同样的内容时，只注明条款号即可；</p>
+                    <p>（7）绩效参数：是指能监测（度量）某过程绩效的量度（表述），如没有相应的绩效参数鼓励列出相关文件名称；</p>
+                    <p>（8）《管理体系过程清单》形成后，过程只要不发生变化，则在一个认证周期内不需重新填写；</p>
+                    <p>（9）《审核计划》的"审核活动安排"应与"过程清单"相对应，不得遗漏过程。</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-4 border-t border-slate-100">
+                    <div class="form-field">
+                        <label class="text-xs font-medium text-slate-700 mb-1 block">审核组长</label>
+                        <input type="text" id="processLeader" placeholder="自动带入">
+                    </div>
+                    <div class="form-field">
+                        <label class="text-xs font-medium text-slate-700 mb-1 block">日期</label>
+                        <input type="date" id="processDate">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. 认证场所清单（原有再认证内容） -->
+
+    </div>
+
+    <!-- 再认证通知书弹窗 -->
+    <div id="reNoticeModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-blue-50 rounded-t-2xl">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fas fa-file-alt text-indigo-600"></i>
+                    再认证通知书
+                </h3>
+                <button onclick="closeReNoticeModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-white rounded-full">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-8 space-y-6">
+                <!-- 通知书头部 -->
+                <div class="flex justify-between items-start border-b-2 border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900 mb-1">中国质量认证中心</h2>
+                        <p class="text-sm text-slate-600">China Quality Certification Centre (CQC)</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-slate-500 mb-1">通知书编号</div>
+                        <div class="text-sm font-mono font-bold text-slate-700">MSF11-24-2026-00123</div>
+                    </div>
+                </div>
+
+                <div class="text-center py-4">
+                    <h3 class="text-xl font-bold text-slate-900 tracking-widest">再 认 证 通 知 书</h3>
+                    <div class="w-24 h-1 bg-red-700 mx-auto mt-2"></div>
+                </div>
+
+                <div class="space-y-4 text-sm leading-relaxed text-slate-800">
+                    <p class="font-bold text-lg">示例科技有限公司：</p>
+                    
+                    <p class="indent-8">
+                        自贵方获得CQC管理体系认证证书以来，对我方的认证工作给予了大力的支持和配合。贵方的证书将于<span class="font-bold text-red-700 text-base">2026年06月30日</span>到期，根据相关规定，现将有关事宜告知如下：
+                    </p>
+                    
+                    <p class="indent-8">
+                        请确认并填写《再认证申请表》，并及时与我方取得联系，将相关申请资料提交我方。
+                    </p>
+                    
+                    <p class="indent-8">
+                        受理机构将与贵方协商签定新的认证合同，安排再认证审核。
+                    </p>
+                    
+                    <p class="indent-8">
+                        考虑到审核中可能出现的对不符合实施纠正措施、跟踪验证、材料上报及认证决定等环节所占用的时间较长，从实施审核到颁发新证书（如通过）还需要一个时间间隔。因此，根据有关规定<span class="font-bold">再认证审核必须在2026年05月30日前完成</span>。如在原证书到期前未能完成再认证的全部活动，将按新认证项目实施。
+                    </p>
+                    
+                    <p class="indent-8">
+                        若贵方不能在现证书有效期内完成再认证，现认证证书将在有效期到后自动失效，我中心也将发布相应的证书失效公告。
+                    </p>
+                    
+                    <p class="indent-8">
+                        未尽事宜请与我中心联系协商，联系方式是：
+                    </p>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 my-4">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-slate-600">联系人：</span>
+                                <span class="font-medium text-slate-900">张三</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-600">电话：</span>
+                                <span class="font-medium text-slate-900">010-83886666</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-600">传真：</span>
+                                <span class="font-medium text-slate-900">010-83886677</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-600">Email：</span>
+                                <span class="font-medium text-slate-900">zhangsan@cqc.com.cn</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-center font-medium text-slate-700 mt-6">
+                        祝贵方工作顺利！
+                    </p>
+                </div>
+
+                <!-- 底部公章 -->
+                <div class="flex justify-end items-end mt-8 pt-6 border-t border-slate-200">
+                    <div class="text-center mr-4">
+                        <div class="cqc-seal mb-2">
+                            <canvas id="cqcSealCanvas" width="140" height="140"></canvas>
+                        </div>
+                        <p class="text-sm font-bold text-slate-900">中国质量认证中心（公章）</p>
+                        <p class="text-sm text-slate-700 mt-1">2026年03月25日</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 获证方情况调查表详情弹窗 -->
+    <div id="surveyModal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-purple-50 to-indigo-50 rounded-t-2xl">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fas fa-clipboard-check text-purple-600"></i>
+                    获证方情况调查表详情
+                </h3>
+                <button onclick="closeSurveyModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-white rounded-full">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                    <h4 class="font-semibold text-slate-900 mb-3">客户基本信息</h4>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-slate-500">客户名称：</span>
+                            <span class="font-medium text-slate-900">示例科技有限公司</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500">提交日期：</span>
+                            <span class="font-medium text-slate-900">2026-04-11</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                        <i class="fas fa-clipboard-check text-purple-500"></i>
+                        自上次审核以来变更情况
+                    </h4>
+                    <div class="space-y-3">
+                        <div class="change-item-card !mb-0">
+                            <div class="flex items-start gap-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="text-sm font-medium text-slate-700">组织名称</span>
+                                        <span class="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">无变更</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="change-item-card !mb-0">
+                            <div class="flex items-start gap-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="text-sm font-medium text-slate-700">营业执照的经营范围、资质许可的范围</span>
+                                        <span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-medium">有变更</span>
+                                    </div>
+                                    <p class="text-sm text-slate-600 bg-white p-2 rounded border border-slate-200">
+                                        新增"软件开发"经营范围，已办理营业执照变更手续。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="change-item-card !mb-0">
+                            <div class="flex items-start gap-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="text-sm font-medium text-slate-700">最高管理者</span>
+                                        <span class="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">无变更</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="change-item-card !mb-0">
+                            <div class="flex items-start gap-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="text-sm font-medium text-slate-700">组织人数或体系覆盖人数</span>
+                                        <span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-medium">有变更</span>
+                                    </div>
+                                    <p class="text-sm text-slate-600 bg-white p-2 rounded border border-slate-200">
+                                        原人数150人，现人数165人，新增15人为研发团队。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="change-item-card !mb-0">
+                            <div class="flex items-start gap-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="text-sm font-medium text-slate-700">联系人/联系方式</span>
+                                        <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-medium">必填信息</span>
+                                    </div>
+                                    <p class="text-sm text-slate-600 bg-white p-2 rounded border border-slate-200">
+                                        张三，13800138000，zhangsan@example.com
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                    <h4 class="font-semibold text-blue-900 mb-2">审核日期确认</h4>
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        同意《再认证通知书》中的审核日期（2026年5月15日至17日）
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                    <h4 class="font-semibold text-slate-900 mb-2">客户代表</h4>
+                    <p class="text-sm text-slate-700">张三（质量管理部经理）</p>
+                </div>
+
+                <div class="p-4 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-800 space-y-1">
+                    <p class="font-medium mb-1">注意事项：</p>
+                    <p>注1：若根据变更信息需要变更认证证书的，则还应请客户提交《证书变更申请书》；</p>
+                    <p>注2：若客户属于多场所组织且场所发生了变更，则还应请客户提交最新的《认证场所清单》；</p>
+                    <p>注3：再认证项目人天数调整信息应传递给申请评审岗位并记录。</p>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-end">
+                <button onclick="closeSurveyModal()" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示消息 -->
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMessage">操作成功</span>
+    </div>
+
+    <script>
+        // 全局状态
+        let selectedSystems = [
+            { key: 'QMS', id: 'QMS_1', index: 1, selected: false, certType: 're', fromContract: true },
+            { key: 'EMS', id: 'EMS_2', index: 2, selected: false, certType: 're', fromContract: true }
+        ];
+        let systemCounter = 2;
+        let processCounter = 0;
+        let locationCounters = { QMS: 0, EMS: 0 };
+        let batchSelectedSystems = [];
+        
+        const systemConfig = {
+            'QMS': { name: '质量管理体系', color: 'blue', icon: 'fa-certificate', standards: ['GB/T 19001-2016 / ISO 9001:2015', 'GB/T 50430-2017 (建设行业)'] },
+            'EMS': { name: '环境管理体系', color: 'green', icon: 'fa-leaf', standards: ['GB/T 24001-2016 / ISO 14001:2015'] },
+            'OHSMS': { name: '职业健康安全管理体系', color: 'orange', icon: 'fa-hard-hat', standards: ['GB/T 45001-2020 / ISO 45001:2018'] },
+            'FSMS': { name: '食品安全管理体系', color: 'purple', icon: 'fa-utensils', standards: ['GB/T 22000 / ISO 22000:2018'] },
+            'ISMS': { name: '信息安全管理体系', color: 'cyan', icon: 'fa-lock', standards: ['GB/T 22080 / ISO/IEC 27001:2013'] }
+        };
+
+        const processHistoryData = [
+            '文件控制过程', '内部审核过程', '管理评审过程', '人力资源管理过程',
+            '采购控制过程', '生产和服务提供过程', '监视和测量设备控制过程',
+            '不合格品控制过程', '纠正措施过程', '质量目标管理过程'
+        ];
+
+        const attachmentFiles = {};
+        for (let i = 1; i <= 10; i++) {
+            attachmentFiles[i] = [];
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            generateAppNo();
+            initSystemCards();
+            initProcessList();
+            initLocationLists();
+            initShiftTimes();
+            initScrollSpy();
+            initSeal();
+            
+            document.getElementById('processDate').value = new Date().toISOString().split('T')[0];
+        });
+
+        function generateAppNo() {
+            const date = new Date();
+            const dateStr = date.getFullYear().toString() +
+                          String(date.getMonth() + 1).padStart(2, '0') +
+                          String(date.getDate()).padStart(2, '0');
+            const random = String(Math.floor(Math.random() * 9000) + 1000);
+            document.getElementById('appNo').value = 'RC' + dateStr + random;
+        }
+
+        function initSystemCards() {
+            selectedSystems.forEach(sys => {
+                renderSystemCard(sys.key, sys.id, sys.index);
+            });
+            updateSystemCount();
+        }
+
+        function renderSystemCard(systemKey, uniqueId, index) {
+            const sys = systemConfig[systemKey];
+            const cardsList = document.getElementById('systemCardsList');
+            
+            const card = document.createElement('div');
+            card.className = `system-card p-4 mb-4`;
+            card.id = `system-card-${uniqueId}`;
+            card.dataset.systemId = uniqueId;
+            card.dataset.system = systemKey;
+
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" class="rounded text-blue-600 focus:ring-blue-500 mr-2" onchange="toggleSystemSelection('${uniqueId}', this.checked)">
+                        <div class="w-10 h-10 rounded-lg bg-${sys.color}-100 text-${sys.color}-600 flex items-center justify-center">
+                            <i class="fas ${sys.icon}"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-slate-900">${sys.name} <span class="text-slate-400">#${index}</span></div>
+                            <div class="text-xs text-slate-500">${systemKey}</div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-amber-100 text-amber-700 border border-amber-200 mt-1">
+                                <i class="fas fa-sync-alt text-[8px]"></i>再认证
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="deleteSystem('${uniqueId}')" class="text-xs text-red-600 hover:bg-red-50 px-2 py-1 rounded transition-colors">
+                            <i class="fas fa-trash-alt"></i> 删除
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">认证标准</label>
+                            <div class="space-y-1 bg-slate-50 p-2 rounded border border-slate-200">
+                                ${sys.standards.map((std, idx) => `
+                                    <label class="flex items-center gap-2 text-xs">
+                                        <input type="checkbox" ${idx === 0 ? 'checked disabled' : ''} class="rounded text-blue-600 ${idx === 0 ? 'opacity-60' : ''}">
+                                        <span class="${idx === 0 ? 'font-medium' : ''}">${std} ${idx === 0 ? '<span class="text-slate-400">（必选）</span>' : ''}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">认可机构（多选）</label>
+                            <div class="flex gap-2 flex-wrap">
+                                ${['CNAS', 'DAKKS', 'UKAS'].map(acc => `
+                                    <label class="flex items-center gap-1 text-xs bg-slate-50 px-2 py-1 rounded border border-slate-200">
+                                        <input type="checkbox" checked class="rounded text-blue-600">
+                                        <span>${acc}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-slate-700 mb-1 required">认证范围</label>
+                            <textarea maxlength="500" rows="2" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg resize-none">计算机软件开发、系统集成服务</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">是否需要纸质证书</label>
+                            <div class="flex gap-4 mt-2">
+                                <label class="flex items-center gap-1 text-xs cursor-pointer">
+                                    <input type="radio" name="paper_${uniqueId}" value="yes" class="text-blue-600">
+                                    <span>是</span>
+                                </label>
+                                <label class="flex items-center gap-1 text-xs cursor-pointer">
+                                    <input type="radio" name="paper_${uniqueId}" value="no" checked class="text-blue-600">
+                                    <span>否（电子证书）</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-200 pt-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <label class="block text-xs font-medium text-slate-700 required">认证场所</label>
+                            <div class="flex gap-2">
+                                <button onclick="openLocationSelectModal('${uniqueId}')" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1">
+                                    <i class="fas fa-list"></i>选择场所
+                                </button>
+                                <button onclick="openTempLocationModal('${uniqueId}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1">
+                                    <i class="fas fa-plus"></i>新增临时场所
+                                </button>
+                            </div>
+                        </div>
+                        <div id="locations_${uniqueId}" class="space-y-3 mb-3"></div>
+                        <div id="emptyLocationTip_${uniqueId}" class="text-center py-6 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                            <i class="fas fa-map-marker-alt text-2xl text-slate-300 mb-2"></i>
+                            <p class="text-xs text-slate-500">暂无认证场所，请选择或新增</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            cardsList.appendChild(card);
+        }
+
+        // 批量选择相关函数
+        function toggleBatchSelect() {
+            const dropdown = document.getElementById('batchSelectDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        function toggleSystemOption(element) {
+            const checkbox = element.querySelector('input[type="checkbox"]');
+            const systemKey = element.dataset.system;
+            checkbox.checked = !checkbox.checked;
+            element.classList.toggle('selected', checkbox.checked);
+
+            if (checkbox.checked) {
+                if (!batchSelectedSystems.includes(systemKey)) {
+                    batchSelectedSystems.push(systemKey);
+                }
+            } else {
+                batchSelectedSystems = batchSelectedSystems.filter(s => s !== systemKey);
+            }
+            updateBatchSelectTags();
+        }
+
+        function updateBatchSelectTags() {
+            const container = document.getElementById('selectedSystemsTags');
+            if (batchSelectedSystems.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+            container.classList.remove('hidden');
+            container.innerHTML = batchSelectedSystems.map(sys => {
+                const config = systemConfig[sys];
+                return `
+                    <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs border border-blue-200">
+                        ${config.name}
+                        <button onclick="removeFromBatch('${sys}')" class="hover:text-blue-800">
+                            <i class="fas fa-times text-[10px]"></i>
+                        </button>
+                    </span>
+                `;
+            }).join('');
+            document.getElementById('batchSelectText').textContent = `已选择 ${batchSelectedSystems.length} 个体系`;
+        }
+
+        function removeFromBatch(systemKey) {
+            batchSelectedSystems = batchSelectedSystems.filter(s => s !== systemKey);
+            const option = document.querySelector(`[data-system="${systemKey}"]`);
+            if (option) {
+                option.querySelector('input[type="checkbox"]').checked = false;
+                option.classList.remove('selected');
+            }
+            updateBatchSelectTags();
+        }
+
+        function confirmBatchAdd() {
+            if (batchSelectedSystems.length === 0) {
+                showToast('请至少选择一个认证体系', 'error');
+                return;
+            }
+            let addedCount = 0;
+            batchSelectedSystems.forEach(systemKey => {
+                if (!selectedSystems.some(s => s.key === systemKey)) {
+                    systemCounter++;
+                    const uniqueId = `${systemKey}_${systemCounter}_${Date.now()}`;
+                    selectedSystems.push({
+                        key: systemKey,
+                        id: uniqueId,
+                        index: systemCounter,
+                        selected: false,
+                        certType: 're'
+                    });
+                    renderSystemCard(systemKey, uniqueId, systemCounter);
+                    addedCount++;
+                }
+            });
+            batchSelectedSystems = [];
+            document.querySelectorAll('.system-option').forEach(opt => {
+                opt.querySelector('input[type="checkbox"]').checked = false;
+                opt.classList.remove('selected');
+            });
+            updateBatchSelectTags();
+            document.getElementById('batchSelectDropdown').classList.add('hidden');
+            showToast(`成功添加 ${addedCount} 个认证领域`);
+            updateSystemCount();
+        }
+
+        function addSystem() {
+            if (batchSelectedSystems.length === 0) {
+                showToast('请从下拉列表中选择认证体系', 'error');
+                return;
+            }
+            confirmBatchAdd();
+        }
+
+        function deleteSystem(uniqueId) {
+            if (!confirm('确定要删除此认证领域吗？')) return;
+            const card = document.getElementById(`system-card-${uniqueId}`);
+            if (card) card.remove();
+            selectedSystems = selectedSystems.filter(s => s.id !== uniqueId);
+            if (selectedSystems.length === 0) {
+                document.getElementById('emptySystemTip').classList.remove('hidden');
+            }
+            updateSystemCount();
+            showToast('已删除认证领域');
+        }
+
+        function toggleSystemSelection(uniqueId, checked) {
+            const system = selectedSystems.find(s => s.id === uniqueId);
+            if (system) system.selected = checked;
+            updateBatchActions();
+        }
+
+        function updateBatchActions() {
+            const bar = document.getElementById('batchActionsBar');
+            const selectedCount = selectedSystems.filter(s => s.selected).length;
+            document.getElementById('selectedCount').textContent = `已选择 ${selectedCount} 项`;
+            if (selectedSystems.length > 0) {
+                bar.classList.add('active');
+            } else {
+                bar.classList.remove('active');
+            }
+        }
+
+        function toggleSelectAll(checked) {
+            selectedSystems.forEach(s => s.selected = checked);
+            document.querySelectorAll('.system-card input[type="checkbox"]').forEach(cb => cb.checked = checked);
+            updateBatchActions();
+        }
+
+        function batchDelete() {
+            const selected = selectedSystems.filter(s => s.selected);
+            if (selected.length === 0) {
+                showToast('请先选择要删除的认证领域', 'error');
+                return;
+            }
+            if (!confirm(`确定要删除选中的 ${selected.length} 个认证领域吗？`)) return;
+            selected.forEach(system => {
+                const element = document.getElementById(`system-card-${system.id}`);
+                if (element) element.remove();
+            });
+            selectedSystems = selectedSystems.filter(s => !s.selected);
+            if (selectedSystems.length === 0) {
+                document.getElementById('emptySystemTip').classList.remove('hidden');
+            }
+            updateSystemCount();
+            updateBatchActions();
+            showToast(`已删除 ${selected.length} 个认证领域`);
+        }
+
+        function updateSystemCount() {
+            document.getElementById('systemCount').textContent = `已添加 ${selectedSystems.length} 个认证领域`;
+        }
+
+        // 过程清单相关
+        function initProcessList() {
+            addProcessRow({ name: '文件控制过程', dept: '质量管理部', related: '各部门', clause: '7.5', kpi: '文件有效率100%' });
+            addProcessRow({ name: '内部审核过程', dept: '质量管理部', related: '各部门', clause: '9.2', kpi: '审核计划完成率100%' });
+            addProcessRow({ name: '管理评审过程', dept: '总经理', related: '各部门', clause: '9.3', kpi: '改进措施完成率≥95%' });
+        }
+
+        function addProcessRow(data = {}) {
+            processCounter++;
+            const tbody = document.getElementById('processList');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-slate-500 font-medium">${processCounter}</td>
+                <td>
+                    <div class="relative process-name-wrapper">
+                        <input type="text" value="${data.name || ''}" placeholder="输入过程名称"
+                               class="w-full px-2 py-1 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-500"
+                               oninput="handleProcessNameInput(this)" onblur="hideProcessDropdown(this)" onfocus="showProcessHistory(this)">
+                        <div class="process-dropdown hidden absolute z-50 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        </div>
+                    </div>
+                </td>
+                <td><input type="text" value="${data.dept || ''}" class="w-full px-2 py-1 text-sm border border-slate-300 rounded"></td>
+                <td><input type="text" value="${data.related || ''}" class="w-full px-2 py-1 text-sm border border-slate-300 rounded"></td>
+                <td><input type="text" value="${data.clause || ''}" class="w-full px-2 py-1 text-sm border border-slate-300 rounded"></td>
+                <td><input type="text" value="${data.kpi || ''}" class="w-full px-2 py-1 text-sm border border-slate-300 rounded"></td>
+                <td class="text-center">
+                    <button onclick="copyProcessRow(this)" class="text-blue-600 hover:text-blue-800 mx-1 p-1 hover:bg-blue-50 rounded" title="复制">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button onclick="deleteProcessRow(this)" class="text-red-600 hover:text-red-800 mx-1 p-1 hover:bg-red-50 rounded" title="删除">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function copyProcessRow(btn) {
+            const row = btn.closest('tr');
+            const inputs = row.querySelectorAll('input');
+            addProcessRow({
+                name: inputs[0].value,
+                dept: inputs[1].value,
+                related: inputs[2].value,
+                clause: inputs[3].value,
+                kpi: inputs[4].value
+            });
+            showToast('已复制该行');
+        }
+
+        function deleteProcessRow(btn) {
+            if (confirm('确定删除此行吗？')) {
+                btn.closest('tr').remove();
+                renumberProcessRows();
+            }
+        }
+
+        function renumberProcessRows() {
+            const rows = document.querySelectorAll('#processList tr');
+            rows.forEach((row, index) => {
+                row.cells[0].textContent = index + 1;
+            });
+            processCounter = rows.length;
+        }
+
+        function handleProcessNameInput(input) {
+            const value = input.value.trim().toLowerCase();
+            const wrapper = input.closest('.process-name-wrapper');
+            const dropdown = wrapper.querySelector('.process-dropdown');
+            
+            if (value.length === 0) {
+                showProcessHistory(input);
+                return;
+            }
+            
+            const matches = processHistoryData.filter(item => item.toLowerCase().includes(value));
+            renderDropdown(dropdown, matches, input, value);
+        }
+
+        function showProcessHistory(input) {
+            const wrapper = input.closest('.process-name-wrapper');
+            const dropdown = wrapper.querySelector('.process-dropdown');
+            renderDropdown(dropdown, processHistoryData.slice(0, 5), input, null, true);
+        }
+
+        function renderDropdown(dropdown, items, input, highlightText = null, isHistory = false) {
+            dropdown.innerHTML = '';
+            if (items.length === 0) {
+                dropdown.innerHTML = '<div class="p-2 text-xs text-slate-400 text-center">无匹配记录</div>';
+                dropdown.classList.remove('hidden');
+                return;
+            }
+            
+            const hint = document.createElement('div');
+            hint.className = 'p-1.5 bg-slate-50 text-xs text-slate-500 border-b';
+            hint.textContent = isHistory ? '最近使用' : `找到 ${items.length} 个匹配项`;
+            dropdown.appendChild(hint);
+            
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'process-dropdown-item';
+                div.textContent = item;
+                div.onclick = function(e) {
+                    e.stopPropagation();
+                    input.value = item;
+                    dropdown.classList.add('hidden');
+                };
+                dropdown.appendChild(div);
+            });
+            dropdown.classList.remove('hidden');
+        }
+
+        function hideProcessDropdown(input) {
+            setTimeout(() => {
+                const wrapper = input.closest('.process-name-wrapper');
+                const dropdown = wrapper.querySelector('.process-dropdown');
+                dropdown.classList.add('hidden');
+            }, 200);
+        }
+
+        // 场所清单相关
+        function initLocationLists() {
+            addLocationRow('QMS', { name: '北京总部', address: '北京市朝阳区xxx路xxx号', activity: '软件开发、系统集成', shift: '08:00-17:00', staff: 120, contact: '张三', phone: '13800138000', subcert: 'no' });
+            addLocationRow('QMS', { name: '上海分公司', address: '上海市浦东新区xxx路xxx号', activity: '技术支持、客户服务', shift: '09:00-18:00', staff: 45, contact: '李四', phone: '13900139000', subcert: 'yes' });
+            addLocationRow('EMS', { name: '北京总部', address: '北京市朝阳区xxx路xxx号', activity: '软件开发、系统集成（环境管理）', shift: '08:00-17:00', staff: 120, contact: '张三', phone: '13800138000', subcert: 'no' });
+        }
+
+        function addLocationRow(system, data = {}) {
+            locationCounters[system]++;
+            const tbody = document.getElementById(`locationList_${system}`);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-slate-500 font-medium">${locationCounters[system]}</td>
+                <td><input type="text" value="${data.name || ''}" class="w-full px-2 py-1 text-sm border border-slate-300 rounded"></td>
+                <td><input type="text" value="${data.address || ''}" class="w-full px-2 py-1 text-sm border border-slate-300 rounded"></td>
+                <td><textarea maxlength="500" rows="2" class="w-full px-2 py-1 text-sm border border-slate-300 rounded resize-none">${data.activity || ''}</textarea></td>
+                <td><input type="text" value="${data.shift || ''}" class="w-full px-2 py-1 text-sm border border-slate-300 rounded"></td>
+                <td><input type="number" value="${data.staff || ''}" class="w-full px-2 py-1 text-sm border border-slate-300 rounded"></td>
+                <td><input type="text" value="${data.contact || ''}" class="w-full px-2 py-1 text-sm border border-slate-300 rounded"></td>
+                <td><input type="text" value="${data.phone || ''}" class="w-full px-2 py-1 text-sm border border-slate-300 rounded"></td>
+                <td>
+                    <select class="w-full px-1 py-1 text-sm border border-slate-300 rounded">
+                        <option value="no" ${data.subcert === 'no' ? 'selected' : ''}>否</option>
+                        <option value="yes" ${data.subcert === 'yes' ? 'selected' : ''}>是</option>
+                    </select>
+                </td>
+                <td class="text-center">
+                    <button onclick="this.closest('tr').remove(); renumberLocationRows('${system}')" class="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function renumberLocationRows(system) {
+            const rows = document.querySelectorAll(`#locationList_${system} tr`);
+            rows.forEach((row, index) => {
+                row.cells[0].textContent = index + 1;
+            });
+            locationCounters[system] = rows.length;
+        }
+
+        // 班次时间
+        function initShiftTimes() {
+            updateShiftTimeInputs(1);
+        }
+
+        function updateShiftTimeInputs(count) {
+            const container = document.getElementById('shiftTimesContainer');
+            let html = '';
+            for (let i = 1; i <= count; i++) {
+                const startHour = i === 1 ? '08' : (i === 2 ? '16' : '00');
+                const endHour = i === 1 ? '17' : (i === 2 ? '00' : '08');
+                html += `
+                    <div class="shift-row">
+                        <span class="shift-label">第${i}班次</span>
+                        <div class="shift-time-group">
+                            <select><option value="08" selected>08</option></select>
+                            <span class="text-slate-400">:</span>
+                            <select><option value="00" selected>00</option></select>
+                            <span class="text-slate-400">-</span>
+                            <select><option value="17" selected>17</option></select>
+                            <span class="text-slate-400">:</span>
+                            <select><option value="00" selected>00</option></select>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        // 历史认证记录
+        function addHistoryRow() {
+            const container = document.getElementById('historyList');
+            const div = document.createElement('div');
+            div.className = 'history-item bg-slate-50 p-3 rounded-lg border border-slate-200 mt-2';
+            div.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1 required">认证机构的名称</label>
+                        <input type="text" maxlength="100" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1 required">认证标准</label>
+                        <select class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                            <option value="Q">Q</option>
+                            <option value="E">E</option>
+                            <option value="OHS">OHS</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1 required">证书有效期</label>
+                        <input type="date" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1 required">最近一次审核日期</label>
+                        <input type="date" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1 required">管理体系开始运行时间</label>
+                        <input type="date" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1 required">最近一次内审时间</label>
+                        <input type="date" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button onclick="copyHistory(this)" class="px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                        <i class="fas fa-copy mr-1"></i>复制
+                    </button>
+                    <button onclick="this.closest('.history-item').remove()" class="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded transition-colors">
+                        <i class="fas fa-trash-alt mr-1"></i>删除
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function copyHistory(btn) {
+            const item = btn.closest('.history-item');
+            const clone = item.cloneNode(true);
+            item.parentNode.insertBefore(clone, item.nextSibling);
+            showToast('已复制该记录');
+        }
+
+        // 弹窗控制
+        function openReNoticeModal() {
+            const modal = document.getElementById('reNoticeModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('active');
+                drawSeal();
+            }, 10);
+        }
+
+        function closeReNoticeModal() {
+            const modal = document.getElementById('reNoticeModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        function openSurveyModal() {
+            const modal = document.getElementById('surveyModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function closeSurveyModal() {
+            const modal = document.getElementById('surveyModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        // 绘制公章
+        function drawSeal() {
+            const canvas = document.getElementById('cqcSealCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 60;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius - 8, 0, Math.PI * 2);
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = '#dc2626';
+            ctx.font = 'bold 14px "Microsoft YaHei", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const text = '中国质量认证中心';
+            const textRadius = radius - 18;
+            const totalAngle = Math.PI * 0.8;
+            const startAngle = Math.PI * 1.5 - totalAngle / 2;
+            const angleStep = totalAngle / (text.length - 1);
+
+            for (let i = 0; i < text.length; i++) {
+                const angle = startAngle + i * angleStep;
+                const x = centerX + Math.cos(angle) * textRadius;
+                const y = centerY + Math.sin(angle) * textRadius;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle + Math.PI / 2);
+                ctx.fillText(text[i], 0, 0);
+                ctx.restore();
+            }
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.fillStyle = '#dc2626';
+            drawStar(ctx, 0, 0, 5, 14, 7);
+            ctx.restore();
+
+            ctx.font = 'bold 12px Arial, sans-serif';
+            const engText = 'CQC';
+            const engRadius = radius - 18;
+            const engTotalAngle = Math.PI * 0.4;
+            const engStartAngle = Math.PI * 0.5 - engTotalAngle / 2;
+            const engAngleStep = engTotalAngle / (engText.length - 1);
+
+            for (let i = 0; i < engText.length; i++) {
+                const angle = engStartAngle + i * engAngleStep;
+                const x = centerX + Math.cos(angle) * engRadius;
+                const y = centerY + Math.sin(angle) * engRadius;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle + Math.PI / 2);
+                ctx.fillText(engText[i], 0, 0);
+                ctx.restore();
+            }
+        }
+
+        function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            let step = Math.PI / spikes;
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            ctx.lineTo(cx, cy - outerRadius);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function initSeal() {
+            setTimeout(drawSeal, 500);
+        }
+
+        // 工具函数
+        function toggleSection(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.fa-chevron-down');
+            if (!content) return;
+            
+            if (content.style.maxHeight === '0px') {
+                content.style.maxHeight = '4000px';
+                content.style.overflow = 'visible';
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.maxHeight = '0px';
+                content.style.overflow = 'hidden';
+                if (icon) icon.style.transform = 'rotate(-90deg)';
+            }
+        }
+
+        function toggleField(id, show) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (show) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        }
+
+        function toggleLanguage(show) {
+            const input = document.getElementById('otherLanguage');
+            if (show) {
+                input.classList.remove('hidden');
+                input.focus();
+            } else {
+                input.classList.add('hidden');
+            }
+        }
+
+        function fillContactInfo(idx) {
+            const contacts = [
+                { dept: '质量管理部', position: '经理', phone: '13800138000', email: 'zhangsan@example.com' },
+                { dept: '行政部', position: '主任', phone: '13900139000', email: 'lisi@example.com' }
+            ];
+            if (contacts[idx]) {
+                document.getElementById('dept').value = contacts[idx].dept;
+                document.getElementById('position').value = contacts[idx].position;
+                document.getElementById('phone').value = contacts[idx].phone;
+                document.getElementById('email').value = contacts[idx].email;
+            }
+        }
+
+        function initScrollSpy() {
+            const sections = document.querySelectorAll('.form-section[id]');
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        navItems.forEach(item => {
+                            item.classList.remove('active');
+                            if (item.getAttribute('data-section') === id) {
+                                item.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: '-20% 0px -80% 0px', threshold: 0 });
+            
+            sections.forEach(section => observer.observe(section));
+        }
+
+        function saveDraft() {
+            showToast('草稿已保存');
+        }
+
+        function submitForm() {
+            showToast('再认证申请已提交成功！', 'success');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msg = document.getElementById('toastMessage');
+            const icon = toast.querySelector('i');
+            
+            msg.textContent = message;
+            icon.className = type === 'error' ? 'fas fa-exclamation-circle text-red-400' : 
+                            type === 'warning' ? 'fas fa-exclamation-triangle text-yellow-400' : 
+                            'fas fa-check-circle text-green-400';
+            
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // 文件上传处理
+        function handleFileUpload(input, typeId) {
+            if (input.files && input.files.length > 0) {
+                const countSpan = document.getElementById(`count_${typeId}`);
+                const tagsContainer = document.getElementById(`tags_${typeId}`);
+                
+                let count = parseInt(countSpan.textContent.match(/\d+/)[0]) || 0;
+                count += input.files.length;
+                countSpan.textContent = `已上传 ${count} 个文件`;
+                
+                Array.from(input.files).forEach((file, index) => {
+                    const tag = document.createElement('span');
+                    tag.className = 'inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs';
+                    tag.innerHTML = `
+                        <i class="fas fa-check-circle"></i>
+                        ${file.name}
+                        <button onclick="removeFile('${typeId}', ${index})" class="hover:text-red-600 ml-1"><i class="fas fa-times"></i></button>
+                    `;
+                    tagsContainer.appendChild(tag);
+                });
+                
+                showToast(`成功上传 ${input.files.length} 个文件`);
+                input.value = '';
+            }
+        }
+
+        function removeFile(typeId, index) {
+            showToast('文件已删除');
+        }
+
+        function handleMultiFileUpload(input, typeId) {
+            const files = Array.from(input.files);
+            if (files.length === 0) return;
+            
+            attachmentFiles[typeId] = attachmentFiles[typeId].concat(files);
+            updateAttachmentUI(typeId);
+            showToast(`已添加 ${files.length} 个文件`);
+        }
+
+        function updateAttachmentUI(typeId) {
+            const filesContainer = document.getElementById(`files_${typeId}`);
+            const countSpan = document.getElementById(`meta_${typeId}`);
+            const card = document.getElementById(`card_${typeId}`);
+            const files = attachmentFiles[typeId];
+            
+            if (files.length > 0) {
+                countSpan.textContent = `${files.length} 个文件`;
+                countSpan.classList.add('has-files');
+                card.classList.add('has-files');
+            } else {
+                countSpan.textContent = '0 个文件';
+                countSpan.classList.remove('has-files');
+                card.classList.remove('has-files');
+            }
+            
+            filesContainer.innerHTML = files.map((file, index) => `
+                <div class="file-tag">
+                    <span class="file-tag-name" title="${file.name}">${file.name}</span>
+                    <span class="file-tag-size">${formatFileSize(file.size)}</span>
+                    <span class="file-tag-remove" onclick="removeAttachmentFile(${typeId}, ${index})" title="删除">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function removeAttachmentFile(typeId, index) {
+            attachmentFiles[typeId].splice(index, 1);
+            updateAttachmentUI(typeId);
+            showToast('文件已删除');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 点击外部关闭下拉
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('batchSelectDropdown');
+            const button = document.querySelector('[onclick="toggleBatchSelect()"]');
+            if (dropdown && !dropdown.contains(e.target) && !button.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
