@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>监督审核申请详情 - JD202403001</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        /* 全宽布局 */
+        .full-width-container {
+            width: 100%;
+            max-width: 100%;
+            padding: 0;
+        }
+
+        /* 详情页专用样式 */
+        .detail-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            scroll-margin-top: 140px; /* 锚点偏移，防止被固定导航遮挡 */
+        }
+
+        .detail-section-title {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-left: 4px solid #3b82f6;
+            padding: 16px 20px;
+            margin: 0;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .info-label {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #0f172a;
+            font-weight: 500;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .info-value.highlight {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+
+        .info-value.warning {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+
+        .info-value.success {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .change-item-row {
+            display: flex;
+            align-items: flex-start;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.2s;
+        }
+
+        .change-item-row:hover {
+            background-color: #f8fafc;
+        }
+
+        .change-item-row:last-child {
+            border-bottom: none;
+        }
+
+        .change-status {
+            flex-shrink: 0;
+            width: 80px;
+            text-align: center;
+        }
+
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-no {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .status-yes {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .change-content {
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .change-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .change-desc {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 8px;
+            padding: 10px;
+            background: #fef3c7;
+            border-radius: 6px;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .attachment-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .attachment-info {
+            flex: 1;
+        }
+
+        .attachment-name {
+            font-weight: 500;
+            color: #1e293b;
+            font-size: 14px;
+        }
+
+        .attachment-meta {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* 锚点导航样式 */
+        .anchor-nav {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 24px;
+            position: sticky;
+            top: 73px; /* 顶部标题栏高度 */
+            z-index: 40;
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .anchor-nav-list {
+            display: flex;
+            gap: 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .anchor-nav-list::-webkit-scrollbar {
+            display: none;
+        }
+
+        .anchor-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 20px;
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .anchor-link:hover {
+            color: #3b82f6;
+            background: #f8fafc;
+        }
+
+        .anchor-link.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+            background: #eff6ff;
+            font-weight: 600;
+        }
+
+        .anchor-link i {
+            font-size: 14px;
+        }
+
+        /* 公文样式通知 */
+        .notice-document {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            font-family: 'Noto Sans SC', 'SimSun', serif;
+            line-height: 1.8;
+            color: #1f2937;
+            margin: 20px;
+            border-radius: 4px;
+        }
+
+        .notice-header {
+            text-align: center;
+            padding: 40px 40px 20px;
+            border-bottom: 2px solid #dc2626;
+            margin: 0 40px;
+        }
+
+        .notice-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #dc2626;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+
+        .notice-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .notice-body {
+            padding: 30px 60px;
+            font-size: 16px;
+        }
+
+        .notice-recipient {
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 24px;
+        }
+
+        .notice-paragraph {
+            margin-bottom: 16px;
+            text-indent: 2em;
+        }
+
+        .notice-highlight {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .notice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 15px;
+        }
+
+        .notice-table th,
+        .notice-table td {
+            border: 1px solid #d1d5db;
+            padding: 12px 16px;
+            text-align: left;
+        }
+
+        .notice-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            width: 20%;
+        }
+
+        .notice-footer {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .notice-stamp {
+            width: 120px;
+            height: 120px;
+            border: 3px solid #dc2626;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #dc2626;
+            font-size: 18px;
+            font-weight: 700;
+            transform: rotate(-15deg);
+            opacity: 0.6;
+            margin-left: 40px;
+        }
+
+        .notice-signature {
+            text-align: right;
+            line-height: 2;
+        }
+
+        .notice-contact {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #d1d5db;
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .notice-bank-info {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        @media print {
+            body { background: white; }
+            .no-print, .anchor-nav { display: none; }
+            .detail-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; scroll-margin-top: 0; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+<div class="full-width-container">
+    <!-- 顶部标题栏 -->
+    <div class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="bg-blue-600 text-white px-3 py-1 rounded text-sm font-medium">
+                    JD202403001
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900">监督审核申请详情</h1>
+                    <p class="text-sm text-slate-500 mt-0.5">北京某某科技有限公司 | QMS/EMS体系监督</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <div class="text-sm text-slate-500">当前状态</div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold border border-green-200">
+                        <i class="fas fa-check-circle"></i>
+                        已提交
+                    </div>
+                </div>
+                <div class="text-right border-l pl-4 border-slate-200">
+                    <div class="text-sm text-slate-500">申请日期</div>
+                    <div class="text-sm font-semibold text-slate-900">2026-03-30</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 锚点导航 Tab -->
+    <nav class="anchor-nav">
+        <div class="anchor-nav-list">
+            <a href="#basic-info" class="anchor-link active" data-target="basic-info">
+                <i class="fas fa-building"></i>
+                基本信息
+            </a>
+            <a href="#audit-date" class="anchor-link" data-target="audit-date">
+                <i class="fas fa-calendar-alt"></i>
+                审核日期
+            </a>
+            <a href="#business-review" class="anchor-link" data-target="business-review">
+                <i class="fas fa-gavel"></i>
+                业务评审
+            </a>
+            <a href="#change-list" class="anchor-link" data-target="change-list">
+                <i class="fas fa-clipboard-check"></i>
+                变更清单
+                <span class="ml-1 px-1.5 py-0.5 bg-red-100 text-red-600 text-xs rounded">2</span>
+            </a>
+            <a href="#attachments" class="anchor-link" data-target="attachments">
+                <i class="fas fa-paperclip"></i>
+                附件
+                <span class="ml-1 px-1.5 py-0.5 bg-slate-200 text-slate-600 text-xs rounded">2</span>
+            </a>
+            <a href="#audit-notice" class="anchor-link" data-target="audit-notice">
+                <i class="fas fa-bell"></i>
+                审核通知
+            </a>
+        </div>
+    </nav>
+
+    <div class="p-6 space-y-6">
+        <!-- 基本信息卡片 -->
+        <div id="basic-info" class="detail-card">
+            <div class="detail-section-title">
+                <i class="fas fa-building text-blue-600"></i>
+                客户基本信息
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">客户名称</span>
+                    <div class="info-value highlight">北京某某科技有限公司</div>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">联系人/联系方式</span>
+                    <div class="info-value">张经理 / 138-1234-5678</div>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">组织人数/体系覆盖人数</span>
+                    <div class="info-value">156人</div>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">认证领域</span>
+                    <div class="info-value">QMS（质量管理体系）、EMS（环境管理体系）</div>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">证书编号</span>
+                    <div class="info-value">00123Q34567R0S/37000</div>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">受理机构</span>
+                    <div class="info-value">中国质量认证中心（CQC）</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 审核日期确认 -->
+        <div id="audit-date" class="detail-card">
+            <div class="detail-section-title">
+                <i class="fas fa-calendar-alt text-blue-600"></i>
+                审核日期确认
+            </div>
+            <div class="p-5">
+                <div class="flex items-start gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="bg-blue-100 p-2 rounded-full text-blue-600 mt-0.5">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-blue-900">同意通知书中的审核日期</div>
+                        <div class="text-blue-800 mt-1 text-sm">
+                            审核时间：<span class="font-bold">2026年4月15日 至 2026年4月17日</span>（共3天）
+                        </div>
+                        <div class="text-blue-700 mt-2 text-sm">
+                            <i class="fas fa-user-tie mr-1"></i>
+                            审核类型：监督审核（一阶段+二阶段）
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 业务评审标记 -->
+        <div id="business-review" class="detail-card">
+            <div class="detail-section-title">
+                <i class="fas fa-gavel text-blue-600"></i>
+                业务评审标记
+            </div>
+            <div class="p-5">
+                <div class="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                    <div>
+                        <div class="font-semibold text-slate-900">是否需要业务评审</div>
+                        <div class="text-slate-600 mt-1 text-sm">选择"是"将流经业务评审节点；选择"否"直接进入方案策划</div>
+                    </div>
+                    <div class="px-4 py-2 bg-slate-200 text-slate-600 rounded-lg font-medium border border-slate-300">
+                        否
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 变更事项检查清单 -->
+        <div id="change-list" class="detail-card">
+            <div class="detail-section-title">
+                <i class="fas fa-clipboard-check text-blue-600"></i>
+                变更事项检查清单
+                <span class="text-xs font-normal text-slate-500 ml-2">自上次审核以来的变更情况</span>
+                <span class="ml-auto px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">2项变更</span>
+            </div>
+            <div class="divide-y divide-slate-100">
+                <!-- 第1项 - 有变更 -->
+                <div class="change-item-row">
+                    <div class="change-status">
+                        <span class="status-tag status-yes">
+                            <i class="fas fa-exclamation mr-1"></i>是
+                        </span>
+                    </div>
+                    <div class="change-content">
+                        <div class="change-title">组织名称</div>
+                        <div class="change-desc">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            变更详情：由"北京某某科技有限公司"变更为"北京某某科技集团有限公司"
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第2项 - 无变更 -->
+                <div class="change-item-row">
+                    <div class="change-status">
+                        <span class="status-tag status-no">否</span>
+                    </div>
+                    <div class="change-content">
+                        <div class="change-title">营业执照的经营范围、资质许可的范围</div>
+                    </div>
+                </div>
+
+                <!-- 第3项 - 无变更 -->
+                <div class="change-item-row">
+                    <div class="change-status">
+                        <span class="status-tag status-no">否</span>
+                    </div>
+                    <div class="change-content">
+                        <div class="change-title">法律地位或所有权</div>
+                    </div>
+                </div>
+
+                <!-- 第4项 - 有变更 -->
+                <div class="change-item-row">
+                    <div class="change-status">
+                        <span class="status-tag status-yes">
+                            <i class="fas fa-exclamation mr-1"></i>是
+                        </span>
+                    </div>
+                    <div class="change-content">
+                        <div class="change-title">注册地址或运营地址</div>
+                        <div class="change-desc">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            变更详情：注册地址迁至北京市朝阳区XX路XX号新办公大楼，原地址停止运营
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第5项 - 无变更 -->
+                <div class="change-item-row">
+                    <div class="change-status">
+                        <span class="status-tag status-no">否</span>
+                    </div>
+                    <div class="change-content">
+                        <div class="change-title">最高管理者（法定代表人、总经理、管理体系负责人等）</div>
+                    </div>
+                </div>
+
+                <!-- 第6项 - 必填项 -->
+                <div class="change-item-row bg-blue-50/50">
+                    <div class="change-status">
+                        <span class="status-tag bg-blue-100 text-blue-700 border border-blue-200">
+                            <i class="fas fa-lock mr-1"></i>当前
+                        </span>
+                    </div>
+                    <div class="change-content">
+                        <div class="change-title">联系人/联系方式</div>
+                        <div class="mt-2 p-3 bg-white border border-blue-200 rounded text-sm text-slate-700">
+                            张经理 / 138-1234-5678 / zhang@example.com
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第7项 - 无变更 -->
+                <div class="change-item-row">
+                    <div class="change-status">
+                        <span class="status-tag status-no">否</span>
+                    </div>
+                    <div class="change-content">
+                        <div class="change-title">组织机构</div>
+                    </div>
+                </div>
+
+                <!-- 第8项 - 必填项 -->
+                <div class="change-item-row bg-blue-50/50">
+                    <div class="change-status">
+                        <span class="status-tag bg-blue-100 text-blue-700 border border-blue-200">
+                            <i class="fas fa-lock mr-1"></i>当前
+                        </span>
+                    </div>
+                    <div class="change-content">
+                        <div class="change-title">组织人数或体系覆盖人数</div>
+                        <div class="mt-2 p-3 bg-white border border-blue-200 rounded text-sm text-slate-700">
+                            156人（较上次审核增加20人）
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第9-20项简略展示 -->
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">分支机构/常设多场所</div></div>
+                </div>
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">管理体系的主要过程</div></div>
+                </div>
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">产品/服务（或业务）</div></div>
+                </div>
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">主要生产（服务）设施设备</div></div>
+                </div>
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">体系文件化信息</div></div>
+                </div>
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">临时服务现场信息</div></div>
+                </div>
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">外部提供的职能或过程（外包）</div></div>
+                </div>
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">在本组织之外其他场所提供的服务</div></div>
+                </div>
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">整合管理体系（IMS）的整合程度</div></div>
+                </div>
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">应急或业务连续性演练活动的日期安排情况（BCMS适用）</div></div>
+                </div>
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">是否发生过不良信息事件（如重大事故/行政检查和抽查发现的问题）</div></div>
+                </div>
+                <div class="change-item-row">
+                    <div class="change-status"><span class="status-tag status-no">否</span></div>
+                    <div class="change-content"><div class="change-title">是否被市场监管部门列入异常经营名录、严重违法失信名单</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 附件列表 -->
+        <div id="attachments" class="detail-card">
+            <div class="detail-section-title">
+                <i class="fas fa-paperclip text-blue-600"></i>
+                调查表附件
+                <span class="ml-auto px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">2个文件</span>
+            </div>
+            <div class="p-5">
+                <div class="attachment-item">
+                    <div class="attachment-icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="attachment-info">
+                        <div class="attachment-name">获证方情况调查表_北京某某科技_2026.pdf</div>
+                        <div class="attachment-meta">PDF文件 · 2.4MB · 上传于 2026-03-30 14:25</div>
+                    </div>
+                    <div class="text-sm text-slate-500">
+                        <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                        已归档
+                    </div>
+                </div>
+                <div class="attachment-item">
+                    <div class="attachment-icon" style="background: #eff6ff; color: #2563eb;">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <div class="attachment-info">
+                        <div class="attachment-name">营业执照变更证明_新.pdf</div>
+                        <div class="attachment-meta">PDF文件 · 1.1MB · 上传于 2026-03-30 14:28</div>
+                    </div>
+                    <div class="text-sm text-slate-500">
+                        <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                        已归档
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 监督审核通知（公文样式） -->
+        <div id="audit-notice" class="detail-card">
+            <div class="detail-section-title">
+                <i class="fas fa-bell text-blue-600"></i>
+                监督审核通知
+                <span class="ml-auto text-xs font-normal text-slate-500 bg-slate-100 px-2 py-1 rounded">MSF11-22 2015版</span>
+            </div>
+            <div class="notice-document">
+                <div class="notice-header">
+                    <div class="notice-title">监督审核通知</div>
+                    <div class="notice-subtitle">文件编号：MSF11-22 &nbsp;|&nbsp; 版本：2015版</div>
+                </div>
+
+                <div class="notice-body">
+                    <div class="notice-recipient">致：北京某某科技有限公司</div>
+
+                    <p class="notice-paragraph">
+                        感谢一年以来贵方对我中心认证工作的支持和配合，依据认证的相关规定及《管理体系认证合同》（以下简称"合同"）约定，拟于<span class="notice-highlight">2026年4月15日至2026年4月17日</span>对贵方进行监督审核，现将有关情况告知如下：
+                    </p>
+
+                    <p class="notice-paragraph">
+                        根据合同约定，请贵方确认并真实填写本通知附件《获证方情况调查表》，尽快回传给我中心。请贵方尽快确认审核时间，并在《获证方情况调查表》中注明，根据合同约定，若在<span class="notice-highlight">2026年4月5日</span>前贵方仍不能接受监督审核，我们将暂停或撤销贵方获得的认证证书并发布公告。
+                    </p>
+
+                    <p class="notice-paragraph">
+                        根据合同约定，本次监督审核费为<span class="notice-highlight">15,000.00元人民币</span>，请收到本通知后，在两周内将监督审核费用汇入如下帐号：
+                    </p>
+
+                    <div class="notice-bank-info">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <span class="text-slate-500">开户银行：</span>
+                                <span class="font-medium">中国工商银行北京分行</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-500">开户名称：</span>
+                                <span class="font-medium">中国质量认证中心</span>
+                            </div>
+                            <div class="col-span-2">
+                                <span class="text-slate-500">开户帐号：</span>
+                                <span class="font-medium font-mono">0200000319200123456</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="notice-table">
+                        <tr>
+                            <th>证书编号</th>
+                            <td>00123Q34567R0S/37000</td>
+                            <th>认证领域</th>
+                            <td>QMS（质量管理体系）、EMS（环境管理体系）</td>
+                        </tr>
+                        <tr>
+                            <th>审核类型</th>
+                            <td>监督审核（一阶段+二阶段）</td>
+                            <th>审核人日</th>
+                            <td>3天（含路途0.5天）</td>
+                        </tr>
+                        <tr>
+                            <th>审核范围</th>
+                            <td colspan="3">计算机软件开发、系统集成服务及相关管理活动</td>
+                        </tr>
+                    </table>
+
+                    <p class="notice-paragraph" style="margin-top: 24px;">
+                        我们期望能为贵方提供公正规范、诚信高效的认证服务！
+                    </p>
+
+                    <div class="notice-footer">
+                        <div class="notice-stamp">
+                            <div style="text-align: center;">
+                                <div>中国质量</div>
+                                <div>认证中心</div>
+                                <div style="font-size: 12px; margin-top: 4px;">（公章）</div>
+                            </div>
+                        </div>
+                        <div class="notice-signature">
+                            <div>中国质量认证中心</div>
+                            <div style="margin-top: 8px;">2026年3月30日</div>
+                        </div>
+                    </div>
+
+                    <div class="notice-contact">
+                        <div class="font-semibold mb-2">联系方式：</div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div><span class="text-slate-500">联系人：</span>张经理</div>
+                            <div><span class="text-slate-500">电话：</span>010-12345678</div>
+                            <div><span class="text-slate-500">传真：</span>010-87654321</div>
+                            <div class="col-span-3"><span class="text-slate-500">E-mail：</span>zhang@cqc.com.cn</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部备注 -->
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs text-slate-600 space-y-1">
+            <p class="font-semibold text-slate-700 mb-2">备注说明：</p>
+            <p>注1：若根据变更信息需要变更认证证书的，则还应请客户提交《证书变更申请书》；</p>
+            <p>注2：若客户属于多场所组织且场所发生了变更，则还应请客户提交最新的《认证场所清单》；</p>
+            <p>注3：列明除建筑施工（28大类）、建筑监理（34.01.01）、开采业（02）之外的、正在实施以及已经签订合同，拟在半年内实施的服务项目。</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 锚点导航交互
+    document.addEventListener('DOMContentLoaded', function() {
+        const anchorLinks = document.querySelectorAll('.anchor-link');
+        const sections = document.querySelectorAll('.detail-card');
+
+        // 点击锚点平滑滚动
+        anchorLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('data-target');
+                const targetSection = document.getElementById(targetId);
+
+                if (targetSection) {
+                    targetSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+
+                    // 更新激活状态
+                    anchorLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // 滚动时自动更新锚点状态
+        const observerOptions = {
+            root: null,
+            rootMargin: '-150px 0px -60% 0px',
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    anchorLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('data-target') === id) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(section => observer.observe(section));
+    });
+</script>
+
+</body>
+</html>
