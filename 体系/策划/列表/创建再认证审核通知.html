@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建再认证审核通知</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        /* 遮罩层背景改为透明 */
+        .modal-overlay {
+            background: transparent !important;  /* 原为 rgba(31, 31, 31, 0.4) */
+        }
+        .modal-container {
+    border-radius: 0 !important;    /* 直角边框 */
+    width: 900px;        /* 固定宽度 */
+    height: 800px;       /* 固定高度 */
+}
+
+body {
+    background-color: transparent;  /* 去掉背景色 */
+}
+        .modal {
+            width: 900px;        /* 原为 width: 100%; max-width: 900px; */
+            height: 800px;       /* 原为 max-height: 90vh; */
+            border-radius: 0;    /* 直角边框 */
+        }
+        /* 弹窗圆角改为直角 */
+        .modal {
+            border-radius: 0 !important;  /* 原为 24px */
+        }
+        body {
+            font-family: "Google Sans", "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: #f0f4f9;
+            color: #1f1f1f;
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* 弹窗容器 - 直接作为主体展示 */
+        .modal-container {
+            background: #ffffff;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12), 0 11px 15px -7px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            background: #ffffff;
+            color: #1f1f1f;
+            padding: 24px 32px;
+            border-bottom: 1px solid #e1e3e1;
+        }
+
+        .modal-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 步骤指示器 */
+        .step-indicator {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #f0f4f9;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #5f6368;
+            background: #f1f3f4;
+            transition: all 0.3s;
+        }
+
+        .step-item.active {
+            background: #e8f0fe;
+            color: #0b57d0;
+            font-weight: 500;
+        }
+
+        .step-item.completed {
+            background: #e6f4ea;
+            color: #137333;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            background: #dadce0;
+            color: #5f6368;
+        }
+
+        .step-item.active .step-number {
+            background: #0b57d0;
+            color: white;
+        }
+
+        .step-item.completed .step-number {
+            background: #137333;
+            color: white;
+        }
+
+        .step-divider {
+            color: #dadce0;
+            font-size: 18px;
+        }
+
+        .modal-body {
+            padding: 24px 32px;
+            overflow-y: auto;
+            flex: 1;
+            background: #fafbfc;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 筛选区域 */
+        .filter-section {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-label {
+            font-size: 13px;
+            color: #5f6368;
+            font-weight: 500;
+        }
+
+        .filter-input, .filter-select {
+            height: 36px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+            font-family: inherit;
+        }
+
+        .filter-input:focus, .filter-select:focus {
+            border-color: #0b57d0;
+        }
+
+        /* 表格容器 */
+        .table-container {
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            color: #5f6368;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+            border-bottom: 1px solid #e1e3e1;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f4f9;
+            vertical-align: middle;
+        }
+
+        .data-table tr:hover:not(.disabled):not(.selected) td {
+            background: #f8fafd;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 高亮行样式 - 需尽快发起 */
+        .tr-urgent {
+            background: #fff8e1 !important;
+        }
+
+        .tr-urgent td {
+            border-bottom: 1px solid #ffe082 !important;
+        }
+
+        .tr-urgent:hover td {
+            background: #ffecb3 !important;
+        }
+
+        .urgent-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #e65100;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* 禁用行样式 - 不同客户 */
+        .tr-disabled {
+            background: #f5f5f5 !important;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .tr-disabled td {
+            color: #9aa0a6;
+        }
+
+        .tr-disabled .cert-tag,
+        .tr-disabled .audit-type-tag {
+            opacity: 0.5;
+        }
+
+        /* 选中行样式 */
+        .tr-selected {
+            background: #e8f0fe !important;
+        }
+
+        .tr-selected td {
+            background: #e8f0fe !important;
+            border-bottom: 1px solid #d2e3fc !important;
+        }
+
+        /* 标签样式 */
+        .cert-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e8f0fe;
+            color: #174ea6;
+        }
+
+        .cert-tag.ems {
+            background: #e8eaf6;
+            color: #3f51b5;
+        }
+
+        .audit-type-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #fce8e6;
+            color: #c5221f;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #0b57d0;
+        }
+
+        .checkbox:disabled {
+            cursor: not-allowed;
+        }
+
+        /* 通知书区域 */
+        .notice-section {
+            background: #ffffff;
+            border: 1px solid #d2e3fc;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .notice-header {
+            font-weight: 500;
+            color: #041e49;
+            margin-bottom: 20px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e1e3e1;
+        }
+
+        .notice-content {
+            font-size: 14px;
+            line-height: 2;
+            color: #1f1f1f;
+        }
+
+        .notice-content p {
+            margin-bottom: 16px;
+            text-indent: 2em;
+        }
+
+        .inline-input {
+            border: none;
+            border-bottom: 2px solid #a8c7fa;
+            background: rgba(168, 199, 250, 0.15);
+            color: #0b57d0;
+            font-family: inherit;
+            font-size: 14px;
+            text-align: center;
+            outline: none;
+            padding: 4px 8px;
+            margin: 0 4px;
+            transition: all 0.2s;
+            border-radius: 4px 4px 0 0;
+            font-weight: 500;
+        }
+
+        .inline-input:focus {
+            border-bottom-color: #0b57d0;
+            background: rgba(168, 199, 250, 0.25);
+        }
+
+        .year-input { width: 60px; }
+        .month-input { width: 40px; }
+        .day-input { width: 40px; }
+        .amount-input { width: 100px; }
+
+        /* 底部操作栏 */
+        .modal-footer {
+            padding: 20px 32px;
+            border-top: 1px solid #e1e3e1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+        }
+
+        .footer-left {
+            color: #5f6368;
+            font-size: 14px;
+        }
+
+        .footer-right {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 0 24px;
+            height: 40px;
+            border-radius: 100px;
+            cursor: pointer;
+            font-size: 14px;
+            border: 1px solid transparent;
+            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+            outline: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #0b57d0;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #0842a0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary:disabled {
+            background: #dadce0;
+            color: #9aa0a6;
+            cursor: not-allowed;
+        }
+
+        .btn-default {
+            background: transparent;
+            border: 1px solid #747775;
+            color: #0b57d0;
+        }
+
+        .btn-default:hover {
+            background: #f3f6fc;
+            border-color: #0b57d0;
+        }
+
+        /* 客户锁定提示 */
+        .lock-notice {
+            background: #e8f0fe;
+            border-left: 4px solid #0b57d0;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #0b57d0;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lock-notice.active {
+            display: flex;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 13px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .modal-container {
+                max-height: 95vh;
+                border-radius: 16px;
+            }
+            
+            .modal-header, .modal-body, .modal-footer {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+            
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f3f4;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c4c7c5;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9aa0a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-header-content">
+                <div class="modal-title">
+                    <span>🔄</span> 创建再认证审核通知
+                </div>
+            </div>
+            
+            <!-- 步骤指示器 -->
+            <div class="step-indicator">
+                <div class="step-item active" id="step1Indicator">
+                    <span class="step-number">1</span>
+                    <span>选择方案</span>
+                </div>
+                <span class="step-divider">›</span>
+                <div class="step-item" id="step2Indicator">
+                    <span class="step-number">2</span>
+                    <span>填写通知书</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-body">
+            <!-- 步骤1：选择方案 -->
+            <div class="step-content active" id="step1">
+                <!-- 筛选区域 -->
+                <div class="filter-section">
+                    <div class="filter-grid">
+                        <div class="filter-item">
+                            <label class="filter-label">策划方案编号</label>
+                            <input type="text" class="filter-input" id="filterNo" placeholder="请输入编号" oninput="filterTable()">
+                        </div>
+                        <div class="filter-item">
+                            <label class="filter-label">客户名称</label>
+                            <select class="filter-select" id="filterCustomer" onchange="filterTable()">
+                                <option value="">全部客户</option>
+                                <option value="华信环境监测技术中心">华信环境监测技术中心</option>
+                                <option value="华夏质量认证公司">华夏质量认证公司</option>
+                                <option value="东方检测实验室">东方检测实验室</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label class="filter-label">认证领域</label>
+                            <select class="filter-select" id="filterDomain" onchange="filterTable()">
+                                <option value="">全部</option>
+                                <option value="QMS">QMS</option>
+                                <option value="EMS">EMS</option>
+                                <option value="OHSMS">OHSMS</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 客户锁定提示 -->
+                <div class="lock-notice" id="lockNotice">
+                    <span>🔒</span>
+                    <span>已锁定客户：<strong id="lockedCustomerName"></strong>，仅可选择该客户下的方案</span>
+                    <button onclick="clearSelection()" style="margin-left: auto; background: transparent; border: none; color: #0b57d0; cursor: pointer; font-size: 13px; text-decoration: underline;">清除选择</button>
+                </div>
+
+                <!-- 方案列表 -->
+                <div class="table-container">
+                    <table class="data-table" id="schemeTable">
+                        <thead>
+                            <tr>
+                                <th width="50">选择</th>
+                                <th width="140">策划方案编号</th>
+                                <th>客户名称</th>
+                                <th width="90">认证领域</th>
+                                <th width="90">当前轮次</th>
+                                <th width="100">当前审核类型</th>
+                                <th width="140">证书到期日期</th>
+                                <th width="90">是否多场所</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- 数据通过JS渲染 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 步骤2：填写再认证审核通知书 -->
+            <div class="step-content" id="step2">
+                <div class="notice-section">
+                    <div class="notice-header">
+                        <span>📄</span> 再认证通知书（MSF11-24）
+                    </div>
+                    <div class="notice-content">
+                        <p>自贵方获得CQC管理体系认证证书以来，对我方的认证工作给予了大力的支持和配合。贵方的证书将于 <input type="text" class="inline-input year-input" placeholder="YYYY" id="certYear">年<input type="text" class="inline-input month-input" placeholder="MM" id="certMonth">月<input type="text" class="inline-input day-input" placeholder="DD" id="certDay">日 到期，根据相关规定，现将有关事宜告知如下：</p>
+                        
+                        <p>请确认并填写《再认证申请表》，并及时与我方取得联系，将相关申请资料提交我方。</p>
+                        
+                        <p>受理机构将与贵方协商签定新的认证合同，安排再认证审核。</p>
+                        
+                        <p>考虑到审核中可能出现的对不符合实施纠正措施、跟踪验证、材料上报及认证决定等环节所占用的时间较长，从实施审核到颁发新证书（如通过）还需要一个时间间隔。因此，根据有关规定再认证审核必须在 <input type="text" class="inline-input year-input" placeholder="YYYY" id="auditYear">年<input type="text" class="inline-input month-input" placeholder="MM" id="auditMonth">月 前完成。如在原证书到期前未能完成再认证的全部活动，将按新认证项目实施。</p>
+                        
+                        <p>若贵方不能在现证书有效期内完成再认证，现认证证书将在有效期到后自动失效，我中心也将发布相应的证书失效公告。</p>
+                        
+                        <p>未尽事宜请与我中心联系协商。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <div class="footer-left" id="footerInfo">
+                请选择需要发起再认证审核的方案
+            </div>
+            <div class="footer-right">
+                <button class="btn btn-default" id="backBtn" onclick="goToStep(1)" style="display: none;">返回上一步</button>
+                <button class="btn btn-primary" id="nextBtn" onclick="goToStep(2)" disabled>下一步</button>
+                <button class="btn btn-primary" id="submitBtn" onclick="submitAudit()" style="display: none;">确认发起</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据 - 仅再认证类型，部分标记为需尽快发起
+        const schemeData = [
+            { no: 'PLN/2024/0006', customer: '华信环境监测技术中心', domain: 'QMS', round: '第二轮', currentType: '再认证', deadline: '2026-04-01', multi: '是', urgent: true, certExpire: '2026-04-01' },
+            { no: 'PLN/2024/0007', customer: '华信环境监测技术中心', domain: 'QMS', round: '第二轮', currentType: '再认证', deadline: '2026-04-05', multi: '是', urgent: true, certExpire: '2026-04-05' },
+            { no: 'PLN/2024/0010', customer: '华信环境监测技术中心', domain: 'EMS', round: '第二轮', currentType: '再认证', deadline: '2026-05-01', multi: '否', urgent: false, certExpire: '2026-05-01' },
+            { no: 'PLN/2024/0015', customer: '华夏质量认证公司', domain: 'QMS', round: '第三轮', currentType: '再认证', deadline: '2026-04-10', multi: '是', urgent: true, certExpire: '2026-04-10' },
+            { no: 'PLN/2024/0016', customer: '华夏质量认证公司', domain: 'OHSMS', round: '第三轮', currentType: '再认证', deadline: '2026-05-15', multi: '否', urgent: false, certExpire: '2026-05-15' },
+            { no: 'PLN/2024/0020', customer: '东方检测实验室', domain: 'QMS', round: '第一轮', currentType: '再认证', deadline: '2026-04-20', multi: '是', urgent: true, certExpire: '2026-04-20' },
+            { no: 'PLN/2024/0021', customer: '东方检测实验室', domain: 'EMS', round: '第一轮', currentType: '再认证', deadline: '2026-06-01', multi: '否', urgent: false, certExpire: '2026-06-01' },
+        ];
+
+        let currentStep = 1;
+        let selectedItems = new Set();
+        let lockedCustomer = null; // 锁定客户名称
+        let filteredData = [];
+
+        // 初始化 - 排序：需尽快发起的置顶
+        function init() {
+            // 排序：urgent为true的排在前面
+            schemeData.sort((a, b) => {
+                if (a.urgent && !b.urgent) return -1;
+                if (!a.urgent && b.urgent) return 1;
+                return 0;
+            });
+            filteredData = [...schemeData];
+            renderTable();
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            filteredData.forEach((item) => {
+                const tr = document.createElement('tr');
+                
+                // 判断是否被选中
+                const isSelected = selectedItems.has(item.no);
+                
+                // 判断是否禁用（不同客户且已有选择）
+                const isDisabled = lockedCustomer && item.customer !== lockedCustomer;
+                
+                // 设置行样式
+                if (item.urgent) tr.classList.add('tr-urgent');
+                if (isSelected) tr.classList.add('tr-selected');
+                if (isDisabled) tr.classList.add('tr-disabled');
+
+                // 截止日期显示
+                const deadlineDisplay = item.urgent 
+                    ? `<span class="urgent-badge"><span>⚠️</span> ${item.deadline}（需尽快发起）</span>`
+                    : `<span style="color: #5f6368;">${item.deadline}</span>`;
+
+                tr.innerHTML = `
+                    <td onclick="event.stopPropagation()">
+                        <input type="checkbox" class="checkbox" 
+                            ${isSelected ? 'checked' : ''} 
+                            ${isDisabled ? 'disabled' : ''} 
+                            onchange="toggleSelect('${item.no}', '${item.customer}')"
+                        >
+                    </td>
+                    <td class="mono">${item.no}</td>
+                    <td style="font-weight: 500;">${item.customer}</td>
+                    <td><span class="cert-tag ${item.domain === 'EMS' ? 'ems' : ''}">${item.domain}</span></td>
+                    <td>${item.round}</td>
+                    <td><span class="audit-type-tag">${item.currentType}</span></td>
+                    <td>${deadlineDisplay}</td>
+                    <td><span style="color: ${item.multi === '是' ? '#b3261e' : '#146c2e'}; font-weight: 500;">${item.multi}</span></td>
+                `;
+
+                // 仅非禁用行可点击
+                if (!isDisabled) {
+                    tr.onclick = () => toggleSelect(item.no, item.customer);
+                }
+
+                tbody.appendChild(tr);
+            });
+
+            updateFooter();
+        }
+
+        // 选择/取消选择
+        function toggleSelect(no, customer) {
+            // 检查是否是切换当前选中项（即点击已选中的取消选择）
+            const isCurrentlySelected = selectedItems.has(no);
+            
+            if (isCurrentlySelected) {
+                // 取消选择
+                selectedItems.delete(no);
+                
+                // 如果取消后没有选中项，解除锁定
+                if (selectedItems.size === 0) {
+                    lockedCustomer = null;
+                    document.getElementById('lockNotice').classList.remove('active');
+                }
+            } else {
+                // 新增选择
+                if (!lockedCustomer) {
+                    // 首次选择，锁定客户
+                    lockedCustomer = customer;
+                    document.getElementById('lockedCustomerName').textContent = customer;
+                    document.getElementById('lockNotice').classList.add('active');
+                }
+                
+                if (customer === lockedCustomer) {
+                    selectedItems.add(no);
+                }
+            }
+
+            renderTable();
+        }
+
+        // 清除选择（解除锁定）
+        function clearSelection() {
+            selectedItems.clear();
+            lockedCustomer = null;
+            document.getElementById('lockNotice').classList.remove('active');
+            renderTable();
+        }
+
+        // 筛选功能
+        function filterTable() {
+            const no = document.getElementById('filterNo').value.toLowerCase();
+            const customer = document.getElementById('filterCustomer').value;
+            const domain = document.getElementById('filterDomain').value;
+
+            filteredData = schemeData.filter(item => {
+                return (no === '' || item.no.toLowerCase().includes(no)) &&
+                       (customer === '' || item.customer === customer) &&
+                       (domain === '' || item.domain === domain);
+            });
+
+            // 保持排序：紧急的在前
+            filteredData.sort((a, b) => {
+                if (a.urgent && !b.urgent) return -1;
+                if (!a.urgent && b.urgent) return 1;
+                return 0;
+            });
+
+            renderTable();
+        }
+
+        // 更新底部信息
+        function updateFooter() {
+            const count = selectedItems.size;
+            const footerInfo = document.getElementById('footerInfo');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            if (count === 0) {
+                footerInfo.textContent = '请选择需要发起再认证审核的方案';
+                nextBtn.disabled = true;
+            } else {
+                footerInfo.innerHTML = `已选择 <strong style="color: #0b57d0;">${count}</strong> 个方案，客户：<strong>${lockedCustomer}</strong>`;
+                nextBtn.disabled = false;
+            }
+        }
+
+        // 步骤切换
+        function goToStep(step) {
+            currentStep = step;
+            
+            // 更新步骤指示器
+            const step1Indicator = document.getElementById('step1Indicator');
+            const step2Indicator = document.getElementById('step2Indicator');
+            
+            // 更新内容显示
+            document.getElementById('step1').classList.toggle('active', step === 1);
+            document.getElementById('step2').classList.toggle('active', step === 2);
+            
+            // 更新按钮
+            document.getElementById('backBtn').style.display = step === 1 ? 'none' : 'flex';
+            document.getElementById('nextBtn').style.display = step === 2 ? 'none' : 'flex';
+            document.getElementById('submitBtn').style.display = step === 2 ? 'flex' : 'none';
+            
+            if (step === 1) {
+                step1Indicator.classList.add('active');
+                step1Indicator.classList.remove('completed');
+                step2Indicator.classList.remove('active', 'completed');
+                updateFooter();
+            } else {
+                step1Indicator.classList.remove('active');
+                step1Indicator.classList.add('completed');
+                step2Indicator.classList.add('active');
+                document.getElementById('footerInfo').textContent = `已选择 ${selectedItems.size} 个方案，请完善通知书内容`;
+                
+                // 自动填充证书到期日期（取第一个选中项的日期）
+                const selectedNo = Array.from(selectedItems)[0];
+                const selectedItem = schemeData.find(item => item.no === selectedNo);
+                if (selectedItem) {
+                    const date = new Date(selectedItem.certExpire);
+                    document.getElementById('certYear').value = date.getFullYear();
+                    document.getElementById('certMonth').value = String(date.getMonth() + 1).padStart(2, '0');
+                    document.getElementById('certDay').value = String(date.getDate()).padStart(2, '0');
+                    
+                    // 再认证审核必须在到期前3个月完成（示例逻辑）
+                    const auditDeadline = new Date(date);
+                    auditDeadline.setMonth(auditDeadline.getMonth() - 3);
+                    document.getElementById('auditYear').value = auditDeadline.getFullYear();
+                    document.getElementById('auditMonth').value = String(auditDeadline.getMonth() + 1).padStart(2, '0');
+                }
+            }
+        }
+
+        // 提交审核
+        function submitAudit() {
+            const certYear = document.getElementById('certYear').value;
+            const certMonth = document.getElementById('certMonth').value;
+            const certDay = document.getElementById('certDay').value;
+            
+            if (!certYear || !certMonth || !certDay) {
+                alert('请填写完整的证书到期日期');
+                return;
+            }
+            
+            const schemeNos = Array.from(selectedItems).join(', ');
+            alert(`再认证审核发起成功！\n\n选中方案：${schemeNos}\n客户：${lockedCustomer}\n证书到期：${certYear}年${certMonth}月${certDay}日\n\n已自动生成再认证通知书及材料清单。`);
+            
+            // 重置并返回第一步
+            clearSelection();
+            goToStep(1);
+        }
+
+        // 初始化
+        init();
+    </script>
+</body>
+</html>
