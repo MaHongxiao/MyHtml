@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择审核通知类型</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: #f5f5f5;  /* 浅灰背景，突出弹窗 */
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 弹窗容器 - 固定宽高 600x400 */
+        .modal-container {
+            width: 600px;
+            height: 400px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        /* 头部 */
+        .modal-header {
+            padding: 20px 24px;
+            background: #fff;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-title::before {
+            content: "";
+            width: 4px;
+            height: 18px;
+            background: #1e40af;
+            border-radius: 2px;
+        }
+
+        .close-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: #f3f4f6;
+            color: #6b7280;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        /* 内容区 */
+        .modal-content {
+            flex: 1;
+            padding: 32px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .content-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+
+        /* 类型选择卡片 */
+        .type-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .type-card {
+            padding: 32px 24px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-align: center;
+            background: #fff;
+            position: relative;
+        }
+
+        .type-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -4px rgba(59, 130, 246, 0.15);
+        }
+
+        .type-card.active {
+            border-color: #1e40af;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .type-card.active::after {
+            content: "✓";
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 20px;
+            height: 20px;
+            background: #1e40af;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .type-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 12px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: #f3f4f6;
+            transition: all 0.25s;
+        }
+
+        .type-card.active .type-icon {
+            background: #1e40af;
+            color: white;
+        }
+
+        .type-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+            transition: color 0.25s;
+        }
+
+        .type-card.active .type-title {
+            color: #1e40af;
+        }
+
+        .type-code {
+            font-size: 12px;
+            color: #9ca3af;
+            font-family: monospace;
+            background: #f3f4f6;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .type-card.active .type-code {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* 底部按钮 */
+        .modal-footer {
+            padding: 16px 24px;
+            background: #fafafa;
+            border-top: 1px solid #f3f4f6;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        .btn-primary {
+            background: #1e40af;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e3a8a;
+        }
+
+        .btn-primary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 直接展示的弹窗 -->
+    <div class="modal-container">
+        <!-- 头部 -->
+        <div class="modal-header">
+            <div class="modal-title">选择审核通知类型</div>
+            <button class="close-btn" onclick="closeModal()" title="关闭">×</button>
+        </div>
+
+        <!-- 内容 - 仅类型选择 -->
+        <div class="modal-content">
+            <div class="content-label">请选择要创建的通知类型：</div>
+            
+            <div class="type-selector">
+                <div class="type-card active" data-type="supervision" onclick="selectType('supervision')">
+                    <div class="type-icon">📋</div>
+                    <div class="type-title">监督审核通知</div>
+                    <!-- <div class="type-code">MSF11-22</div> -->
+                </div>
+                
+                <div class="type-card" data-type="re" onclick="selectType('re')">
+                    <div class="type-icon">🔄</div>
+                    <div class="type-title">再认证通知</div>
+                    <!-- <div class="type-code">MSF11-24</div> -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+            <button class="btn btn-primary" onclick="confirmSelection()">确认选择</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedType = 'supervision';
+
+        // 选择类型
+        function selectType(type) {
+            selectedType = type;
+            
+            // 移除所有active
+            document.querySelectorAll('.type-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            // 添加active到当前选中的
+            document.querySelector(`[data-type="${type}"]`).classList.add('active');
+        }
+
+        // 确认选择
+        function confirmSelection() {
+            const typeMap = {
+                'supervision': '监督审核通知 (MSF11-22)',
+                're': '再认证通知 (MSF11-24)'
+            };
+            
+            alert(`已选择：${typeMap[selectedType]}\n\n点击确定后进入下一步表单填报...`);
+            // 这里可以添加跳转逻辑或触发父页面的回调
+        }
+
+        // 关闭弹窗（调用父层方法或隐藏）
+        function closeModal() {
+            if (window.parent && window.parent.closeAuditModal) {
+                window.parent.closeAuditModal();
+            } else {
+                // 如果是独立页面，可以返回或隐藏
+                document.querySelector('.modal-container').style.display = 'none';
+            }
+        }
+
+        // ESC键关闭
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+
+</body>
+</html>
