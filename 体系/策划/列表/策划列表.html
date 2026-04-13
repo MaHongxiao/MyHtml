@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审核方案管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Google Sans", "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: #f0f4f9;
+            color: #1f1f1f;
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* 页面容器 */
+        .page-container {
+            padding: 24px;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        /* 顶部栏：标签页 + 操作按钮 */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 8px 8px 8px 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .tabs-wrapper {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+        }
+
+        .tab-item {
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #444746;
+            transition: all 0.2s;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .tab-item:hover {
+            background: #f3f6fc;
+        }
+
+        .tab-item.active {
+            background: #e8f0fe;
+            color: #0b57d0;
+        }
+
+        .tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #b3261e;
+            color: white;
+            font-size: 12px;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            margin-left: 6px;
+            padding: 0 5px;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 0 20px;
+            height: 36px;
+            border-radius: 100px;
+            cursor: pointer;
+            font-size: 14px;
+            border: 1px solid transparent;
+            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+            outline: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #0b57d0;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #0842a0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+
+        .btn-default {
+            background: transparent;
+            border: 1px solid #747775;
+            color: #0b57d0;
+        }
+
+        .btn-default:hover:not(:disabled) {
+            background: #f3f6fc;
+            border-color: #0b57d0;
+        }
+
+        .btn-success {
+            background: #137333;
+            color: #ffffff;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #0d5f29;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+
+        /* 筛选区域 */
+        .filter-section {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-row.hidden {
+            display: none;
+        }
+
+        .filter-row.expanded {
+            display: flex;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e1e3e1;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label {
+            color: #444746;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .filter-input {
+            height: 36px;
+            border: 1px solid #c4c7c5;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+            min-width: 180px;
+        }
+
+        .filter-input:focus {
+            border-color: #0b57d0;
+        }
+
+        .filter-select {
+            height: 36px;
+            border: 1px solid #c4c7c5;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+            min-width: 160px;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            border-color: #0b57d0;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .btn-filter {
+            padding: 0 20px;
+            height: 36px;
+            border-radius: 100px;
+            font-size: 14px;
+        }
+
+        /* 表格容器 - 支持横向滚动 */
+        .table-wrapper {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-scroll-container {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .data-table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background: #f3f6fc;
+            color: #041e49;
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 500;
+            border-bottom: 1px solid #e1e3e1;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f4f9;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .data-table tr:hover td {
+            background: #f8fafd;
+        }
+
+        .data-table tr.selected-row td {
+            background: #e8f0fe;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 高亮行样式 - 需尽快发起或剩余85天 */
+        .tr-urgent {
+            background: #fff8e1 !important;
+            position: relative;
+        }
+
+        .tr-urgent td {
+            border-bottom: 1px solid #ffd54f !important;
+        }
+
+        .tr-urgent:hover td {
+            background: #ffecb3 !important;
+        }
+
+        .urgent-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #e65100;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* 认证领域标签 */
+        .cert-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e8f0fe;
+            color: #174ea6;
+        }
+
+        .cert-tag.ems {
+            background: #e8eaf6;
+            color: #3f51b5;
+        }
+
+        /* 审核类型标签 */
+        .audit-type-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .audit-type-initial { background: #fce8e6; color: #c5221f; }
+        .audit-type-s1 { background: #e8f0fe; color: #174ea6; }
+        .audit-type-s2 { background: #e6f4ea; color: #137333; }
+        .audit-type-s1-change { background: #fff3e0; color: #e65100; }
+        .audit-type-rc { background: #f3e8fd; color: #7b1fa2; }
+        .audit-type-temp { background: #e0f7fa; color: #006064; }
+
+        /* 状态标签 */
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #444746;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.pending { background: #b3261e; }
+        .status-dot.planned { background: #146c2e; }
+        .status-dot.waiting { background: #f9ab00; }
+
+        /* 操作按钮 */
+        .action-links {
+            display: flex;
+            gap: 12px;
+        }
+
+        .action-link {
+            color: #0b57d0;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .action-link:hover {
+            text-decoration: underline;
+        }
+
+        /* 代码字体 */
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 13px;
+        }
+
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(31, 31, 31, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            display: none;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #ffffff;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12), 0 11px 15px -7px rgba(0,0,0,0.2);
+            animation: modalSlideIn 0.3s cubic-bezier(0.2, 0, 0, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-sm {
+            max-width: 500px;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-header {
+            background: #ffffff;
+            color: #1f1f1f;
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e1e3e1;
+        }
+
+        .modal-header.success {
+            background: #e6f4ea;
+            border-bottom: 1px solid #b8e5c9;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: #444746;
+            font-size: 24px;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #f0f4f9;
+            color: #1f1f1f;
+        }
+
+        .modal-body {
+            padding: 24px 32px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 20px 32px;
+            border-top: 1px solid #e1e3e1;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #ffffff;
+        }
+
+        /* 成功弹窗特殊样式 */
+        .success-content {
+            text-align: center;
+            padding: 32px;
+        }
+
+        .success-icon {
+            font-size: 64px;
+            color: #137333;
+            margin-bottom: 16px;
+        }
+
+        .success-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: #1f1f1f;
+            margin-bottom: 8px;
+        }
+
+        .success-desc {
+            color: #444746;
+            margin-bottom: 32px;
+        }
+
+        .download-section {
+            background: #f8fafd;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .download-title {
+            font-weight: 500;
+            color: #041e49;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .download-pack-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 16px;
+            background: #ffffff;
+            border: 2px solid #0b57d0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .download-pack-btn:hover {
+            background: #e8f0fe;
+            box-shadow: 0 4px 8px rgba(11, 87, 208, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .download-pack-icon {
+            font-size: 32px;
+        }
+
+        .download-pack-info {
+            text-align: left;
+        }
+
+        .download-pack-name {
+            font-weight: 600;
+            color: #0b57d0;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .download-pack-meta {
+            color: #9aa0a6;
+            font-size: 13px;
+        }
+
+        .download-pack-arrow {
+            color: #0b57d0;
+            font-size: 24px;
+            margin-left: auto;
+        }
+
+        /* 弹窗内表格 */
+        .modal-table-container {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #e1e3e1;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .modal-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 14px;
+        }
+
+        .modal-table th {
+            background: #f3f6fc;
+            color: #041e49;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+            border-bottom: 1px solid #e1e3e1;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .modal-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f4f9;
+            white-space: nowrap;
+        }
+
+        .modal-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 联系人选择区域 */
+        .contact-section {
+            background: #f3f6fc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .contact-section-title {
+            font-weight: 500;
+            color: #041e49;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            align-items: end;
+        }
+
+        .contact-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .contact-label {
+            font-weight: 500;
+            color: #444746;
+            font-size: 13px;
+        }
+
+        .contact-select, .contact-input {
+            height: 40px;
+            border: 1px solid #c4c7c5;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+            width: 100%;
+        }
+
+        .contact-select:focus, .contact-input:focus {
+            border-color: #0b57d0;
+        }
+
+        /* 通知书区域 - 简化为表单 */
+        .notice-section {
+            border: 1px solid #d3e3fd;
+            border-radius: 12px;
+            padding: 24px;
+            background: #f8fafd;
+        }
+
+        .notice-header {
+            font-weight: 500;
+            color: #041e49;
+            margin-bottom: 20px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #d3e3fd;
+        }
+
+        .notice-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .form-label {
+            color: #444746;
+            font-size: 14px;
+            min-width: 120px;
+        }
+
+        .form-field-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .form-select {
+            height: 40px;
+            border: 1px solid #c4c7c5;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 14px;
+            outline: none;
+            background: white;
+            min-width: 100px;
+        }
+
+        .form-select:focus {
+            border-color: #0b57d0;
+            border-width: 2px;
+        }
+
+        .form-input {
+            height: 40px;
+            border: 1px solid #c4c7c5;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 14px;
+            outline: none;
+            min-width: 120px;
+        }
+
+        .form-input:focus {
+            border-color: #0b57d0;
+            border-width: 2px;
+        }
+
+        .form-input.amount {
+            min-width: 150px;
+        }
+
+        .form-hint {
+            color: #9aa0a6;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        /* 分页 */
+        .pagination {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 24px;
+            background: #ffffff;
+            border-top: 1px solid #e1e3e1;
+        }
+
+        .page-btn {
+            padding: 0 12px;
+            height: 32px;
+            border: 1px solid #c4c7c5;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #444746;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover {
+            border-color: #0b57d0;
+            color: #0b57d0;
+        }
+
+        .page-btn.active {
+            background: #0b57d0;
+            color: white;
+            border-color: #0b57d0;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 复选框样式 */
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #0b57d0;
+        }
+
+        /* 提示信息 */
+        .alert-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #b3261e;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 2000;
+            display: none;
+            font-weight: 500;
+        }
+
+        .alert-toast.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { transform: translate(-50%, -20px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        /* 响应式 */
+        @media (max-width: 1200px) {
+            .top-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .tabs-wrapper {
+                width: 100%;
+            }
+
+            .top-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-actions {
+                margin-left: 0;
+                justify-content: flex-end;
+            }
+            
+            .contact-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-container {
+                padding: 16px;
+            }
+
+            .top-actions {
+                flex-wrap: wrap;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f3f4;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c4c7c5;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9aa0a6;
+        }
+
+        /* 必填标记 */
+        .required::after {
+            content: "*";
+            color: #b3261e;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 提示 toast -->
+    <div class="alert-toast" id="alertToast"></div>
+
+    <div class="page-container">
+        <!-- 顶部栏：标签页 + 操作按钮 -->
+        <div class="top-bar">
+            <div class="tabs-wrapper">
+                <div class="tab-item active" onclick="switchTab(this, 'all')">
+                    全部
+                </div>
+                <div class="tab-item" onclick="switchTab(this, 'pending-notify')">
+                    待通知审核 <span class="tab-badge">2</span>
+                </div>
+                <div class="tab-item" onclick="switchTab(this, 'pending-plan')">
+                    待策划 <span class="tab-badge">2</span>
+                </div>
+                <div class="tab-item" onclick="switchTab(this, 'planned')">
+                    已策划
+                </div>
+            </div>
+            <div class="top-actions">
+                <button class="btn btn-primary" id="btnSupervise" onclick="openModal('supervise')" disabled>
+                    <span>📋</span> 创建监督审核通知
+                </button>
+                <button class="btn btn-primary" id="btnReaudit" onclick="openModal('reaudit')" disabled>
+                    <span>🔄</span> 创建再认证审核通知
+                </button>
+            </div>
+        </div>
+
+        <!-- 筛选区域 -->
+        <div class="filter-section">
+            <div class="filter-row">
+                <div class="filter-item">
+                    <span class="filter-label">策划方案编号</span>
+                    <input type="text" class="filter-input" id="filterNo" placeholder="请输入项目编号">
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">客户名称</span>
+                    <select class="filter-select" id="filterCustomer">
+                        <option value="">全部</option>
+                        <option value="华信环境监测技术中心">华信环境监测技术中心</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">策划状态</span>
+                    <select class="filter-select" id="filterStatus">
+                        <option value="">全部</option>
+                        <option value="pending">待策划</option>
+                        <option value="notify">待通知审核</option>
+                        <option value="planned">已策划</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">当前审核类型</span>
+                    <select class="filter-select" id="filterType">
+                        <option value="">全部</option>
+                        <option value="initial">初次认证</option>
+                        <option value="s1">监督一</option>
+                        <option value="s1-change">监督一+变更</option>
+                        <option value="s2">监督二</option>
+                        <option value="rc">再认证</option>
+                        <option value="temp">临时审核</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn btn-default btn-filter" onclick="resetFilter()">重置</button>
+                    <button class="btn btn-primary btn-filter" onclick="applyFilter()">查询</button>
+                    <button class="btn btn-default btn-filter" style="padding: 0 12px;" onclick="toggleExpandFilter()">
+                        <span id="expandText">展开</span> <span style="font-size: 10px;" id="expandIcon">▼</span>
+                    </button>
+                </div>
+            </div>
+            <!-- 展开的高级筛选 -->
+            <div class="filter-row hidden" id="expandFilterRow">
+                <div class="filter-item">
+                    <span class="filter-label">所属区域</span>
+                    <select class="filter-select" id="filterRegion">
+                        <option value="">全部</option>
+                        <option value="南京市">南京市</option>
+                        <option value="无锡市">无锡市</option>
+                        <option value="徐州市">徐州市</option>
+                        <option value="常州市">常州市</option>
+                        <option value="苏州市">苏州市</option>
+                        <option value="南通市">南通市</option>
+                        <option value="连云港市">连云港市</option>
+                        <option value="淮安市">淮安市</option>
+                        <option value="盐城市">盐城市</option>
+                        <option value="扬州市">扬州市</option>
+                        <option value="镇江市">镇江市</option>
+                        <option value="泰州市">泰州市</option>
+                        <option value="宿迁市">宿迁市</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">客服人员</span>
+                    <input type="text" class="filter-input" id="filterService" placeholder="请输入客服人员">
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">联系人</span>
+                    <input type="text" class="filter-input" id="filterContact" placeholder="请输入联系人">
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="table-wrapper">
+            <div class="table-scroll-container">
+                <table class="data-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th width="40"><input type="checkbox" class="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                            <th width="140">策划方案编号</th>
+                            <th>客户名称</th>
+                            <th width="100">客服人员</th>
+                            <th width="100">联系人</th>
+                            <th width="80">认证领域</th>
+                            <th width="80">当前轮次</th>
+                            <th width="100">当前审核类型</th>
+                            <th width="140">审核截止日期</th>
+                            <th width="90">是否多场所</th>
+                            <th width="90">申请日期</th>
+                            <th width="90">受理日期</th>
+                            <th width="90">策划日期</th>
+                            <th width="100">策划状态</th>
+                            <th width="100">方案执行状态</th>
+                            <th width="100">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- 数据将通过JS动态渲染 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            <div class="pagination">
+                <span style="color: #444746; margin-right: 12px;">10条/页</span>
+                <button class="page-btn" disabled>‹</button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <span style="color: #444746;">...</span>
+                <button class="page-btn">10</button>
+                <button class="page-btn">›</button>
+                <span style="color: #444746; margin: 0 8px;">跳至</span>
+                <input type="text" style="width: 40px; height: 32px; border: 1px solid #c4c7c5; border-radius: 8px; text-align: center;">
+                <span style="color: #444746;">/ 20页</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 审核发起弹窗 -->
+    <div class="modal-overlay" id="auditModal" onclick="closeModalOnOverlay(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle"><span>➕</span> 发起审核</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 选中方案列表 -->
+                <div class="modal-table-container">
+                    <table class="modal-table" id="modalTable">
+                        <thead>
+                            <tr>
+                                <th width="140">方案编号</th>
+                                <th>客户名称</th>
+                                <th width="100">客服</th>
+                                <th width="100">联系人</th>
+                                <th width="80">认证领域</th>
+                                <th width="80">当前轮次</th>
+                                <th width="100">审核类型</th>
+                                <th width="110">通知截止日期</th>
+                                <th width="90">是否多场所</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalTableBody">
+                            <!-- 数据将通过JS动态插入 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 客户联系人选择区域 -->
+                <div class="contact-section" id="contactSection">
+                    <div class="contact-section-title">📧 客户通知联系人信息</div>
+                    <div class="contact-grid">
+                        <div class="contact-field">
+                            <label class="contact-label required">通知联系人</label>
+                            <select class="contact-select" id="contactSelect" onchange="updateContactInfo()">
+                                <option value="">请选择联系人</option>
+                            </select>
+                        </div>
+                        <div class="contact-field">
+                            <label class="contact-label required">联系电话</label>
+                            <input type="text" class="contact-input" id="contactPhone" placeholder="请输入联系电话">
+                        </div>
+                        <div class="contact-field">
+                            <label class="contact-label required">电子邮箱</label>
+                            <input type="text" class="contact-input" id="contactEmail" placeholder="请输入电子邮箱">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 通知书区域 - 简化为表单 -->
+                <div class="notice-section" id="noticeSection">
+                    <div class="notice-header" id="noticeTitle">监督审核通知书</div>
+                    <div class="notice-form" id="noticeContent">
+                        <!-- 动态生成表单字段 -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitAudit()">确认发起</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 发送成功弹窗 -->
+    <div class="modal-overlay" id="successModal" onclick="closeSuccessModalOnOverlay(event)">
+        <div class="modal modal-sm" onclick="event.stopPropagation()">
+            <div class="modal-header success">
+                <h3><span>✓</span> 发送成功</h3>
+                <button class="modal-close" onclick="closeSuccessModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <div class="success-content">
+                    <div class="success-icon">✓</div>
+                    <div class="success-title" id="successTitle">审核通知发送成功</div>
+                    <div class="success-desc" id="successDesc">相关通知书已生成并准备发送</div>
+                    
+                    <div class="download-section">
+                        <div class="download-title">📎 附件下载</div>
+                        <div class="download-pack-btn" onclick="downloadPack()">
+                            <span class="download-pack-icon">📦</span>
+                            <div class="download-pack-info">
+                                <div class="download-pack-name" id="downloadPackName">审核通知附件包</div>
+                                <div class="download-pack-meta">包含通知书及调查表 · ZIP格式</div>
+                            </div>
+                            <span class="download-pack-arrow">↓</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button class="btn btn-success" onclick="closeSuccessModal()">完成</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 所有数据（增加客服、联系人、所属区域字段，以及联系人详情）
+        const allData = [
+            { no: 'PLN/2024/0001', customer: '新东方教育科技公司', service: '张客服', contact: '李经理', region: '南京市', domain: 'QMS', round: '第一轮', currentType: '初次认证', nextType: '监督一', deadline: '2026-06-01', multi: '是', status: '待策划', execStatus: '-' },
+            { no: 'PLN/2024/0002', customer: '华信环境监测技术中心', service: '张客服', contact: '王主任', region: '南京市', domain: 'EMS', round: '第一轮', currentType: '监督一', nextType: '监督二', deadline: '2026-06-01（剩余85天）', multi: '否', status: '待通知审核', execStatus: '-' },
+            { no: 'PLN/2024/0003', customer: '华信环境监测技术中心', service: '张客服', contact: '李经理', region: '南京市', domain: 'QMS', round: '第一轮', currentType: '监督一', nextType: '监督二', deadline: '2026-06-01（剩余85天）', multi: '是', status: '待通知审核', execStatus: '-' },
+            { no: 'PLN/2024/0004', customer: '华信环境监测技术中心', service: '李客服', contact: '赵主管', region: '苏州市', domain: 'QMS', round: '第二轮', currentType: '监督一+变更', nextType: '监督二', deadline: '2026-05-01', multi: '是', status: '待策划', execStatus: '-' },
+            { no: 'PLN/2024/0005', customer: '华信环境监测技术中心', service: '李客服', contact: '陈经理', region: '苏州市', domain: 'EMS', round: '第二轮', currentType: '监督二', nextType: '-', deadline: '2026-05-01', multi: '是', status: '待策划', execStatus: '-' },
+            { no: 'PLN/2024/0006', customer: '北京地铁有限公司', service: '王客服', contact: '刘主任', region: '无锡市', domain: 'QMS', round: '第二轮', currentType: '再认证', nextType: '-', deadline: '2026-05-01（剩余75天）', multi: '是', status: '待通知审核', execStatus: '-' },
+            { no: 'PLN/2024/0007', customer: '北京地铁有限公司', service: '王客服', contact: '刘主任', region: '无锡市', domain: 'QMS', round: '第二轮', currentType: '再认证', nextType: '-', deadline: '2026-05-01（剩余75天）', multi: '是', status: '待通知审核', execStatus: '-' },
+            { no: 'PLN/2024/0008', customer: '华信环境监测技术中心', service: '王客服', contact: '周经理', region: '无锡市', domain: 'QMS', round: '第二轮', currentType: '临时审核', nextType: '-', deadline: '2026-05-01', multi: '是', status: '已策划', execStatus: '方案执行中' },
+            { no: 'PLN/2024/0009', customer: '华信环境监测技术中心', service: '赵客服', contact: '吴主管', region: '常州市', domain: 'QMS', round: '第二轮', currentType: '再认证', nextType: '-', deadline: '2026-05-01', multi: '是', status: '待策划', execStatus: '-' },
+            { no: 'PLN/2024/0010', customer: '华信环境监测技术中心', service: '赵客服', contact: '吴主管', region: '常州市', domain: 'QMS', round: '第二轮', currentType: '再认证', nextType: '-', deadline: '2026-05-01', multi: '是', status: '已策划', execStatus: '方案执行中' },
+        ];
+
+        // 客户联系人详细信息映射
+        const contactDetails = {
+            '王主任': { phone: '13800138001', email: 'wang@huaxin.com' },
+            '李经理': { phone: '13900139002', email: 'li@huaxin.com' },
+            '赵主管': { phone: '13700137003', email: 'zhao@huaxin.com' },
+            '陈经理': { phone: '13600136004', email: 'chen@huaxin.com' },
+            '刘主任': { phone: '13500135005', email: 'liu@beijing Subway.com' },
+            '周经理': { phone: '13400134006', email: 'zhou@huaxin.com' },
+            '吴主管': { phone: '13300133007', email: 'wu@huaxin.com' }
+        };
+
+        let filteredData = [...allData];
+        let selectedItems = new Set();
+        let currentCustomer = null;
+        let currentModalType = '';
+
+        // 生成年份选项（2026-2030）
+        function generateYearOptions() {
+            let options = '';
+            for (let year = 2026; year <= 2030; year++) {
+                options += `<option value="${year}">${year}年</option>`;
+            }
+            return options;
+        }
+
+        // 生成月份选项（1-12）
+        function generateMonthOptions() {
+            let options = '';
+            for (let month = 1; month <= 12; month++) {
+                options += `<option value="${month}">${month}月</option>`;
+            }
+            return options;
+        }
+
+        // 生成日期选项（1-31）
+        function generateDayOptions() {
+            let options = '';
+            for (let day = 1; day <= 31; day++) {
+                options += `<option value="${day}">${day}日</option>`;
+            }
+            return options;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTable();
+            updateSelectionState();
+        });
+
+        // 切换标签页
+        function switchTab(element, tab) {
+            document.querySelectorAll('.tab-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            filteredData.forEach((item) => {
+                const tr = document.createElement('tr');
+                tr.className = selectedItems.has(item.no) ? 'selected-row' : '';
+                
+                // 高亮显示：包含"剩余85天"或"需尽快"或再认证且待通知审核
+                if (item.deadline.includes('剩余85天') || item.deadline.includes('需尽快') || (item.currentType === '再认证' && item.status === '待通知审核')) {
+                    tr.classList.add('tr-urgent');
+                }
+
+                const isChecked = selectedItems.has(item.no) ? 'checked' : '';
+
+                // 修改：待通知审核状态下策划日期也为"-"
+                const planDate = (item.status === '待策划' || item.status === '待通知审核') ? '-' : '2026-04-01';
+                const planDateStyle = (item.status === '待策划' || item.status === '待通知审核') ? 'color: #747775;' : 'color: #0b57d0; font-weight: 500;';
+
+                tr.innerHTML = `
+                    <td><input type="checkbox" class="checkbox" ${isChecked} onchange="toggleSelectRow('${item.no}', '${item.customer}')"></td>
+                    <td class="mono">${item.no}</td>
+                    <td style="font-weight: 500;">${item.customer}</td>
+                    <td>${item.service}</td>
+                    <td>${item.contact}</td>
+                    <td><span class="cert-tag ${item.domain === 'EMS' ? 'ems' : ''}">${item.domain}</span></td>
+                    <td>${item.round}</td>
+                    <td><span class="audit-type-tag audit-type-${getTypeClass(item.currentType)}">${item.currentType}</span></td>
+                    <td style="${item.deadline.includes('需尽快') || item.deadline.includes('剩余85天') || (item.currentType === '再认证' && item.status === '待通知审核') ? 'color: #b3261e; font-weight: 600;' : 'color: #747775;'}">${item.deadline}</td>
+                    <td><span style="color: ${item.multi === '是' ? '#b3261e' : '#146c2e'}; font-weight: 500;">${item.multi}</span></td>
+                    <td>2026-03-23</td>
+                    <td>2026-03-30</td>
+                    <td style="${planDateStyle}">${planDate}</td>
+                    <td>
+                        <span class="status-tag">
+                            <span class="status-dot ${getStatusClass(item.status)}"></span> ${item.status}
+                        </span>
+                    </td>
+                    <td>
+                        ${item.execStatus === '-' ? '-' : `<span style="color: #0b57d0; font-weight: 500;">● ${item.execStatus}</span>`}
+                    </td>
+                    <td>
+                        <div class="action-links">
+                            ${item.status === '待策划' ? '<a class="action-link">策划</a>' : ''}
+                            <a class="action-link">详情</a>
+                        </div>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getTypeClass(type) {
+            if (type === '初次认证') return 'initial';
+            if (type === '监督一') return 's1';
+            if (type === '监督二') return 's2';
+            if (type === '再认证') return 'rc';
+            if (type === '临时审核') return 'temp';
+            if (type === '监督一+变更') return 's1-change';
+            return 's1';
+        }
+
+        function getStatusClass(status) {
+            if (status === '待策划') return 'waiting';
+            if (status === '待通知审核') return 'pending';
+            if (status === '已策划') return 'planned';
+            return 'waiting';
+        }
+
+        // 切换选择行（限制同一客户）
+        function toggleSelectRow(no, customer) {
+            if (selectedItems.has(no)) {
+                selectedItems.delete(no);
+                if (selectedItems.size === 0) {
+                    currentCustomer = null;
+                }
+            } else {
+                if (selectedItems.size > 0 && currentCustomer !== customer) {
+                    showAlert('只能选择同一客户的方案进行批量操作');
+                    renderTable();
+                    return;
+                }
+                selectedItems.add(no);
+                currentCustomer = customer;
+            }
+            renderTable();
+            updateSelectionState();
+        }
+
+        // 全选/取消全选（同客户限制）
+        function toggleSelectAll() {
+            const checked = document.getElementById('selectAll').checked;
+            if (checked) {
+                if (filteredData.length > 0) {
+                    const firstCustomer = filteredData[0].customer;
+                    const sameCustomerData = filteredData.filter(item => item.customer === firstCustomer);
+                    if (sameCustomerData.length > 0) {
+                        selectedItems = new Set(sameCustomerData.map(item => item.no));
+                        currentCustomer = firstCustomer;
+                        showAlert(`已全选同一客户（${firstCustomer}）的 ${sameCustomerData.length} 个方案`);
+                    }
+                }
+            } else {
+                selectedItems.clear();
+                currentCustomer = null;
+            }
+            renderTable();
+            updateSelectionState();
+        }
+
+        // 更新选择状态和按钮
+        function updateSelectionState() {
+            const hasSelection = selectedItems.size > 0;
+            const btnSupervise = document.getElementById('btnSupervise');
+            const btnReaudit = document.getElementById('btnReaudit');
+
+            if (hasSelection && currentCustomer) {
+                const selectedData = allData.filter(item => selectedItems.has(item.no));
+                const hasSuperviseType = selectedData.some(item => 
+                    item.nextType.includes('监督') || item.currentType.includes('监督')
+                );
+                const hasReauditType = selectedData.some(item => 
+                    item.currentType === '再认证'
+                );
+
+                btnSupervise.disabled = !hasSuperviseType;
+                btnReaudit.disabled = !hasReauditType;
+            } else {
+                btnSupervise.disabled = true;
+                btnReaudit.disabled = true;
+            }
+
+            const allCheckboxes = document.querySelectorAll('#tableBody .checkbox');
+            const allChecked = allCheckboxes.length > 0 && Array.from(allCheckboxes).every(cb => cb.checked);
+            document.getElementById('selectAll').checked = allChecked;
+        }
+
+        // 显示提示
+        function showAlert(message) {
+            const toast = document.getElementById('alertToast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 展开/收起筛选
+        function toggleExpandFilter() {
+            const expandRow = document.getElementById('expandFilterRow');
+            const expandText = document.getElementById('expandText');
+            const expandIcon = document.getElementById('expandIcon');
+
+            if (expandRow.classList.contains('hidden')) {
+                expandRow.classList.remove('hidden');
+                expandRow.classList.add('expanded');
+                expandText.textContent = '收起';
+                expandIcon.textContent = '▲';
+            } else {
+                expandRow.classList.add('hidden');
+                expandRow.classList.remove('expanded');
+                expandText.textContent = '展开';
+                expandIcon.textContent = '▼';
+            }
+        }
+
+        // 应用筛选
+        function applyFilter() {
+            const no = document.getElementById('filterNo').value.toLowerCase();
+            const customer = document.getElementById('filterCustomer').value;
+            const status = document.getElementById('filterStatus').value;
+            const type = document.getElementById('filterType').value;
+            const region = document.getElementById('filterRegion').value;
+            const service = document.getElementById('filterService').value.toLowerCase();
+            const contact = document.getElementById('filterContact').value.toLowerCase();
+
+            filteredData = allData.filter(item => {
+                return (no === '' || item.no.toLowerCase().includes(no)) &&
+                       (customer === '' || item.customer === customer) &&
+                       (status === '' || item.status === status || 
+                        (status === 'pending' && item.status === '待策划') ||
+                        (status === 'notify' && item.status === '待通知审核') ||
+                        (status === 'planned' && item.status === '已策划')) &&
+                       (type === '' || item.currentType === getTypeText(type)) &&
+                       (region === '' || item.region === region) &&
+                       (service === '' || item.service.toLowerCase().includes(service)) &&
+                       (contact === '' || item.contact.toLowerCase().includes(contact));
+            });
+
+            selectedItems.clear();
+            currentCustomer = null;
+            renderTable();
+            updateSelectionState();
+        }
+
+        function getTypeText(typeValue) {
+            const typeMap = {
+                'initial': '初次认证',
+                's1': '监督一',
+                's1-change': '监督一+变更',
+                's2': '监督二',
+                'rc': '再认证',
+                'temp': '临时审核'
+            };
+            return typeMap[typeValue] || typeValue;
+        }
+
+        // 重置筛选
+        function resetFilter() {
+            document.getElementById('filterNo').value = '';
+            document.getElementById('filterCustomer').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterRegion').value = '';
+            document.getElementById('filterService').value = '';
+            document.getElementById('filterContact').value = '';
+
+            filteredData = [...allData];
+            selectedItems.clear();
+            currentCustomer = null;
+            renderTable();
+            updateSelectionState();
+        }
+
+        // 更新客户联系人信息（电话和邮箱）
+        function updateContactInfo() {
+            const contactName = document.getElementById('contactSelect').value;
+            const phoneInput = document.getElementById('contactPhone');
+            const emailInput = document.getElementById('contactEmail');
+            
+            if (contactName && contactDetails[contactName]) {
+                phoneInput.value = contactDetails[contactName].phone;
+                emailInput.value = contactDetails[contactName].email;
+            } else {
+                phoneInput.value = '';
+                emailInput.value = '';
+            }
+        }
+
+        // 打开弹窗
+        function openModal(type) {
+            if (selectedItems.size === 0) {
+                showAlert('请先选择方案');
+                return;
+            }
+
+            currentModalType = type;
+            const modal = document.getElementById('auditModal');
+            const title = document.getElementById('modalTitle');
+            const noticeTitle = document.getElementById('noticeTitle');
+            const noticeContent = document.getElementById('noticeContent');
+
+            const selectedData = allData.filter(item => selectedItems.has(item.no));
+            const modalTbody = document.getElementById('modalTableBody');
+            modalTbody.innerHTML = '';
+
+            const contacts = new Set();
+
+            selectedData.forEach(item => {
+                contacts.add(item.contact);
+
+                const tr = document.createElement('tr');
+                let auditType = item.nextType;
+                if (type === 'supervise') {
+                    if (item.currentType.includes('监督一')) auditType = '监督二';
+                    else if (item.currentType.includes('监督二')) auditType = '监督一';
+                    else auditType = '监督一';
+                } else if (type === 'reaudit') {
+                    auditType = '再认证';
+                }
+
+                tr.innerHTML = `
+                    <td class="mono">${item.no}</td>
+                    <td style="font-weight: 500;">${item.customer}</td>
+                    <td>${item.service}</td>
+                    <td>${item.contact}</td>
+                    <td><span class="cert-tag ${item.domain === 'EMS' ? 'ems' : ''}">${item.domain}</span></td>
+                    <td>${item.round}</td>
+                    <td><span class="audit-type-tag audit-type-${getTypeClass(auditType)}">${auditType}</span></td>
+                    <td style="${item.deadline.includes('需尽快') ? 'color: #b3261e; font-weight: 600;' : 'color: #747775;'}">${item.deadline}</td>
+                    <td><span style="color: ${item.multi === '是' ? '#b3261e' : '#146c2e'}; font-weight: 500;">${item.multi}</span></td>
+                `;
+                modalTbody.appendChild(tr);
+            });
+
+            // 填充客户联系人选项
+            const contactSelect = document.getElementById('contactSelect');
+            contactSelect.innerHTML = '<option value="">请选择联系人</option>';
+            const contactsArray = Array.from(contacts);
+            
+            if (contactsArray.length > 0) {
+                contactsArray.forEach((contact) => {
+                    const option = document.createElement('option');
+                    option.value = contact;
+                    option.textContent = contact;
+                    contactSelect.appendChild(option);
+                });
+                contactSelect.value = contactsArray[0];
+                updateContactInfo();
+            }
+
+            // 生成表单内容
+            if (type === 'supervise') {
+                title.innerHTML = '<span>📋</span> 创建监督审核通知';
+                noticeTitle.innerHTML = '<span>📄</span> 监督审核通知书（MSF11-22）';
+                noticeContent.innerHTML = `
+                    <div class="form-row">
+                        <label class="form-label">监督审核时间：</label>
+                        <div class="form-field-group">
+                            <select class="form-select">${generateYearOptions()}</select>
+                            <select class="form-select">${generateMonthOptions()}</select>
+                            <span class="form-hint">请选择计划进行监督审核的年月</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">截止日期：</label>
+                        <div class="form-field-group">
+                            <select class="form-select">${generateYearOptions()}</select>
+                            <select class="form-select">${generateMonthOptions()}</select>
+                            <span class="form-hint">若此前不能接受监督审核，将暂停或撤销证书</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">监督审核费用：</label>
+                        <div class="form-field-group">
+                            <input type="text" class="form-input amount" placeholder="请输入金额">
+                            <span style="color: #444746;">元/人民币</span>
+                            <span class="form-hint">请收到通知后两周内汇入指定账户</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                title.innerHTML = '<span>🔄</span> 创建再认证审核通知';
+                noticeTitle.innerHTML = '<span>📄</span> 再认证通知书（MSF11-24）';
+                noticeContent.innerHTML = `
+                    <div class="form-row">
+                        <label class="form-label">证书到期日：</label>
+                        <div class="form-field-group">
+                            <select class="form-select">${generateYearOptions()}</select>
+                            <select class="form-select">${generateMonthOptions()}</select>
+                            <select class="form-select">${generateDayOptions()}</select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">再认证截止：</label>
+                        <div class="form-field-group">
+                            <select class="form-select">${generateYearOptions()}</select>
+                            <select class="form-select">${generateMonthOptions()}</select>
+                            <span class="form-hint">再认证审核必须在此前完成，否则按新认证项目实施</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('auditModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // 点击外部关闭
+        function closeModalOnOverlay(event) {
+            if (event.target === event.currentTarget) {
+                closeModal();
+            }
+        }
+
+        // 确认发起
+        function submitAudit() {
+            // 验证客户联系人信息
+            const contactSelect = document.getElementById('contactSelect');
+            const phoneInput = document.getElementById('contactPhone');
+            const emailInput = document.getElementById('contactEmail');
+            
+            if (!contactSelect.value) {
+                showAlert('请选择客户通知联系人');
+                return;
+            }
+            if (!phoneInput.value.trim()) {
+                showAlert('请输入客户联系电话');
+                return;
+            }
+            if (!emailInput.value.trim()) {
+                showAlert('请输入客户电子邮箱');
+                return;
+            }
+
+            // 关闭原弹窗
+            closeModal();
+
+            // 显示成功弹窗
+            showSuccessModal();
+        }
+
+        // 显示成功弹窗
+        function showSuccessModal() {
+            const successModal = document.getElementById('successModal');
+            const successTitle = document.getElementById('successTitle');
+            const successDesc = document.getElementById('successDesc');
+            const downloadPackName = document.getElementById('downloadPackName');
+
+            if (currentModalType === 'supervise') {
+                successTitle.textContent = '监督审核通知发送成功';
+                successDesc.textContent = `已向客户发送监督审核通知，共选择 ${selectedItems.size} 个方案`;
+                downloadPackName.textContent = '监督审核通知附件包';
+            } else {
+                successTitle.textContent = '再认证审核通知发送成功';
+                successDesc.textContent = `已向客户发送再认证审核通知，共选择 ${selectedItems.size} 个方案`;
+                downloadPackName.textContent = '再认证审核通知附件包';
+            }
+
+            successModal.classList.add('active');
+        }
+
+        // 关闭成功弹窗
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.remove('active');
+            document.body.style.overflow = '';
+            
+            // 清空选择状态
+            selectedItems.clear();
+            currentCustomer = null;
+            renderTable();
+            updateSelectionState();
+        }
+
+        // 点击外部关闭成功弹窗
+        function closeSuccessModalOnOverlay(event) {
+            if (event.target === event.currentTarget) {
+                closeSuccessModal();
+            }
+        }
+
+        // 打包下载附件
+        function downloadPack() {
+            const packName = currentModalType === 'supervise' ? '监督审核通知附件包.zip' : '再认证审核通知附件包.zip';
+            showAlert(`开始下载：${packName}（包含通知书及获证方情况调查表）`);
+        }
+
+        // ESC键关闭弹窗
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (document.getElementById('successModal').classList.contains('active')) {
+                    closeSuccessModal();
+                } else if (document.getElementById('auditModal').classList.contains('active')) {
+                    closeModal();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
