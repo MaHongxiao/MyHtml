@@ -370,15 +370,59 @@
             font-weight: 500;
         }
 
-        /* 批量操作栏 */
-        .batch-operation-bar {
-            background: #fafafa;
-            border: 1px solid #f0f0f0;
-            border-radius: var(--radius-sm);
-            padding: 12px 16px;
+        /* 证书视图专用工具栏：快捷筛选 + 批量操作 */
+        .cert-view-toolbar {
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
             margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
             display: flex;
-            gap: 12px;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-filters {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .quick-filter-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 8px;
+            height: 32px;
+            border-radius: 0;
+            font-size: 13px;
+            border: none;
+            border-bottom: 2px solid transparent;
+            background: transparent;
+            cursor: pointer;
+            transition: var(--transition-base);
+            white-space: nowrap;
+            color: var(--text-secondary);
+        }
+        
+        .quick-filter-tag:hover {
+            color: var(--primary-color);
+            border-bottom-color: #d9d9d9;
+        }
+        
+        .quick-filter-tag.active {
+            background: transparent;
+            border-color: transparent;
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .batch-actions {
+            display: flex;
+            gap: 8px;
             align-items: center;
         }
         
@@ -962,9 +1006,41 @@
             text-align: center;
         }
         
+        /* 证书编号标签云样式 - 用于批量操作弹窗 */
+        .cert-tags-container {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        
+        .cert-tags-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .cert-tag-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            background: #ffffff;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-family: Consolas, 'Roboto Mono', monospace;
+            font-size: 13px;
+            color: var(--text-main);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        
         @media screen and (max-width: 1400px) {
             .dashboard-alerts { grid-template-columns: repeat(2, 1fr); }
             .filter-grid { grid-template-columns: repeat(4, 1fr); }
+            .cert-view-toolbar { flex-direction: column; align-items: stretch; }
+            .quick-filters { justify-content: flex-start; }
+            .batch-actions { justify-content: flex-end; }
         }
         @media screen and (max-width: 768px) {
             .dashboard-alerts { grid-template-columns: 1fr; }
@@ -972,6 +1048,8 @@
             .filter-actions { grid-column: 1 / -1; }
             .container { padding: 16px; }
             .form-row { grid-template-columns: 1fr; }
+            .cert-view-toolbar { flex-direction: column; }
+            .batch-actions { justify-content: flex-start; }
         }
     </style>
 </head>
@@ -1064,17 +1142,6 @@
 
                 <div class="hidden-filters">
                     <div class="filter-item">
-                        <label>风险类型</label>
-                        <select id="riskType">
-                            <option value="">全部</option>
-                            <option value="营业执照到期">营业执照到期</option>
-                            <option value="行政许可到期">行政许可到期</option>
-                            <option value="监督审核预警">监督审核预警</option>
-                            <option value="再认证审核预警">再认证审核预警</option>
-                            <option value="无风险">无风险</option>
-                        </select>
-                    </div>
-                    <div class="filter-item">
                         <label>风险等级</label>
                         <select id="riskLevel">
                             <option value="">全部</option>
@@ -1151,29 +1218,41 @@
                 <span>💡 提示：高亮背景行表示存在待处理风险预警的证书或客户；高风险客户（营业执照/行政许可到期）统一在企业行处理</span>
             </div>
             <div class="view-toggle">
-                <button class="view-toggle-btn active" id="customerViewBtn" onclick="toggleView('customer')">客户视图</button>
-                <button class="view-toggle-btn" id="certViewBtn" onclick="toggleView('cert')">证书视图</button>
+                <button class="view-toggle-btn" id="customerViewBtn" onclick="toggleView('customer')">客户视图</button>
+                <button class="view-toggle-btn active" id="certViewBtn" onclick="toggleView('cert')">证书视图</button>
             </div>
         </div>
         
-        <!-- 证书视图批量操作栏 -->
-        <div class="batch-operation-bar hidden" id="certBatchBar">
-            <button class="btn btn-warning" onclick="batchPause()">
-                <span>⏸</span> 批量暂停
-            </button>
-            <button class="btn btn-danger" onclick="batchRevoke()">
-                <span>🚫</span> 批量撤销
-            </button>
-            <button class="btn btn-success" onclick="batchResume()">
-                <span>▶️</span> 批量恢复
-            </button>
-            <span style="color: var(--text-secondary); font-size: 13px; margin-left: 12px;">已选择 <strong id="selectedCount">0</strong> 张证书</span>
+        <!-- 证书视图专用工具栏：快捷筛选 + 批量操作 -->
+        <div class="cert-view-toolbar" id="certViewToolbar">
+            <div class="quick-filters">
+                <span class="quick-filter-tag active" id="filter-all" onclick="quickFilter('')">全部</span>
+                <span class="quick-filter-tag" id="filter-biz-license" onclick="quickFilter('营业执照到期')">营业执照到期</span>
+                <span class="quick-filter-tag" id="filter-admin-license" onclick="quickFilter('行政许可到期')">行政许可到期</span>
+                <span class="quick-filter-tag" id="filter-supervise" onclick="quickFilter('监督审核预警')">监督审核预警</span>
+                <span class="quick-filter-tag" id="filter-re-audit" onclick="quickFilter('再认证审核预警')">再认证审核预警</span>
+            </div>
+            <div class="batch-actions">
+                <button class="btn btn-secondary" onclick="batchIgnore()">
+                    <span>🚫</span> 批量忽略
+                </button>
+                <button class="btn btn-warning" onclick="batchPause()">
+                    <span>⏸</span> 批量暂停
+                </button>
+                <button class="btn btn-danger" onclick="batchRevoke()">
+                    <span>🚫</span> 批量撤销
+                </button>
+                <button class="btn btn-success" onclick="batchResume()">
+                    <span>▶️</span> 批量恢复
+                </button>
+                <span style="color: var(--text-secondary); font-size: 13px; margin-left: 12px;">已选择 <strong id="selectedCount">0</strong> 张证书</span>
+            </div>
         </div>
         
         <div class="table-wrapper">
             <div class="table-scroll-container">
                 <!-- 客户视图表格 -->
-                <table class="data-table" id="customerTable">
+                <table class="data-table hidden" id="customerTable">
                     <thead>
                         <tr>
                             <th width="200">企业名称</th>
@@ -1577,7 +1656,7 @@
                 </table>
 
                 <!-- 证书视图表格（默认隐藏） -->
-                <table class="data-table hidden" id="certTable">
+                <table class="data-table" id="certTable">
                     <thead>
                         <tr>
                             <th width="40"><input type="checkbox" id="selectAllCertsView" onchange="toggleSelectAllCertsView()"></th>
@@ -1795,7 +1874,7 @@
         </div>
     </div>
 
-    <!-- 暂停证书弹窗（单证书） -->
+    <!-- 暂停证书弹窗（单证书/批量） -->
     <div class="modal-overlay" id="pauseModal">
         <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
@@ -1807,8 +1886,12 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>证书编号</label>
-                    <input type="text" id="pauseCertNo" readonly style="background: #f5f5f5;">
+                    <label>证书编号 <span style="color: var(--text-secondary); font-weight: normal;">(共 <strong id="pauseCertCount">1</strong> 张)</span></label>
+                    <div class="cert-tags-container">
+                        <div class="cert-tags-list" id="pauseCertNos">
+                            <!-- 证书编号标签将由JS动态插入 -->
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -1868,7 +1951,7 @@
         </div>
     </div>
 
-    <!-- 撤销证书弹窗（单证书） -->
+    <!-- 撤销证书弹窗（单证书/批量） -->
     <div class="modal-overlay" id="revokeModal">
         <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
@@ -1881,8 +1964,12 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>证书编号</label>
-                    <input type="text" id="revokeCertNo" readonly style="background: #f5f5f5;">
+                    <label>证书编号 <span style="color: var(--text-secondary); font-weight: normal;">(共 <strong id="revokeCertCount">1</strong> 张)</span></label>
+                    <div class="cert-tags-container">
+                        <div class="cert-tags-list" id="revokeCertNos">
+                            <!-- 证书编号标签将由JS动态插入 -->
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -1938,7 +2025,7 @@
         </div>
     </div>
 
-    <!-- 恢复证书弹窗 -->
+    <!-- 恢复证书弹窗（单证书/批量） -->
     <div class="modal-overlay" id="resumeModal">
         <div class="modal" style="max-width: 500px;">
             <div class="modal-header">
@@ -1950,8 +2037,12 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>证书编号</label>
-                    <input type="text" id="resumeCertNo" readonly style="background: #f5f5f5;">
+                    <label>证书编号 <span style="color: var(--text-secondary); font-weight: normal;">(共 <strong id="resumeCertCount">1</strong> 张)</span></label>
+                    <div class="cert-tags-container">
+                        <div class="cert-tags-list" id="resumeCertNos">
+                            <!-- 证书编号标签将由JS动态插入 -->
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -1984,6 +2075,49 @@
         </div>
     </div>
     
+    <!-- 批量忽略确认弹窗 -->
+    <div class="modal-overlay" id="batchIgnoreModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>
+                    <span>🚫</span>
+                    批量忽略风险
+                </h3>
+                <button class="modal-close" onclick="closeModal('batchIgnoreModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>涉及证书编号 <span style="color: var(--text-secondary); font-weight: normal;">(共 <strong id="batchIgnoreCount">0</strong> 张)</span></label>
+                    <div class="cert-tags-container">
+                        <div class="cert-tags-list" id="batchIgnoreCertNos">
+                            <!-- 证书编号标签将由JS动态插入 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>忽略原因 <span style="color: var(--danger-color);">*</span></label>
+                    <select id="batchIgnoreReason">
+                        <option value="">请选择忽略原因</option>
+                        <option value="风险已解除">风险已解除</option>
+                        <option value="误报">误报</option>
+                        <option value="已延期处理">已延期处理</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+
+                <div class="process-record-box" style="margin-top: 0;">
+                    <label>备注说明</label>
+                    <textarea id="batchIgnoreRemark" placeholder="请输入忽略备注说明..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeModal('batchIgnoreModal')">取消</button>
+                <button class="btn btn-secondary" onclick="submitBatchIgnore()">确认忽略</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
         let isFilterExpanded = false;
         let currentProcessType = '';
@@ -1991,7 +2125,8 @@
         let currentCompanyName = '';
         let isParentCert = false;
         let currentProcessScope = 'cert'; // 'cert' 或 'company'
-        let currentView = 'customer'; // 'customer' 或 'cert'
+        let currentView = 'cert'; // 默认证书视图：'customer' 或 'cert'
+        let currentQuickFilter = ''; // 当前快捷筛选条件
         
         // 证书关系映射（母子证关系）
         const certRelations = {
@@ -2008,8 +2143,8 @@
             'CQC25FS1507R1M/4400-3': { isParent: false, parent: 'CQC25FS1507R1M/4400' }
         };
 
-        // 证书数据（用于证书视图）
-        let certData = [
+        // 证书数据（用于证书视图）- 包含子证
+        let allCertData = [
             { no: '00126Q300285R601', company: '深圳市神州线缆有限公司', field: 'Q', standard: 'ISO 9001:2015', accBody: 'CNAS', status: 'valid', auditType: '监督二', issue: '2026-01-14', expiry: '2029-01-13', riskType: '营业执照到期', risk: 'high', riskDesc: '营业执照将于2026-04-15到期，涉及客户下所有证书', business: '广州中心', process: '未处理', auditStatus: '待提交', isParent: true },
             { no: '00126Q300285R601-1', company: '深圳市神州线缆有限公司东莞分公司', field: 'Q', standard: 'ISO 9001:2015', accBody: 'CNAS', status: 'valid', auditType: '监督二', issue: '2026-01-14', expiry: '2029-01-13', riskType: '营业执照到期', risk: 'high', riskDesc: '营业执照将于2026-04-15到期，涉及客户下所有证书', business: '广州中心', process: '未处理', auditStatus: '待提交', isParent: false, parentNo: '00126Q300285R601' },
             { no: '00126Q300285R601-2', company: '深圳市神州线缆有限公司深圳分公司', field: 'Q', standard: 'ISO 9001:2015', accBody: 'CNAS', status: 'valid', auditType: '监督二', issue: '2026-01-14', expiry: '2029-01-13', riskType: '营业执照到期', risk: 'high', riskDesc: '营业执照将于2026-04-15到期，涉及客户下所有证书', business: '广州中心', process: '未处理', auditStatus: '待提交', isParent: false, parentNo: '00126Q300285R601' },
@@ -2040,28 +2175,71 @@
             const certTable = document.getElementById('certTable');
             const customerBtn = document.getElementById('customerViewBtn');
             const certBtn = document.getElementById('certViewBtn');
-            const batchBar = document.getElementById('certBatchBar');
+            const certToolbar = document.getElementById('certViewToolbar');
             
             if (view === 'customer') {
                 customerTable.classList.remove('hidden');
                 certTable.classList.add('hidden');
+                certToolbar.style.display = 'none';
                 customerBtn.classList.add('active');
                 certBtn.classList.remove('active');
-                batchBar.classList.add('hidden');
             } else {
                 customerTable.classList.add('hidden');
                 certTable.classList.remove('hidden');
+                certToolbar.style.display = 'flex';
                 customerBtn.classList.remove('active');
                 certBtn.classList.add('active');
-                batchBar.classList.remove('hidden');
                 renderCertView();
             }
+        }
+
+        // 获取显示的证书数据（过滤子证：只显示母证或没有子证的证书）
+        function getDisplayCertData() {
+            // 筛选：显示母证(isParent=true)或独立证书(没有parentNo)
+            let filtered = allCertData.filter(cert => cert.isParent || !cert.parentNo);
+            
+            // 应用快捷筛选
+            if (currentQuickFilter) {
+                filtered = filtered.filter(cert => cert.riskType === currentQuickFilter);
+            }
+            
+            return filtered;
+        }
+
+        // 快捷筛选
+        function quickFilter(riskType) {
+            currentQuickFilter = riskType;
+            
+            // 更新UI
+            document.querySelectorAll('.quick-filter-tag').forEach(tag => {
+                tag.classList.remove('active');
+            });
+            
+            if (riskType === '') {
+                document.getElementById('filter-all').classList.add('active');
+            } else {
+                document.getElementById(`filter-${getFilterId(riskType)}`).classList.add('active');
+            }
+            
+            renderCertView();
+        }
+
+        function getFilterId(riskType) {
+            const map = {
+                '营业执照到期': 'biz-license',
+                '行政许可到期': 'admin-license',
+                '监督审核预警': 'supervise',
+                '再认证审核预警': 're-audit'
+            };
+            return map[riskType] || '';
         }
 
         // 渲染证书视图
         function renderCertView() {
             const tbody = document.getElementById('certTableBody');
-            tbody.innerHTML = certData.map(cert => {
+            const displayData = getDisplayCertData();
+            
+            tbody.innerHTML = displayData.map(cert => {
                 let statusClass = '';
                 let statusText = '';
                 let rowClass = 'cert-view-row';
@@ -2132,8 +2310,7 @@
                     actions = '-';
                 }
 
-                const badge = cert.isParent ? '<span class="parent-badge">母</span>' : 
-                             (cert.parentNo ? '<span class="child-badge">子</span>' : '');
+                const badge = cert.isParent ? '<span class="parent-badge">母</span>' : '';
 
                 return `
                     <tr class="${rowClass}" data-cert="${cert.no}">
@@ -2163,6 +2340,8 @@
                 `;
             }).join('');
             
+            // 重置全选框
+            document.getElementById('selectAllCertsView').checked = false;
             updateSelectedCount();
         }
 
@@ -2174,85 +2353,149 @@
             
             if (relation) {
                 if (relation.isParent && isChecked) {
-                    // 勾选母证，自动勾选所有子证
+                    // 勾选母证，自动勾选所有子证（在批量操作中包含子证）
                     relation.children.forEach(childNo => {
-                        const childCheckbox = document.querySelector(`tr[data-cert="${childNo}"] .cert-view-checkbox`);
-                        if (childCheckbox) {
-                            childCheckbox.checked = true;
-                            childCheckbox.disabled = true;
-                        }
+                        // 子证不在列表中显示，但需要在批量操作中包含
                     });
                 } else if (relation.isParent && !isChecked) {
-                    // 取消勾选母证，子证恢复可选状态
-                    relation.children.forEach(childNo => {
-                        const childCheckbox = document.querySelector(`tr[data-cert="${childNo}"] .cert-view-checkbox`);
-                        if (childCheckbox) {
-                            childCheckbox.checked = false;
-                            childCheckbox.disabled = false;
-                        }
-                    });
-                } else if (!relation.isParent && isChecked) {
-                    // 勾选子证，自动勾选母证
-                    const parentCheckbox = document.querySelector(`tr[data-cert="${relation.parent}"] .cert-view-checkbox`);
-                    if (parentCheckbox && !parentCheckbox.checked) {
-                        parentCheckbox.checked = true;
-                        // 触发母证的勾选逻辑，联动其他子证
-                        handleCertCheckboxChange(relation.parent);
-                    }
+                    // 取消勾选母证
                 }
             }
             updateSelectedCount();
         }
 
-        // 更新已选择数量
+        // 更新已选择数量（包含子证）
         function updateSelectedCount() {
-            const count = document.querySelectorAll('.cert-view-checkbox:checked').length;
-            document.getElementById('selectedCount').textContent = count;
+            const checkedCerts = Array.from(document.querySelectorAll('.cert-view-checkbox:checked')).map(cb => cb.value);
+            let totalCount = checkedCerts.length;
+            
+            // 统计包含的子证数量
+            checkedCerts.forEach(certNo => {
+                const relation = certRelations[certNo];
+                if (relation && relation.isParent) {
+                    totalCount += relation.children.length;
+                }
+            });
+            
+            document.getElementById('selectedCount').textContent = totalCount;
+        }
+
+        // 获取选中的证书列表（包含子证）
+        function getSelectedCertsWithChildren() {
+            const checkedCerts = Array.from(document.querySelectorAll('.cert-view-checkbox:checked')).map(cb => cb.value);
+            let allCerts = [];
+            
+            checkedCerts.forEach(certNo => {
+                allCerts.push(certNo);
+                const relation = certRelations[certNo];
+                if (relation && relation.isParent) {
+                    allCerts = allCerts.concat(relation.children);
+                }
+            });
+            
+            return [...new Set(allCerts)]; // 去重
         }
 
         // 全选/取消全选（证书视图）
         function toggleSelectAllCertsView() {
             const selectAll = document.getElementById('selectAllCertsView').checked;
-            const checkboxes = document.querySelectorAll('.cert-view-checkbox:not(:disabled)');
+            const checkboxes = document.querySelectorAll('.cert-view-checkbox');
             checkboxes.forEach(cb => {
                 cb.checked = selectAll;
-                // 触发change事件以处理联动
-                if (cb.onchange) cb.onchange();
             });
             updateSelectedCount();
         }
 
-        // 批量操作
-        function batchPause() {
-            const checked = document.querySelectorAll('.cert-view-checkbox:checked');
-            if (checked.length === 0) {
+        // 生成证书编号标签HTML
+        function generateCertTagsHtml(certNos) {
+            return certNos.map(no => `<span class="cert-tag-item">${no}</span>`).join('');
+        }
+
+        // 批量忽略
+        function batchIgnore() {
+            const selectedCerts = getSelectedCertsWithChildren();
+            if (selectedCerts.length === 0) {
                 alert('请至少选择一张证书');
                 return;
             }
-            const certNos = Array.from(checked).map(cb => cb.value).join('、');
-            alert(`批量暂停申请：${certNos}\n\n将进入审批流程`);
+            
+            document.getElementById('batchIgnoreCertNos').innerHTML = generateCertTagsHtml(selectedCerts);
+            document.getElementById('batchIgnoreCount').textContent = selectedCerts.length;
+            document.getElementById('batchIgnoreModal').classList.add('show');
+        }
+
+        // 提交批量忽略
+        function submitBatchIgnore() {
+            const reason = document.getElementById('batchIgnoreReason').value;
+            if (!reason) {
+                alert('请选择忽略原因');
+                return;
+            }
+            
+            const certNos = getSelectedCertsWithChildren();
+            
+            // 更新所有选中证书的状态
+            certNos.forEach(no => {
+                const cert = allCertData.find(c => c.no === no);
+                if (cert) {
+                    cert.process = '已处理';
+                }
+            });
+            
+            alert(`已批量忽略 ${certNos.length} 张证书的风险预警`);
+            closeModal('batchIgnoreModal');
+            renderCertView();
+        }
+
+        // 批量操作
+        function batchPause() {
+            const selectedCerts = getSelectedCertsWithChildren();
+            if (selectedCerts.length === 0) {
+                alert('请至少选择一张证书');
+                return;
+            }
+            openBatchPauseModal(selectedCerts);
         }
 
         function batchRevoke() {
-            const checked = document.querySelectorAll('.cert-view-checkbox:checked');
-            if (checked.length === 0) {
+            const selectedCerts = getSelectedCertsWithChildren();
+            if (selectedCerts.length === 0) {
                 alert('请至少选择一张证书');
                 return;
             }
-            const certNos = Array.from(checked).map(cb => cb.value).join('、');
-            if (confirm(`确定要批量撤销以下证书吗？\n${certNos}\n\n此操作不可恢复！`)) {
-                alert(`批量撤销申请已提交，等待审批`);
-            }
+            openBatchRevokeModal(selectedCerts);
         }
 
         function batchResume() {
-            const checked = document.querySelectorAll('.cert-view-checkbox:checked');
-            if (checked.length === 0) {
+            const selectedCerts = getSelectedCertsWithChildren();
+            if (selectedCerts.length === 0) {
                 alert('请至少选择一张证书');
                 return;
             }
-            const certNos = Array.from(checked).map(cb => cb.value).join('、');
-            alert(`批量恢复申请：${certNos}\n\n将进入审批流程`);
+            openBatchResumeModal(selectedCerts);
+        }
+
+        // 打开批量暂停弹窗
+        function openBatchPauseModal(certNos) {
+            document.getElementById('pauseCertNos').innerHTML = generateCertTagsHtml(certNos);
+            document.getElementById('pauseCertCount').textContent = certNos.length;
+            document.getElementById('pauseStartDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('pauseModal').classList.add('show');
+        }
+
+        // 打开批量撤销弹窗
+        function openBatchRevokeModal(certNos) {
+            document.getElementById('revokeCertNos').innerHTML = generateCertTagsHtml(certNos);
+            document.getElementById('revokeCertCount').textContent = certNos.length;
+            document.getElementById('revokeStartDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('revokeModal').classList.add('show');
+        }
+
+        // 打开批量恢复弹窗
+        function openBatchResumeModal(certNos) {
+            document.getElementById('resumeCertNos').innerHTML = generateCertTagsHtml(certNos);
+            document.getElementById('resumeCertCount').textContent = certNos.length;
+            document.getElementById('resumeModal').classList.add('show');
         }
 
         // 筛选展开/收起
@@ -2373,7 +2616,7 @@
         
         // 更新弹窗详情内容
         function updateModalDetail(certNo) {
-            const cert = certData.find(c => c.no === certNo) || certData[0];
+            const cert = allCertData.find(c => c.no === certNo) || allCertData[0];
             
             document.getElementById('modalCompanyName').textContent = cert.company;
             document.getElementById('modalCertNo').textContent = cert.no;
@@ -2464,8 +2707,8 @@
                 }];
                 countSpan.textContent = '（共 1 张证书）';
             } else {
-                const parent = certData.find(c => c.no === certNo);
-                const children = certData.filter(c => c.parentNo === certNo);
+                const parent = allCertData.find(c => c.no === certNo);
+                const children = allCertData.filter(c => c.parentNo === certNo);
                 certInfos = [
                     { 
                         type: 'parent', typeName: '母证', typeClass: 'parent', 
@@ -2531,23 +2774,29 @@
             downloadCert(certNo);
         }
         
-        // 打开暂停弹窗（单证书）
+        // 打开暂停弹窗（单证书/批量）
         function openPauseModal(certNo) {
-            document.getElementById('pauseCertNo').value = certNo;
+            const certNos = certNo ? [certNo] : getSelectedCertsWithChildren();
+            document.getElementById('pauseCertNos').innerHTML = generateCertTagsHtml(certNos);
+            document.getElementById('pauseCertCount').textContent = certNos.length;
             document.getElementById('pauseStartDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('pauseModal').classList.add('show');
         }
 
-        // 打开撤销弹窗（单证书）
+        // 打开撤销弹窗（单证书/批量）
         function openRevokeModal(certNo) {
-            document.getElementById('revokeCertNo').value = certNo;
+            const certNos = certNo ? [certNo] : getSelectedCertsWithChildren();
+            document.getElementById('revokeCertNos').innerHTML = generateCertTagsHtml(certNos);
+            document.getElementById('revokeCertCount').textContent = certNos.length;
             document.getElementById('revokeStartDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('revokeModal').classList.add('show');
         }
 
-        // 打开恢复弹窗
+        // 打开恢复弹窗（单证书/批量）
         function openResumeModal(certNo) {
-            document.getElementById('resumeCertNo').value = certNo;
+            const certNos = certNo ? [certNo] : getSelectedCertsWithChildren();
+            document.getElementById('resumeCertNos').innerHTML = generateCertTagsHtml(certNos);
+            document.getElementById('resumeCertCount').textContent = certNos.length;
             document.getElementById('resumeModal').classList.add('show');
         }
 
@@ -2564,7 +2813,7 @@
 
         // 提交暂停
         function submitPause() {
-            const certNo = document.getElementById('pauseCertNo').value;
+            const certNos = getSelectedCertsWithChildren();
             const reason = document.getElementById('pauseReason').value;
             const startDate = document.getElementById('pauseStartDate').value;
             const endDate = document.getElementById('pauseEndDate').value;
@@ -2572,53 +2821,59 @@
             if (!reason) { alert('请选择暂停原因'); return; }
             if (!startDate || !endDate) { alert('请选择暂停时间'); return; }
             
-            alert(`暂停申请已提交！\n证书：${certNo}\n原因：${reason}\n时间：${startDate} 至 ${endDate}\n\n等待审批中...`);
+            alert(`暂停申请已提交！\n证书数量：${certNos.length} 张\n原因：${reason}\n时间：${startDate} 至 ${endDate}\n\n等待审批中...`);
             closeModal('pauseModal');
             
             // 更新证书数据状态
-            const cert = certData.find(c => c.no === certNo);
-            if (cert) {
-                cert.auditStatus = '审批中';
-                renderCertView();
-            }
+            certNos.forEach(no => {
+                const cert = allCertData.find(c => c.no === no);
+                if (cert) {
+                    cert.auditStatus = '审批中';
+                }
+            });
+            renderCertView();
         }
 
         // 提交撤销
         function submitRevoke() {
-            const certNo = document.getElementById('revokeCertNo').value;
+            const certNos = getSelectedCertsWithChildren();
             const reason = document.getElementById('revokeReason').value;
             const startDate = document.getElementById('revokeStartDate').value;
             
             if (!reason) { alert('请选择撤销原因'); return; }
             if (!startDate) { alert('请选择撤销生效时间'); return; }
             
-            if (confirm(`确定要提交撤销申请吗？\n证书：${certNo}\n原因：${reason}\n生效时间：${startDate}\n\n此操作审批通过后不可恢复！`)) {
+            if (confirm(`确定要提交撤销申请吗？\n涉及证书：${certNos.length} 张\n原因：${reason}\n生效时间：${startDate}\n\n此操作审批通过后不可恢复！`)) {
                 alert('撤销申请已提交！等待审批中...');
                 closeModal('revokeModal');
                 
-                const cert = certData.find(c => c.no === certNo);
-                if (cert) {
-                    cert.auditStatus = '审批中';
-                    renderCertView();
-                }
+                certNos.forEach(no => {
+                    const cert = allCertData.find(c => c.no === no);
+                    if (cert) {
+                        cert.auditStatus = '审批中';
+                    }
+                });
+                renderCertView();
             }
         }
 
         // 提交恢复
         function submitResume() {
-            const certNo = document.getElementById('resumeCertNo').value;
+            const certNos = getSelectedCertsWithChildren();
             const reason = document.getElementById('resumeReason').value;
             
             if (!reason) { alert('请选择恢复原因'); return; }
             
-            alert(`恢复申请已提交！\n证书：${certNo}\n原因：${reason}\n\n等待审批中...`);
+            alert(`恢复申请已提交！\n证书数量：${certNos.length} 张\n原因：${reason}\n\n等待审批中...`);
             closeModal('resumeModal');
             
-            const cert = certData.find(c => c.no === certNo);
-            if (cert) {
-                cert.auditStatus = '审批中';
-                renderCertView();
-            }
+            certNos.forEach(no => {
+                const cert = allCertData.find(c => c.no === no);
+                if (cert) {
+                    cert.auditStatus = '审批中';
+                }
+            });
+            renderCertView();
         }
         
         // 从列表忽略风险
@@ -2633,7 +2888,7 @@
                 if (confirm(`确定要忽略证书 ${id} 的风险预警吗？`)) {
                     alert(`已忽略证书 ${id} 的风险预警`);
                     // 更新证书数据
-                    const cert = certData.find(c => c.no === id);
+                    const cert = allCertData.find(c => c.no === id);
                     if (cert) {
                         cert.process = '已处理';
                         renderCertView();
@@ -2852,7 +3107,7 @@
                     updateCompanyRiskStatus(currentCertNo, '已处理');
                 } else {
                     alert(`已处理证书 ${currentCertNo} 的风险预警，状态已更新为"已处理"。`);
-                    const cert = certData.find(c => c.no === currentCertNo);
+                    const cert = allCertData.find(c => c.no === currentCertNo);
                     if (cert) {
                         cert.process = '已处理';
                         renderCertView();
@@ -2891,7 +3146,7 @@
                     closeModal('riskProcessModal');
                     
                     Array.from(checkedCerts).forEach(cb => {
-                        const cert = certData.find(c => c.no === cb.value);
+                        const cert = allCertData.find(c => c.no === cb.value);
                         if (cert) cert.auditStatus = '审批中';
                     });
                     renderCertView();
@@ -2909,7 +3164,7 @@
                     closeModal('riskProcessModal');
                     
                     Array.from(checkedCerts).forEach(cb => {
-                        const cert = certData.find(c => c.no === cb.value);
+                        const cert = allCertData.find(c => c.no === cb.value);
                         if (cert) cert.auditStatus = '审批中';
                     });
                     renderCertView();
