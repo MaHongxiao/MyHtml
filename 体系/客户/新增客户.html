@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新增客户 - 客户信息管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .form-section {
+            scroll-margin-top: 80px;
+        }
+        .text-2xl {
+            font-size: 1.2rem !important;
+            line-height: 2rem;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .loading-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .highlight-warning {
+            border-color: #f59e0b !important;
+            background-color: #fffbeb !important;
+        }
+        .similarity-alert {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+        }
+        .duplicate-alert {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+        .group-center-badge {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+        }
+        .primary-contact-badge {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            color: #166534;
+        }
+        .similar-customer-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            margin: 0.25rem;
+            background: #fef3c7;
+            color: #92400e;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid #fcd34d;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .similar-customer-tag:hover {
+            background: #fcd34d;
+            transform: translateY(-1px);
+        }
+        .similar-customer-tag.exact-match {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #ef4444;
+        }
+        .similar-customer-tag.exact-match:hover {
+            background: #fecaca;
+        }
+        .similarity-panel {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .similarity-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .similarity-item:last-child {
+            border-bottom: none;
+        }
+        .similarity-score {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .score-high {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .score-medium {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .score-low {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+        .test-data-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <nav class="sticky-nav border-b border-gray-200 shadow-sm">
+        <div class="w-full px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-user-plus text-blue-600 mr-2"></i>新增客户
+                    </h1>
+                    <div class="flex bg-gray-100 rounded-lg p-1">
+                        <button onclick="switchCustomerType('domestic')" id="btn-domestic" 
+                            class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-white text-blue-600 shadow-sm">
+                            <i class="fas fa-flag mr-1"></i>国内客户
+                        </button>
+                        <button onclick="switchCustomerType('foreign')" id="btn-foreign" 
+                            class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-globe mr-1"></i>国外客户
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="saveDraft()" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">
+                        <i class="fas fa-save mr-1"></i>保存草稿
+                    </button>
+                    <button onclick="submitForm()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md">
+                        <i class="fas fa-check-circle mr-1"></i>确认创建
+                    </button>
+                </div>
+            </div>
+
+            <!-- 锚点导航 -->
+            <div class="mt-4 flex space-x-6 text-sm border-t pt-3 overflow-x-auto">
+                <a href="#basic-info" class="nav-link text-blue-600 font-medium hover:text-blue-800 flex items-center">
+                    <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 text-xs">1</span>
+                    基础信息
+                </a>
+                <a href="#contact-info" class="nav-link text-gray-600 hover:text-gray-800 flex items-center">
+                    <span class="w-6 h-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center mr-2 text-xs">2</span>
+                    联系人
+                </a>
+                <a href="#site-info" class="nav-link text-gray-600 hover:text-gray-800 flex items-center">
+                    <span class="w-6 h-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center mr-2 text-xs">3</span>
+                    客户场所
+                </a>
+                <a href="#invoice-info" id="nav-invoice" class="nav-link text-gray-600 hover:text-gray-800 flex items-center">
+                    <span class="w-6 h-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center mr-2 text-xs">4</span>
+                    开票信息
+                </a>
+                <a href="#requirement-info" class="nav-link text-gray-600 hover:text-gray-800 flex items-center">
+                    <span class="w-6 h-6 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center mr-2 text-xs">5</span>
+                    需求信息
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主体内容 -->
+    <div class="w-full px-6 py-6">
+        <form id="customerForm" class="space-y-6">
+
+            <!-- 国内客户搜索提示 -->
+            <div id="domestic-search-hint" class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start space-x-3">
+                <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                <div class="flex-1">
+                    <p class="text-sm text-blue-800 font-medium">国内客户必须通过AI底座平台企业信息接口创建</p>
+                    <p class="text-xs text-blue-600 mt-1">请在下方搜索框输入客户名称进行模糊搜索，系统将自动回填企业信息</p>
+                </div>
+            </div>
+
+            <!-- 国外客户名称相似性警告 -->
+            <div id="foreign-similarity-warning" class="hidden rounded-lg p-4 mb-4">
+                <div class="flex items-start space-x-3">
+                    <i class="fas fa-exclamation-triangle mt-0.5 text-lg" id="warning-icon"></i>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium mb-1" id="similarity-title">系统检测到相似客户名称</p>
+                        <p class="text-xs mb-3" id="similarity-desc">该客户名称与系统中已有客户相似，请确认是否重复录入</p>
+                        
+                        <!-- 相似客户列表面板 -->
+                        <div id="similarity-panel" class="similarity-panel hidden">
+                            <div class="text-xs font-medium text-gray-700 mb-2 flex items-center">
+                                <i class="fas fa-list mr-1"></i>检测到以下相似客户（点击可查看详情）：
+                            </div>
+                            <div id="similarity-list" class="space-y-1">
+                                <!-- 动态生成相似客户列表 -->
+                            </div>
+                        </div>
+
+                        <div class="mt-3 flex space-x-2" id="similarity-actions">
+                            <!-- 动态生成按钮 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 基础信息管理 -->
+            <section id="basic-info" class="form-section bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-building text-blue-600 mr-2"></i>基础信息管理
+                    </h2>
+                </div>
+
+                <div class="p-6">
+                    <!-- 国内客户基础信息 -->
+                    <div id="domestic-basic" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- 客户名称搜索 -->
+                        <div class="lg:col-span-2 relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                客户名称 <span class="text-red-500">*</span>
+                                <span class="text-xs text-gray-500 font-normal ml-1">支持模糊搜索</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text" id="customerName" name="customerName" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+                                    placeholder="请输入企业名称关键字搜索..."
+                                    oninput="handleCustomerSearch(this.value)">
+                                <div class="absolute right-3 top-2.5">
+                                    <i id="search-icon" class="fas fa-search text-gray-400"></i>
+                                    <div id="search-loading" class="loading-spinner hidden"></div>
+                                </div>
+                                <!-- 搜索结果下拉 -->
+                                <div id="search-results" class="hidden absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">输入至少2个字符开始搜索，选择后将自动回填企业信息</p>
+                        </div>
+
+                        <!-- 客户类型 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                客户类型 <span class="text-red-500">*</span>
+                            </label>
+                            <select id="customerType" name="customerType" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                onchange="handleCustomerTypeChange(this.value)">
+                                <option value="">请选择</option>
+                                <option value="central_enterprise">中央企业</option>
+                                <option value="local_soe">地方国企</option>
+                                <option value="central_ministry">中央部委</option>
+                                <option value="local_gov">地方政府</option>
+                                <option value="private">民营企业</option>
+                                <option value="institution">事业单位</option>
+                                <option value="individual">个体工商户</option>
+                                <option value="foreign_invested">外资企业</option>
+                                <option value="public_org">公共组织</option>
+                                <option value="personal">个人客商</option>
+                                <option value="other">其它</option>
+                            </select>
+                        </div>
+
+                        <!-- 证件号（根据类型动态变化） -->
+                        <div>
+                            <label id="cert-label" class="block text-sm font-medium text-gray-700 mb-2">
+                                统一社会信用代码 <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="certNo" name="certNo" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                                placeholder="搜索后将自动回填" readonly>
+                        </div>
+
+                        <!-- 行业分类 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                行业分类 <span class="text-red-500">*</span>
+                                <span class="text-xs text-gray-500 font-normal ml-1">按认监委分类</span>
+                            </label>
+                            <select id="industry" name="industry" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">请选择</option>
+                                <option value="agriculture">农、林、牧、渔业</option>
+                                <option value="mining">采矿业</option>
+                                <option value="manufacturing">制造业</option>
+                                <option value="electricity">电力、热力、燃气及水生产和供应业</option>
+                                <option value="construction">建筑业</option>
+                                <option value="wholesale">批发和零售业</option>
+                                <option value="transport">交通运输、仓储和邮政业</option>
+                                <option value="accommodation">住宿和餐饮业</option>
+                                <option value="it">信息传输、软件和信息技术服务业</option>
+                                <option value="finance">金融业</option>
+                                <option value="real_estate">房地产业</option>
+                                <option value="leasing">租赁和商务服务业</option>
+                                <option value="scientific">科学研究和技术服务业</option>
+                                <option value="water">水利、环境和公共设施管理业</option>
+                                <option value="resident">居民服务、修理和其他服务业</option>
+                                <option value="education">教育</option>
+                                <option value="health">卫生和社会工作</option>
+                                <option value="culture">文化、体育和娱乐业</option>
+                                <option value="public">公共管理、社会保障和社会组织</option>
+                                <option value="international">国际组织</option>
+                            </select>
+                        </div>
+
+                        <!-- 省市区三级联动 -->
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                地址（省市区） <span class="text-red-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <select id="province" name="province" onchange="handleProvinceChange(this.value)"
+                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">省/直辖市</option>
+                                </select>
+                                <select id="city" name="city" onchange="handleCityChange(this.value)"
+                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">市</option>
+                                </select>
+                                <select id="district" name="district"
+                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">区/县</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 客户来源 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">客户来源</label>
+                            <select id="source" name="source" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">请选择</option>
+                                <option value="self_developed">自主开发</option>
+                                <option value="internal_refer">内部推荐</option>
+                                <option value="external_refer">外部渠道</option>
+                            </select>
+                        </div>
+
+                        <!-- 详细地址 -->
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                详细地址 <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="detailAddress" name="detailAddress" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="街道、门牌号等">
+                        </div>
+
+                        <!-- 法人信息 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">法人信息</label>
+                            <input type="text" id="legalPerson" name="legalPerson" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="法定代表人姓名">
+                        </div>
+
+                        <!-- 注册资金 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">注册资金（万元）</label>
+                            <input type="number" id="registeredCapital" name="registeredCapital" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="请输入金额">
+                        </div>
+
+                        <!-- 经营期限类型 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                经营期限类型 <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex space-x-4">
+                                <label class="flex items-center">
+                                    <input type="radio" name="termType" value="fixed" checked 
+                                        class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                        onchange="handleTermTypeChange('fixed')">
+                                    <span class="ml-2 text-sm text-gray-700">有固定期限</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="termType" value="indefinite" 
+                                        class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                        onchange="handleTermTypeChange('indefinite')">
+                                    <span class="ml-2 text-sm text-gray-700">无固定期限</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 经营期限日期 -->
+                        <div id="term-date-container" class="lg:col-span-2">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        开始日期 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="date" id="startDate" name="startDate" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <div id="end-date-wrapper">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        结束日期 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="date" id="endDate" name="endDate" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 成立日期 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">成立日期</label>
+                            <input type="date" id="establishDate" name="establishDate" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- 企业分类 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                企业分类 <span class="text-red-500">*</span>
+                            </label>
+                            <select id="enterpriseClass" name="enterpriseClass" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">请选择</option>
+                                <option value="A+">A+</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                        </div>
+
+                        <!-- 备注信息（国内客户） -->
+                        <div class="lg:col-span-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                备注信息
+                                <span class="text-xs text-gray-500 font-normal ml-1">（非必填）</span>
+                            </label>
+                            <textarea id="domesticRemarks" name="domesticRemarks" rows="3"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="请输入备注信息，如特殊要求、注意事项、内部说明等..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 国外客户基础信息（默认隐藏） -->
+                    <div id="foreign-basic" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- 客户名称 -->
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                客户名称 <span class="text-red-500">*</span>
+                                <span class="text-xs text-gray-500 font-normal ml-1">手动录入，系统将进行相似性校验</span>
+                            </label>
+                            <input type="text" id="foreignCustomerName" name="foreignCustomerName" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="请输入国外客户完整名称（试试输入 ceshishuju）"
+                                oninput="checkSimilarityRealtime(this.value)"
+                                onblur="checkSimilarity(this.value)">
+                        </div>
+
+                        <!-- 国家及代码 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                国家及代码 <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex space-x-2">
+                                <select id="country" name="country" 
+                                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateCountryCode(this.value)">
+                                    <option value="">选择国家</option>
+                                    <option value="US">美国 (USA)</option>
+                                    <option value="GB">英国 (UK)</option>
+                                    <option value="DE">德国 (Germany)</option>
+                                    <option value="FR">法国 (France)</option>
+                                    <option value="JP">日本 (Japan)</option>
+                                    <option value="KR">韩国 (Korea)</option>
+                                    <option value="SG">新加坡 (Singapore)</option>
+                                    <option value="AU">澳大利亚 (Australia)</option>
+                                    <option value="CA">加拿大 (Canada)</option>
+                                    <option value="NL">荷兰 (Netherlands)</option>
+                                    <option value="CH">瑞士 (Switzerland)</option>
+                                    <option value="SE">瑞典 (Sweden)</option>
+                                    <option value="IT">意大利 (Italy)</option>
+                                    <option value="ES">西班牙 (Spain)</option>
+                                    <option value="RU">俄罗斯 (Russia)</option>
+                                    <option value="IN">印度 (India)</option>
+                                    <option value="BR">巴西 (Brazil)</option>
+                                    <option value="OTHER">其它</option>
+                                </select>
+                                <input type="text" id="countryCode" name="countryCode" 
+                                    class="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                                    placeholder="代码" readonly>
+                            </div>
+                        </div>
+
+                        <!-- 国外客户类型 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                客户类型 <span class="text-red-500">*</span>
+                            </label>
+                            <select id="foreignCustomerType" name="foreignCustomerType" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">请选择</option>
+                                <option value="enterprise">企业</option>
+                                <option value="personal">个人客商</option>
+                                <option value="public_org">公共组织</option>
+                                <option value="other">其它</option>
+                            </select>
+                        </div>
+
+                        <!-- 客户来源 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">客户来源</label>
+                            <select id="foreignSource" name="foreignSource" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">请选择</option>
+                                <option value="self_developed">自主开发</option>
+                                <option value="internal_refer">内部推荐</option>
+                                <option value="external_refer">外部渠道</option>
+                            </select>
+                        </div>
+
+                        <!-- 税号类型标识 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">税号类型</label>
+                            <select id="taxType" name="taxType" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">请选择</option>
+                                <option value="VAT">VAT No. (增值税号)</option>
+                                <option value="EIN">EIN (雇主识别号)</option>
+                                <option value="TAX">TAX ID (税务ID)</option>
+                                <option value="REG">Registration No. (商业登记号)</option>
+                            </select>
+                        </div>
+
+                        <!-- 税号 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">税号/登记号</label>
+                            <input type="text" id="foreignTaxNo" name="foreignTaxNo" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="请输入税号或商业登记号">
+                        </div>
+
+                        <!-- 行业分类 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                行业分类 <span class="text-red-500">*</span>
+                            </label>
+                            <select id="foreignIndustry" name="foreignIndustry" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">请选择</option>
+                                <option value="agriculture">农、林、牧、渔业</option>
+                                <option value="mining">采矿业</option>
+                                <option value="manufacturing">制造业</option>
+                                <option value="electricity">电力、热力、燃气及水生产和供应业</option>
+                                <option value="construction">建筑业</option>
+                                <option value="wholesale">批发和零售业</option>
+                                <option value="transport">交通运输、仓储和邮政业</option>
+                                <option value="accommodation">住宿和餐饮业</option>
+                                <option value="it">信息传输、软件和信息技术服务业</option>
+                                <option value="finance">金融业</option>
+                                <option value="real_estate">房地产业</option>
+                                <option value="leasing">租赁和商务服务业</option>
+                                <option value="scientific">科学研究和技术服务业</option>
+                                <option value="water">水利、环境和公共设施管理业</option>
+                                <option value="resident">居民服务、修理和其他服务业</option>
+                                <option value="education">教育</option>
+                                <option value="health">卫生和社会工作</option>
+                                <option value="culture">文化、体育和娱乐业</option>
+                                <option value="public">公共管理、社会保障和社会组织</option>
+                                <option value="international">国际组织</option>
+                            </select>
+                        </div>
+
+                        <!-- 注册资金及币种 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">注册资金及币种</label>
+                            <div class="flex space-x-2">
+                                <input type="number" id="foreignCapital" name="foreignCapital" 
+                                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="金额">
+                                <select id="currency" name="currency" 
+                                    class="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="GBP">GBP</option>
+                                    <option value="JPY">JPY</option>
+                                    <option value="CNY">CNY</option>
+                                    <option value="OTHER">其它</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 成立日期 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">成立日期</label>
+                            <input type="date" id="foreignEstablishDate" name="foreignEstablishDate" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- 国外地址 -->
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">地址信息</label>
+                            <textarea id="foreignAddress" name="foreignAddress" rows="2"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="国家、城市、街道地址、邮编"></textarea>
+                        </div>
+
+                        <!-- 法人信息 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">法人信息</label>
+                            <input type="text" id="foreignLegalPerson" name="foreignLegalPerson" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="法定代表人">
+                        </div>
+
+                        <!-- 企业分类 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                企业分类 <span class="text-red-500">*</span>
+                            </label>
+                            <select id="foreignEnterpriseClass" name="foreignEnterpriseClass" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">请选择</option>
+                                <option value="A+">A+</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                        </div>
+
+                        <!-- 备注信息（国外客户） -->
+                        <div class="lg:col-span-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                备注信息
+                                <span class="text-xs text-gray-500 font-normal ml-1">（非必填）</span>
+                            </label>
+                            <textarea id="foreignRemarks" name="foreignRemarks" rows="3"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="请输入备注信息，如特殊要求、注意事项等..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 联系人维护 -->
+            <section id="contact-info" class="form-section bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-address-book text-blue-600 mr-2"></i>联系人维护
+                    </h2>
+                    <button type="button" onclick="addContact()" 
+                        class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
+                        <i class="fas fa-plus mr-1"></i>添加联系人
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div id="contacts-container" class="space-y-4">
+                        <!-- 联系人卡片模板 -->
+                    </div>
+                    <div id="no-contacts" class="text-center py-8 text-gray-500">
+                        <i class="fas fa-user-plus text-4xl mb-2 text-gray-300"></i>
+                        <p>暂无联系人，请点击上方按钮添加</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 客户场所维护 -->
+            <section id="site-info" class="form-section bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>客户场所维护
+                    </h2>
+                    <button type="button" onclick="addSite()" 
+                        class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium">
+                        <i class="fas fa-plus mr-1"></i>添加场所
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div id="sites-container" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- 场所卡片模板 -->
+                    </div>
+                    <div id="no-sites" class="text-center py-8 text-gray-500 lg:col-span-2">
+                        <i class="fas fa-building text-4xl mb-2 text-gray-300"></i>
+                        <p>暂无场所信息，请点击上方按钮添加</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 开票信息维护 -->
+            <section id="invoice-info" class="form-section bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-file-invoice-dollar text-blue-600 mr-2"></i>开票信息维护
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">发票名称</label>
+                            <input type="text" id="invoiceName" name="invoiceName" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="发票抬头名称">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">税号</label>
+                            <input type="text" id="invoiceTaxNo" name="invoiceTaxNo" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="纳税人识别号">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">单位地址</label>
+                            <input type="text" id="invoiceAddress" name="invoiceAddress" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="注册地址">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">联系电话</label>
+                            <input type="text" id="invoicePhone" name="invoicePhone" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="联系电话">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">开户银行</label>
+                            <input type="text" id="invoiceBank" name="invoiceBank" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="开户行全称">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">银行账户</label>
+                            <input type="text" id="invoiceAccount" name="invoiceAccount" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="银行账号">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 客户需求信息 -->
+            <section id="requirement-info" class="form-section bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-clipboard-list text-blue-600 mr-2"></i>客户需求信息
+                        <span class="ml-2 text-xs font-normal text-gray-500">（非必填）</span>
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <textarea id="requirements" name="requirements" rows="4"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="请录入客户潜在合作意向、特殊服务要求等补充信息..."></textarea>
+                </div>
+            </section>
+        </form>
+    </div>
+
+    <!-- 测试数据匹配弹窗 -->
+    <div id="test-data-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden">
+            <!-- 头部 -->
+            <div class="bg-gradient-to-r from-violet-600 to-purple-600 p-6 flex justify-between items-center">
+                <div class="flex items-center text-white">
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-vial text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold">🧪 检测到测试数据匹配</h3>
+                        <p class="text-violet-100 text-sm mt-1">系统发现您输入的关键词匹配到测试数据库</p>
+                    </div>
+                </div>
+                <button onclick="closeTestDataModal()" class="text-white hover:text-violet-200 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- 内容 -->
+            <div class="p-6 overflow-y-auto max-h-[50vh]">
+                <div class="bg-violet-50 border border-violet-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-violet-600 mt-1 mr-2"></i>
+                        <div class="text-sm text-violet-800">
+                            <p class="font-medium mb-1">共检测到 <span id="test-match-count" class="text-lg font-bold text-violet-900">2</span> 条重复数据</p>
+                            <p class="text-violet-600">以下是系统中已存在的测试客户，请查看确认是否重复录入</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 测试数据列表 -->
+                <div id="test-data-list" class="space-y-4">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="p-6 border-t border-gray-200 bg-gray-50 flex justify-end space-x-3">
+                <button onclick="clearCustomerNameFromModal()" class="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex items-center font-medium">
+                    <i class="fas fa-undo mr-2"></i>重新输入
+                </button>
+                <button onclick="confirmTestDataContinue()" class="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg hover:from-violet-700 hover:to-purple-700 transition-all flex items-center font-medium shadow-lg shadow-violet-200">
+                    <i class="fas fa-check mr-2"></i>确认不重复，继续录入
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 相似客户详情模态框 -->
+    <div id="similar-detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-800">客户详情</h3>
+                <button onclick="closeSimilarDetailModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6" id="similar-detail-content">
+                <!-- 动态内容 -->
+            </div>
+            <div class="p-6 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+                <button onclick="closeSimilarDetailModal()" class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认创建客户模态框（替代原来的审核模态框） -->
+    <div id="confirm-create-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden">
+            <!-- 头部 -->
+            <div class="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-center">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-check-circle text-3xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">确认创建客户</h3>
+                <p class="text-green-100 text-sm mt-1">请确认以下客户信息无误后创建</p>
+            </div>
+            
+            <!-- 内容 -->
+            <div class="p-6">
+                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <h4 class="font-medium text-gray-800 mb-3 flex items-center">
+                        <i class="fas fa-user-tie mr-2 text-green-600"></i>客户信息预览
+                    </h4>
+                    <div id="confirm-customer-info" class="space-y-2 text-sm">
+                        <!-- 动态生成客户信息摘要 -->
+                    </div>
+                </div>
+
+                <div class="flex items-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <i class="fas fa-exclamation-circle text-yellow-600 mr-2"></i>
+                    <span class="text-xs text-yellow-800">创建后客户信息将直接进入系统，请确保信息准确无误</span>
+                </div>
+            </div>
+
+            <!-- 底部按钮 -->
+            <div class="p-6 border-t border-gray-200 bg-gray-50 flex justify-end space-x-3">
+                <button onclick="closeConfirmModal()" class="px-5 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-times mr-1"></i>取消
+                </button>
+                <button onclick="confirmCreateCustomer()" class="px-5 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg shadow-green-200 flex items-center">
+                    <i class="fas fa-check mr-1"></i>确认创建
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let currentCustomerType = 'domestic';
+        let contacts = [];
+        let sites = [];
+        let searchTimeout = null;
+        let similarityCheckTimeout = null;
+        window.isDuplicateCustomer = false;
+        window.isStrictDuplicate = false;
+        
+        // 假数据：系统中已有的国外客户（大幅扩充，包含ceshishuju测试数据）
+        const existingForeignCustomers = [
+            // 特殊测试数据 - ceshishuju（输入ceshishuju时会匹配这两个）
+            { name: 'ceshishuju001', country: 'US', type: 'enterprise', taxNo: '12-3456789', address: '123 Test St, New York, NY 10001', legal: 'Test User 1', capital: '1000000', industry: 'it', matchType: 'partial' },
+            { name: 'myceshishuju002', country: 'GB', type: 'enterprise', taxNo: 'GB123456789', address: '456 Test Ave, London EC2A 4DP', legal: 'Test User 2', capital: '2000000', industry: 'manufacturing', matchType: 'partial' },
+            
+            // 完全匹配测试数据
+            { name: '123', country: 'US', type: 'enterprise', taxNo: '12-3456789', address: '123 Number St, Digital City', legal: 'Number Admin', capital: '500000', industry: 'other', matchType: 'exact' },
+            
+            // 常见国外企业数据（50条）
+            { name: 'ABC Trading Co., Ltd.', country: 'US', type: 'enterprise', taxNo: '98-7654321', address: '1 World Trade Center, New York, NY 10007', legal: 'John Smith', capital: '5000000', industry: 'wholesale', matchType: 'normal' },
+            { name: 'ABC Trading Company Limited', country: 'GB', type: 'enterprise', taxNo: 'GB123456789', address: '10 Downing Street, London SW1A 2AA', legal: 'James Brown', capital: '3000000', industry: 'wholesale', matchType: 'normal' },
+            { name: 'Tech Solutions Inc.', country: 'US', type: 'enterprise', taxNo: '11-2223334', address: '1600 Amphitheatre Parkway, Mountain View, CA 94043', legal: 'Larry Page', capital: '10000000', industry: 'it', matchType: 'normal' },
+            { name: 'Tech Solutions International Ltd.', country: 'CA', type: 'enterprise', taxNo: 'CA987654321', address: '100 King St W, Toronto, ON M5X 1C7', legal: 'Michael Chen', capital: '8000000', industry: 'it', matchType: 'normal' },
+            { name: 'Global Manufacturing GmbH', country: 'DE', type: 'enterprise', taxNo: 'DE123456789', address: 'Marienplatz 1, 80331 Munich', legal: 'Hans Mueller', capital: '15000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Global Manufacturing Group', country: 'DE', type: 'enterprise', taxNo: 'DE987654321', address: 'Potsdamer Platz 1, 10785 Berlin', legal: 'Klaus Schmidt', capital: '20000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Apple Inc.', country: 'US', type: 'enterprise', taxNo: '94-2404110', address: '1 Apple Park Way, Cupertino, CA 95014', legal: 'Tim Cook', capital: '500000000', industry: 'it', matchType: 'normal' },
+            { name: 'Apple Japan Co., Ltd.', country: 'JP', type: 'enterprise', taxNo: 'J123456789', address: '2-2-1 Roppongi, Minato-ku, Tokyo 106-0032', legal: 'Yoshiaki Suzuki', capital: '100000000', industry: 'it', matchType: 'normal' },
+            { name: 'Microsoft Corporation', country: 'US', type: 'enterprise', taxNo: '91-1144442', address: '1 Microsoft Way, Redmond, WA 98052', legal: 'Satya Nadella', capital: '800000000', industry: 'it', matchType: 'normal' },
+            { name: 'Microsoft Ireland Operations Ltd.', country: 'IE', type: 'enterprise', taxNo: 'IE9876543', address: 'South County Business Park, Dublin 18', legal: 'Cathriona Hallahan', capital: '200000000', industry: 'it', matchType: 'normal' },
+            { name: 'Samsung Electronics Co., Ltd.', country: 'KR', type: 'enterprise', taxNo: 'KRA123456', address: '129 Samsung-ro, Suwon 16677', legal: 'Jae-yong Lee', capital: '300000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Samsung Semiconductor', country: 'US', type: 'enterprise', taxNo: '77-8889990', address: '3655 N 1st St, San Jose, CA 95134', legal: 'Han Jin-man', capital: '150000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Siemens AG', country: 'DE', type: 'enterprise', taxNo: 'DE123456789', address: 'Werner-von-Siemens-Straße 1, 80333 Munich', legal: 'Roland Busch', capital: '400000000', industry: 'electricity', matchType: 'normal' },
+            { name: 'Siemens Healthineers', country: 'DE', type: 'enterprise', taxNo: 'DE987654321', address: 'Henkestraße 127, 91052 Erlangen', legal: 'Bernd Montag', capital: '100000000', industry: 'health', matchType: 'normal' },
+            { name: 'Toyota Motor Corporation', country: 'JP', type: 'enterprise', taxNo: 'J987654321', address: '1 Toyota-cho, Toyota City, Aichi 471-8571', legal: 'Akio Toyoda', capital: '600000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Toyota Motor Sales USA', country: 'US', type: 'enterprise', taxNo: '95-1234567', address: '6565 Headquarters Dr, Plano, TX 75024', legal: 'James Lentz', capital: '200000000', industry: 'wholesale', matchType: 'normal' },
+            { name: 'Shell plc', country: 'NL', type: 'enterprise', taxNo: 'NL123456789B01', address: 'Carel van Bylandtlaan 30, 2596 HR The Hague', legal: 'Wael Sawan', capital: '350000000', industry: 'mining', matchType: 'normal' },
+            { name: 'Shell Energy Europe', country: 'GB', type: 'enterprise', taxNo: 'GB987654321', address: '10 Upper Bank Street, London E14 5BF', legal: 'Steve Hill', capital: '50000000', industry: 'electricity', matchType: 'normal' },
+            { name: 'Nestlé S.A.', country: 'CH', type: 'enterprise', taxNo: 'CHE-123.456.789', address: 'Avenue Nestlé 55, 1800 Vevey', legal: 'Ulf Mark Schneider', capital: '450000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Nestlé USA', country: 'US', type: 'enterprise', taxNo: '36-1234567', address: '1812 N Moore St, Arlington, VA 22209', legal: 'Steve Presley', capital: '80000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Volkswagen Group', country: 'DE', type: 'enterprise', taxNo: 'DE111111111', address: 'Berliner Ring 2, 38440 Wolfsburg', legal: 'Oliver Blume', capital: '550000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Volkswagen of America', country: 'US', type: 'enterprise', taxNo: '54-1234567', address: '2200 Ferdinand Porsche Dr, Herndon, VA 20171', legal: 'Pablo Di Si', capital: '100000000', industry: 'wholesale', matchType: 'normal' },
+            { name: 'BMW AG', country: 'DE', type: 'enterprise', taxNo: 'DE222222222', address: 'Petuelring 130, 80809 Munich', legal: 'Oliver Zipse', capital: '400000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'BMW North America LLC', country: 'US', type: 'enterprise', taxNo: '13-1234567', address: '300 Chestnut Ridge Road, Woodcliff Lake, NJ 07677', legal: 'Sebastian Mackensen', capital: '120000000', industry: 'wholesale', matchType: 'normal' },
+            { name: 'Mercedes-Benz AG', country: 'DE', type: 'enterprise', taxNo: 'DE333333333', address: 'Mercedesstraße 120, 70372 Stuttgart', legal: 'Ola Källenius', capital: '480000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Mercedes-Benz USA', country: 'US', type: 'enterprise', taxNo: '58-1234567', address: '1 Mercedes-Benz Drive, Sandy Springs, GA 30328', legal: 'Dimitris Psillakis', capital: '90000000', industry: 'wholesale', matchType: 'normal' },
+            { name: 'Amazon.com Inc.', country: 'US', type: 'enterprise', taxNo: '91-1646860', address: '410 Terry Ave N, Seattle, WA 98109', legal: 'Andy Jassy', capital: '1500000000', industry: 'wholesale', matchType: 'normal' },
+            { name: 'Amazon Web Services', country: 'US', type: 'enterprise', taxNo: '91-1646861', address: '410 Terry Ave N, Seattle, WA 98109', legal: 'Adam Selipsky', capital: '800000000', industry: 'it', matchType: 'normal' },
+            { name: 'Google LLC', country: 'US', type: 'enterprise', taxNo: '77-0493581', address: '1600 Amphitheatre Parkway, Mountain View, CA 94043', legal: 'Sundar Pichai', capital: '1200000000', industry: 'it', matchType: 'normal' },
+            { name: 'Google UK Ltd.', country: 'GB', type: 'enterprise', taxNo: 'GB789456123', address: '6 Pancras Square, London N1C 4AG', legal: 'Debbie Weinstein', capital: '200000000', industry: 'it', matchType: 'normal' },
+            { name: 'Facebook Inc.', country: 'US', type: 'enterprise', taxNo: '20-1665261', address: '1 Hacker Way, Menlo Park, CA 94025', legal: 'Mark Zuckerberg', capital: '900000000', industry: 'it', matchType: 'normal' },
+            { name: 'Meta Platforms Ireland', country: 'IE', type: 'enterprise', taxNo: 'IE1234567', address: 'Merrion Road, Dublin 4, D04 X3X4', legal: 'Jameson Spence', capital: '150000000', industry: 'it', matchType: 'normal' },
+            { name: 'Tesla Inc.', country: 'US', type: 'enterprise', taxNo: '91-2197729', address: '1 Tesla Road, Austin, TX 78725', legal: 'Elon Musk', capital: '800000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Tesla Motors Netherlands', country: 'NL', type: 'enterprise', taxNo: 'NL987654321B01', address: 'Krijgsman 1, 1186 DM Amstelveen', legal: 'Jeroen van der Meer', capital: '100000000', industry: 'wholesale', matchType: 'normal' },
+            { name: 'IBM Corporation', country: 'US', type: 'enterprise', taxNo: '13-0871985', address: '1 New Orchard Road, Armonk, NY 10504', legal: 'Arvind Krishna', capital: '600000000', industry: 'it', matchType: 'normal' },
+            { name: 'IBM UK Ltd.', country: 'GB', type: 'enterprise', taxNo: 'GB456789123', address: '76/78 Upper Ground, London SE1 9PZ', legal: 'Nicola Hodson', capital: '80000000', industry: 'it', matchType: 'normal' },
+            { name: 'Oracle Corporation', country: 'US', type: 'enterprise', taxNo: '54-2185193', address: '2300 Oracle Way, Austin, TX 78741', legal: 'Safra Catz', capital: '700000000', industry: 'it', matchType: 'normal' },
+            { name: 'Oracle Nederland', country: 'NL', type: 'enterprise', taxNo: 'NL123987456B01', address: 'Evert van de Beekstraat 354, 1118 CL Schiphol', legal: 'Remco de Boer', capital: '120000000', industry: 'it', matchType: 'normal' },
+            { name: 'Intel Corporation', country: 'US', type: 'enterprise', taxNo: '94-1672743', address: '2200 Mission College Blvd, Santa Clara, CA 95054', legal: 'Pat Gelsinger', capital: '900000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Intel Germany GmbH', country: 'DE', type: 'enterprise', taxNo: 'DE456789123', address: 'Am Campeon 10, 85579 Neubiberg', legal: 'Christoph Schell', capital: '150000000', industry: 'manufacturing', matchType: 'normal' },
+            { name: 'Cisco Systems Inc.', country: 'US', type: 'enterprise', taxNo: '77-0059951', address: '170 West Tasman Dr, San Jose, CA 95134', legal: 'Chuck Robbins', capital: '550000000', industry: 'it', matchType: 'normal' },
+            { name: 'Cisco Systems Switzerland', country: 'CH', type: 'enterprise', taxNo: 'CHE-456.789.123', address: 'Richtistrasse 7, 8304 Wallisellen', legal: 'Oliver Tuszik', capital: '80000000', industry: 'it', matchType: 'normal' },
+            { name: 'Pfizer Inc.', country: 'US', type: 'enterprise', taxNo: '13-5315170', address: '235 East 42nd Street, New York, NY 10017', legal: 'Albert Bourla', capital: '400000000', industry: 'health', matchType: 'normal' },
+            { name: 'Pfizer Europe', country: 'BE', type: 'enterprise', taxNo: 'BE0123456789', address: 'Boulevard de la Plaine 17, 1050 Brussels', legal: 'Johan Vansteenkiste', capital: '120000000', industry: 'health', matchType: 'normal' },
+            { name: 'Johnson & Johnson', country: 'US', type: 'enterprise', taxNo: '22-1024240', address: '1 Johnson & Johnson Plaza, New Brunswick, NJ 08933', legal: 'Joaquin Duato', capital: '450000000', industry: 'health', matchType: 'normal' },
+            { name: 'J&J MedTech', country: 'IE', type: 'enterprise', taxNo: 'IE9871234', address: 'Loughmore, Cleaboy, Waterford X91 F8V3', legal: 'Ashley McEvoy', capital: '100000000', industry: 'health', matchType: 'normal' },
+            { name: 'Exxon Mobil Corporation', country: 'US', type: 'enterprise', taxNo: '13-5409005', address: '22777 Springwoods Village Pkwy, Spring, TX 77389', legal: 'Darren Woods', capital: '380000000', industry: 'mining', matchType: 'normal' },
+            { name: 'ExxonMobil Europe', country: 'BE', type: 'enterprise', taxNo: 'BE9876543210', address: 'Havensesteenweg 502, 1930 Brussels', legal: 'Josiane Poncin', capital: '60000000', industry: 'mining', matchType: 'normal' },
+            { name: 'Chevron Corporation', country: 'US', type: 'enterprise', taxNo: '94-0890210', address: '6001 Bollinger Canyon Rd, San Ramon, CA 94583', legal: 'Mike Wirth', capital: '350000000', industry: 'mining', matchType: 'normal' },
+            { name: 'Chevron Australia', country: 'AU', type: 'enterprise', taxNo: 'AU123456789', address: '250 St Georges Terrace, Perth WA 6000', legal: 'Al Williams', capital: '80000000', industry: 'mining', matchType: 'normal' },
+            { name: 'TotalEnergies SE', country: 'FR', type: 'enterprise', taxNo: 'FR12345678901', address: '2 place Jean Millier, 92400 Courbevoie', legal: 'Patrick Pouyanné', capital: '300000000', industry: 'mining', matchType: 'normal' },
+            { name: 'TotalEnergies UK', country: 'GB', type: 'enterprise', taxNo: 'GB789123456', address: '10 Upper Bank Street, London E14 5BF', legal: 'Jean-Luc Guiziou', capital: '50000000', industry: 'mining', matchType: 'normal' }
+        ];
+
+        // 模拟省市区数据
+        const regionData = {
+            'beijing': { name: '北京市', cities: { 'beijing_city': { name: '北京市', districts: ['dongcheng', 'xicheng', 'chaoyang', 'haidian'] } } },
+            'shanghai': { name: '上海市', cities: { 'shanghai_city': { name: '上海市', districts: ['huangpu', 'xuhui', 'changning', 'jingan'] } } },
+            'guangdong': { name: '广东省', cities: { 'guangzhou': { name: '广州市', districts: ['tianhe', 'yuexiu', 'haizhu', 'liwan'] }, 'shenzhen': { name: '深圳市', districts: ['futian', 'nanshan', 'luohu', 'baoan'] } } },
+            'jiangsu': { name: '江苏省', cities: { 'nanjing': { name: '南京市', districts: ['xuanwu', 'gulou', 'jianye', 'qinhuai'] }, 'suzhou': { name: '苏州市', districts: ['gusu', 'hqiu', 'wuzhong', 'xiangcheng'] } } },
+            'zhejiang': { name: '浙江省', cities: { 'hangzhou': { name: '杭州市', districts: ['shangcheng', 'xiacheng', 'jianggan', 'gongshu'] }, 'ningbo': { name: '宁波市', districts: ['haishu', 'jiangbei', 'zhenhai', 'beilun'] } } }
+        };
+
+        const districtNames = {
+            'dongcheng': '东城区', 'xicheng': '西城区', 'chaoyang': '朝阳区', 'haidian': '海淀区',
+            'huangpu': '黄浦区', 'xuhui': '徐汇区', 'changning': '长宁区', 'jingan': '静安区',
+            'tianhe': '天河区', 'yuexiu': '越秀区', 'haizhu': '海珠区', 'liwan': '荔湾区',
+            'futian': '福田区', 'nanshan': '南山区', 'luohu': '罗湖区', 'baoan': '宝安区'
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initProvinceSelect();
+            // 默认添加一个联系人
+            addContact();
+        });
+
+        // 客户类型切换
+        function switchCustomerType(type) {
+            currentCustomerType = type;
+            const domesticBtn = document.getElementById('btn-domestic');
+            const foreignBtn = document.getElementById('btn-foreign');
+            const domesticBasic = document.getElementById('domestic-basic');
+            const foreignBasic = document.getElementById('foreign-basic');
+            const domesticHint = document.getElementById('domestic-search-hint');
+            const foreignWarning = document.getElementById('foreign-similarity-warning');
+            const invoiceSection = document.getElementById('invoice-info');
+            const navInvoice = document.getElementById('nav-invoice');
+
+            if (type === 'domestic') {
+                domesticBtn.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+                domesticBtn.classList.remove('text-gray-600');
+                foreignBtn.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+                foreignBtn.classList.add('text-gray-600');
+                domesticBasic.classList.remove('hidden');
+                foreignBasic.classList.add('hidden');
+                domesticHint.classList.remove('hidden');
+                foreignWarning.classList.add('hidden');
+                // 显示开票信息
+                invoiceSection.classList.remove('hidden');
+                navInvoice.classList.remove('hidden');
+            } else {
+                foreignBtn.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+                foreignBtn.classList.remove('text-gray-600');
+                domesticBtn.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+                domesticBtn.classList.add('text-gray-600');
+                foreignBasic.classList.remove('hidden');
+                domesticBasic.classList.add('hidden');
+                domesticHint.classList.add('hidden');
+                // 隐藏开票信息（国外客户不需要）
+                invoiceSection.classList.add('hidden');
+                navInvoice.classList.add('hidden');
+            }
+        }
+
+        // 客户名称搜索（模拟AI底座平台接口）
+        function handleCustomerSearch(keyword) {
+            clearTimeout(searchTimeout);
+            const resultsDiv = document.getElementById('search-results');
+            const loadingDiv = document.getElementById('search-loading');
+            const searchIcon = document.getElementById('search-icon');
+
+            if (keyword.length < 2) {
+                resultsDiv.classList.add('hidden');
+                return;
+            }
+
+            loadingDiv.classList.remove('hidden');
+            searchIcon.classList.add('hidden');
+
+            searchTimeout = setTimeout(() => {
+                // 模拟API返回数据
+                const mockResults = [
+                    { name: '中国石油天然气集团有限公司', type: 'central_enterprise', certNo: '91110000100010433W', province: 'beijing', city: 'beijing_city', district: 'dongcheng', address: '东城区东直门北大街9号', legal: '戴厚良', capital: '48690000', establishDate: '1990-02-09', industry: 'mining' },
+                    { name: '中国石油化工集团有限公司', type: 'central_enterprise', certNo: '9111000010006289X1', province: 'beijing', city: 'beijing_city', district: 'chaoyang', address: '朝阳区朝阳门北大街22号', legal: '马永生', capital: '32654722', establishDate: '1998-07-27', industry: 'mining' },
+                    { name: '国家电网有限公司', type: 'central_enterprise', certNo: '9111000010001065XA', province: 'beijing', city: 'beijing_city', district: 'xicheng', address: '西城区西长安街86号', legal: '辛保安', capital: '82950000', establishDate: '2003-05-13', industry: 'electricity' }
+                ].filter(item => item.name.includes(keyword));
+
+                loadingDiv.classList.add('hidden');
+                searchIcon.classList.remove('hidden');
+
+                if (mockResults.length > 0) {
+                    resultsDiv.innerHTML = mockResults.map(item => `
+                        <div class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0" onclick="selectCustomer(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                            <div class="font-medium text-gray-800">${item.name}</div>
+                            <div class="text-xs text-gray-500 mt-1">${item.certNo} | 中央企业</div>
+                        </div>
+                    `).join('');
+                    resultsDiv.classList.remove('hidden');
+                } else {
+                    resultsDiv.innerHTML = '<div class="px-4 py-3 text-gray-500 text-sm">未找到匹配企业，请更换关键词</div>';
+                    resultsDiv.classList.remove('hidden');
+                }
+            }, 500);
+        }
+
+        // 选择客户（回填信息）
+        function selectCustomer(data) {
+            document.getElementById('customerName').value = data.name;
+            document.getElementById('customerName').setAttribute('readonly', true);
+            document.getElementById('customerName').classList.add('bg-gray-100');
+            document.getElementById('certNo').value = data.certNo;
+            document.getElementById('industry').value = data.industry;
+            document.getElementById('legalPerson').value = data.legal;
+            document.getElementById('registeredCapital').value = data.capital;
+            document.getElementById('establishDate').value = data.establishDate;
+            document.getElementById('detailAddress').value = data.address;
+            document.getElementById('customerType').value = data.type;
+            handleCustomerTypeChange(data.type);
+
+            // 回填地址
+            document.getElementById('province').value = data.province;
+            handleProvinceChange(data.province);
+            setTimeout(() => {
+                document.getElementById('city').value = data.city;
+                handleCityChange(data.city);
+                setTimeout(() => {
+                    document.getElementById('district').value = data.district;
+                }, 100);
+            }, 100);
+
+            document.getElementById('search-results').classList.add('hidden');
+
+            // 显示回填成功提示
+            showToast('企业信息已自动回填，部分字段可修改', 'success');
+        }
+
+        // 客户类型变更处理证件号标签
+        function handleCustomerTypeChange(type) {
+            const certLabel = document.getElementById('cert-label');
+            const certInput = document.getElementById('certNo');
+
+            const typeMap = {
+                'central_enterprise': '统一社会信用代码',
+                'local_soe': '统一社会信用代码',
+                'central_ministry': '组织机构代码',
+                'local_gov': '统一社会信用代码',
+                'private': '统一社会信用代码',
+                'institution': '事业单位法人证书号',
+                'individual': '身份证号码',
+                'foreign_invested': '营业执照注册号',
+                'public_org': '统一社会信用代码',
+                'personal': '身份证号码',
+                'other': '证件号码'
+            };
+
+            certLabel.innerHTML = `${typeMap[type] || '证件号码'} <span class="text-red-500">*</span>`;
+        }
+
+        // 初始化省份选择
+        function initProvinceSelect() {
+            const provinceSelect = document.getElementById('province');
+            Object.keys(regionData).forEach(key => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = regionData[key].name;
+                provinceSelect.appendChild(option);
+            });
+        }
+
+        // 省份变更
+        function handleProvinceChange(province) {
+            const citySelect = document.getElementById('city');
+            const districtSelect = document.getElementById('district');
+            citySelect.innerHTML = '<option value="">市</option>';
+            districtSelect.innerHTML = '<option value="">区/县</option>';
+
+            if (province && regionData[province]) {
+                Object.keys(regionData[province].cities).forEach(cityKey => {
+                    const option = document.createElement('option');
+                    option.value = cityKey;
+                    option.textContent = regionData[province].cities[cityKey].name;
+                    citySelect.appendChild(option);
+                });
+            }
+        }
+
+        // 城市变更
+        function handleCityChange(city) {
+            const province = document.getElementById('province').value;
+            const districtSelect = document.getElementById('district');
+            districtSelect.innerHTML = '<option value="">区/县</option>';
+
+            if (province && city && regionData[province].cities[city]) {
+                regionData[province].cities[city].districts.forEach(districtKey => {
+                    const option = document.createElement('option');
+                    option.value = districtKey;
+                    option.textContent = districtNames[districtKey] || districtKey;
+                    districtSelect.appendChild(option);
+                });
+            }
+        }
+
+        // 经营期限类型变更
+        function handleTermTypeChange(type) {
+            const endDateWrapper = document.getElementById('end-date-wrapper');
+            const endDateInput = document.getElementById('endDate');
+
+            if (type === 'indefinite') {
+                endDateWrapper.classList.add('hidden');
+                endDateInput.removeAttribute('required');
+            } else {
+                endDateWrapper.classList.remove('hidden');
+                endDateInput.setAttribute('required', 'required');
+            }
+        }
+
+        // 实时相似性检测（输入时）
+        function checkSimilarityRealtime(name) {
+            clearTimeout(similarityCheckTimeout);
+            if (!name || name.length < 3) {
+                document.getElementById('foreign-similarity-warning').classList.add('hidden');
+                return;
+            }
+            
+            // 延迟检测，避免频繁触发
+            similarityCheckTimeout = setTimeout(() => {
+                checkSimilarity(name, true);
+            }, 500);
+        }
+
+        // 国外客户名称相似性校验
+        function checkSimilarity(name, isRealtime = false) {
+            if (!name || name.length < 2) {
+                document.getElementById('foreign-similarity-warning').classList.add('hidden');
+                return;
+            }
+
+            const warningDiv = document.getElementById('foreign-similarity-warning');
+            const warningIcon = document.getElementById('warning-icon');
+            const titleEl = document.getElementById('similarity-title');
+            const descEl = document.getElementById('similarity-desc');
+            const panelEl = document.getElementById('similarity-panel');
+            const listEl = document.getElementById('similarity-list');
+            const actionsEl = document.getElementById('similarity-actions');
+            const nameInput = document.getElementById('foreignCustomerName');
+
+            // 特殊处理："ceshishuju"测试数据 - 使用弹窗展示
+            if (name.toLowerCase().includes('ceshishuju')) {
+                const ceshiMatches = existingForeignCustomers.filter(c => 
+                    c.name.toLowerCase().includes('ceshishuju')
+                );
+                if (ceshiMatches.length > 0) {
+                    // 隐藏常规警告，使用弹窗
+                    warningDiv.classList.add('hidden');
+                    showTestDataModal(ceshiMatches, name);
+                    return;
+                }
+            }
+
+            // 特殊处理："123"完全匹配
+            if (name === '123') {
+                showExactMatchWarning(warningDiv, warningIcon, titleEl, descEl, panelEl, listEl, actionsEl, nameInput, '123');
+                return;
+            }
+
+            // 清除之前的样式
+            nameInput.classList.remove('border-red-500', 'bg-red-50', 'border-amber-500', 'bg-amber-50');
+
+            // 查找匹配的客户
+            const matches = [];
+            
+            existingForeignCustomers.forEach(customer => {
+                const existName = customer.name.toLowerCase();
+                const inputName = name.toLowerCase();
+                
+                // 完全匹配
+                if (existName === inputName) {
+                    matches.push({ ...customer, matchType: 'exact', similarity: 1.0 });
+                    return;
+                }
+                
+                // 包含关系
+                if (existName.includes(inputName) || inputName.includes(existName)) {
+                    const similarity = inputName.length / Math.max(existName.length, inputName.length);
+                    matches.push({ ...customer, matchType: 'contains', similarity: similarity });
+                    return;
+                }
+                
+                // 编辑距离算法
+                const similarity = calculateSimilarity(existName, inputName);
+                if (similarity > 0.6) {
+                    matches.push({ ...customer, matchType: 'similar', similarity: similarity });
+                }
+            });
+
+            // 按相似度排序
+            matches.sort((a, b) => b.similarity - a.similarity);
+
+            // 处理匹配结果
+            if (matches.length === 0) {
+                warningDiv.classList.add('hidden');
+                window.isDuplicateCustomer = false;
+                window.isStrictDuplicate = false;
+                return;
+            }
+
+            // 检查是否有完全匹配
+            const exactMatches = matches.filter(m => m.matchType === 'exact');
+            if (exactMatches.length > 0) {
+                showExactMatchWarning(warningDiv, warningIcon, titleEl, descEl, panelEl, listEl, actionsEl, nameInput, exactMatches[0].name, exactMatches);
+                return;
+            }
+
+            // 显示相似性面板（部分匹配）
+            showSimilarityPanel(warningDiv, warningIcon, titleEl, descEl, panelEl, listEl, actionsEl, nameInput, matches, name, false);
+        }
+
+        // 显示测试数据弹窗
+        function showTestDataModal(matches, inputName) {
+            const modal = document.getElementById('test-data-modal');
+            const listContainer = document.getElementById('test-data-list');
+            const countEl = document.getElementById('test-match-count');
+            
+            // 更新匹配数量
+            countEl.textContent = matches.length;
+            
+            // 生成测试数据列表
+            listContainer.innerHTML = matches.map((match, idx) => `
+                <div class="bg-white border border-violet-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg mr-4 shadow-lg shadow-violet-200">
+                                ${idx + 1}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-lg">${match.name}</h4>
+                                <span class="test-data-badge mt-1">
+                                    <i class="fas fa-flask mr-1"></i>测试数据
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-3xl font-bold text-violet-600">${Math.round(match.similarity * 100 || 95)}%</div>
+                            <div class="text-xs text-gray-500">匹配度</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3 text-sm mb-4">
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-gray-500 text-xs mb-1">国家/地区</p>
+                            <p class="font-semibold text-gray-800 flex items-center">
+                                <span class="mr-2 text-lg">${getCountryFlag(match.country)}</span>
+                                ${match.country}
+                            </p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-gray-500 text-xs mb-1">税号/登记号</p>
+                            <p class="font-semibold text-gray-800 font-mono">${match.taxNo}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-gray-500 text-xs mb-1">注册资金</p>
+                            <p class="font-semibold text-gray-800">${match.capital ? parseInt(match.capital).toLocaleString() : '-'} USD</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-gray-500 text-xs mb-1">法定代表人</p>
+                            <p class="font-semibold text-gray-800">${match.legal || '-'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-violet-50 rounded-lg p-3 border border-violet-100">
+                        <p class="text-violet-800 text-xs font-medium mb-1">注册地址</p>
+                        <p class="text-violet-900 text-sm">${match.address || '-'}</p>
+                    </div>
+                </div>
+            `).join('');
+            
+            // 设置重复标记
+            window.isDuplicateCustomer = true;
+            window.isStrictDuplicate = false; // 测试数据允许继续录入
+            
+            // 显示弹窗
+            modal.classList.remove('hidden');
+            
+            // 高亮输入框
+            document.getElementById('foreignCustomerName').classList.add('border-violet-500', 'bg-violet-50');
+        }
+
+        // 关闭测试数据弹窗
+        function closeTestDataModal() {
+            document.getElementById('test-data-modal').classList.add('hidden');
+        }
+
+        // 从弹窗重新输入
+        function clearCustomerNameFromModal() {
+            closeTestDataModal();
+            clearCustomerName();
+        }
+
+        // 确认测试数据继续录入
+        function confirmTestDataContinue() {
+            closeTestDataModal();
+            window.isDuplicateCustomer = false;
+            document.getElementById('foreignCustomerName').classList.remove('border-violet-500', 'bg-violet-50');
+            showToast('已确认测试数据不重复，可继续录入', 'success');
+        }
+
+        // 获取国家emoji旗帜
+        function getCountryFlag(country) {
+            const flags = {
+                'US': '🇺🇸', 'GB': '🇬🇧', 'DE': '🇩🇪', 'FR': '🇫🇷', 'JP': '🇯🇵',
+                'KR': '🇰🇷', 'SG': '🇸🇬', 'AU': '🇦🇺', 'CA': '🇨🇦', 'NL': '🇳🇱',
+                'CH': '🇨🇭', 'SE': '🇸🇪', 'IT': '🇮🇹', 'ES': '🇪🇸', 'RU': '🇷🇺',
+                'IN': '🇮🇳', 'BR': '🇧🇷', 'IE': '🇮🇪', 'BE': '🇧🇪'
+            };
+            return flags[country] || '🏳️';
+        }
+
+        // 显示完全匹配警告
+        function showExactMatchWarning(warningDiv, warningIcon, titleEl, descEl, panelEl, listEl, actionsEl, nameInput, matchName, allMatches = null) {
+            warningDiv.classList.remove('hidden', 'similarity-alert');
+            warningDiv.classList.add('duplicate-alert');
+            warningIcon.className = 'fas fa-ban text-red-600 mt-0.5 text-lg';
+            titleEl.textContent = '⚠️ 客户名称已存在（完全匹配）';
+            titleEl.className = 'text-sm font-medium text-red-900 mb-1';
+            descEl.innerHTML = `系统中已存在名为"<span class="font-bold text-red-700">${matchName}</span>"的客户，<span class="font-bold">禁止重复录入</span>`;
+            descEl.className = 'text-xs text-red-800 mb-3';
+
+            // 显示匹配列表（如果有多个）
+            if (allMatches && allMatches.length > 0) {
+                panelEl.classList.remove('hidden');
+                listEl.innerHTML = allMatches.map((match, idx) => `
+                    <div class="similarity-item">
+                        <div class="flex items-center">
+                            <span class="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs mr-2">${idx + 1}</span>
+                            <div>
+                                <div class="font-medium text-sm text-gray-800">${match.name}</div>
+                                <div class="text-xs text-gray-500">${match.country} | ${match.taxNo}</div>
+                            </div>
+                        </div>
+                        <span class="similarity-score score-high">100% 匹配</span>
+                    </div>
+                `).join('');
+            } else {
+                panelEl.classList.add('hidden');
+            }
+
+            actionsEl.innerHTML = `
+                <button type="button" onclick="viewSimilarCustomerDetails('${matchName}')" class="text-xs px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors flex items-center">
+                    <i class="fas fa-eye mr-1"></i>查看详情
+                </button>
+                <button type="button" onclick="clearCustomerName()" class="text-xs px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                    <i class="fas fa-edit mr-1"></i>重新输入
+                </button>
+            `;
+
+            nameInput.classList.add('border-red-500', 'bg-red-50');
+            window.isDuplicateCustomer = true;
+            window.isStrictDuplicate = true;
+        }
+
+        // 显示相似性面板
+        function showSimilarityPanel(warningDiv, warningIcon, titleEl, descEl, panelEl, listEl, actionsEl, nameInput, matches, inputName, isTestData = false) {
+            warningDiv.classList.remove('hidden', 'duplicate-alert');
+            warningDiv.classList.add('similarity-alert');
+            warningIcon.className = 'fas fa-exclamation-triangle text-amber-600 mt-0.5 text-lg';
+            titleEl.textContent = isTestData ? '📝 检测到测试数据匹配' : '⚠️ 检测到相似客户名称';
+            titleEl.className = 'text-sm font-medium text-amber-900 mb-1';
+            
+            const matchCount = matches.length;
+            descEl.innerHTML = `系统检测到 <span class="font-bold text-amber-700 text-lg">${matchCount}</span> 个相似客户，请仔细核对是否重复`;
+            descEl.className = 'text-xs text-amber-800 mb-3';
+
+            // 显示相似客户列表
+            panelEl.classList.remove('hidden');
+            listEl.innerHTML = matches.map((match, idx) => {
+                const isExact = match.matchType === 'exact';
+                const scoreClass = match.similarity > 0.9 ? 'score-high' : match.similarity > 0.8 ? 'score-medium' : 'score-low';
+                const scoreText = Math.round(match.similarity * 100) + '%';
+                
+                return `
+                    <div class="similarity-item hover:bg-gray-50 rounded transition-colors cursor-pointer" onclick="viewSimilarCustomerDetails('${match.name}')">
+                        <div class="flex items-center flex-1 min-w-0">
+                            <span class="w-6 h-6 rounded-full ${isExact ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'} flex items-center justify-center text-xs mr-2 flex-shrink-0">${idx + 1}</span>
+                            <div class="min-w-0 flex-1">
+                                <div class="font-medium text-sm text-gray-800 truncate">${match.name}</div>
+                                <div class="text-xs text-gray-500 flex items-center mt-0.5">
+                                    <span class="mr-2"><i class="fas fa-flag mr-1"></i>${match.country}</span>
+                                    <span class="truncate">${match.taxNo}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center ml-2 flex-shrink-0">
+                            <span class="similarity-score ${scoreClass} mr-2">${scoreText}</span>
+                            <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            actionsEl.innerHTML = `
+                <button type="button" onclick="clearCustomerName()" class="text-xs px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center">
+                    <i class="fas fa-undo mr-1"></i>重新输入
+                </button>
+                <button type="button" onclick="confirmNoDuplicate()" class="text-xs px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center">
+                    <i class="fas fa-check mr-1"></i>确认不重复，继续
+                </button>
+            `;
+
+            nameInput.classList.add('border-amber-500', 'bg-amber-50');
+            window.isDuplicateCustomer = true;
+            window.isStrictDuplicate = false;
+        }
+
+        // 编辑距离算法计算字符串相似度
+        function calculateSimilarity(s1, s2) {
+            const len1 = s1.length;
+            const len2 = s2.length;
+            const matrix = [];
+            
+            for (let i = 0; i <= len1; i++) {
+                matrix[i] = [i];
+            }
+            for (let j = 0; j <= len2; j++) {
+                matrix[0][j] = j;
+            }
+            
+            for (let i = 1; i <= len1; i++) {
+                for (let j = 1; j <= len2; j++) {
+                    const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j - 1] + cost
+                    );
+                }
+            }
+            
+            const distance = matrix[len1][len2];
+            const maxLen = Math.max(len1, len2);
+            return maxLen === 0 ? 1 : 1 - distance / maxLen;
+        }
+
+        // 确认不重复
+        function confirmNoDuplicate() {
+            document.getElementById('foreign-similarity-warning').classList.add('hidden');
+            document.getElementById('foreignCustomerName').classList.remove('border-amber-500', 'bg-amber-50');
+            window.isDuplicateCustomer = false;
+            showToast('已确认不重复，可继续录入', 'success');
+        }
+
+        // 清空客户名称
+        function clearCustomerName() {
+            const input = document.getElementById('foreignCustomerName');
+            input.value = '';
+            input.classList.remove('border-red-500', 'bg-red-50', 'border-amber-500', 'bg-amber-50', 'border-violet-500', 'bg-violet-50');
+            input.focus();
+            document.getElementById('foreign-similarity-warning').classList.add('hidden');
+            window.isDuplicateCustomer = false;
+            window.isStrictDuplicate = false;
+        }
+
+        // 查看相似客户详情
+        function viewSimilarCustomerDetails(customerName) {
+            const customer = existingForeignCustomers.find(c => c.name === customerName);
+            if (!customer) return;
+
+            const content = document.getElementById('similar-detail-content');
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-bold text-lg text-blue-900">${customer.name}</h4>
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">${customer.country}</span>
+                        </div>
+                        <div class="text-sm text-blue-800 space-y-1">
+                            <p><span class="font-medium">类型：</span>${getCustomerTypeText(customer.type)}</p>
+                            <p><span class="font-medium">税号：</span>${customer.taxNo}</p>
+                            <p><span class="font-medium">行业：</span>${getIndustryText(customer.industry)}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-gray-500 text-xs mb-1">注册资金</p>
+                            <p class="font-medium text-gray-800">${customer.capital ? parseInt(customer.capital).toLocaleString() : '-'} USD</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-gray-500 text-xs mb-1">法定代表人</p>
+                            <p class="font-medium text-gray-800">${customer.legal || '-'}</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <p class="text-gray-500 text-xs mb-1">注册地址</p>
+                        <p class="font-medium text-gray-800 text-sm">${customer.address || '-'}</p>
+                    </div>
+
+                    <div class="flex items-center justify-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <i class="fas fa-info-circle text-yellow-600 mr-2"></i>
+                        <span class="text-xs text-yellow-800">该客户已存在于系统中，请勿重复录入</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('similar-detail-modal').classList.remove('hidden');
+        }
+
+        // 关闭详情模态框
+        function closeSimilarDetailModal() {
+            document.getElementById('similar-detail-modal').classList.add('hidden');
+        }
+
+        // 辅助函数：获取客户类型文本
+        function getCustomerTypeText(type) {
+            const typeMap = {
+                'enterprise': '企业',
+                'personal': '个人客商',
+                'public_org': '公共组织',
+                'other': '其它'
+            };
+            return typeMap[type] || type;
+        }
+
+        // 辅助函数：获取行业文本
+        function getIndustryText(industry) {
+            const industryMap = {
+                'agriculture': '农、林、牧、渔业',
+                'mining': '采矿业',
+                'manufacturing': '制造业',
+                'electricity': '电力、热力、燃气及水生产和供应业',
+                'it': '信息传输、软件和信息技术服务业',
+                'wholesale': '批发和零售业',
+                'health': '卫生和社会工作',
+                'other': '其它'
+            };
+            return industryMap[industry] || industry;
+        }
+
+        // 国家代码更新
+        function updateCountryCode(country) {
+            const codeMap = {
+                'US': 'USA', 'GB': 'GBR', 'DE': 'DEU', 'FR': 'FRA', 'JP': 'JPN',
+                'KR': 'KOR', 'SG': 'SGP', 'AU': 'AUS', 'CA': 'CAN', 'NL': 'NLD',
+                'CH': 'CHE', 'SE': 'SWE', 'IT': 'ITA', 'ES': 'ESP', 'RU': 'RUS',
+                'IN': 'IND', 'BR': 'BRA'
+            };
+            document.getElementById('countryCode').value = codeMap[country] || '';
+        }
+
+        // 添加联系人
+        function addContact() {
+            const id = Date.now();
+            const isPrimary = contacts.length === 0;
+            contacts.push({ id, isPrimary });
+
+            const container = document.getElementById('contacts-container');
+            const noContacts = document.getElementById('no-contacts');
+            noContacts.classList.add('hidden');
+
+            const card = document.createElement('div');
+            card.id = `contact-${id}`;
+            card.className = 'bg-gray-50 rounded-lg p-4 border border-gray-200 slide-in';
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm font-medium text-gray-700">联系人 ${contacts.length}</span>
+                        ${isPrimary ? '<span class="primary-contact-badge px-2 py-0.5 rounded text-xs font-medium">主联系人</span>' : ''}
+                    </div>
+                    <div class="flex space-x-2">
+                        ${!isPrimary ? `<button type="button" onclick="setPrimaryContact(${id})" class="text-xs text-blue-600 hover:text-blue-800">设为主联系人</button>` : ''}
+                        <button type="button" onclick="removeContact(${id})" class="text-red-500 hover:text-red-700">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">联系人名称 <span class="text-red-500">*</span></label>
+                        <input type="text" name="contact_name_${id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="姓名">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">部门</label>
+                        <input type="text" name="contact_dept_${id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="部门">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">职位</label>
+                        <input type="text" name="contact_position_${id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="职位">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">职责</label>
+                        <input type="text" name="contact_duty_${id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="如：业务对接、技术对接、财务对接">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">联系电话 <span class="text-red-500">*</span></label>
+                        <input type="tel" name="contact_phone_${id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="手机号或座机">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">邮箱</label>
+                        <input type="email" name="contact_email_${id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="email@example.com">
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+
+        // 删除联系人
+        function removeContact(id) {
+            const index = contacts.findIndex(c => c.id === id);
+            if (index > -1) {
+                contacts.splice(index, 1);
+                document.getElementById(`contact-${id}`).remove();
+
+                // 如果删除的是主联系人，将第一个设为主联系人
+                if (contacts.length > 0 && !contacts.some(c => c.isPrimary)) {
+                    setPrimaryContact(contacts[0].id);
+                }
+
+                if (contacts.length === 0) {
+                    document.getElementById('no-contacts').classList.remove('hidden');
+                } else {
+                    // 重新编号
+                    Array.from(document.getElementById('contacts-container').children).forEach((card, idx) => {
+                        card.querySelector('span:first-child').textContent = `联系人 ${idx + 1}`;
+                    });
+                }
+            }
+        }
+
+        // 设置主联系人
+        function setPrimaryContact(id) {
+            contacts.forEach(c => c.isPrimary = (c.id === id));
+            renderContacts();
+        }
+
+        // 重新渲染联系人
+        function renderContacts() {
+            const container = document.getElementById('contacts-container');
+            const data = contacts.map(c => {
+                const card = document.getElementById(`contact-${c.id}`);
+                return {
+                    id: c.id,
+                    isPrimary: c.isPrimary,
+                    name: card.querySelector(`[name="contact_name_${c.id}"]`).value,
+                    dept: card.querySelector(`[name="contact_dept_${c.id}"]`).value,
+                    position: card.querySelector(`[name="contact_position_${c.id}"]`).value,
+                    duty: card.querySelector(`[name="contact_duty_${c.id}"]`).value,
+                    phone: card.querySelector(`[name="contact_phone_${c.id}"]`).value,
+                    email: card.querySelector(`[name="contact_email_${c.id}"]`).value
+                };
+            });
+
+            container.innerHTML = '';
+            data.forEach((contact, idx) => {
+                const card = document.createElement('div');
+                card.id = `contact-${contact.id}`;
+                card.className = 'bg-gray-50 rounded-lg p-4 border border-gray-200';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-medium text-gray-700">联系人 ${idx + 1}</span>
+                            ${contact.isPrimary ? '<span class="primary-contact-badge px-2 py-0.5 rounded text-xs font-medium">主联系人</span>' : ''}
+                        </div>
+                        <div class="flex space-x-2">
+                            ${!contact.isPrimary ? `<button type="button" onclick="setPrimaryContact(${contact.id})" class="text-xs text-blue-600 hover:text-blue-800">设为主联系人</button>` : ''}
+                            <button type="button" onclick="removeContact(${contact.id})" class="text-red-500 hover:text-red-700">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">联系人名称 <span class="text-red-500">*</span></label>
+                            <input type="text" name="contact_name_${contact.id}" value="${contact.name}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="姓名">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">部门</label>
+                            <input type="text" name="contact_dept_${contact.id}" value="${contact.dept}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="部门">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">职位</label>
+                            <input type="text" name="contact_position_${contact.id}" value="${contact.position}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="职位">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">职责</label>
+                            <input type="text" name="contact_duty_${contact.id}" value="${contact.duty}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="如：业务对接、技术对接、财务对接">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">联系电话 <span class="text-red-500">*</span></label>
+                            <input type="tel" name="contact_phone_${contact.id}" value="${contact.phone}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="手机号或座机">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">邮箱</label>
+                            <input type="email" name="contact_email_${contact.id}" value="${contact.email}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="email@example.com">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 添加场所
+        function addSite() {
+            const id = Date.now();
+            sites.push({ id });
+
+            const container = document.getElementById('sites-container');
+            const noSites = document.getElementById('no-sites');
+            noSites.classList.add('hidden');
+
+            const card = document.createElement('div');
+            card.id = `site-${id}`;
+            card.className = 'bg-gray-50 rounded-lg p-4 border border-gray-200 slide-in';
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <span class="text-sm font-medium text-gray-700">场所 ${sites.length}</span>
+                    <button type="button" onclick="removeSite(${id})" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+                <div class="space-y-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">场所名称（中文） <span class="text-red-500">*</span></label>
+                            <input type="text" name="site_name_cn_${id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="中文名称">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">场所名称（英文）</label>
+                            <input type="text" name="site_name_en_${id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="English Name">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">涉及产品/过程/活动/项目</label>
+                        <textarea name="site_activity_${id}" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="描述该场所涉及的产品、过程、活动或工程项目进展情况"></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">班次时间</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="time" name="site_shift_start_${id}" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
+                                <span class="text-gray-400">-</span>
+                                <input type="time" name="site_shift_end_${id}" class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">人数</label>
+                            <input type="number" name="site_persons_${id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="场所人数">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">是否中心职能</label>
+                            <select name="site_center_${id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="no">否</option>
+                                <option value="yes">是</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">联系人</label>
+                            <input type="text" name="site_contact_${id}" class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="联系人姓名">
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+
+        // 删除场所
+        function removeSite(id) {
+            const index = sites.findIndex(s => s.id === id);
+            if (index > -1) {
+                sites.splice(index, 1);
+                document.getElementById(`site-${id}`).remove();
+
+                if (sites.length === 0) {
+                    document.getElementById('no-sites').classList.remove('hidden');
+                } else {
+                    Array.from(document.getElementById('sites-container').children).forEach((card, idx) => {
+                        card.querySelector('span:first-child').textContent = `场所 ${idx + 1}`;
+                    });
+                }
+            }
+        }
+
+        // 保存草稿
+        function saveDraft() {
+            showToast('草稿已保存', 'success');
+        }
+
+        // 提交表单 - 修改为确认创建流程
+        function submitForm() {
+            // 基础校验
+            const requiredFields = currentCustomerType === 'domestic' ? 
+                ['customerName', 'customerType', 'certNo', 'industry', 'province', 'city', 'district', 'detailAddress', 'enterpriseClass'] :
+                ['foreignCustomerName', 'country', 'foreignCustomerType', 'foreignIndustry', 'foreignEnterpriseClass'];
+
+            let isValid = true;
+            let firstError = null;
+
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field || !field.value.trim()) {
+                    isValid = false;
+                    field?.classList.add('border-red-500');
+                    if (!firstError) firstError = field;
+                } else {
+                    field?.classList.remove('border-red-500');
+                }
+            });
+
+            if (contacts.length === 0) {
+                showToast('请至少添加一个联系人', 'error');
+                return;
+            }
+
+            if (!isValid) {
+                showToast('请填写必填项', 'error');
+                firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // 检查是否为重复客户（国外客户严格重复）
+            if (currentCustomerType === 'foreign' && window.isStrictDuplicate) {
+                showToast('该客户名称已存在于系统中，请重新输入其他名称', 'error');
+                document.getElementById('foreignCustomerName').focus();
+                return;
+            }
+
+            // 显示确认创建弹窗（替代原来的审核流程）
+            showConfirmCreateModal();
+        }
+
+        // 显示确认创建弹窗
+        function showConfirmCreateModal() {
+            const modal = document.getElementById('confirm-create-modal');
+            const infoContainer = document.getElementById('confirm-customer-info');
+            
+            // 获取当前客户信息
+            let customerName, customerType, customerCountry;
+            
+            if (currentCustomerType === 'domestic') {
+                customerName = document.getElementById('customerName').value;
+                const typeSelect = document.getElementById('customerType');
+                customerType = typeSelect.options[typeSelect.selectedIndex].text;
+                customerCountry = '中国';
+            } else {
+                customerName = document.getElementById('foreignCustomerName').value;
+                const typeSelect = document.getElementById('foreignCustomerType');
+                customerType = typeSelect.options[typeSelect.selectedIndex].text;
+                const countrySelect = document.getElementById('country');
+                customerCountry = countrySelect.options[countrySelect.selectedIndex].text.split(' ')[0];
+            }
+
+            // 生成信息预览
+            infoContainer.innerHTML = `
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-500">客户名称</span>
+                    <span class="font-medium text-gray-800">${customerName}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-500">客户类型</span>
+                    <span class="font-medium text-gray-800">${customerType}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-500">所属国家/地区</span>
+                    <span class="font-medium text-gray-800">${customerCountry}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-500">联系人数量</span>
+                    <span class="font-medium text-gray-800">${contacts.length} 人</span>
+                </div>
+                <div class="flex justify-between py-2">
+                    <span class="text-gray-500">场所数量</span>
+                    <span class="font-medium text-gray-800">${sites.length} 个</span>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+        }
+
+        // 关闭确认弹窗
+        function closeConfirmModal() {
+            document.getElementById('confirm-create-modal').classList.add('hidden');
+        }
+
+        // 确认创建客户
+        function confirmCreateCustomer() {
+            closeConfirmModal();
+            
+            // 模拟创建成功
+            showToast('客户创建成功！', 'success');
+            
+            // 可以在这里添加页面跳转或其他后续操作
+            setTimeout(() => {
+                // 模拟跳转或重置表单
+                if (confirm('客户创建成功！是否继续添加新客户？')) {
+                    // 重置表单
+                    document.getElementById('customerForm').reset();
+                    contacts = [];
+                    sites = [];
+                    document.getElementById('contacts-container').innerHTML = '';
+                    document.getElementById('sites-container').innerHTML = '';
+                    document.getElementById('no-contacts').classList.remove('hidden');
+                    document.getElementById('no-sites').classList.remove('hidden');
+                    addContact(); // 添加一个默认联系人
+                }
+            }, 1500);
+        }
+
+        // Toast提示
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500',
+                warning: 'bg-amber-500'
+            };
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                info: 'fa-info-circle',
+                warning: 'fa-exclamation-triangle'
+            };
+
+            toast.className = `fixed top-20 right-6 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 z-50 fade-in`;
+            toast.innerHTML = `
+                <i class="fas ${icons[type]}"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s';
+                setTimeout(() => toast.remove(), 500);
+            }, duration);
+        }
+
+        // 锚点导航高亮
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                document.querySelectorAll('.nav-link').forEach(l => {
+                    l.classList.remove('text-blue-600', 'font-medium');
+                    l.classList.add('text-gray-600');
+                    l.querySelector('span').classList.remove('bg-blue-100', 'text-blue-600');
+                    l.querySelector('span').classList.add('bg-gray-200', 'text-gray-600');
+                });
+                this.classList.remove('text-gray-600');
+                this.classList.add('text-blue-600', 'font-medium');
+                this.querySelector('span').classList.remove('bg-gray-200', 'text-gray-600');
+                this.querySelector('span').classList.add('bg-blue-100', 'text-blue-600');
+            });
+        });
+
+        // 监听滚动更新导航
+        const observerOptions = {
+            rootMargin: '-80px 0px -80% 0px',
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    document.querySelectorAll('.nav-link').forEach(link => {
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('text-blue-600', 'font-medium');
+                            link.classList.remove('text-gray-600');
+                            link.querySelector('span').classList.add('bg-blue-100', 'text-blue-600');
+                            link.querySelector('span').classList.remove('bg-gray-200', 'text-gray-600');
+                        } else {
+                            link.classList.remove('text-blue-600', 'font-medium');
+                            link.classList.add('text-gray-600');
+                            link.querySelector('span').classList.remove('bg-blue-100', 'text-blue-600');
+                            link.querySelector('span').classList.add('bg-gray-200', 'text-gray-600');
+                        }
+                    });
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.form-section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // 点击外部关闭搜索结果
+        document.addEventListener('click', function(e) {
+            const searchDiv = document.getElementById('search-results');
+            const searchInput = document.getElementById('customerName');
+            if (!searchDiv.contains(e.target) && e.target !== searchInput) {
+                searchDiv.classList.add('hidden');
+            }
+        });
+
+        // 点击外部关闭弹窗
+        document.getElementById('test-data-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeTestDataModal();
+            }
+        });
+        
+        document.getElementById('similar-detail-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSimilarDetailModal();
+            }
+        });
+
+        document.getElementById('confirm-create-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeConfirmModal();
+            }
+        });
+    </script>
+</body>
+</html>
