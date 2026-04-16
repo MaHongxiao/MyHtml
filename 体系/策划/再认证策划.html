@@ -344,6 +344,33 @@
             height: 100px;
         }
         
+        .vertical-nav-item.temp-audit {
+            background: linear-gradient(135deg, #fffbe6 0%, #ffffff 100%);
+            border: 1px solid #ffd591;
+            border-top: none;
+        }
+        
+        .vertical-nav-item.temp-audit:first-of-type {
+            border-top: 1px solid #ffd591;
+        }
+        
+        .vertical-nav-item.temp-audit.active {
+            background: #fff7e6;
+            border-left: 3px solid #fa8c16;
+            border-right: 1px solid #fa8c16;
+            border-top: 1px solid #fa8c16;
+            border-bottom: 1px solid #fa8c16;
+            box-shadow: 0 2px 8px rgba(250, 140, 22, 0.15);
+        }
+        
+        .vertical-nav-item.current-audit-type {
+            border-top: 1px solid #1890ff;
+        }
+        
+        .vertical-nav-item.current-audit-type .nav-header-title-static {
+            display: block;
+        }
+        
         .vertical-nav-content {
             padding: 0 16px;
             display: flex;
@@ -871,6 +898,73 @@
         .stage1-checkbox-wrapper.show {
             display: inline-flex !important;
         }
+
+        /* 新增临时审核按钮样式 */
+        .add-temp-audit-btn {
+            margin-top: 12px;
+            padding: 12px;
+            border: 1px dashed #52c41a;
+            border-radius: 4px;
+            background: #f6ffed;
+            color: #52c41a;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .add-temp-audit-btn:hover {
+            background: #d9f7be;
+            border-color: #389e0d;
+        }
+
+        .add-temp-audit-btn:disabled {
+            background: #f5f5f5;
+            border-color: #d9d9d9;
+            color: #bfbfbf;
+            cursor: not-allowed;
+        }
+
+        /* 临时审核删除按钮 */
+        .temp-delete-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff4d4f;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            z-index: 10;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        
+        .temp-delete-btn:hover {
+            opacity: 1;
+            background: #f5222d;
+        }
+
+        /* 临时审核弹窗特殊样式 */
+        .temp-audit-modal-text {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 20px;
+            color: #262626;
+            line-height: 1.8;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -984,17 +1078,25 @@
                 </div>
             </div>
 
+            <!-- 临时审核节点插入位置（动态插入到这里） -->
+            
             <!-- 再认证 - 当前审核类型，待确认状态，可编辑 -->
-            <div class="vertical-nav-item active" data-phase="recert" onclick="switchPhase('recert', this)">
+            <div class="vertical-nav-item active current-audit-type" data-phase="recert" onclick="switchPhase('recert', this)">
                 <div class="nav-header-title-static">当前审核类型</div>
                 <div class="vertical-nav-content">
                     <div class="nav-title-wrapper">
                         <span class="nav-title" id="navTitle_recert">再认证</span>
                         <span class="nav-time" id="navTime_recert">计划审核时间：2029-04</span>
                     </div>
-                    <div class="nav-status status-unfilled" id="navStatus_recert">已策划</div>
+                    <div class="nav-status status-unfilled" id="navStatus_recert">待确认</div>
                 </div>
             </div>
+
+            <!-- 新增临时审核按钮 -->
+            <button class="add-temp-audit-btn" id="addTempAuditBtn" onclick="openAddTempAuditModal()">
+                <i class="fas fa-plus"></i>
+                新增临时审核
+            </button>
         </div>
 
         <!-- 右侧内容区 -->
@@ -2037,6 +2139,8 @@
                 </div>
             </div>
 
+            <!-- 临时审核内容区域（动态生成） -->
+
             <!-- 再认证内容 - 当前可编辑状态，场所不可增删 -->
             <div class="phase-content active" id="phase_recert">
                 <div class="summary-cards">
@@ -2081,19 +2185,20 @@
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="font-semibold text-gray-800" id="recertTitle">场所抽样方案及实施情况 - 再认证</h3>
                         <div class="flex items-center gap-3">
+                            <button class="btn btn-default btn-sm" onclick="openCertConfirm()">
+                                <i class="fas fa-certificate text-xs"></i>
+                                证书内容确认件
+                            </button>
                             <button class="btn btn-default btn-sm" onclick="openSurveyForm()">
                                 <i class="fas fa-clipboard-list text-xs"></i>
                                 获证方情况调查表
                             </button>
-                            <!-- 证书变更申请表按钮已删除 -->
                             <button class="btn btn-primary btn-sm" onclick="savePhase('recert')">
                                 <i class="fas fa-save"></i>
                                 保存
                             </button>
                         </div>
                     </div>
-
-                    <!-- 变更条件控制区已删除 -->
 
                     <div id="siteCardsContainer_recert">
                         <!-- 再认证场所1 - 中心职能（可编辑，但不可删除） -->
@@ -2536,6 +2641,31 @@
         </div>
     </div>
 
+    <!-- 新增临时审核确认弹窗 -->
+    <div id="addTempAuditModal" class="modal-overlay hidden-section">
+        <div class="modal-content" style="width: 500px;">
+            <div class="modal-header">
+                <div class="card-title">
+                    <i class="fas fa-plus-square text-purple-500"></i>
+                    新增临时审核
+                </div>
+                <button onclick="closeAddTempAuditModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="temp-audit-modal-text">
+                    将在当前审核类型前插入临时审核节点。<br>
+                    临时审核等同于增加纯"监督"阶段，提交后将创建临时审核类别的二阶段审核项目。
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeAddTempAuditModal()" class="btn btn-default">取消</button>
+                <button onclick="confirmAddTempAudit()" class="btn btn-purple">确认新增</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 过程组模板选择抽屉 -->
     <div id="drawerOverlay" class="drawer-overlay" onclick="closeProcessTemplateDrawer()"></div>
     <div id="templateDrawer" class="template-drawer">
@@ -2595,6 +2725,8 @@
         let selectedAvailableSites = [];
         let selectedTemplateIndex = 0;
         let currentTemplateSiteId = '';
+        let tempAuditCount = 0; // 临时审核计数器
+        let hasTempAudit = false; // 是否有临时审核标记
 
         const phaseStatus = {
             initial: true,
@@ -2672,7 +2804,12 @@
             element.classList.add('active');
             
             document.querySelectorAll('.phase-content').forEach(el => el.classList.remove('active'));
-            document.getElementById('phase_' + phase).classList.add('active');
+            
+            // 显示对应的内容区域
+            const contentEl = document.getElementById('phase_' + phase);
+            if (contentEl) {
+                contentEl.classList.add('active');
+            }
             
             currentPhase = phase;
         }
@@ -2708,6 +2845,11 @@
             }
         }
 
+        // 证书内容确认件功能
+        function openCertConfirm() {
+            alert('证书内容确认件功能');
+        }
+
         function openSurveyForm() {
             alert('获证方情况调查表功能');
         }
@@ -2717,15 +2859,20 @@
         }
 
         function savePhase(phase) {
-            phaseStatus[phase] = true;
-            
             const navItem = document.querySelector(`.vertical-nav-item[data-phase="${phase}"]`);
             if (navItem) {
                 const statusEl = navItem.querySelector('.nav-status');
                 if (statusEl) {
-                    statusEl.textContent = '已策划';
-                    statusEl.classList.remove('status-unfilled');
-                    statusEl.classList.add('status-filled');
+                    // 检查当前状态是否为"待确认"，如果是则变为"已确认"
+                    if (statusEl.textContent === '待确认') {
+                        statusEl.textContent = '已确认';
+                        statusEl.classList.remove('status-unfilled');
+                        statusEl.classList.add('status-filled');
+                    } else if (statusEl.textContent === '待策划') {
+                        statusEl.textContent = '已策划';
+                        statusEl.classList.remove('status-unfilled');
+                        statusEl.classList.add('status-filled');
+                    }
                 }
                 
                 const timeEl = navItem.querySelector('.nav-time');
@@ -2742,6 +2889,511 @@
             setTimeout(() => {
                 btn.innerHTML = originalHTML;
             }, 2000);
+        }
+
+        // 新增临时审核相关功能
+        function openAddTempAuditModal() {
+            document.getElementById('addTempAuditModal').classList.remove('hidden-section');
+        }
+
+        function closeAddTempAuditModal() {
+            document.getElementById('addTempAuditModal').classList.add('hidden-section');
+        }
+
+        function confirmAddTempAudit() {
+            tempAuditCount++;
+            const tempPhaseId = `temp_${tempAuditCount}`;
+            hasTempAudit = true;
+            
+            // 获取当前审核类型标签
+            const currentAuditTypeLabel = document.querySelector('.nav-header-title-static');
+            
+            // 创建临时审核导航节点（插入到再认证之前）
+            const navContainer = document.getElementById('verticalNav');
+            const recertNav = navContainer.querySelector('[data-phase="recert"]');
+            
+            // 从再认证中移除当前审核类型标签
+            if (currentAuditTypeLabel) {
+                currentAuditTypeLabel.remove();
+            }
+            recertNav.classList.remove('current-audit-type');
+            
+            const tempNavItem = document.createElement('div');
+            tempNavItem.className = 'vertical-nav-item temp-audit current-audit-type';
+            tempNavItem.setAttribute('data-phase', tempPhaseId);
+            tempNavItem.onclick = function() { switchPhase(tempPhaseId, this); };
+            tempNavItem.innerHTML = `
+                <div class="nav-header-title-static">当前审核类型</div>
+                <button class="temp-delete-btn" onclick="deleteTempAudit('${tempPhaseId}', event)" title="删除临时审核">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="vertical-nav-content">
+                    <div class="nav-title-wrapper">
+                        <span class="nav-title">临时审核</span>
+                        <span class="nav-time">计划审核时间：-</span>
+                    </div>
+                    <div class="nav-status status-unfilled">待策划</div>
+                </div>
+            `;
+            
+            // 插入到再认证节点之前
+            navContainer.insertBefore(tempNavItem, recertNav);
+            
+            // 创建临时审核内容区域（复制监督二的结构，但可编辑，且不包含获证方情况调查表按钮）
+            const mainContentArea = document.querySelector('.main-content-area');
+            const tempContent = document.createElement('div');
+            tempContent.className = 'phase-content';
+            tempContent.id = `phase_${tempPhaseId}`;
+            tempContent.innerHTML = createTempAuditContent(tempPhaseId);
+            mainContentArea.appendChild(tempContent);
+            
+            // 更新sites数组
+            sites.push(`site_${tempPhaseId}_0`);
+            sites.push(`site_${tempPhaseId}_1`);
+            
+            // 禁用新增临时审核按钮
+            const addBtn = document.getElementById('addTempAuditBtn');
+            if (addBtn) {
+                addBtn.disabled = true;
+            }
+            
+            closeAddTempAuditModal();
+            
+            // 自动切换到新添加的临时审核
+            switchPhase(tempPhaseId, tempNavItem);
+        }
+
+        function createTempAuditContent(phaseId) {
+            return `
+                <div class="summary-cards">
+                    <div class="summary-card-item">
+                        <div class="summary-label-card">总审核准备</div>
+                        <div class="summary-value-card">
+                            <span id="${phaseId}-totalPrepTime">1.0</span>
+                            <span class="summary-unit">人天</span>
+                        </div>
+                    </div>
+                    <div class="summary-card-item">
+                        <div class="summary-label-card">总第一阶段审核</div>
+                        <div class="summary-value-card">
+                            <span id="${phaseId}-totalStage1">0.0</span>
+                            <span class="summary-unit">人天</span>
+                        </div>
+                    </div>
+                    <div class="summary-card-item">
+                        <div class="summary-label-card">总监督审核</div>
+                        <div class="summary-value-card">
+                            <span id="${phaseId}-totalStage2">3.5</span>
+                            <span class="summary-unit">人天</span>
+                        </div>
+                    </div>
+                    <div class="summary-card-item">
+                        <div class="summary-label-card">调整后减少人天数</div>
+                        <div class="summary-value-card">
+                            <span id="${phaseId}-totalReducedDays">0.0</span>
+                            <span class="summary-unit">人天</span>
+                        </div>
+                    </div>
+                    <div class="summary-card-item total">
+                        <div class="summary-label-card">总调整后人天数</div>
+                        <div class="summary-value-card" style="color: #1890ff;">
+                            <span id="${phaseId}-totalAdjustedDays">4.5</span>
+                            <span class="summary-unit">人天</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="samplingContent_${phaseId}" class="tab-content">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold text-gray-800">场所抽样方案及实施情况 - 临时审核</h3>
+                        <div class="flex items-center gap-3">
+                            <button class="btn btn-primary btn-sm" onclick="savePhase('${phaseId}')">
+                                <i class="fas fa-save"></i>
+                                保存
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="siteCardsContainer_${phaseId}">
+                        <div class="site-card" id="site_${phaseId}_0" data-is-main="true">
+                            <div class="site-card-header">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">总部</span>
+                                    <span class="font-semibold text-gray-800 site-name">运营地址（中心职能）</span>
+                                </div>
+                            </div>
+                            <div class="site-card-body">
+                                <div class="site-info-left">
+                                    <div class="compact-row-2">
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">计划审核时间</label>
+                                            <input type="month" class="form-input plan-audit-time" value="">
+                                        </div>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">实际审核时间</label>
+                                            <input type="text" class="form-input bg-gray-100" readonly placeholder="----年--月">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="compact-row-2">
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">班次信息</label>
+                                            <div class="shift-info-wrapper">
+                                                <div class="shift-info-display">
+                                                    <span class="shift-label">班次：1</span>،08:00-17:30
+                                                </div>
+                                                <div class="shift-tooltip">
+                                                    <div class="shift-tooltip-row"><span class="shift-label">班次1：</span>08:00-17:30（白班،正常工作时间段）</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">联系人/电话</label>
+                                            <input type="text" class="form-input" value="张先生/13800138000">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="compact-row-2">
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">地址</label>
+                                            <input type="text" class="form-input" value="北京市海淀区中关村大街1号">
+                                        </div>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">涉及产品/过程/活动</label>
+                                            <input type="text" class="form-input" value="软件开发、系统集成">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="compact-row-2">
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">专业代码</label>
+                                            <div class="tags-display-box" id="profCodeBox_site_${phaseId}_0">
+                                                <span class="inline-tag" data-code="19.01.01">19.01.01<i class="fas fa-times remove-tag" onclick="removeTag(event, 'site_${phaseId}_0', '19.01.01', 'prof')"></i></span>
+                                                <input type="text" class="tag-input" placeholder="选择代码" onkeydown="handleTagInput(event, 'site_${phaseId}_0', 'prof')">
+                                            </div>
+                                        </div>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">认可机构</label>
+                                            <div class="tags-display-box" id="accBox_site_${phaseId}_0">
+                                                <span class="inline-tag accreditation" data-code="CNAS">CNAS<i class="fas fa-times remove-tag" onclick="removeTag(event, 'site_${phaseId}_0', 'CNAS', 'acc')"></i></span>
+                                                <input type="text" class="tag-input" placeholder="选择机构" onkeydown="handleTagInput(event, 'site_${phaseId}_0', 'acc')">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="compact-row-2">
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">人数(含承包方)</label>
+                                            <input type="number" class="form-input people-count" value="200" onchange="updateCalculations('site_${phaseId}_0')">
+                                        </div>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <div class="flex justify-between items-center">
+                                                <label class="form-label">有效人数</label>
+                                                <label class="flex items-center gap-1 text-xs text-gray-600">
+                                                    <input type="checkbox" checked disabled class="rounded text-gray-400">
+                                                    <span>发子证</span>
+                                                </label>
+                                            </div>
+                                            <input type="number" class="form-input effective-people" value="180" placeholder="≤总人数" onchange="validateEffectivePeople(this)">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="border-t border-gray-200 pt-3 mt-3">
+                                        <div class="text-xs font-semibold text-gray-700 mb-2">人天计算（AI底座）</div>
+                                        <div class="compact-row-2">
+                                            <div class="form-row" style="margin-bottom: 0;">
+                                                <label class="form-label">审核准备</label>
+                                                <input type="number" step="0.5" class="form-input calc-field" data-type="prep" value="0.5" onchange="updateCalculations('site_${phaseId}_0')">
+                                            </div>
+                                            <div class="form-row" style="margin-bottom: 0;">
+                                                <label class="form-label">第一阶段</label>
+                                                <input type="number" step="0.5" class="form-input calc-field" data-type="stage1" value="0" onchange="updateCalculations('site_${phaseId}_0')">
+                                            </div>
+                                            <div class="form-row" style="margin-bottom: 0;">
+                                                <label class="form-label">监督审核</label>
+                                                <input type="number" step="0.5" class="form-input calc-field" data-type="stage2" value="2.0" onchange="updateCalculations('site_${phaseId}_0')">
+                                            </div>
+                                            <div class="form-row" style="margin-bottom: 0;">
+                                                <label class="form-label">调整比例</label>
+                                                <input type="number" step="0.1" min="0.7" class="form-input calc-field" data-type="ratio" value="1.0" onchange="updateCalculations('site_${phaseId}_0')">
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between items-center bg-blue-50 p-2 rounded mt-2">
+                                            <span class="text-sm font-medium text-blue-900">调整后</span>
+                                            <span class="text-lg font-bold text-blue-600 adjusted-days">2.5</span>
+                                        </div>
+                                        <div class="form-row mt-2 mb-0">
+                                            <input type="text" class="form-input" placeholder="调整理由（如适用）" style="font-size: 12px;">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="site-process-right">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <h4 class="font-semibold text-gray-800">过程审核策划</h4>
+                                        <div class="flex items-center gap-2">
+                                            <button class="btn btn-default btn-sm" onclick="openProcessTemplateDrawer('site_${phaseId}_0')">
+                                                <i class="fas fa-list-alt"></i>
+                                                选择过程组模板
+                                            </button>
+                                            <button class="btn btn-default btn-sm" onclick="importProcessFromExcel('site_${phaseId}_0')">
+                                                <i class="fas fa-file-excel"></i>
+                                                Excel导入
+                                            </button>
+                                            <button onclick="addProcessToSite('site_${phaseId}_0')" class="btn btn-default btn-sm">
+                                                <i class="fas fa-plus"></i>
+                                                新增行
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="w-10">序号</th>
+                                                <th>过程名称</th>
+                                                <th>主责部门</th>
+                                                <th>相关部门</th>
+                                                <th>涉及标准条款</th>
+                                                <th>绩效参数/文件</th>
+                                                <th class="w-10">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="site-process-body" id="processBody_site_${phaseId}_0">
+                                            <tr>
+                                                <td>1</td>
+                                                <td><input type="text" class="form-input" value="组织环境"></td>
+                                                <td><input type="text" class="form-input" value="管理层"></td>
+                                                <td><input type="text" class="form-input" value="各部门"></td>
+                                                <td><input type="text" class="form-input" value="4.1-4.4"></td>
+                                                <td><input type="text" class="form-input" value="《组织环境分析表》"></td>
+                                                <td>
+                                                    <button onclick="deleteProcessRow(this)" class="text-red-500 hover:text-red-700">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="site-card" id="site_${phaseId}_1" data-is-main="false">
+                            <div class="site-card-header">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-green-600 text-white text-xs px-2 py-0.5 rounded">分场所</span>
+                                    <span class="font-semibold text-gray-800 site-name">上海研发中心</span>
+                                </div>
+                            </div>
+                            <div class="site-card-body">
+                                <div class="site-info-left">
+                                    <div class="compact-row-2">
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">计划审核时间</label>
+                                            <input type="month" class="form-input plan-audit-time" value="">
+                                        </div>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">实际审核时间</label>
+                                            <input type="text" class="form-input bg-gray-100" readonly placeholder="----年--月">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="compact-row-2">
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">班次信息</label>
+                                            <div class="shift-info-wrapper">
+                                                <div class="shift-info-display">
+                                                    <span class="shift-label">班次：1</span>،09:00-18:00
+                                                </div>
+                                                <div class="shift-tooltip">
+                                                    <div class="shift-tooltip-row"><span class="shift-label">班次1：</span>09:00-18:00（白班،正常工作时间段）</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">联系人/电话</label>
+                                            <input type="text" class="form-input" value="李先生/13900139000">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="compact-row-2">
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">地址</label>
+                                            <input type="text" class="form-input" value="上海市浦东新区张江高科技园区">
+                                        </div>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">涉及产品/过程/活动</label>
+                                            <input type="text" class="form-input" value="软件研发、测试">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="compact-row-2">
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">专业代码</label>
+                                            <div class="tags-display-box" id="profCodeBox_site_${phaseId}_1">
+                                                <span class="inline-tag" data-code="19.01.01">19.01.01<i class="fas fa-times remove-tag" onclick="removeTag(event, 'site_${phaseId}_1', '19.01.01', 'prof')"></i></span>
+                                                <input type="text" class="tag-input" placeholder="选择代码" onkeydown="handleTagInput(event, 'site_${phaseId}_1', 'prof')">
+                                            </div>
+                                        </div>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">认可机构</label>
+                                            <div class="tags-display-box" id="accBox_site_${phaseId}_1">
+                                                <span class="inline-tag accreditation" data-code="CNAS">CNAS<i class="fas fa-times remove-tag" onclick="removeTag(event, 'site_${phaseId}_1', 'CNAS', 'acc')"></i></span>
+                                                <input type="text" class="tag-input" placeholder="选择机构" onkeydown="handleTagInput(event, 'site_${phaseId}_1', 'acc')">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="compact-row-2">
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <label class="form-label">人数(含承包方)</label>
+                                            <input type="number" class="form-input people-count" value="85" onchange="updateCalculations('site_${phaseId}_1')">
+                                        </div>
+                                        <div class="form-row" style="margin-bottom: 0;">
+                                            <div class="flex justify-between items-center">
+                                                <label class="form-label">有效人数</label>
+                                                <label class="flex items-center gap-1 text-xs text-gray-600">
+                                                    <input type="checkbox" checked disabled class="rounded text-gray-400">
+                                                    <span>发子证</span>
+                                                </label>
+                                            </div>
+                                            <input type="number" class="form-input effective-people" value="80" placeholder="≤总人数" onchange="validateEffectivePeople(this)">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="border-t border-gray-200 pt-3 mt-3">
+                                        <div class="text-xs font-semibold text-gray-700 mb-2">人天计算（AI底座）</div>
+                                        <div class="compact-row-2">
+                                            <div class="form-row" style="margin-bottom: 0;">
+                                                <label class="form-label">审核准备</label>
+                                                <input type="number" step="0.5" class="form-input calc-field" data-type="prep" value="0.5" onchange="updateCalculations('site_${phaseId}_1')">
+                                            </div>
+                                            <div class="form-row" style="margin-bottom: 0;">
+                                                <label class="form-label">第一阶段</label>
+                                                <input type="number" step="0.5" class="form-input calc-field" data-type="stage1" value="0" onchange="updateCalculations('site_${phaseId}_1')">
+                                            </div>
+                                            <div class="form-row" style="margin-bottom: 0;">
+                                                <label class="form-label">监督审核</label>
+                                                <input type="number" step="0.5" class="form-input calc-field" data-type="stage2" value="1.5" onchange="updateCalculations('site_${phaseId}_1')">
+                                            </div>
+                                            <div class="form-row" style="margin-bottom: 0;">
+                                                <label class="form-label">调整比例</label>
+                                                <input type="number" step="0.1" min="0.7" class="form-input calc-field" data-type="ratio" value="1.0" onchange="updateCalculations('site_${phaseId}_1')">
+                                            </div>
+                                        </div>
+                                        <div class="flex justify-between items-center bg-blue-50 p-2 rounded mt-2">
+                                            <span class="text-sm font-medium text-blue-900">调整后</span>
+                                            <span class="text-lg font-bold text-blue-600 adjusted-days">2.0</span>
+                                        </div>
+                                        <div class="form-row mt-2 mb-0">
+                                            <input type="text" class="form-input" placeholder="调整理由（如适用）" style="font-size: 12px;">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="site-process-right">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <h4 class="font-semibold text-gray-800">过程审核策划</h4>
+                                        <div class="flex items-center gap-2">
+                                            <button class="btn btn-default btn-sm" onclick="openProcessTemplateDrawer('site_${phaseId}_1')">
+                                                <i class="fas fa-list-alt"></i>
+                                                选择过程组模板
+                                            </button>
+                                            <button class="btn btn-default btn-sm" onclick="importProcessFromExcel('site_${phaseId}_1')">
+                                                <i class="fas fa-file-excel"></i>
+                                                Excel导入
+                                            </button>
+                                            <button onclick="addProcessToSite('site_${phaseId}_1')" class="btn btn-default btn-sm">
+                                                <i class="fas fa-plus"></i>
+                                                新增行
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="w-10">序号</th>
+                                                <th>过程名称</th>
+                                                <th>主责部门</th>
+                                                <th>相关部门</th>
+                                                <th>涉及标准条款</th>
+                                                <th>绩效参数/文件</th>
+                                                <th class="w-10">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="site-process-body" id="processBody_site_${phaseId}_1">
+                                            <tr>
+                                                <td>1</td>
+                                                <td><input type="text" class="form-input" value="设计与开发"></td>
+                                                <td><input type="text" class="form-input" value="研发部"></td>
+                                                <td><input type="text" class="form-input" value="测试部"></td>
+                                                <td><input type="text" class="form-input" value="8.3"></td>
+                                                <td><input type="text" class="form-input" value="《设计开发控制程序》"></td>
+                                                <td>
+                                                    <button onclick="deleteProcessRow(this)" class="text-red-500 hover:text-red-700">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function deleteTempAudit(phaseId, event) {
+            event.stopPropagation(); // 防止触发导航点击
+            
+            if (!confirm('确定要删除该临时审核节点吗？')) {
+                return;
+            }
+            
+            // 删除导航项
+            const navItem = document.querySelector(`.vertical-nav-item[data-phase="${phaseId}"]`);
+            if (navItem) {
+                navItem.remove();
+            }
+            
+            // 删除内容区域
+            const contentEl = document.getElementById(`phase_${phaseId}`);
+            if (contentEl) {
+                contentEl.remove();
+            }
+            
+            // 清理sites数组
+            sites = sites.filter(s => !s.includes(phaseId));
+            
+            // 将"当前审核类型"标签转移回再认证
+            const recertNav = document.querySelector('.vertical-nav-item[data-phase="recert"]');
+            if (recertNav) {
+                // 创建新的当前审核类型标签
+                const newLabel = document.createElement('div');
+                newLabel.className = 'nav-header-title-static';
+                newLabel.textContent = '当前审核类型';
+                recertNav.insertBefore(newLabel, recertNav.firstChild);
+                recertNav.classList.add('current-audit-type');
+            }
+            
+            // 启用新增临时审核按钮
+            const addBtn = document.getElementById('addTempAuditBtn');
+            if (addBtn) {
+                addBtn.disabled = false;
+            }
+            
+            hasTempAudit = false;
+            
+            // 如果当前激活的是被删除的节点，切换到再认证
+            if (currentPhase === phaseId) {
+                if (recertNav) {
+                    switchPhase('recert', recertNav);
+                }
+            }
         }
 
         function openProcessListModal() {
@@ -2883,14 +3535,24 @@
         }
 
         function updateAllPhaseTotals() {
-            const phaseSites = {
-                'initial': ['site_0', 'site_1'],
-                'surv1': ['site_surv1_0', 'site_surv1_1'],
-                'surv2': ['site_surv2_0', 'site_surv2_1'],
-                'recert': ['site_recert_0', 'site_recert_1']
-            };
+            // 更新所有阶段的总计，包括临时审核
+            const allPhases = ['initial', 'surv1', 'surv2', 'recert'];
             
-            for (let [phase, siteIds] of Object.entries(phaseSites)) {
+            // 查找所有临时审核阶段
+            document.querySelectorAll('.vertical-nav-item[data-phase^="temp_"]').forEach(item => {
+                allPhases.push(item.getAttribute('data-phase'));
+            });
+            
+            allPhases.forEach(phase => {
+                let siteIds = [];
+                if (phase === 'initial') siteIds = ['site_0', 'site_1'];
+                else if (phase === 'surv1') siteIds = ['site_surv1_0', 'site_surv1_1'];
+                else if (phase === 'surv2') siteIds = ['site_surv2_0', 'site_surv2_1'];
+                else if (phase === 'recert') siteIds = ['site_recert_0', 'site_recert_1'];
+                else if (phase.startsWith('temp_')) {
+                    siteIds = [`site_${phase}_0`, `site_${phase}_1`];
+                }
+                
                 let totalPrep = 0, totalStage1 = 0, totalStage2 = 0, totalAdjusted = 0, totalBaseDays = 0;
                 
                 siteIds.forEach(id => {
@@ -2924,7 +3586,7 @@
                 if (stage2El) stage2El.textContent = totalStage2.toFixed(1);
                 if (adjustedEl) adjustedEl.textContent = totalAdjusted.toFixed(1);
                 if (reducedEl) reducedEl.textContent = totalReduced.toFixed(1);
-            }
+            });
         }
 
         function validateEffectivePeople(input) {
@@ -3071,7 +3733,7 @@
             
             // 根据当前阶段确定审核类型字段名
             let stage2Label = '二阶段现场';
-            if (currentPhase === 'surv1' || currentPhase === 'surv2') {
+            if (currentPhase === 'surv1' || currentPhase === 'surv2' || currentPhase.startsWith('temp_')) {
                 stage2Label = '监督审核';
             } else if (currentPhase === 'recert') {
                 stage2Label = '再认证审核';
