@@ -1,0 +1,2554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跟进记录管理 - 客户营销管理系统V2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        /* 顶部栏 */
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* 统计栏 */
+        .stats-bar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px 24px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 140px;
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            background: #f1f5f9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .stat-card.active {
+            background: #eff6ff;
+            border-color: #3b82f6;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .stat-icon.blue { background: #dbeafe; color: #1e40af; }
+        .stat-icon.green { background: #dcfce7; color: #166534; }
+        .stat-icon.purple { background: #f3e8ff; color: #7c3aed; }
+        .stat-icon.orange { background: #ffedd5; color: #9a3412; }
+        .stat-icon.cyan { background: #cffafe; color: #0e7490; }
+        .stat-icon.gray { background: #f3f4f6; color: #4b5563; }
+
+        .stat-number {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .stat-card.active .stat-number {
+            color: #1e40af;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        /* 筛选栏 */
+        .filter-bar {
+            background: white;
+            margin: 20px 20px 0 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .quick-filters {
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #fafafa;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-item label {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .filter-item input,
+        .filter-item select {
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            background: white;
+        }
+
+        .filter-item input:focus,
+        .filter-item select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        /* 表格区域 - 冻结列样式参考商机管理 */
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin: 20px;
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: calc(100vh - 340px);
+            position: relative;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 1600px;
+            table-layout: fixed;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 13px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            background: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table tbody tr:hover td {
+            background: #f8fafc;
+        }
+
+        /* 左侧冻结列 */
+        .col-sticky-left {
+            position: sticky;
+            left: 0;
+            z-index: 30;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            width: 150px;
+            min-width: 150px;
+        }
+
+        .col-sticky-left-2 {
+            position: sticky;
+            left: 150px;
+            z-index: 30;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            width: 240px;
+            min-width: 240px;
+        }
+
+        /* 右侧冻结列 */
+        .col-sticky-right {
+            position: sticky;
+            right: 0;
+            z-index: 30;
+            background: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+            width: 100px;
+            min-width: 100px;
+        }
+
+        .data-table th.col-sticky-left,
+        .data-table th.col-sticky-left-2,
+        .data-table th.col-sticky-right {
+            z-index: 40;
+            background: #f8fafc;
+        }
+
+        .data-table tbody tr:hover .col-sticky-left,
+        .data-table tbody tr:hover .col-sticky-left-2,
+        .data-table tbody tr:hover .col-sticky-right {
+            background: #f8fafc;
+        }
+
+        /* 列宽定义 */
+        .col-record-id { width: 150px; }
+        .col-customer { width: 240px; }
+        .col-follow-type { width: 110px; }
+        .col-follow-time { width: 150px; }
+        .col-follower { width: 120px; }
+        .col-source-type { width: 120px; }
+        .col-source-name { width: 220px; }
+        .col-content { width: 350px; }
+        .col-contact { width: 120px; }
+        .col-location { width: 130px; }
+        .col-action { width: 100px; }
+
+        /* 标签样式 */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 4px;
+        }
+
+        .tag-plan { background: #f3e8ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+        .tag-opportunity { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .tag-customer { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .tag-phone { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .tag-visit { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
+        .tag-email { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+        .tag-video { background: #fce7f3; color: #9d174d; border: 1px solid #fbcfe8; }
+        .tag-other { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+
+        /* 按钮 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: white; border-color: #d1d5db; color: #374151; }
+        .btn-secondary:hover { background: #f9fafb; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        .action-btn {
+            color: #3b82f6;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover { background: #eff6ff; color: #1d4ed8; }
+
+        /* 分页 */
+        .pagination { display: flex; gap: 4px; align-items: center; }
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .page-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+        .page-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 40px;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-container {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            width: 720px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            background: white;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: #fafafa;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .btn-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            color: #6b7280;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-close:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        /* 表单样式 */
+        .form-section {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .form-label .required {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .form-textarea {
+            resize: none;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        /* 关联类型选择卡片 */
+        .source-type-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .source-type-card {
+            position: relative;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            text-align: center;
+        }
+
+        .source-type-card:hover {
+            border-color: #bfdbfe;
+            background: #fafafa;
+        }
+
+        .source-type-card.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .source-type-card i {
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .source-type-card.plan i { color: #7c3aed; }
+        .source-type-card.opportunity i { color: #2563eb; }
+        .source-type-card.customer i { color: #d97706; }
+
+        .source-type-card.selected.plan i { color: #3b82f6; }
+        .source-type-card.selected.opportunity i { color: #3b82f6; }
+        .source-type-card.selected.customer i { color: #3b82f6; }
+
+        .source-type-title {
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .source-type-card.selected .source-type-title {
+            color: #1e40af;
+        }
+
+        .source-type-desc {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        /* 选择器触发器 */
+        .selector-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .selector-trigger:hover {
+            border-color: #3b82f6;
+            background: #fafafa;
+        }
+
+        .selector-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .selector-icon {
+            width: 40px;
+            height: 40px;
+            background: #f3f4f6;
+            color: #6b7280;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .selector-detail h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .selector-detail p {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .selected-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+        }
+
+        /* 跟进方式选择 */
+        .follow-type-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .follow-type-item {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .follow-type-item input {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .follow-type-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .follow-type-item:hover .follow-type-label {
+            border-color: #bfdbfe;
+            background: #fafafa;
+        }
+
+        .follow-type-item input:checked + .follow-type-label {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+        .follow-type-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+
+        .follow-type-item input:checked + .follow-type-label .follow-type-icon {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* 详情页样式 */
+        .detail-container {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            background: #f1f5f9;
+        }
+
+        .detail-header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .anchor-nav {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 24px;
+            display: flex;
+            gap: 32px;
+            position: sticky;
+            top: 73px;
+            z-index: 99;
+        }
+
+        .anchor-tab {
+            padding: 16px 4px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .anchor-tab:hover {
+            color: #3b82f6;
+        }
+
+        .anchor-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        .detail-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .detail-card {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            padding: 24px;
+            margin-bottom: 24px;
+            scroll-margin-top: 140px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #111827;
+            font-weight: 500;
+        }
+
+        /* 关联信息卡片 */
+        .source-info-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .source-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .source-icon.plan { background: #f3e8ff; color: #7c3aed; }
+        .source-icon.opportunity { background: #dbeafe; color: #1e40af; }
+        .source-icon.customer { background: #fef3c7; color: #92400e; }
+
+        .source-details {
+            flex: 1;
+        }
+
+        .source-title {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .source-subtitle {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        /* 客户信息卡片 */
+        .customer-info-card {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .customer-info-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: #dbeafe;
+            color: #1e40af;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .customer-info-details {
+            flex: 1;
+        }
+
+        .customer-info-title {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .customer-info-subtitle {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        /* 文件上传 */
+        .file-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .file-upload-area:hover {
+            border-color: #3b82f6;
+            background: #fafafa;
+        }
+
+        /* 选择列表面板 */
+        .select-list-panel {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .select-list-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .select-list-item:hover {
+            background: #f9fafb;
+        }
+
+        .select-list-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Toast提示 */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #111827;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 2000;
+        }
+
+        .toast.show { display: flex; }
+
+        /* 隐藏 */
+        .hidden { display: none !important; }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <!-- 列表页 -->
+    <div id="listPage">
+        <!-- 顶部栏 -->
+        <div class="top-bar">
+            <div class="flex items-center gap-4">
+                <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-clipboard-check text-blue-600"></i>
+                    跟进记录管理
+                </h1>
+                <span class="text-gray-300">|</span>
+                <div class="flex items-center gap-3 text-sm">
+                    <span class="text-gray-600">共 <strong class="text-gray-900 text-lg" id="totalCount">0</strong> 条记录</span>
+                    <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                        <i class="fas fa-calendar-check mr-1"></i>关联计划 45
+                    </span>
+                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                        <i class="fas fa-funnel-dollar mr-1"></i>关联商机 68
+                    </span>
+                    <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
+                        <i class="fas fa-building mr-1"></i>直接客户 32
+                    </span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button class="btn btn-secondary btn-sm" onclick="exportData()">
+                    <i class="fas fa-download"></i>
+                    导出
+                </button>
+                <!-- <button class="btn btn-primary btn-sm" onclick="openRecordModal()">
+                    <i class="fas fa-plus"></i>
+                    登记跟进
+                </button> -->
+            </div>
+        </div>
+
+        <!-- 统计栏 -->
+        <div class="stats-bar">
+            <div class="stat-card active" onclick="filterByType('all')">
+                <div class="stat-icon blue">
+                    <i class="fas fa-th-list"></i>
+                </div>
+                <div>
+                    <div class="stat-number" id="stat-all">145</div>
+                    <div class="stat-label">全部记录</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByType('plan')">
+                <div class="stat-icon purple">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div>
+                    <div class="stat-number" id="stat-plan">45</div>
+                    <div class="stat-label">关联计划</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByType('opportunity')">
+                <div class="stat-icon blue">
+                    <i class="fas fa-funnel-dollar"></i>
+                </div>
+                <div>
+                    <div class="stat-number" id="stat-opportunity">68</div>
+                    <div class="stat-label">关联商机</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByType('customer')">
+                <div class="stat-icon orange">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div>
+                    <div class="stat-number" id="stat-customer">32</div>
+                    <div class="stat-label">直接客户</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByType('today')">
+                <div class="stat-icon cyan">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <div class="stat-number" id="stat-today">12</div>
+                    <div class="stat-label">今日新增</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="filter-bar">
+            <div class="quick-filters">
+                <div class="filter-item">
+                    <label>记录编号</label>
+                    <input type="text" placeholder="输入编号" style="width: 130px;" id="filterRecordId">
+                </div>
+                <div class="filter-item">
+                    <label>客户名称</label>
+                    <input type="text" placeholder="输入客户" style="width: 150px;" id="filterCustomer">
+                </div>
+                <div class="filter-item">
+                    <label>跟进方式</label>
+                    <select style="width: 110px;" id="filterFollowType">
+                        <option value="">全部</option>
+                        <option value="phone">电话沟通</option>
+                        <option value="visit">现场拜访</option>
+                        <option value="email">邮件往来</option>
+                        <option value="video">视频会议</option>
+                        <option value="wechat">微信/QQ</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>关联类型</label>
+                    <select style="width: 110px;" id="filterSourceType">
+                        <option value="">全部</option>
+                        <option value="plan">跟进计划</option>
+                        <option value="opportunity">商机</option>
+                        <option value="customer">直接客户</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>跟进人</label>
+                    <select style="width: 120px;" id="filterFollower">
+                        <option value="">全部</option>
+                        <option value="王小红">王小红</option>
+                        <option value="李芳">李芳</option>
+                        <option value="刘强">刘强</option>
+                        <option value="张伟">张伟</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>跟进时间</label>
+                    <input type="date" style="width: 130px;" id="filterStartDate">
+                    <span class="text-gray-400">至</span>
+                    <input type="date" style="width: 130px;" id="filterEndDate">
+                </div>
+                <div class="flex-1"></div>
+                <button class="btn btn-primary btn-sm" onclick="searchData()">
+                    <i class="fas fa-search"></i>
+                    查询
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="resetFilter()">
+                    重置
+                </button>
+            </div>
+        </div>
+
+        <!-- 表格区域 -->
+        <div class="table-container">
+            <div class="table-wrapper">
+                <table class="data-table" id="recordTable">
+                    <thead>
+                        <tr>
+                            <th class="col-record-id col-sticky-left">记录编号</th>
+                            <th class="col-customer col-sticky-left-2">客户名称</th>
+                            <th class="col-follow-type">跟进方式</th>
+                            <th class="col-follow-time">跟进时间</th>
+                            <th class="col-follower">跟进人</th>
+                            <th class="col-source-type">关联类型</th>
+                            <th class="col-source-name">关联对象</th>
+                            <th class="col-content">跟进内容摘要</th>
+                            <th class="col-contact">联系人</th>
+                            <th class="col-location">拜访地点</th>
+                            <th class="col-action col-sticky-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- 数据通过JS填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            <div class="p-4 border-t border-gray-200 flex items-center justify-between bg-white">
+                <div class="text-sm text-gray-600">
+                    显示第 <span class="font-medium">1</span> 到 <span class="font-medium" id="pageSize">15</span> 条，共 <span class="font-medium" id="pageTotal">0</span> 条
+                </div>
+                <div class="pagination" id="pagination">
+                </div>
+                <div class="flex items-center gap-2 text-sm text-gray-600">
+                    <span>每页</span>
+                    <select class="border border-gray-300 rounded px-2 py-1 text-sm" onchange="changePageSize(this.value)">
+                        <option value="15">15</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                    </select>
+                    <span>条</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情页 -->
+    <div class="detail-container" id="detailPage">
+        <div class="detail-header">
+            <div class="flex items-center gap-4">
+                <button class="btn btn-secondary btn-sm" onclick="backToList()">
+                    <i class="fas fa-arrow-left"></i>返回列表
+                </button>
+                <div>
+                    <h1 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        跟进记录详情
+                    </h1>
+                    <p class="text-sm text-gray-500 mt-1">记录编号：<span id="detailRecordId">REC-2026-0415-001</span></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button class="btn btn-secondary btn-sm" onclick="printDetail()">
+                    <i class="fas fa-print"></i>打印
+                </button>
+            </div>
+        </div>
+
+        <!-- 锚点Tab导航 -->
+        <div class="anchor-nav">
+            <a href="#section-customer" class="anchor-tab active" onclick="switchAnchor(this, 'section-customer')">
+                <i class="fas fa-building mr-1"></i>客户信息
+            </a>
+            <a href="#section-source" class="anchor-tab" onclick="switchAnchor(this, 'section-source')">
+                <i class="fas fa-link mr-1"></i>关联信息
+            </a>
+            <a href="#section-content" class="anchor-tab" onclick="switchAnchor(this, 'section-content')">
+                <i class="fas fa-align-left mr-1"></i>跟进内容
+            </a>
+            <a href="#section-attachments" class="anchor-tab" onclick="switchAnchor(this, 'section-attachments')">
+                <i class="fas fa-paperclip mr-1"></i>附件 <span class="ml-1 px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs" id="attachCount">2</span>
+            </a>
+        </div>
+
+        <div class="detail-content">
+            <!-- 客户信息 - 所有场景都展示 -->
+            <div class="detail-card" id="section-customer">
+                <h3 class="card-title">
+                    <i class="fas fa-building text-blue-600"></i>客户信息
+                </h3>
+                <div id="detailCustomerInfo">
+                    <!-- 动态填充客户信息 -->
+                </div>
+            </div>
+
+            <!-- 关联信息 -->
+            <div class="detail-card" id="section-source">
+                <h3 class="card-title">
+                    <i class="fas fa-link text-blue-600"></i>关联信息
+                </h3>
+                <div id="detailSourceInfo">
+                    <!-- 动态填充 -->
+                </div>
+            </div>
+
+            <!-- 跟进内容 -->
+            <div class="detail-card" id="section-content">
+                <h3 class="card-title">
+                    <i class="fas fa-align-left text-blue-600"></i>跟进内容
+                </h3>
+                <div class="bg-gray-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                    <p class="text-gray-700 leading-relaxed whitespace-pre-line" id="detailContent">
+                        与客户张总电话沟通，确认年审材料已基本准备就绪，计划下周提交初审。客户反馈希望审核时间安排在5月上旬，避开月初的盘点期。已约定下周三（4月22日）上午9点进行二阶段审核。
+                    </p>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <div class="text-sm font-semibold text-gray-700 mb-2">沟通要点</div>
+                    <div class="flex flex-wrap gap-2" id="detailTags">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">需求确认</span>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">约定时间</span>
+                        <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">材料准备</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 附件 -->
+            <div class="detail-card" id="section-attachments">
+                <h3 class="card-title">
+                    <i class="fas fa-paperclip text-blue-600"></i>附件资料
+                </h3>
+                <div class="grid grid-cols-2 gap-4" id="detailAttachments">
+                    <!-- 动态填充 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增跟进记录模态框 -->
+    <div class="modal-overlay" id="recordModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span id="modalTitle">登记跟进记录</span>
+                </div>
+                <button class="btn-close" onclick="closeRecordModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body custom-scroll">
+                <form id="recordForm">
+                    <!-- 关联类型选择 -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-link text-gray-500"></i>
+                            选择关联类型 <span class="text-red-500">*</span>
+                        </div>
+                        <div class="source-type-cards">
+                            <div class="source-type-card plan" onclick="selectSourceType('plan')" id="card-plan">
+                                <i class="fas fa-calendar-check"></i>
+                                <div class="source-type-title">关联跟进计划</div>
+                                <div class="source-type-desc">执行已创建的跟进计划</div>
+                            </div>
+                            <div class="source-type-card opportunity" onclick="selectSourceType('opportunity')" id="card-opportunity">
+                                <i class="fas fa-funnel-dollar"></i>
+                                <div class="source-type-title">关联商机</div>
+                                <div class="source-type-desc">直接关联到具体商机</div>
+                            </div>
+                            <div class="source-type-card customer selected" onclick="selectSourceType('customer')" id="card-customer">
+                                <i class="fas fa-building"></i>
+                                <div class="source-type-title">直接客户</div>
+                                <div class="source-type-desc">仅关联客户不指定计划</div>
+                            </div>
+                        </div>
+
+                        <!-- 动态选择区域 -->
+                        <div id="sourceSelectorArea" style="margin-top: 16px;">
+                            <!-- 根据类型动态显示不同选择器 -->
+                            <div id="selector-customer" class="selector-panel">
+                                <div id="customer-unselected" class="selector-trigger" onclick="openCustomerSelectModal()">
+                                    <div class="selector-info">
+                                        <div class="selector-icon">
+                                            <i class="fas fa-building"></i>
+                                        </div>
+                                        <div class="selector-detail">
+                                            <h4>选择客户</h4>
+                                            <p>点击选择要跟进的企业客户</p>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </div>
+                                <div id="customer-selected" class="selected-display hidden">
+                                    <div class="selector-info">
+                                        <div class="selector-icon" style="background: #dcfce7; color: #166534;">
+                                            <i class="fas fa-building"></i>
+                                        </div>
+                                        <div class="selector-detail">
+                                            <h4 id="selectedCustomerName">北京科技有限公司</h4>
+                                            <p id="selectedCustomerInfo">客户编号：C20240315001</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="text-blue-600 hover:text-blue-700 text-sm" onclick="changeCustomer()">
+                                        <i class="fas fa-edit"></i> 更换
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="selector-plan" class="selector-panel hidden">
+                                <div class="mb-3 text-sm text-gray-600">
+                                    <i class="fas fa-info-circle mr-1"></i>选择要执行的跟进计划
+                                </div>
+                                <div id="plan-unselected" class="selector-trigger" onclick="openPlanSelectModal()">
+                                    <div class="selector-info">
+                                        <div class="selector-icon" style="background: #f3e8ff; color: #7c3aed;">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </div>
+                                        <div class="selector-detail">
+                                            <h4>选择跟进计划</h4>
+                                            <p>从您的计划列表中选择</p>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </div>
+                                <div id="plan-selected" class="selected-display hidden" style="background: #f3e8ff; border-color: #ddd6fe;">
+                                    <div class="selector-info">
+                                        <div class="selector-icon" style="background: #f3e8ff; color: #7c3aed;">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </div>
+                                        <div class="selector-detail">
+                                            <h4 id="selectedPlanName">ISO9001质量管理体系初次审核跟进</h4>
+                                            <p id="selectedPlanInfo">截止日期：2026-04-20</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="text-purple-600 hover:text-purple-700 text-sm" onclick="changePlan()">
+                                        <i class="fas fa-edit"></i> 更换
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="selector-opportunity" class="selector-panel hidden">
+                                <div class="mb-3 text-sm text-gray-600">
+                                    <i class="fas fa-info-circle mr-1"></i>选择关联的商机（需先选择客户）
+                                </div>
+                                <div id="opp-customer-hint" class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 mb-3">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>请先选择客户
+                                </div>
+                                <div id="opp-unselected" class="selector-trigger hidden" onclick="openOpportunitySelectModal()">
+                                    <div class="selector-info">
+                                        <div class="selector-icon" style="background: #dbeafe; color: #1e40af;">
+                                            <i class="fas fa-funnel-dollar"></i>
+                                        </div>
+                                        <div class="selector-detail">
+                                            <h4>选择商机</h4>
+                                            <p>从客户关联的商机中选择</p>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </div>
+                                <div id="opp-selected" class="selected-display hidden" style="background: #dbeafe; border-color: #bfdbfe;">
+                                    <div class="selector-info">
+                                        <div class="selector-icon" style="background: #dbeafe; color: #1e40af;">
+                                            <i class="fas fa-funnel-dollar"></i>
+                                        </div>
+                                        <div class="selector-detail">
+                                            <h4 id="selectedOppName">ISO9001质量管理体系认证</h4>
+                                            <p id="selectedOppInfo">预计金额：¥45,000</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="text-blue-600 hover:text-blue-700 text-sm" onclick="changeOpportunity()">
+                                        <i class="fas fa-edit"></i> 更换
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 跟进信息 -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-walking text-gray-500"></i>
+                            跟进信息 <span class="text-red-500">*</span>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">跟进方式 <span class="text-red-500">*</span></label>
+                                <select class="form-input" id="followType" required>
+                                    <option value="phone" selected>电话沟通</option>
+                                    <option value="visit">现场拜访</option>
+                                    <option value="email">邮件往来</option>
+                                    <option value="video">视频会议</option>
+                                    <option value="wechat">微信/QQ</option>
+                                    <option value="other">其他</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">跟进时间 <span class="text-red-500">*</span></label>
+                                <input type="datetime-local" class="form-input" id="followTime" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">联系人 <span class="text-red-500">*</span></label>
+                                <select class="form-input" id="contactSelect">
+                                    <option value="">请选择联系人</option>
+                                    <option value="张伟|技术总监">张伟 - 技术总监</option>
+                                    <option value="李芳|质量经理">李芳 - 质量经理</option>
+                                    <option value="manual">+ 手动添加</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="manualContactGroup" style="display: none;">
+                                <label class="form-label">手动输入联系人</label>
+                                <input type="text" class="form-input" id="manualContact" placeholder="输入联系人姓名及职务">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">拜访地点</label>
+                                <input type="text" class="form-input" id="location" placeholder="客户公司/第三方地点/线上">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">下次跟进提醒</label>
+                                <select class="form-input" id="nextReminder">
+                                    <option value="">不设置</option>
+                                    <option value="1">1天后</option>
+                                    <option value="3" selected>3天后</option>
+                                    <option value="7">7天后</option>
+                                    <option value="custom">自定义</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="form-label">跟进内容 <span class="text-red-500">*</span></label>
+                            <textarea class="form-textarea" id="followContent" rows="4" placeholder="详细记录本次沟通内容、客户反馈、痛点需求及下一步行动计划..." required></textarea>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="form-label">沟通结果标签</label>
+                            <div class="flex flex-wrap gap-2">
+                                <label class="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full cursor-pointer hover:bg-blue-50">
+                                    <input type="checkbox" class="mr-2 result-tag" value="需求确认">
+                                    <span class="text-sm">需求确认</span>
+                                </label>
+                                <label class="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full cursor-pointer hover:bg-blue-50">
+                                    <input type="checkbox" class="mr-2 result-tag" value="方案介绍">
+                                    <span class="text-sm">方案介绍</span>
+                                </label>
+                                <label class="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full cursor-pointer hover:bg-blue-50">
+                                    <input type="checkbox" class="mr-2 result-tag" value="报价提交">
+                                    <span class="text-sm">报价提交</span>
+                                </label>
+                                <label class="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full cursor-pointer hover:bg-blue-50">
+                                    <input type="checkbox" class="mr-2 result-tag" value="合同推进">
+                                    <span class="text-sm">合同推进</span>
+                                </label>
+                                <label class="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full cursor-pointer hover:bg-blue-50">
+                                    <input type="checkbox" class="mr-2 result-tag" value="异议处理">
+                                    <span class="text-sm">异议处理</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 附件上传 -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-paperclip text-gray-500"></i>
+                            附件资料
+                        </div>
+                        <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                            <div class="text-sm font-medium text-gray-700">点击上传附件</div>
+                            <div class="text-xs text-gray-500 mt-1">支持 PDF、Word、Excel、图片，单个不超过 20MB</div>
+                            <input type="file" id="fileInput" multiple hidden onchange="handleFileSelect(this)">
+                        </div>
+                        <div id="fileList" class="mt-3 space-y-2"></div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeRecordModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveRecord()">
+                    <i class="fas fa-save"></i>保存记录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 客户选择弹窗 -->
+    <div class="modal-overlay" id="customerSelectModal">
+        <div class="modal-container" style="width: 600px;">
+            <div class="modal-header">
+                <div class="modal-title">选择客户</div>
+                <button class="btn-close" onclick="closeCustomerSelectModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="position: relative; margin-bottom: 16px;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+                    <input type="text" id="customerSearchInput" style="width: 100%; padding: 10px 12px 10px 36px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;" placeholder="搜索客户名称、编号..." oninput="filterCustomerList(this.value)">
+                </div>
+                <div class="select-list-panel" id="customerSelectList">
+                    <!-- 动态填充 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 计划选择弹窗 -->
+    <div class="modal-overlay" id="planSelectModal">
+        <div class="modal-container" style="width: 700px;">
+            <div class="modal-header">
+                <div class="modal-title">选择跟进计划</div>
+                <button class="btn-close" onclick="closePlanSelectModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="position: relative; margin-bottom: 16px;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+                    <input type="text" style="width: 100%; padding: 10px 12px 10px 36px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;" placeholder="搜索计划名称..." oninput="filterPlanList(this.value)">
+                </div>
+                <div class="select-list-panel" id="planSelectList">
+                    <!-- 动态填充 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商机选择弹窗 -->
+    <div class="modal-overlay" id="opportunitySelectModal">
+        <div class="modal-container" style="width: 600px;">
+            <div class="modal-header">
+                <div class="modal-title">选择商机</div>
+                <button class="btn-close" onclick="closeOpportunitySelectModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="position: relative; margin-bottom: 16px;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+                    <input type="text" style="width: 100%; padding: 10px 12px 10px 36px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;" placeholder="搜索商机名称..." oninput="filterOppList(this.value)">
+                </div>
+                <div class="select-list-panel" id="oppSelectList">
+                    <!-- 动态填充 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMessage">操作成功</span>
+    </div>
+
+    <script>
+        // 假数据 - 跟进记录（覆盖全部场景）
+        const mockData = [
+            // 场景1：关联跟进计划
+            {
+                id: 'REC20260415001',
+                customerId: 'C20240315001',
+                customerName: '北京科技有限公司',
+                customerIndustry: '制造业',
+                customerRegion: '华北',
+                sourceType: 'plan',
+                sourceId: 'PL20260410001',
+                sourceName: 'ISO9001质量管理体系初次审核跟进',
+                followType: 'phone',
+                followTypeName: '电话沟通',
+                followTime: '2026-04-15 14:30',
+                follower: '王小红',
+                content: '与客户张总电话沟通，确认年审材料已基本准备就绪，计划下周提交初审。客户反馈希望审核时间安排在5月上旬，避开月初的盘点期。',
+                contactName: '张伟',
+                contactTitle: '技术总监',
+                location: '线上',
+                createTime: '2026-04-15 14:35',
+                attachments: ['会议纪要.pdf'],
+                tags: ['需求确认', '约定时间']
+            },
+            {
+                id: 'REC20260414002',
+                customerId: 'C20240201002',
+                customerName: '华能电力发展有限公司',
+                customerIndustry: '电力',
+                customerRegion: '华北',
+                sourceType: 'plan',
+                sourceId: 'PL20260412002',
+                sourceName: '证书临期提醒跟进',
+                followType: 'visit',
+                followTypeName: '现场拜访',
+                followTime: '2026-04-14 10:00',
+                follower: '李芳',
+                content: '前往客户现场，与质量部李经理面谈证书换证事宜。客户已准备好相关材料，希望尽快安排审核。',
+                contactName: '李芳',
+                contactTitle: '质量经理',
+                location: '华能电力总部',
+                createTime: '2026-04-14 11:20',
+                attachments: ['现场照片.jpg', '材料清单.xlsx'],
+                tags: ['材料准备']
+            },
+            // 场景2：关联商机
+            {
+                id: 'REC20260413003',
+                customerId: 'C20240110003',
+                customerName: '中建材国际贸易有限公司',
+                customerIndustry: '贸易',
+                customerRegion: '华北',
+                sourceType: 'opportunity',
+                sourceId: 'OP20240320001',
+                sourceName: 'ISO14001环境管理体系认证',
+                followType: 'email',
+                followTypeName: '邮件往来',
+                followTime: '2026-04-13 16:45',
+                follower: '刘强',
+                content: '发送正式报价单给客户，包含认证费用、咨询费用及时间安排。抄送客户采购部和质量部负责人。',
+                contactName: '王建国',
+                contactTitle: '采购经理',
+                location: '线上',
+                createTime: '2026-04-13 16:50',
+                attachments: ['报价单.pdf'],
+                tags: ['报价提交']
+            },
+            {
+                id: 'REC20260412004',
+                customerId: 'C20231120005',
+                customerName: '中国航天科技集团第五研究院',
+                customerIndustry: '航天',
+                customerRegion: '华北',
+                sourceType: 'opportunity',
+                sourceId: 'OP20240405001',
+                sourceName: '保密资质认证咨询',
+                followType: 'visit',
+                followTypeName: '现场拜访',
+                followTime: '2026-04-12 09:30',
+                follower: '李芳',
+                content: '初次拜访，了解客户保密室建设情况，提供整改建议。客户对咨询服务表示认可，进入方案设计阶段。',
+                contactName: '李建国',
+                contactTitle: '保密办主任',
+                location: '航天五院保密室',
+                createTime: '2026-04-12 12:00',
+                attachments: [],
+                tags: ['需求确认', '方案介绍']
+            },
+            // 场景3：直接客户（不关联计划/商机）
+            {
+                id: 'REC20260411005',
+                customerId: 'C20240320009',
+                customerName: '字节跳动科技有限公司',
+                customerIndustry: '互联网',
+                customerRegion: '华北',
+                sourceType: 'customer',
+                sourceId: null,
+                sourceName: null,
+                followType: 'video',
+                followTypeName: '视频会议',
+                followTime: '2026-04-11 15:00',
+                follower: '王磊',
+                content: '与客户进行视频会议，讨论多体系整合认证方案。客户IT部门和质量部门共同参与，对整合方案提出具体技术要求。',
+                contactName: '赵敏',
+                contactTitle: '质量总监',
+                location: '腾讯会议',
+                createTime: '2026-04-11 15:30',
+                attachments: ['会议录音.mp3'],
+                tags: ['方案介绍', '异议处理']
+            },
+            {
+                id: 'REC20260410006',
+                customerId: 'C20240215007',
+                customerName: '上汽通用五菱汽车股份有限公司',
+                customerIndustry: '汽车',
+                customerRegion: '华南',
+                sourceType: 'customer',
+                sourceId: null,
+                sourceName: null,
+                followType: 'wechat',
+                followTypeName: '微信沟通',
+                followTime: '2026-04-10 18:20',
+                follower: '刘强',
+                content: '微信沟通确认审核员资质文件已发送，客户对审核组安排无异议。提醒客户提前准备现场审核所需的设备清单。',
+                contactName: '王明',
+                contactTitle: '质量经理',
+                location: '微信',
+                createTime: '2026-04-10 18:25',
+                attachments: [],
+                tags: ['约定时间']
+            },
+            {
+                id: 'REC20260409007',
+                customerId: 'C20231205004',
+                customerName: '北京市朝阳区人民政府机关事务管理局',
+                customerIndustry: '政府机构',
+                customerRegion: '华北',
+                sourceType: 'plan',
+                sourceId: 'PL20260405003',
+                sourceName: '政府客户季度回访',
+                followType: 'visit',
+                followTypeName: '现场拜访',
+                followTime: '2026-04-09 09:00',
+                follower: '王小红',
+                content: '季度例行回访，了解政府客户对认证服务的满意度，收集改进建议。客户对服务响应速度表示满意。',
+                contactName: '王科长',
+                contactTitle: '后勤处长',
+                location: '朝阳区政府办公楼',
+                createTime: '2026-04-09 10:30',
+                attachments: ['满意度调查表.pdf'],
+                tags: ['需求确认']
+            },
+            {
+                id: 'REC20260408008',
+                customerId: 'C20240301006',
+                customerName: '京东世纪贸易有限公司',
+                customerIndustry: '电商',
+                customerRegion: '华北',
+                sourceType: 'opportunity',
+                sourceId: 'OP20240402002',
+                sourceName: '供应链质量管理体系升级',
+                followType: 'phone',
+                followTypeName: '电话沟通',
+                followTime: '2026-04-08 11:30',
+                follower: '刘强',
+                content: '与供应链部门负责人电话沟通，确认现场审核时间和抽样方案。客户希望审核范围覆盖其华北区域5个仓库。',
+                contactName: '张强',
+                contactTitle: '供应链总监',
+                location: '线上',
+                createTime: '2026-04-08 11:35',
+                attachments: [],
+                tags: ['约定时间', '需求确认']
+            },
+            {
+                id: 'REC20260407009',
+                customerId: 'C20240315001',
+                customerName: '北京科技有限公司',
+                customerIndustry: '制造业',
+                customerRegion: '华北',
+                sourceType: 'customer',
+                sourceId: null,
+                sourceName: null,
+                followType: 'email',
+                followTypeName: '邮件往来',
+                followTime: '2026-04-07 14:00',
+                follower: '王小红',
+                content: '发送审核准备清单给客户，提醒客户准备内审记录、管理评审记录及相关法律法规更新文件。',
+                contactName: '张伟',
+                contactTitle: '技术总监',
+                location: '邮件',
+                createTime: '2026-04-07 14:05',
+                attachments: ['审核准备清单.docx'],
+                tags: ['材料准备']
+            },
+            {
+                id: 'REC20260406010',
+                customerId: 'C20240201002',
+                customerName: '华能电力发展有限公司',
+                customerIndustry: '电力',
+                customerRegion: '华北',
+                sourceType: 'plan',
+                sourceId: 'PL20260405004',
+                sourceName: 'IATF16949转版培训跟进',
+                followType: 'video',
+                followTypeName: '视频会议',
+                followTime: '2026-04-06 10:00',
+                follower: '李芳',
+                content: '组织转版培训后的视频会议答疑，解答客户关于新版标准中风险管理条款的理解问题。',
+                contactName: '李芳',
+                contactTitle: '质量经理',
+                location: '钉钉会议',
+                createTime: '2026-04-06 10:30',
+                attachments: [],
+                tags: ['异议处理']
+            }
+        ];
+
+        // 客户数据
+        const customerData = [
+            { id: 'C20240315001', name: '北京科技有限公司', industry: '制造业', region: '华北' },
+            { id: 'C20240201002', name: '华能电力发展有限公司', industry: '电力', region: '华北' },
+            { id: 'C20240110003', name: '中建材国际贸易有限公司', industry: '贸易', region: '华北' },
+            { id: 'C20231120005', name: '中国航天科技集团第五研究院', industry: '航天', region: '华北' },
+            { id: 'C20240320009', name: '字节跳动科技有限公司', industry: '互联网', region: '华北' },
+            { id: 'C20240215007', name: '上汽通用五菱汽车股份有限公司', industry: '汽车', region: '华南' },
+            { id: 'C20231205004', name: '北京市朝阳区人民政府机关事务管理局', industry: '政府机构', region: '华北' },
+            { id: 'C20240301006', name: '京东世纪贸易有限公司', industry: '电商', region: '华北' }
+        ];
+
+        // 计划数据
+        const planData = [
+            { id: 'PL20260410001', name: 'ISO9001质量管理体系初次审核跟进', customerId: 'C20240315001', deadline: '2026-04-20' },
+            { id: 'PL20260412002', name: '证书临期提醒跟进', customerId: 'C20240201002', deadline: '2026-04-18' },
+            { id: 'PL20260405003', name: '政府客户季度回访', customerId: 'C20231205004', deadline: '2026-04-15' },
+            { id: 'PL20260405004', name: 'IATF16949转版培训跟进', customerId: 'C20240201002', deadline: '2026-04-10' }
+        ];
+
+        // 商机数据
+        const opportunityData = [
+            { id: 'OP20240320001', name: 'ISO14001环境管理体系认证', customerId: 'C20240110003', amount: '¥38,000', stage: '报价阶段' },
+            { id: 'OP20240405001', name: '保密资质认证咨询', customerId: 'C20231120005', amount: '¥85,000', stage: '合同签署' },
+            { id: 'OP20240402002', name: '供应链质量管理体系升级', customerId: 'C20240301006', amount: '¥120,000', stage: '审核准备' }
+        ];
+
+        let currentFilter = { type: 'all' };
+        let filteredData = [...mockData];
+        let currentPage = 1;
+        let pageSize = 15;
+        let selectedSourceType = 'customer';
+        let selectedCustomer = null;
+        let selectedPlan = null;
+        let selectedOpportunity = null;
+        let currentDetailId = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTable();
+            updateStats();
+            
+            // 设置默认时间
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('followTime').value = now.toISOString().slice(0, 16);
+        });
+
+        // 渲染表格
+        function renderTable(data = filteredData) {
+            const tbody = document.getElementById('tableBody');
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, data.length);
+            const pageData = data.slice(start, end);
+
+            let html = '';
+            pageData.forEach(row => {
+                const typeTagClass = {
+                    'phone': 'tag-phone',
+                    'visit': 'tag-visit',
+                    'email': 'tag-email',
+                    'video': 'tag-video',
+                    'wechat': 'tag-other',
+                    'other': 'tag-other'
+                }[row.followType] || 'tag-other';
+
+                const sourceTagClass = {
+                    'plan': 'tag-plan',
+                    'opportunity': 'tag-opportunity',
+                    'customer': 'tag-customer'
+                }[row.sourceType] || 'tag-customer';
+
+                const sourceTypeName = {
+                    'plan': '跟进计划',
+                    'opportunity': '商机',
+                    'customer': '直接客户'
+                }[row.sourceType] || '直接客户';
+
+                const sourceDisplay = row.sourceName 
+                    ? `<div class="font-medium text-gray-900 truncate" style="max-width: 180px;">${row.sourceName}</div>`
+                    : '<span class="text-gray-400">-</span>';
+
+                html += `
+                    <tr onclick="showDetail('${row.id}')">
+                        <td class="col-record-id col-sticky-left font-mono text-gray-600">${row.id}</td>
+                        <td class="col-customer col-sticky-left-2">
+                            <div class="font-semibold text-gray-900">${row.customerName}</div>
+                        </td>
+                        <td class="col-follow-type">
+                            <span class="tag ${typeTagClass}">
+                                <i class="fas ${getFollowTypeIcon(row.followType)} mr-1"></i>${row.followTypeName}
+                            </span>
+                        </td>
+                        <td class="col-follow-time text-gray-600">${row.followTime}</td>
+                        <td class="col-follower">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                    ${row.follower.charAt(0)}
+                                </div>
+                                <span>${row.follower}</span>
+                            </div>
+                        </td>
+                        <td class="col-source-type">
+                            <span class="tag ${sourceTagClass}">${sourceTypeName}</span>
+                        </td>
+                        <td class="col-source-name">${sourceDisplay}</td>
+                        <td class="col-content">
+                            <div class="truncate text-gray-600" style="max-width: 280px;">${row.content}</div>
+                        </td>
+                        <td class="col-contact text-gray-600">${row.contactName || '-'}</td>
+                        <td class="col-location text-gray-600">${row.location || '-'}</td>
+                        <td class="col-action col-sticky-right">
+                            <button class="action-btn" onclick="event.stopPropagation(); showDetail('${row.id}')">
+                                <i class="fas fa-eye"></i>详情
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html || '<tr><td colspan="11" class="text-center py-8 text-gray-500">暂无数据</td></tr>';
+            
+            document.getElementById('totalCount').textContent = data.length;
+            document.getElementById('pageTotal').textContent = data.length;
+            document.getElementById('pageSize').textContent = Math.min(end, data.length);
+            
+            renderPagination(data.length);
+        }
+
+        function getFollowTypeIcon(type) {
+            const icons = {
+                'phone': 'fa-phone',
+                'visit': 'fa-handshake',
+                'email': 'fa-envelope',
+                'video': 'fa-video',
+                'wechat': 'fa-comments',
+                'other': 'fa-ellipsis-h'
+            };
+            return icons[type] || 'fa-ellipsis-h';
+        }
+
+        function renderPagination(total) {
+            const totalPages = Math.ceil(total / pageSize);
+            let html = '';
+            
+            html += `<button class="page-btn" ${currentPage === 1 ? 'disabled style="opacity:0.5"' : ''} onclick="changePage(${currentPage - 1})">
+                <i class="fas fa-chevron-left"></i>
+            </button>`;
+            
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    html += `<button class="page-btn">...</button>`;
+                }
+            }
+            
+            html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled style="opacity:0.5"' : ''} onclick="changePage(${currentPage + 1})">
+                <i class="fas fa-chevron-right"></i>
+            </button>`;
+            
+            document.getElementById('pagination').innerHTML = html;
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredData.length / pageSize);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderTable();
+        }
+
+        function changePageSize(size) {
+            pageSize = parseInt(size);
+            currentPage = 1;
+            renderTable();
+        }
+
+        // 筛选功能
+        function filterByType(type) {
+            currentFilter.type = type;
+            
+            document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            let filtered = [...mockData];
+            
+            if (type !== 'all') {
+                if (type === 'today') {
+                    const today = new Date().toISOString().split('T')[0];
+                    filtered = mockData.filter(item => item.createTime.startsWith(today));
+                } else {
+                    filtered = mockData.filter(item => item.sourceType === type);
+                }
+            }
+            
+            filteredData = filtered;
+            currentPage = 1;
+            renderTable();
+        }
+
+        function searchData() {
+            const recordId = document.getElementById('filterRecordId').value.toLowerCase();
+            const customer = document.getElementById('filterCustomer').value.toLowerCase();
+            const followType = document.getElementById('filterFollowType').value;
+            const sourceType = document.getElementById('filterSourceType').value;
+            const follower = document.getElementById('filterFollower').value;
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+
+            filteredData = mockData.filter(item => {
+                if (recordId && !item.id.toLowerCase().includes(recordId)) return false;
+                if (customer && !item.customerName.toLowerCase().includes(customer)) return false;
+                if (followType && item.followType !== followType) return false;
+                if (sourceType && item.sourceType !== sourceType) return false;
+                if (follower && item.follower !== follower) return false;
+                if (startDate && item.followTime < startDate) return false;
+                if (endDate && item.followTime > endDate + ' 23:59:59') return false;
+                return true;
+            });
+
+            currentPage = 1;
+            renderTable();
+            showToast(`查询完成，找到 ${filteredData.length} 条记录`);
+        }
+
+        function resetFilter() {
+            document.getElementById('filterRecordId').value = '';
+            document.getElementById('filterCustomer').value = '';
+            document.getElementById('filterFollowType').value = '';
+            document.getElementById('filterSourceType').value = '';
+            document.getElementById('filterFollower').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            
+            document.querySelectorAll('.stat-card').forEach((card, index) => {
+                card.classList.toggle('active', index === 0);
+            });
+
+            filteredData = [...mockData];
+            currentPage = 1;
+            renderTable();
+            showToast('筛选条件已重置');
+        }
+
+        function updateStats() {
+            const stats = {
+                all: mockData.length,
+                plan: mockData.filter(i => i.sourceType === 'plan').length,
+                opportunity: mockData.filter(i => i.sourceType === 'opportunity').length,
+                customer: mockData.filter(i => i.sourceType === 'customer').length,
+                today: mockData.filter(i => i.createTime.startsWith(new Date().toISOString().split('T')[0])).length
+            };
+            
+            document.getElementById('stat-all').textContent = stats.all;
+            document.getElementById('stat-plan').textContent = stats.plan;
+            document.getElementById('stat-opportunity').textContent = stats.opportunity;
+            document.getElementById('stat-customer').textContent = stats.customer;
+            document.getElementById('stat-today').textContent = stats.today;
+        }
+
+        // 模态框控制
+        function openRecordModal() {
+            document.getElementById('recordModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            resetForm();
+        }
+
+        function closeRecordModal() {
+            document.getElementById('recordModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function resetForm() {
+            selectedSourceType = 'customer';
+            selectedCustomer = null;
+            selectedPlan = null;
+            selectedOpportunity = null;
+            
+            // 重置关联类型选择
+            document.querySelectorAll('.source-type-card').forEach(card => card.classList.remove('selected'));
+            document.getElementById('card-customer').classList.add('selected');
+            
+            // 显示客户选择器
+            showSelector('customer');
+            
+            // 重置选择状态
+            document.getElementById('customer-unselected').classList.remove('hidden');
+            document.getElementById('customer-selected').classList.add('hidden');
+            document.getElementById('plan-unselected').classList.remove('hidden');
+            document.getElementById('plan-selected').classList.add('hidden');
+            document.getElementById('opp-unselected').classList.add('hidden');
+            document.getElementById('opp-selected').classList.add('hidden');
+            document.getElementById('opp-customer-hint').classList.remove('hidden');
+            
+            // 重置表单字段
+            document.getElementById('followType').value = 'phone';
+            document.getElementById('followContent').value = '';
+            document.getElementById('location').value = '';
+            document.getElementById('contactSelect').value = '';
+            document.getElementById('manualContactGroup').style.display = 'none';
+            document.getElementById('manualContact').value = '';
+            document.getElementById('fileList').innerHTML = '';
+            
+            // 重置结果标签
+            document.querySelectorAll('.result-tag').forEach(tag => tag.checked = false);
+            
+            // 设置默认时间
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('followTime').value = now.toISOString().slice(0, 16);
+        }
+
+        // 关联类型选择
+        function selectSourceType(type) {
+            selectedSourceType = type;
+            document.querySelectorAll('.source-type-card').forEach(card => card.classList.remove('selected'));
+            document.getElementById('card-' + type).classList.add('selected');
+            
+            showSelector(type);
+        }
+
+        function showSelector(type) {
+            document.querySelectorAll('.selector-panel').forEach(panel => panel.classList.add('hidden'));
+            document.getElementById('selector-' + type).classList.remove('hidden');
+        }
+
+        // 客户选择
+        function openCustomerSelectModal() {
+            renderCustomerList();
+            document.getElementById('customerSelectModal').classList.add('active');
+        }
+
+        function closeCustomerSelectModal() {
+            document.getElementById('customerSelectModal').classList.remove('active');
+        }
+
+        function renderCustomerList(search = '') {
+            const list = document.getElementById('customerSelectList');
+            const filtered = customerData.filter(c => 
+                !search || c.name.includes(search) || c.id.includes(search)
+            );
+            
+            list.innerHTML = filtered.map(c => `
+                <div class="select-list-item" onclick="selectCustomer('${c.id}', '${c.name}')">
+                    <div>
+                        <div class="font-semibold text-gray-900">${c.name}</div>
+                        <div class="text-sm text-gray-500">${c.id} · ${c.industry} · ${c.region}</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </div>
+            `).join('');
+        }
+
+        function filterCustomerList(keyword) {
+            renderCustomerList(keyword);
+        }
+
+        function selectCustomer(id, name) {
+            selectedCustomer = { id, name };
+            document.getElementById('selectedCustomerName').textContent = name;
+            document.getElementById('selectedCustomerInfo').textContent = '客户编号：' + id;
+            document.getElementById('customer-unselected').classList.add('hidden');
+            document.getElementById('customer-selected').classList.remove('hidden');
+            closeCustomerSelectModal();
+            
+            // 如果选择了商机模式，显示商机选择
+            if (selectedSourceType === 'opportunity') {
+                document.getElementById('opp-customer-hint').classList.add('hidden');
+                document.getElementById('opp-unselected').classList.remove('hidden');
+                renderOpportunityList();
+            }
+            
+            showToast('客户选择成功');
+        }
+
+        function changeCustomer() {
+            selectedCustomer = null;
+            selectedOpportunity = null;
+            document.getElementById('customer-unselected').classList.remove('hidden');
+            document.getElementById('customer-selected').classList.add('hidden');
+            document.getElementById('opp-unselected').classList.add('hidden');
+            document.getElementById('opp-selected').classList.add('hidden');
+            document.getElementById('opp-customer-hint').classList.remove('hidden');
+        }
+
+        // 计划选择
+        function openPlanSelectModal() {
+            if (!selectedCustomer) {
+                showToast('请先选择客户', 'error');
+                return;
+            }
+            renderPlanList();
+            document.getElementById('planSelectModal').classList.add('active');
+        }
+
+        function closePlanSelectModal() {
+            document.getElementById('planSelectModal').classList.remove('active');
+        }
+
+        function renderPlanList(search = '') {
+            const list = document.getElementById('planSelectList');
+            const filtered = planData.filter(p => {
+                if (p.customerId !== selectedCustomer.id) return false;
+                if (search && !p.name.includes(search)) return false;
+                return true;
+            });
+            
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="p-4 text-center text-gray-500">该客户下无跟进计划</div>';
+                return;
+            }
+            
+            list.innerHTML = filtered.map(p => `
+                <div class="select-list-item" onclick="selectPlan('${p.id}', '${p.name}', '${p.deadline}')">
+                    <div>
+                        <div class="font-semibold text-gray-900">${p.name}</div>
+                        <div class="text-sm text-gray-500">截止日期：${p.deadline}</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </div>
+            `).join('');
+        }
+
+        function filterPlanList(keyword) {
+            renderPlanList(keyword);
+        }
+
+        function selectPlan(id, name, deadline) {
+            selectedPlan = { id, name, deadline };
+            document.getElementById('selectedPlanName').textContent = name;
+            document.getElementById('selectedPlanInfo').textContent = '截止日期：' + deadline;
+            document.getElementById('plan-unselected').classList.add('hidden');
+            document.getElementById('plan-selected').classList.remove('hidden');
+            closePlanSelectModal();
+            showToast('计划选择成功');
+        }
+
+        function changePlan() {
+            selectedPlan = null;
+            document.getElementById('plan-unselected').classList.remove('hidden');
+            document.getElementById('plan-selected').classList.add('hidden');
+        }
+
+        // 商机选择
+        function openOpportunitySelectModal() {
+            if (!selectedCustomer) {
+                showToast('请先选择客户', 'error');
+                return;
+            }
+            renderOpportunityList();
+            document.getElementById('opportunitySelectModal').classList.add('active');
+        }
+
+        function closeOpportunitySelectModal() {
+            document.getElementById('opportunitySelectModal').classList.remove('active');
+        }
+
+        function renderOpportunityList(search = '') {
+            const list = document.getElementById('oppSelectList');
+            const filtered = opportunityData.filter(o => {
+                if (o.customerId !== selectedCustomer.id) return false;
+                if (search && !o.name.includes(search)) return false;
+                return true;
+            });
+            
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="p-4 text-center text-gray-500">该客户下无商机</div>';
+                return;
+            }
+            
+            list.innerHTML = filtered.map(o => `
+                <div class="select-list-item" onclick="selectOpportunity('${o.id}', '${o.name}', '${o.amount}')">
+                    <div>
+                        <div class="font-semibold text-gray-900">${o.name}</div>
+                        <div class="text-sm text-gray-500">${o.stage} · ${o.amount}</div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </div>
+            `).join('');
+        }
+
+        function filterOppList(keyword) {
+            renderOpportunityList(keyword);
+        }
+
+        function selectOpportunity(id, name, amount) {
+            selectedOpportunity = { id, name, amount };
+            document.getElementById('selectedOppName').textContent = name;
+            document.getElementById('selectedOppInfo').textContent = '预计金额：' + amount;
+            document.getElementById('opp-unselected').classList.add('hidden');
+            document.getElementById('opp-selected').classList.remove('hidden');
+            closeOpportunitySelectModal();
+            showToast('商机选择成功');
+        }
+
+        function changeOpportunity() {
+            selectedOpportunity = null;
+            document.getElementById('opp-unselected').classList.remove('hidden');
+            document.getElementById('opp-selected').classList.add('hidden');
+        }
+
+        // 联系人手动输入切换
+        document.getElementById('contactSelect')?.addEventListener('change', function() {
+            const manualGroup = document.getElementById('manualContactGroup');
+            if (this.value === 'manual') {
+                manualGroup.style.display = 'block';
+            } else {
+                manualGroup.style.display = 'none';
+            }
+        });
+
+        // 文件处理
+        function handleFileSelect(input) {
+            const fileList = document.getElementById('fileList');
+            Array.from(input.files).forEach(file => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-2 bg-gray-50 rounded text-sm';
+                div.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-file text-gray-400"></i>
+                        <span>${file.name}</span>
+                        <span class="text-gray-400 text-xs">(${(file.size/1024).toFixed(1)} KB)</span>
+                    </div>
+                    <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                fileList.appendChild(div);
+            });
+        }
+
+        // 保存记录
+        function saveRecord() {
+            // 验证
+            if (!selectedCustomer) {
+                showToast('请选择客户', 'error');
+                return;
+            }
+            if (selectedSourceType === 'plan' && !selectedPlan) {
+                showToast('请选择跟进计划', 'error');
+                return;
+            }
+            if (selectedSourceType === 'opportunity' && !selectedOpportunity) {
+                showToast('请选择商机', 'error');
+                return;
+            }
+            
+            const followTime = document.getElementById('followTime').value;
+            const content = document.getElementById('followContent').value;
+            
+            if (!followTime) {
+                showToast('请选择跟进时间', 'error');
+                return;
+            }
+            if (!content.trim()) {
+                showToast('请填写跟进内容', 'error');
+                return;
+            }
+
+            // 构造新记录
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+            const random = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+            
+            let sourceId = null;
+            let sourceName = null;
+            
+            if (selectedSourceType === 'plan' && selectedPlan) {
+                sourceId = selectedPlan.id;
+                sourceName = selectedPlan.name;
+            } else if (selectedSourceType === 'opportunity' && selectedOpportunity) {
+                sourceId = selectedOpportunity.id;
+                sourceName = selectedOpportunity.name;
+            }
+            
+            const followType = document.getElementById('followType').value;
+            const followTypeName = document.getElementById('followType').options[document.getElementById('followType').selectedIndex].text;
+            
+            let contactName = '';
+            let contactTitle = '';
+            const contactSelect = document.getElementById('contactSelect').value;
+            if (contactSelect === 'manual') {
+                const manualVal = document.getElementById('manualContact').value;
+                contactName = manualVal;
+            } else if (contactSelect) {
+                const parts = contactSelect.split('|');
+                contactName = parts[0];
+                contactTitle = parts[1] || '';
+            }
+
+            // 获取客户详细信息
+            const customerInfo = customerData.find(c => c.id === selectedCustomer.id);
+
+            const newRecord = {
+                id: 'REC' + dateStr + random,
+                customerId: selectedCustomer.id,
+                customerName: selectedCustomer.name,
+                customerIndustry: customerInfo ? customerInfo.industry : '',
+                customerRegion: customerInfo ? customerInfo.region : '',
+                sourceType: selectedSourceType,
+                sourceId: sourceId,
+                sourceName: sourceName,
+                followType: followType,
+                followTypeName: followTypeName,
+                followTime: followTime.replace('T', ' '),
+                follower: '王小红', // 当前用户
+                content: content,
+                contactName: contactName,
+                contactTitle: contactTitle,
+                location: document.getElementById('location').value,
+                createTime: now.toLocaleString('zh-CN'),
+                attachments: [],
+                tags: Array.from(document.querySelectorAll('.result-tag:checked')).map(t => t.value)
+            };
+
+            mockData.unshift(newRecord);
+            filteredData = [...mockData];
+            
+            showToast('跟进记录保存成功');
+            closeRecordModal();
+            renderTable();
+            updateStats();
+        }
+
+        // 详情页
+        function showDetail(id) {
+            const data = mockData.find(item => item.id === id);
+            if (!data) return;
+            
+            currentDetailId = id;
+            
+            document.getElementById('listPage').style.display = 'none';
+            document.getElementById('detailPage').style.display = 'block';
+            
+            // 填充基本信息
+            document.getElementById('detailRecordId').textContent = data.id;
+            document.getElementById('detailContent').textContent = data.content;
+            
+            // 填充客户信息（所有场景都展示）
+            const customerInfoHtml = `
+                <div class="customer-info-card">
+                    <div class="customer-info-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="customer-info-details">
+                        <div class="customer-info-title">${data.customerName}</div>
+                        <div class="customer-info-subtitle">客户编号：${data.customerId}</div>
+                        <div class="flex gap-4 mt-2 text-sm text-gray-600">
+                            <span><i class="fas fa-industry mr-1"></i>${data.customerIndustry || '制造业'}</span>
+                            <span><i class="fas fa-map-marker-alt mr-1"></i>${data.customerRegion || '华北'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">跟进方式</span>
+                        <span class="info-value">
+                            <span class="tag tag-${data.followType}">
+                                <i class="fas ${getFollowTypeIcon(data.followType)} mr-1"></i>${data.followTypeName}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">跟进时间</span>
+                        <span class="info-value">${data.followTime}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">跟进人</span>
+                        <span class="info-value">${data.follower}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">联系人</span>
+                        <span class="info-value">${data.contactName}${data.contactTitle ? '（' + data.contactTitle + '）' : ''}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">拜访地点</span>
+                        <span class="info-value">${data.location || '-'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">创建时间</span>
+                        <span class="info-value">${data.createTime}</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('detailCustomerInfo').innerHTML = customerInfoHtml;
+            
+            // 关联信息
+            const sourceInfoHtml = getSourceInfoHtml(data);
+            document.getElementById('detailSourceInfo').innerHTML = sourceInfoHtml;
+            
+            // 沟通要点标签
+            const tagsContainer = document.getElementById('detailTags');
+            if (data.tags && data.tags.length > 0) {
+                tagsContainer.innerHTML = data.tags.map(tag => 
+                    `<span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">${tag}</span>`
+                ).join('');
+            } else {
+                tagsContainer.innerHTML = '<span class="text-gray-400">无标签</span>';
+            }
+            
+            // 附件
+            const attachContainer = document.getElementById('detailAttachments');
+            if (data.attachments && data.attachments.length > 0) {
+                document.getElementById('attachCount').textContent = data.attachments.length;
+                attachContainer.innerHTML = data.attachments.map(file => `
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-900">${file}</div>
+                            <div class="text-sm text-gray-500">2.4 MB · PDF</div>
+                        </div>
+                        <button class="text-blue-600 hover:text-blue-700">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                document.getElementById('attachCount').textContent = '0';
+                attachContainer.innerHTML = '<div class="text-gray-400 text-center py-4">暂无附件</div>';
+            }
+            
+            // 重置锚点Tab
+            document.querySelectorAll('.anchor-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector('.anchor-tab').classList.add('active');
+            
+            window.scrollTo(0, 0);
+        }
+
+        function getSourceInfoHtml(data) {
+            if (data.sourceType === 'plan') {
+                return `
+                    <div class="source-info-card">
+                        <div class="source-icon plan">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="source-details">
+                            <div class="source-title">关联跟进计划</div>
+                            <div class="source-subtitle">${data.sourceName}</div>
+                            <div class="text-sm text-purple-600 mt-1">计划编号：${data.sourceId}</div>
+                        </div>
+                        <span class="tag tag-plan">跟进计划</span>
+                    </div>
+                `;
+            } else if (data.sourceType === 'opportunity') {
+                const opp = opportunityData.find(o => o.id === data.sourceId);
+                return `
+                    <div class="source-info-card">
+                        <div class="source-icon opportunity">
+                            <i class="fas fa-funnel-dollar"></i>
+                        </div>
+                        <div class="source-details">
+                            <div class="source-title">关联商机</div>
+                            <div class="source-subtitle">${data.sourceName}</div>
+                            <div class="text-sm text-blue-600 mt-1">商机编号：${data.sourceId} ${opp ? '· 预计金额：' + opp.amount : ''}</div>
+                        </div>
+                        <span class="tag tag-opportunity">商机</span>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="source-info-card">
+                        <div class="source-icon customer">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="source-details">
+                            <div class="source-title">直接客户跟进</div>
+                            <div class="source-subtitle">该记录为直接客户跟进，未关联具体计划或商机</div>
+                        </div>
+                        <span class="tag tag-customer">直接客户</span>
+                    </div>
+                `;
+            }
+        }
+
+        function backToList() {
+            document.getElementById('detailPage').style.display = 'none';
+            document.getElementById('listPage').style.display = 'block';
+            currentDetailId = null;
+        }
+
+        function switchAnchor(element, sectionId) {
+            event.preventDefault();
+            document.querySelectorAll('.anchor-tab').forEach(tab => tab.classList.remove('active'));
+            element.classList.add('active');
+            
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function printDetail() {
+            showToast('准备打印...');
+        }
+
+        function exportData() {
+            showToast('正在导出数据...');
+            setTimeout(() => showToast('导出成功！'), 1500);
+        }
+
+        // Toast提示
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('i');
+            const msg = document.getElementById('toastMessage');
+            
+            msg.textContent = message;
+            
+            if (type === 'error') {
+                icon.className = 'fas fa-times-circle text-red-400';
+            } else {
+                icon.className = 'fas fa-check-circle text-green-400';
+            }
+            
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // 点击遮罩关闭
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
