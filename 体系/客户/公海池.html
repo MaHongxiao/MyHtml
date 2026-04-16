@@ -1,0 +1,2220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公海客户管理 - 区域公海/全国公海</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .sea-type-tabs {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 4px;
+            margin-left: 20px;
+        }
+
+        .sea-type-tab {
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sea-type-tab.active {
+            background: white;
+            color: #3b82f6;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .sea-badge {
+            background: #ef4444;
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 4px;
+        }
+
+        .filter-bar {
+            background: white;
+            margin: 20px 20px 0 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .quick-filters {
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #fafafa;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-item label {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .filter-item input,
+        .filter-item select {
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            background: white;
+        }
+
+        .filter-item input:focus,
+        .filter-item select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .filter-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .filter-panel.expanded {
+            max-height: 300px;
+        }
+
+        .advanced-filters {
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: white;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin: 20px;
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: calc(100vh - 320px);
+            position: relative;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 2600px;
+            table-layout: fixed;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 13px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            background: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table tbody tr:hover td {
+            background: #f8fafc;
+        }
+
+        .col-sticky-left {
+            position: sticky;
+            left: 0;
+            z-index: 30;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            width: 140px;
+            min-width: 140px;
+        }
+
+        .col-sticky-left-2 {
+            position: sticky;
+            left: 140px;
+            z-index: 30;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            width: 260px;
+            min-width: 260px;
+        }
+
+        .col-sticky-right {
+            position: sticky;
+            right: 260px;
+            z-index: 30;
+            background: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+            width: 120px;
+            min-width: 120px;
+        }
+
+        .col-sticky-right-2 {
+            position: sticky;
+            right: 0;
+            z-index: 30;
+            background: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+            width: 120px;
+            min-width: 120px;
+        }
+
+        .data-table th.col-sticky-left,
+        .data-table th.col-sticky-left-2 {
+            z-index: 40;
+            background: #f8fafc;
+        }
+
+        .data-table th.col-sticky-right,
+        .data-table th.col-sticky-right-2 {
+            z-index: 40;
+            background: #f8fafc;
+        }
+
+        .data-table tbody tr:hover .col-sticky-left,
+        .data-table tbody tr:hover .col-sticky-left-2,
+        .data-table tbody tr:hover .col-sticky-right,
+        .data-table tbody tr:hover .col-sticky-right-2 {
+            background: #f8fafc;
+        }
+
+        .col-id { width: 140px; }
+        .col-name { width: 260px; }
+        .col-type { width: 110px; }
+        .col-industry { width: 120px; }
+        .col-region { width: 100px; }
+        .col-grade { width: 90px; }
+        .col-last-deal { width: 120px; }
+        .col-deal-amount { width: 130px; }
+        .col-deal-count { width: 110px; }
+        .col-in-pool-days { width: 110px; }
+        .col-no-deal-days { width: 130px; }
+        .col-warning { width: 220px; }
+        .col-source { width: 120px; }
+        .col-enter-date { width: 120px; }
+        .col-status { width: 110px; }
+        .col-action { width: 240px; }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 20px !important;
+        }
+
+        .sortable:hover {
+            background: #e2e8f0;
+        }
+
+        .sort-icon {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .sortable.asc .sort-icon,
+        .sortable.desc .sort-icon {
+            color: #3b82f6;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 4px;
+            margin-bottom: 2px;
+        }
+
+        .tag-national { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .tag-regional { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .tag-auto-transfer { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        .grade-a-plus { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; display: inline-block; }
+        .grade-a { background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; display: inline-block; }
+        .grade-b { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; display: inline-block; }
+        .grade-c { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; display: inline-block; }
+        .grade-d { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; display: inline-block; }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-regional { background: #dbeafe; color: #1e40af; }
+        .status-national { background: #fef3c7; color: #92400e; }
+        .status-transferred { background: #fee2e2; color: #991b1b; }
+
+        .warning-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .warning-tag.critical { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .warning-tag.warning { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+        .warning-tag.info { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .urgent-pulse { animation: pulse-red 2s infinite; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover { background: #d97706; }
+        .btn-secondary { background: white; border-color: #d1d5db; color: #374151; }
+        .btn-secondary:hover { background: #f9fafb; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .action-btns { display: flex; gap: 8px; }
+        .action-btn {
+            color: #3b82f6;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .action-btn:hover { background: #eff6ff; color: #1d4ed8; }
+        .action-btn.success { color: #10b981; }
+        .action-btn.success:hover { background: #ecfdf5; color: #059669; }
+        .action-btn.warning { color: #f59e0b; }
+        .action-btn.warning:hover { background: #fff7ed; color: #d97706; }
+
+        .customer-name {
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .amount { font-family: 'Courier New', monospace; font-weight: 600; color: #059669; }
+        .amount-zero { color: #9ca3af; }
+
+        .highlight-red { color: #dc2626; font-weight: 700; background: #fef2f2; padding: 2px 6px; border-radius: 4px; }
+        .highlight-orange { color: #ea580c; font-weight: 700; background: #fff7ed; padding: 2px 6px; border-radius: 4px; }
+        .highlight-yellow { color: #ca8a04; font-weight: 600; background: #fefce8; padding: 2px 6px; border-radius: 4px; }
+
+        .pagination { display: flex; gap: 4px; align-items: center; }
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .page-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+        .page-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+
+        .info-banner {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 0 20px 20px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #1e40af;
+            font-size: 13px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-container {
+            background: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-container.small {
+            max-width: 500px;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .detail-section {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .detail-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+
+        .history-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #64748b;
+        }
+
+        .close-btn:hover {
+            color: #1e293b;
+        }
+
+        .transfer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .op-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .op-claim { background: #dcfce7; color: #166534; }
+        .op-assign { background: #dbeafe; color: #1e40af; }
+        .op-transfer { background: #fce7f3; color: #be185d; }
+
+        .hidden { display: none !important; }
+
+        /* 弹窗内表单样式 */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .form-label .required {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .customer-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .customer-card-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .customer-card-info {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .confirm-info {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .confirm-info-title {
+            font-weight: 600;
+            color: #166534;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .confirm-info-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .steps {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .step.active {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .step-arrow {
+            color: #cbd5e1;
+        }
+
+        .success-icon {
+            width: 48px;
+            height: 48px;
+            background: #dcfce7;
+            color: #16a34a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部栏 -->
+    <div class="top-bar">
+        <div class="flex items-center">
+            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-water text-blue-600"></i>
+                公海客户管理
+            </h1>
+
+            <div class="sea-type-tabs">
+                <button class="sea-type-tab active" id="tab-regional" onclick="switchSeaType('regional')">
+                    <i class="fas fa-map-marker-alt"></i>
+                    区域公海
+                    <span class="sea-badge" id="regional-count">8</span>
+                </button>
+                <button class="sea-type-tab" id="tab-national" onclick="switchSeaType('national')">
+                    <i class="fas fa-globe"></i>
+                    全国公海
+                    <span class="sea-badge" id="national-count">6</span>
+                </button>
+            </div>
+
+            <span class="text-gray-300 mx-4">|</span>
+            <div class="flex items-center gap-3 text-sm">
+                <span class="text-gray-600">当前区域：<strong class="text-blue-600">华北区域</strong></span>
+                <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium" id="transfer-warning">
+                    <i class="fas fa-exchange-alt mr-1"></i>2年无成交自动转入全国公海
+                </span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button class="btn btn-secondary btn-sm" onclick="toggleFilter()">
+                <i class="fas fa-filter"></i>
+                <span id="filter-text">收起筛选</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="batchClaim()" id="batchClaimBtn">
+                <i class="fas fa-check-square"></i>
+                批量认领
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="showBatchAssignModal()" id="batchAssignBtn">
+                <i class="fas fa-user-plus"></i>
+                批量分配
+            </button>
+        </div>
+    </div>
+
+    <!-- 提示信息 -->
+    <div class="info-banner" id="info-banner">
+        <i class="fas fa-info-circle"></i>
+        <div>
+            <strong>业务规则说明：</strong>
+            <span id="rule-text">区域公海客户可由销售人员自主认领或由部门经理分配给具体销售人员；超过2年（730天）无成交记录的客户将自动转入全国公海。</span>
+        </div>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+        <div class="quick-filters">
+            <div class="filter-item">
+                <label>客户编号</label>
+                <input type="text" placeholder="输入编号" style="width: 130px;">
+            </div>
+            <div class="filter-item">
+                <label>客户名称</label>
+                <input type="text" placeholder="输入名称" style="width: 150px;">
+            </div>
+            <div class="filter-item">
+                <label>企业分类</label>
+                <select style="width: 80px;">
+                    <option value="">全部</option>
+                    <option>A+</option>
+                    <option>A</option>
+                    <option>B</option>
+                    <option>C</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>行业分类</label>
+                <select style="width: 110px;">
+                    <option value="">全部</option>
+                    <option>制造业</option>
+                    <option>电力</option>
+                    <option>互联网</option>
+                    <option>金融</option>
+                </select>
+            </div>
+            <div class="filter-item" id="region-filter">
+                <label>原属区域</label>
+                <select style="width: 100px;">
+                    <option value="">全部</option>
+                    <option>东北区域</option>
+                    <option>华北区域</option>
+                    <option>华东区域</option>
+                    <option>华南区域</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>历史成交</label>
+                <select style="width: 110px;">
+                    <option value="">全部</option>
+                    <option value="has">有成交记录</option>
+                    <option value="none">无成交记录</option>
+                    <option value="2y">2年无成交</option>
+                </select>
+            </div>
+            <div class="flex-1"></div>
+            <button class="btn btn-primary btn-sm" onclick="searchData()">
+                <i class="fas fa-search"></i>
+                查询
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="resetData()">
+                重置
+            </button>
+        </div>
+
+        <div class="filter-panel expanded" id="filterPanel">
+            <div class="advanced-filters">
+                <div class="filter-item">
+                    <label>进入公海时间</label>
+                    <input type="date" style="width: 130px;"> 至 <input type="date" style="width: 130px;">
+                </div>
+                <div class="filter-item">
+                    <label>最后成交时间</label>
+                    <input type="date" style="width: 130px;"> 至 <input type="date" style="width: 130px;">
+                </div>
+                <div class="filter-item">
+                    <label>成交金额区间</label>
+                    <input type="number" placeholder="最小" style="width: 80px;"> - <input type="number" placeholder="最大" style="width: 80px;">
+                </div>
+                <div class="filter-item">
+                    <label>在池天数</label>
+                    <select style="width: 120px;">
+                        <option value="">全部</option>
+                        <option value="30">30天内</option>
+                        <option value="90">90天内</option>
+                        <option value="180">180天内</option>
+                        <option value="365">1年以上</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表格区域 -->
+    <div class="table-container">
+        <div class="table-wrapper">
+            <table class="data-table" id="customerTable">
+                <thead id="tableHead">
+                    <tr>
+                        <th class="col-id col-sticky-left sortable" onclick="sortTable('id')">
+                            <input type="checkbox" class="mr-2 rounded text-blue-600" onclick="toggleSelectAll(event)">客户编号
+                            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+                        </th>
+                        <th class="col-name col-sticky-left-2">客户名称</th>
+                        <th class="col-type">客户类型</th>
+                        <th class="col-industry">行业分类</th>
+                        <th class="col-region">原属区域</th>
+                        <th class="col-grade sortable" onclick="sortTable('grade')">企业分类<span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th class="col-last-deal sortable" onclick="sortTable('lastDealDate')">最后成交<span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th class="col-deal-amount sortable" onclick="sortTable('totalAmount')">历史成交金额<span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th class="col-deal-count sortable" onclick="sortTable('dealCount')">成交笔数<span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th class="col-in-pool-days sortable" onclick="sortTable('inPoolDays')">在池天数<span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th class="col-no-deal-days">无成交天数</th>
+                        <th class="col-warning">预警/流转提示</th>
+                        <th class="col-source">客户来源</th>
+                        <th class="col-enter-date sortable" onclick="sortTable('enterDate')">进入公海时间<span class="sort-icon"><i class="fas fa-sort"></i></span></th>
+                        <th class="col-status col-sticky-right">公海状态</th>
+                        <th class="col-action col-sticky-right-2">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="p-4 border-t border-gray-200 flex items-center justify-between bg-white">
+            <div class="text-sm text-gray-600">
+                显示第 <span class="font-medium">1</span> 到 <span class="font-medium" id="page-size">8</span> 条，共 <span class="font-medium" id="page-total">8</span> 条
+            </div>
+            <div class="pagination">
+                <button class="page-btn" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn" disabled>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+                <span>每页</span>
+                <select class="border border-gray-300 rounded px-2 py-1 text-sm">
+                    <option>15</option>
+                    <option>30</option>
+                    <option>50</option>
+                </select>
+                <span>条</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 客户详情弹窗 -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="text-lg font-bold text-gray-800">
+                    <i class="fas fa-building text-blue-600 mr-2"></i>
+                    客户详情
+                </h3>
+                <button class="close-btn" onclick="closeModal('detailModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid" id="customerDetailGrid">
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-title">
+                        <i class="fas fa-history text-blue-600"></i>
+                        历史成交记录
+                    </div>
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>成交日期</th>
+                                <th>业务类型</th>
+                                <th>成交金额</th>
+                                <th>成交状态</th>
+                                <th>原跟进人</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dealHistoryBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-title">
+                        <i class="fas fa-exchange-alt text-orange-600"></i>
+                        公海流转记录
+                    </div>
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>操作类型</th>
+                                <th>原状态</th>
+                                <th>新状态</th>
+                                <th>操作人</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transferHistoryBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" id="detailModalFooter">
+                <button class="btn btn-secondary" onclick="closeModal('detailModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 认领确认弹窗（区域公海） -->
+    <div class="modal-overlay" id="claimModal">
+        <div class="modal-container small">
+            <div class="modal-header">
+                <h3 class="text-lg font-bold text-gray-800">
+                    <i class="fas fa-hand-paper text-green-600 mr-2"></i>
+                    认领客户确认
+                </h3>
+                <button class="close-btn" onclick="closeModal('claimModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="claimStep1">
+                    <div class="customer-card">
+                        <div class="customer-card-title" id="claimCustomerName"></div>
+                        <div class="customer-card-info">
+                            编号：<span id="claimCustomerId"></span> | 
+                            区域：<span id="claimCustomerRegion"></span> | 
+                            历史成交：<span id="claimCustomerDeal"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">认领人 <span class="required">*</span></label>
+                        <input type="text" class="form-input" value="当前登录用户（刘明）" readonly>
+                        <div class="text-xs text-gray-500 mt-1">认领后该客户将转入您的个人客户池</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">认领备注</label>
+                        <textarea class="form-textarea" id="claimRemark" placeholder="请输入认领原因或跟进计划..."></textarea>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        认领后需在90天内完成首次跟进，否则客户将重新释放至区域公海。
+                    </div>
+                </div>
+
+                <div id="claimStep2" class="hidden">
+                    <div class="success-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="text-center">
+                        <h4 class="text-lg font-bold text-gray-800 mb-2">认领成功</h4>
+                        <p class="text-sm text-gray-600 mb-4">客户已成功认领至您的个人客户池</p>
+                    </div>
+                    <div class="confirm-info">
+                        <div class="confirm-info-title">
+                            <i class="fas fa-clipboard-check"></i>
+                            认领信息确认
+                        </div>
+                        <div class="confirm-info-item">
+                            <span>客户名称</span>
+                            <span id="confirmClaimName"></span>
+                        </div>
+                        <div class="confirm-info-item">
+                            <span>认领时间</span>
+                            <span id="confirmClaimTime"></span>
+                        </div>
+                        <div class="confirm-info-item">
+                            <span>保护期规则</span>
+                            <span>90天跟进保护期</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="claimModalFooter">
+                <button class="btn btn-secondary" onclick="closeModal('claimModal')">取消</button>
+                <button class="btn btn-success" onclick="confirmClaim()" id="claimConfirmBtn">
+                    <i class="fas fa-check"></i>
+                    确认认领
+                </button>
+                <button class="btn btn-primary hidden" onclick="closeModal('claimModal')" id="claimDoneBtn">
+                    完成
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 领至区域弹窗（全国公海→区域公海） -->
+    <div class="modal-overlay" id="regionalModal">
+        <div class="modal-container small">
+            <div class="modal-header">
+                <h3 class="text-lg font-bold text-gray-800">
+                    <i class="fas fa-map-marker-alt text-orange-600 mr-2"></i>
+                    领至本区域公海
+                </h3>
+                <button class="close-btn" onclick="closeModal('regionalModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="regionalStep1">
+                    <div class="steps">
+                        <div class="step active">
+                            <i class="fas fa-globe"></i>
+                            <span>全国公海</span>
+                        </div>
+                        <i class="fas fa-arrow-right step-arrow"></i>
+                        <div class="step">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>华北区域公海</span>
+                        </div>
+                        <i class="fas fa-arrow-right step-arrow"></i>
+                        <div class="step">
+                            <i class="fas fa-user"></i>
+                            <span>分配销售</span>
+                        </div>
+                    </div>
+
+                    <div class="customer-card">
+                        <div class="customer-card-title" id="regionalCustomerName"></div>
+                        <div class="customer-card-info">
+                            编号：<span id="regionalCustomerId"></span> | 
+                            原属区域：<span id="regionalCustomerOldRegion"></span> | 
+                            历史成交：<span id="regionalCustomerDeal"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">目标区域 <span class="required">*</span></label>
+                        <select class="form-select" id="targetRegion">
+                            <option value="华北区域">华北区域（当前）</option>
+                            <option value="华东区域">华东区域</option>
+                            <option value="华南区域">华南区域</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">是否立即分配销售人员</label>
+                        <div class="flex gap-4 mt-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="assignNow" value="yes" class="text-blue-600" onchange="toggleAssignSection(true)">
+                                <span class="text-sm">立即分配</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="assignNow" value="no" class="text-blue-600" checked onchange="toggleAssignSection(false)">
+                                <span class="text-sm">暂存区域公海</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="assignSection" class="hidden">
+                        <div class="form-group">
+                            <label class="form-label">选择销售人员 <span class="required">*</span></label>
+                            <select class="form-select" id="regionalSalesSelect">
+                                <option value="">请选择</option>
+                                <option value="刘明">刘明（华北区域）</option>
+                                <option value="王芳">王芳（华北区域）</option>
+                                <option value="李明">李明（华北区域）</option>
+                                <option value="张华">张华（华北区域）</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">操作备注</label>
+                        <textarea class="form-textarea" id="regionalRemark" placeholder="请输入领至区域的原因..."></textarea>
+                    </div>
+
+                    <div class="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        从全国公海领至区域后，该客户将在区域公海中保留，可由本区域销售人员认领或您直接分配。
+                    </div>
+                </div>
+
+                <div id="regionalStep2" class="hidden">
+                    <div class="success-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="text-center">
+                        <h4 class="text-lg font-bold text-gray-800 mb-2">操作成功</h4>
+                        <p class="text-sm text-gray-600 mb-4">客户已成功领至区域公海</p>
+                    </div>
+                    <div class="confirm-info">
+                        <div class="confirm-info-title">
+                            <i class="fas fa-clipboard-check"></i>
+                            流转信息确认
+                        </div>
+                        <div class="confirm-info-item">
+                            <span>客户名称</span>
+                            <span id="confirmRegionalName"></span>
+                        </div>
+                        <div class="confirm-info-item">
+                            <span>流转路径</span>
+                            <span id="confirmRegionalPath"></span>
+                        </div>
+                        <div class="confirm-info-item">
+                            <span>操作时间</span>
+                            <span id="confirmRegionalTime"></span>
+                        </div>
+                        <div class="confirm-info-item" id="confirmAssignInfo">
+                            <span>分配人员</span>
+                            <span id="confirmAssignName"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="regionalModalFooter">
+                <button class="btn btn-secondary" onclick="closeModal('regionalModal')">取消</button>
+                <button class="btn btn-warning" onclick="confirmRegional()" id="regionalConfirmBtn">
+                    <i class="fas fa-map-marker-alt"></i>
+                    确认领至区域
+                </button>
+                <button class="btn btn-primary hidden" onclick="closeModal('regionalModal')" id="regionalDoneBtn">
+                    完成
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分配弹窗 -->
+    <div class="modal-overlay" id="assignModal">
+        <div class="modal-container small">
+            <div class="modal-header">
+                <h3 class="text-lg font-bold text-gray-800">
+                    <i class="fas fa-user-plus text-blue-600 mr-2"></i>
+                    <span id="assignModalTitle">分配销售人员</span>
+                </h3>
+                <button class="close-btn" onclick="closeModal('assignModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="assignStep1">
+                    <div id="assignCustomerCards">
+                        <!-- 客户卡片列表 -->
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">选择销售人员 <span class="required">*</span></label>
+                        <select class="form-select" id="assignSalesSelect">
+                            <option value="">请选择</option>
+                            <option value="刘明">刘明（华北区域）</option>
+                            <option value="王芳">王芳（华北区域）</option>
+                            <option value="李明">李明（华北区域）</option>
+                            <option value="张华">张华（华北区域）</option>
+                            <option value="陈静">陈静（华北区域）</option>
+                        </select>
+                        <div class="text-xs text-gray-500 mt-1">分配后该销售人员将收到通知，客户转入其个人客户池</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">分配原因 <span class="required">*</span></label>
+                        <textarea class="form-textarea" id="assignReason" placeholder="请输入分配原因..."></textarea>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        分配后客户将进入销售人员的个人客户池，销售人员需在90天内完成首次跟进。
+                    </div>
+                </div>
+
+                <div id="assignStep2" class="hidden">
+                    <div class="success-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="text-center">
+                        <h4 class="text-lg font-bold text-gray-800 mb-2">分配成功</h4>
+                        <p class="text-sm text-gray-600 mb-4">客户已成功分配至指定销售人员</p>
+                    </div>
+                    <div class="confirm-info">
+                        <div class="confirm-info-title">
+                            <i class="fas fa-clipboard-check"></i>
+                            分配信息确认
+                        </div>
+                        <div class="confirm-info-item">
+                            <span>客户数量</span>
+                            <span id="confirmAssignCount"></span>
+                        </div>
+                        <div class="confirm-info-item">
+                            <span>分配人员</span>
+                            <span id="confirmAssignSales"></span>
+                        </div>
+                        <div class="confirm-info-item">
+                            <span>分配时间</span>
+                            <span id="confirmAssignTime"></span>
+                        </div>
+                        <div class="confirm-info-item">
+                            <span>保护期规则</span>
+                            <span>90天跟进保护期</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="assignModalFooter">
+                <button class="btn btn-secondary" onclick="closeModal('assignModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmAssign()" id="assignConfirmBtn">
+                    <i class="fas fa-check"></i>
+                    确认分配
+                </button>
+                <button class="btn btn-primary hidden" onclick="closeModal('assignModal')" id="assignDoneBtn">
+                    完成
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 修正后的区域公海数据 - 所有超过2年无成交的客户已转入全国公海
+        const regionalData = [
+            {
+                id: 'C20240315001',
+                name: '北京某某科技有限公司',
+                type: '民营企业',
+                industry: '信息传输、软件和信息技术服务业',
+                region: '华北区域',
+                grade: 'B',
+                lastDealDate: '2024-03-15',
+                totalAmount: 150000,
+                dealCount: 2,
+                inPoolDays: 45,
+                noDealDays: 396,
+                warningLevel: 'warning',
+                warningText: '即将满2年无成交，334天后将自动转入全国公海',
+                daysToTransfer: 334,
+                source: '保护期到期释放',
+                enterDate: '2026-03-01',
+                status: '区域公海',
+                deals: [
+                    { date: '2024-03-15', type: 'ISO9001认证', amount: 80000, status: '已完成', sales: '刘明' },
+                    { date: '2023-08-20', type: 'ISO14001认证', amount: 70000, status: '已完成', sales: '王芳' }
+                ],
+                transferHistory: [
+                    { time: '2026-03-01 10:30', type: '释放', from: '个人锁定', to: '区域公海', operator: '系统', remark: '保护期到期自动释放' }
+                ]
+            },
+            {
+                id: 'C20240310002',
+                name: '天津某贸易股份有限公司',
+                type: '外资企业',
+                industry: '批发和零售业',
+                region: '华北区域',
+                grade: 'A',
+                lastDealDate: '2025-01-20',
+                totalAmount: 320000,
+                dealCount: 3,
+                inPoolDays: 15,
+                noDealDays: 86,
+                warningLevel: 'none',
+                warningText: '',
+                daysToTransfer: 644,
+                source: '90天未跟进释放',
+                enterDate: '2026-04-01',
+                status: '区域公海',
+                deals: [
+                    { date: '2025-01-20', type: '产品认证', amount: 150000, status: '已完成', sales: '陈静' }
+                ],
+                transferHistory: [
+                    { time: '2026-04-01 16:45', type: '释放', from: '区域锁定', to: '区域公海', operator: '系统', remark: '90天未跟进自动释放' }
+                ]
+            },
+            {
+                id: 'C20240228003',
+                name: '北京某建筑工程有限公司',
+                type: '地方国企',
+                industry: '建筑业',
+                region: '华北区域',
+                grade: 'A',
+                lastDealDate: '2024-08-25',
+                totalAmount: 450000,
+                dealCount: 4,
+                inPoolDays: 90,
+                noDealDays: 234,
+                warningLevel: 'none',
+                warningText: '',
+                daysToTransfer: 496,
+                source: '招投标',
+                enterDate: '2026-01-17',
+                status: '区域公海',
+                deals: [
+                    { date: '2024-08-25', type: '质量管理体系认证', amount: 120000, status: '已完成', sales: '刘明' }
+                ],
+                transferHistory: []
+            },
+            {
+                id: 'C20240320004',
+                name: '天津某物流股份有限公司',
+                type: '民营企业',
+                industry: '交通运输、仓储和邮政业',
+                region: '华北区域',
+                grade: 'B',
+                lastDealDate: '2025-03-10',
+                totalAmount: 180000,
+                dealCount: 2,
+                inPoolDays: 30,
+                noDealDays: 37,
+                warningLevel: 'none',
+                warningText: '',
+                daysToTransfer: 693,
+                source: '自主开发',
+                enterDate: '2026-03-17',
+                status: '区域公海',
+                deals: [
+                    { date: '2025-03-10', type: '服务认证', amount: 90000, status: '已完成', sales: '王芳' }
+                ],
+                transferHistory: []
+            },
+            {
+                id: 'C20240215005',
+                name: '河北某制造集团有限公司',
+                type: '地方国企',
+                industry: '制造业',
+                region: '华北区域',
+                grade: 'A',
+                lastDealDate: '2023-12-10',
+                totalAmount: 580000,
+                dealCount: 5,
+                inPoolDays: 120,
+                noDealDays: 492,
+                warningLevel: 'warning',
+                warningText: '即将满2年无成交，238天后将自动转入全国公海',
+                daysToTransfer: 238,
+                source: '保护期到期释放',
+                enterDate: '2025-12-18',
+                status: '区域公海',
+                deals: [
+                    { date: '2023-12-10', type: '质量管理体系认证', amount: 120000, status: '已完成', sales: '张华' }
+                ],
+                transferHistory: [
+                    { time: '2026-01-15 09:00', type: '释放', from: '签单保护', to: '区域公海', operator: '系统', remark: '保护期到期' }
+                ]
+            },
+            {
+                id: 'C20240305006',
+                name: '北京某新能源有限公司',
+                type: '民营企业',
+                industry: '电力、热力、燃气及水生产和供应业',
+                region: '华北区域',
+                grade: 'B',
+                lastDealDate: null,
+                totalAmount: 0,
+                dealCount: 0,
+                inPoolDays: 60,
+                noDealDays: 60,
+                warningLevel: 'info',
+                warningText: '新进入公海客户，无历史成交记录（满2年后将转入全国公海）',
+                daysToTransfer: 670,
+                source: '官网注册',
+                enterDate: '2026-02-15',
+                status: '区域公海',
+                deals: [],
+                transferHistory: [
+                    { time: '2026-02-15 09:00', type: '转入', from: '新客户', to: '区域公海', operator: '系统', remark: '自动进入公海池' }
+                ]
+            },
+            {
+                id: 'C20240120007',
+                name: '内蒙古某农牧科技有限公司',
+                type: '民营企业',
+                industry: '农林牧渔业',
+                region: '华北区域',
+                grade: 'C',
+                lastDealDate: '2024-11-20',
+                totalAmount: 85000,
+                dealCount: 1,
+                inPoolDays: 85,
+                noDealDays: 148,
+                warningLevel: 'none',
+                warningText: '',
+                daysToTransfer: 582,
+                source: '合作伙伴',
+                enterDate: '2026-01-22',
+                status: '区域公海',
+                deals: [
+                    { date: '2024-11-20', type: '有机认证', amount: 85000, status: '已完成', sales: '李明' }
+                ],
+                transferHistory: []
+            },
+            {
+                id: 'C20240308008',
+                name: '山西某医疗设备有限公司',
+                type: '外资企业',
+                industry: '制造业',
+                region: '华北区域',
+                grade: 'A',
+                lastDealDate: '2025-02-15',
+                totalAmount: 280000,
+                dealCount: 2,
+                inPoolDays: 25,
+                noDealDays: 60,
+                warningLevel: 'none',
+                warningText: '',
+                daysToTransfer: 670,
+                source: '展会获客',
+                enterDate: '2026-03-22',
+                status: '区域公海',
+                deals: [
+                    { date: '2025-02-15', type: '医疗器械认证', amount: 150000, status: '已完成', sales: '张华' }
+                ],
+                transferHistory: []
+            }
+        ];
+
+        // 全国公海数据 - 包含从区域公海自动转入的（超过2年无成交）和其他区域释放的
+        const nationalData = [
+            {
+                id: 'N20240301001',
+                name: '河北某化工股份有限公司',
+                type: '中央企业',
+                industry: '制造业',
+                region: '华北区域',
+                grade: 'A+',
+                lastDealDate: '2022-04-10',
+                totalAmount: 1200000,
+                dealCount: 8,
+                inPoolDays: 15,
+                noDealDays: 1101,
+                warningLevel: 'info',
+                warningText: '由华北区域公海自动转入（超过2年无成交）',
+                source: '区域自动转入',
+                enterDate: '2026-04-01',
+                status: '全国公海',
+                originalSea: '华北区域公海',
+                transferReason: '超过730天无成交记录自动转入',
+                deals: [
+                    { date: '2022-04-10', type: '能源管理体系认证', amount: 300000, status: '已完成', sales: '原华北-赵强' }
+                ],
+                transferHistory: [
+                    { time: '2026-04-01 00:00', type: '自动流转', from: '华北区域公海', to: '全国公海', operator: '系统', remark: '超过2年（730天）无成交记录，自动转入全国公海' }
+                ]
+            },
+            {
+                id: 'N20240220002',
+                name: '河北某医疗器械有限公司',
+                type: '民营企业',
+                industry: '制造业',
+                region: '华北区域',
+                grade: 'B',
+                lastDealDate: '2023-06-15',
+                totalAmount: 280000,
+                dealCount: 3,
+                inPoolDays: 30,
+                noDealDays: 670,
+                warningLevel: 'info',
+                warningText: '由华北区域公海自动转入（超过2年无成交）',
+                source: '区域自动转入',
+                enterDate: '2026-03-17',
+                status: '全国公海',
+                originalSea: '华北区域公海',
+                transferReason: '超过730天无成交记录自动转入',
+                deals: [
+                    { date: '2023-06-15', type: 'ISO认证', amount: 120000, status: '已完成', sales: '原华北-刘洋' }
+                ],
+                transferHistory: [
+                    { time: '2026-03-17 00:00', type: '自动流转', from: '华北区域公海', to: '全国公海', operator: '系统', remark: '超过2年（730天）无成交记录，自动转入全国公海' }
+                ]
+            },
+            {
+                id: 'N20240315003',
+                name: '上海某电子科技有限公司',
+                type: '民营企业',
+                industry: '制造业',
+                region: '华东区域',
+                grade: 'A',
+                lastDealDate: '2023-01-20',
+                totalAmount: 890000,
+                dealCount: 6,
+                inPoolDays: 45,
+                noDealDays: 816,
+                warningLevel: 'info',
+                warningText: '由华东区域公海自动转入（超过2年无成交）',
+                source: '区域自动转入',
+                enterDate: '2026-03-02',
+                status: '全国公海',
+                originalSea: '华东区域公海',
+                transferReason: '超过730天无成交记录自动转入',
+                deals: [
+                    { date: '2023-01-20', type: '电子产品认证', amount: 200000, status: '已完成', sales: '原华东-张磊' }
+                ],
+                transferHistory: [
+                    { time: '2026-03-02 00:00', type: '自动流转', from: '华东区域公海', to: '全国公海', operator: '系统', remark: '超过2年（730天）无成交记录，自动转入全国公海' }
+                ]
+            },
+            {
+                id: 'N20240228004',
+                name: '广东某新能源股份有限公司',
+                type: '地方国企',
+                industry: '电力、热力、燃气及水生产和供应业',
+                region: '华南区域',
+                grade: 'A+',
+                lastDealDate: '2022-11-15',
+                totalAmount: 2500000,
+                dealCount: 12,
+                inPoolDays: 60,
+                noDealDays: 883,
+                warningLevel: 'info',
+                warningText: '由华南区域公海自动转入（超过2年无成交）',
+                source: '区域自动转入',
+                enterDate: '2026-02-15',
+                status: '全国公海',
+                originalSea: '华南区域公海',
+                transferReason: '超过730天无成交记录自动转入',
+                deals: [
+                    { date: '2022-11-15', type: '能源认证', amount: 500000, status: '已完成', sales: '原华南-李强' }
+                ],
+                transferHistory: [
+                    { time: '2026-02-15 00:00', type: '自动流转', from: '华南区域公海', to: '全国公海', operator: '系统', remark: '超过2年（730天）无成交记录，自动转入全国公海' }
+                ]
+            },
+            {
+                id: 'N20240320005',
+                name: '山东某纺织集团有限公司',
+                type: '民营企业',
+                industry: '制造业',
+                region: '山东公司',
+                grade: 'A',
+                lastDealDate: '2023-03-25',
+                totalAmount: 680000,
+                dealCount: 7,
+                inPoolDays: 25,
+                noDealDays: 757,
+                warningLevel: 'info',
+                warningText: '由山东区域公海自动转入（超过2年无成交）',
+                source: '区域自动转入',
+                enterDate: '2026-03-22',
+                status: '全国公海',
+                originalSea: '山东区域公海',
+                transferReason: '超过730天无成交记录自动转入',
+                deals: [
+                    { date: '2023-03-25', type: '纺织品认证', amount: 180000, status: '已完成', sales: '原山东-王鹏' }
+                ],
+                transferHistory: [
+                    { time: '2026-03-22 00:00', type: '自动流转', from: '山东区域公海', to: '全国公海', operator: '系统', remark: '超过2年（730天）无成交记录，自动转入全国公海' }
+                ]
+            },
+            {
+                id: 'N20240310006',
+                name: '四川某食品集团有限公司',
+                type: '民营企业',
+                industry: '制造业',
+                region: '西南区域',
+                grade: 'A',
+                lastDealDate: '2024-12-15',
+                totalAmount: 420000,
+                dealCount: 3,
+                inPoolDays: 20,
+                noDealDays: 122,
+                warningLevel: 'none',
+                warningText: '由西南区域公海主动申请转入（资源调配）',
+                source: '区域主动转入',
+                enterDate: '2026-03-27',
+                status: '全国公海',
+                originalSea: '西南区域公海',
+                transferReason: '区域间资源调配',
+                deals: [
+                    { date: '2024-12-15', type: '食品安全认证', amount: 150000, status: '已完成', sales: '原西南-刘洋' }
+                ],
+                transferHistory: [
+                    { time: '2026-03-27 14:30', type: '主动流转', from: '西南区域公海', to: '全国公海', operator: '王经理', remark: '区域间资源调配' }
+                ]
+            }
+        ];
+
+        let currentSeaType = 'regional';
+        let selectedCustomers = [];
+        let currentModalCustomer = null;
+        let currentClaimCustomer = null;
+        let currentRegionalCustomer = null;
+
+        // 渲染表格
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            let html = '';
+
+            data.forEach((row, index) => {
+                const gradeClass = {
+                    'A+': 'grade-a-plus',
+                    'A': 'grade-a',
+                    'B': 'grade-b',
+                    'C': 'grade-c',
+                    'D': 'grade-d'
+                }[row.grade] || 'grade-d';
+
+                const warningClass = row.warningLevel === 'critical' ? 'warning-tag critical urgent-pulse' : 
+                                   row.warningLevel === 'warning' ? 'warning-tag warning' : 
+                                   row.warningLevel === 'info' ? 'warning-tag info' : '';
+
+                const warningIcon = row.warningLevel === 'critical' ? '<i class="fas fa-exclamation-circle"></i>' : 
+                                   row.warningLevel === 'warning' ? '<i class="fas fa-exclamation-triangle"></i>' : 
+                                   row.warningLevel === 'info' ? '<i class="fas fa-info-circle"></i>' : '';
+
+                const statusClass = row.status === '区域公海' ? 'status-regional' : 
+                                   row.status === '全国公海' ? 'status-national' : 'status-transferred';
+
+                const amountClass = row.totalAmount > 0 ? 'amount' : 'amount-zero';
+                const amountText = row.totalAmount > 0 ? `¥${row.totalAmount.toLocaleString()}` : '-';
+
+                let noDealClass = '';
+                if (row.noDealDays >= 730) noDealClass = 'highlight-red';
+                else if (row.noDealDays >= 365) noDealClass = 'highlight-orange';
+                else if (row.noDealDays >= 180) noDealClass = 'highlight-yellow';
+
+                // 自动流转标签
+                let transferBadge = '';
+                if (row.source && row.source.includes('自动转入')) {
+                    transferBadge = '<span class="tag tag-auto-transfer"><i class="fas fa-robot"></i> 自动转入</span>';
+                } else if (row.source && row.source.includes('主动')) {
+                    transferBadge = '<span class="tag tag-national"><i class="fas fa-hand-paper"></i> 主动转入</span>';
+                }
+
+                // 操作按钮
+                let actionButtons = '';
+                if (currentSeaType === 'regional') {
+                    actionButtons = `
+                        <button class="action-btn success" onclick="openClaimModal('${row.id}')">
+                            <i class="fas fa-hand-paper"></i> 认领
+                        </button>
+                        <button class="action-btn" onclick="openAssignModal(['${row.id}'])">
+                            <i class="fas fa-user-plus"></i> 分配
+                        </button>
+                    `;
+                } else {
+                    actionButtons = `
+                        <button class="action-btn warning" onclick="openRegionalModal('${row.id}')">
+                            <i class="fas fa-map-marker-alt"></i> 领至区域
+                        </button>
+                        <button class="action-btn" onclick="openAssignModal(['${row.id}'])">
+                            <i class="fas fa-user-check"></i> 直接分配
+                        </button>
+                    `;
+                }
+
+                html += `
+                    <tr>
+                        <td class="col-id col-sticky-left font-mono text-gray-600">
+                            <input type="checkbox" class="mr-2 rounded text-blue-600" onchange="toggleSelect('${row.id}')">
+                            ${row.id}
+                        </td>
+                        <td class="col-name col-sticky-left-2">
+                            <div class="customer-name">
+                                ${row.name}
+                                ${transferBadge}
+                            </div>
+                        </td>
+                        <td class="col-type">${row.type}</td>
+                        <td class="col-industry">${row.industry}</td>
+                        <td class="col-region">${row.region}</td>
+                        <td class="col-grade"><span class="${gradeClass}">${row.grade}</span></td>
+                        <td class="col-last-deal" style="color: ${row.lastDealDate ? '#64748b' : '#9ca3af'}">${row.lastDealDate || '无记录'}</td>
+                        <td class="col-deal-amount ${amountClass}">${amountText}</td>
+                        <td class="col-deal-count">${row.dealCount > 0 ? row.dealCount + '笔' : '-'}</td>
+                        <td class="col-in-pool-days">${row.inPoolDays}天</td>
+                        <td class="col-no-deal-days ${noDealClass}">${row.noDealDays}天</td>
+                        <td class="col-warning">
+                            ${row.warningLevel !== 'none' ? `
+                                <div class="${warningClass}">
+                                    ${warningIcon} ${row.warningText}
+                                </div>
+                            ` : '<span class="text-gray-400">-</span>'}
+                        </td>
+                        <td class="col-source">${row.source}</td>
+                        <td class="col-enter-date" style="color: #64748b; font-size: 12px;">${row.enterDate}</td>
+                        <td class="col-status col-sticky-right">
+                            <span class="status-badge ${statusClass}">${row.status}</span>
+                        </td>
+                        <td class="col-action col-sticky-right-2">
+                            <div class="action-btns">
+                                ${actionButtons}
+                                <button class="action-btn" onclick="viewDetail('${row.id}')">
+                                    <i class="fas fa-eye"></i> 详情
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // 切换公海类型
+        function switchSeaType(type) {
+            currentSeaType = type;
+            selectedCustomers = [];
+
+            document.getElementById('tab-regional').classList.toggle('active', type === 'regional');
+            document.getElementById('tab-national').classList.toggle('active', type === 'national');
+
+            const ruleText = document.getElementById('rule-text');
+            const infoBanner = document.getElementById('info-banner');
+
+            if (type === 'regional') {
+                ruleText.textContent = '区域公海客户可由销售人员自主认领或由部门经理分配给具体销售人员；超过2年（730天）无成交记录的客户将自动转入全国公海。';
+                infoBanner.style.background = '#eff6ff';
+                infoBanner.style.borderColor = '#bfdbfe';
+                infoBanner.style.color = '#1e40af';
+                document.getElementById('batchClaimBtn').style.display = 'inline-flex';
+            } else {
+                ruleText.textContent = '全国公海包含各区域超过2年无成交自动转入的客户，以及主动申请转入的区域客户；部门经理可领至本区域或直接分配给销售人员。';
+                infoBanner.style.background = '#fef3c7';
+                infoBanner.style.borderColor = '#fcd34d';
+                infoBanner.style.color = '#92400e';
+                document.getElementById('batchClaimBtn').style.display = 'none';
+            }
+
+            const data = type === 'regional' ? regionalData : nationalData;
+            document.getElementById('page-total').textContent = data.length;
+            document.getElementById('page-size').textContent = data.length;
+
+            renderTable(data);
+        }
+
+        // 打开认领弹窗
+        function openClaimModal(id) {
+            const data = currentSeaType === 'regional' ? regionalData : nationalData;
+            const customer = data.find(d => d.id === id);
+            if (customer) {
+                currentClaimCustomer = customer;
+                document.getElementById('claimCustomerName').textContent = customer.name;
+                document.getElementById('claimCustomerId').textContent = customer.id;
+                document.getElementById('claimCustomerRegion').textContent = customer.region;
+                document.getElementById('claimCustomerDeal').textContent = customer.dealCount > 0 ? `¥${customer.totalAmount.toLocaleString()}/${customer.dealCount}笔` : '无';
+                document.getElementById('claimRemark').value = '';
+
+                // 重置步骤
+                document.getElementById('claimStep1').classList.remove('hidden');
+                document.getElementById('claimStep2').classList.add('hidden');
+                document.getElementById('claimConfirmBtn').classList.remove('hidden');
+                document.getElementById('claimDoneBtn').classList.add('hidden');
+
+                document.getElementById('claimModal').classList.add('active');
+            }
+        }
+
+        // 确认认领
+        function confirmClaim() {
+            const remark = document.getElementById('claimRemark').value;
+
+            // 显示确认信息
+            document.getElementById('confirmClaimName').textContent = currentClaimCustomer.name;
+            document.getElementById('confirmClaimTime').textContent = new Date().toLocaleString('zh-CN');
+
+            // 切换到成功步骤
+            document.getElementById('claimStep1').classList.add('hidden');
+            document.getElementById('claimStep2').classList.remove('hidden');
+            document.getElementById('claimConfirmBtn').classList.add('hidden');
+            document.getElementById('claimDoneBtn').classList.remove('hidden');
+        }
+
+        // 打开领至区域弹窗
+        function openRegionalModal(id) {
+            const customer = nationalData.find(d => d.id === id);
+            if (customer) {
+                currentRegionalCustomer = customer;
+                document.getElementById('regionalCustomerName').textContent = customer.name;
+                document.getElementById('regionalCustomerId').textContent = customer.id;
+                document.getElementById('regionalCustomerOldRegion').textContent = customer.region;
+                document.getElementById('regionalCustomerDeal').textContent = customer.dealCount > 0 ? `¥${customer.totalAmount.toLocaleString()}/${customer.dealCount}笔` : '无';
+
+                // 重置表单
+                document.querySelector('input[name="assignNow"][value="no"]').checked = true;
+                toggleAssignSection(false);
+                document.getElementById('regionalSalesSelect').value = '';
+                document.getElementById('regionalRemark').value = '';
+                document.getElementById('targetRegion').value = '华北区域';
+
+                // 重置步骤
+                document.getElementById('regionalStep1').classList.remove('hidden');
+                document.getElementById('regionalStep2').classList.add('hidden');
+                document.getElementById('regionalConfirmBtn').classList.remove('hidden');
+                document.getElementById('regionalDoneBtn').classList.add('hidden');
+
+                document.getElementById('regionalModal').classList.add('active');
+            }
+        }
+
+        // 切换分配选项
+        function toggleAssignSection(show) {
+            const section = document.getElementById('assignSection');
+            if (show) {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        }
+
+        // 确认领至区域
+        function confirmRegional() {
+            const targetRegion = document.getElementById('targetRegion').value;
+            const assignNow = document.querySelector('input[name="assignNow"]:checked').value === 'yes';
+            const salesPerson = document.getElementById('regionalSalesSelect').value;
+
+            if (assignNow && !salesPerson) {
+                alert('请选择销售人员');
+                return;
+            }
+
+            // 显示确认信息
+            document.getElementById('confirmRegionalName').textContent = currentRegionalCustomer.name;
+            document.getElementById('confirmRegionalPath').textContent = `全国公海 → ${targetRegion}公海`;
+            document.getElementById('confirmRegionalTime').textContent = new Date().toLocaleString('zh-CN');
+
+            const assignInfo = document.getElementById('confirmAssignInfo');
+            if (assignNow) {
+                assignInfo.classList.remove('hidden');
+                document.getElementById('confirmAssignName').textContent = salesPerson;
+            } else {
+                assignInfo.classList.add('hidden');
+            }
+
+            // 切换到成功步骤
+            document.getElementById('regionalStep1').classList.add('hidden');
+            document.getElementById('regionalStep2').classList.remove('hidden');
+            document.getElementById('regionalConfirmBtn').classList.add('hidden');
+            document.getElementById('regionalDoneBtn').classList.remove('hidden');
+        }
+
+        // 打开分配弹窗
+        function openAssignModal(ids) {
+            const data = currentSeaType === 'regional' ? regionalData : nationalData;
+            selectedCustomers = data.filter(d => ids.includes(d.id));
+
+            if (selectedCustomers.length === 0) return;
+
+            // 更新标题
+            const isBatch = selectedCustomers.length > 1;
+            document.getElementById('assignModalTitle').textContent = isBatch ? `批量分配 (${selectedCustomers.length}个客户)` : '分配销售人员';
+
+            // 渲染客户卡片
+            const cardsHtml = selectedCustomers.map(c => `
+                <div class="customer-card">
+                    <div class="customer-card-title">${c.name}</div>
+                    <div class="customer-card-info">
+                        编号：${c.id} | 原属区域：${c.region} | 历史成交：${c.dealCount > 0 ? `¥${c.totalAmount.toLocaleString()}/${c.dealCount}笔` : '无'}
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('assignCustomerCards').innerHTML = cardsHtml;
+
+            // 重置表单
+            document.getElementById('assignSalesSelect').value = '';
+            document.getElementById('assignReason').value = '';
+
+            // 重置步骤
+            document.getElementById('assignStep1').classList.remove('hidden');
+            document.getElementById('assignStep2').classList.add('hidden');
+            document.getElementById('assignConfirmBtn').classList.remove('hidden');
+            document.getElementById('assignDoneBtn').classList.add('hidden');
+
+            document.getElementById('assignModal').classList.add('active');
+        }
+
+        // 确认分配
+        function confirmAssign() {
+            const salesPerson = document.getElementById('assignSalesSelect').value;
+            const reason = document.getElementById('assignReason').value;
+
+            if (!salesPerson) {
+                alert('请选择销售人员');
+                return;
+            }
+            if (!reason) {
+                alert('请输入分配原因');
+                return;
+            }
+
+            // 显示确认信息
+            document.getElementById('confirmAssignCount').textContent = selectedCustomers.length + ' 个';
+            document.getElementById('confirmAssignSales').textContent = salesPerson;
+            document.getElementById('confirmAssignTime').textContent = new Date().toLocaleString('zh-CN');
+
+            // 切换到成功步骤
+            document.getElementById('assignStep1').classList.add('hidden');
+            document.getElementById('assignStep2').classList.remove('hidden');
+            document.getElementById('assignConfirmBtn').classList.add('hidden');
+            document.getElementById('assignDoneBtn').classList.remove('hidden');
+        }
+
+        // 批量分配
+        function showBatchAssignModal() {
+            if (selectedCustomers.length === 0) {
+                alert('请先选择客户');
+                return;
+            }
+            openAssignModal(selectedCustomers.map(c => c.id));
+        }
+
+        // 查看详情
+        function viewDetail(id) {
+            const data = currentSeaType === 'regional' ? regionalData : nationalData;
+            const customer = data.find(d => d.id === id);
+            if (customer) {
+                currentModalCustomer = customer;
+
+                // 填充客户基本信息
+                const grid = document.getElementById('customerDetailGrid');
+                grid.innerHTML = `
+                    <div class="detail-item">
+                        <span class="detail-label">客户编号</span>
+                        <span class="detail-value">${customer.id}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">客户名称</span>
+                        <span class="detail-value">${customer.name}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">客户类型</span>
+                        <span class="detail-value">${customer.type}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">行业分类</span>
+                        <span class="detail-value">${customer.industry}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">原属区域</span>
+                        <span class="detail-value">${customer.region}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">企业分类</span>
+                        <span class="detail-value">${customer.grade}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">历史成交金额</span>
+                        <span class="detail-value ${customer.totalAmount > 0 ? 'amount' : 'amount-zero'}">${customer.totalAmount > 0 ? '¥' + customer.totalAmount.toLocaleString() : '无记录'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">成交笔数</span>
+                        <span class="detail-value">${customer.dealCount} 笔</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">最后成交日期</span>
+                        <span class="detail-value" style="color: ${customer.lastDealDate ? '#1e293b' : '#9ca3af'}">${customer.lastDealDate || '无成交记录'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">无成交天数</span>
+                        <span class="detail-value ${customer.noDealDays >= 730 ? 'highlight-red' : customer.noDealDays >= 365 ? 'highlight-orange' : ''}">${customer.noDealDays} 天</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">进入公海时间</span>
+                        <span class="detail-value">${customer.enterDate}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">当前状态</span>
+                        <span class="detail-value">
+                            <span class="${customer.status === '区域公海' ? 'tag-regional' : 'tag-national'}">${customer.status}</span>
+                        </span>
+                    </div>
+                `;
+
+                // 填充成交记录
+                const dealBody = document.getElementById('dealHistoryBody');
+                if (customer.deals && customer.deals.length > 0) {
+                    dealBody.innerHTML = customer.deals.map(deal => `
+                        <tr>
+                            <td>${deal.date}</td>
+                            <td>${deal.type}</td>
+                            <td class="amount">¥${deal.amount.toLocaleString()}</td>
+                            <td><span class="tag" style="background: #dcfce7; color: #166534;">${deal.status}</span></td>
+                            <td>${deal.sales}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    dealBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #9ca3af; padding: 20px;">暂无成交记录</td></tr>';
+                }
+
+                // 填充流转记录
+                const transferBody = document.getElementById('transferHistoryBody');
+                if (customer.transferHistory && customer.transferHistory.length > 0) {
+                    transferBody.innerHTML = customer.transferHistory.map(trans => {
+                        let opClass = 'op-claim';
+                        if (trans.type === '自动流转' || trans.type === '转入') opClass = 'op-transfer';
+                        else if (trans.type === '分配') opClass = 'op-assign';
+
+                        return `
+                            <tr>
+                                <td>${trans.time}</td>
+                                <td><span class="op-tag ${opClass}">${trans.type}</span></td>
+                                <td>${trans.from}</td>
+                                <td>${trans.to}</td>
+                                <td>${trans.operator}</td>
+                                <td>${trans.remark}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    transferBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #9ca3af; padding: 20px;">暂无流转记录</td></tr>';
+                }
+
+                // 更新底部按钮
+                const footer = document.getElementById('detailModalFooter');
+                if (currentSeaType === 'regional') {
+                    footer.innerHTML = `
+                        <button class="btn btn-secondary" onclick="closeModal('detailModal')">关闭</button>
+                        <button class="btn btn-success" onclick="openClaimModal('${customer.id}'); closeModal('detailModal');">
+                            <i class="fas fa-hand-paper"></i> 立即认领
+                        </button>
+                        <button class="btn btn-primary" onclick="openAssignModal(['${customer.id}']); closeModal('detailModal');">
+                            <i class="fas fa-user-check"></i> 分配给他人
+                        </button>
+                    `;
+                } else {
+                    footer.innerHTML = `
+                        <button class="btn btn-secondary" onclick="closeModal('detailModal')">关闭</button>
+                        <button class="btn btn-warning" onclick="openRegionalModal('${customer.id}'); closeModal('detailModal');">
+                            <i class="fas fa-map-marker-alt"></i> 领至本区域
+                        </button>
+                        <button class="btn btn-primary" onclick="openAssignModal(['${customer.id}']); closeModal('detailModal');">
+                            <i class="fas fa-user-check"></i> 直接分配
+                        </button>
+                    `;
+                }
+
+                document.getElementById('detailModal').classList.add('active');
+            }
+        }
+
+        // 关闭弹窗
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // 全选/取消全选
+        function toggleSelectAll(event) {
+            event.stopPropagation();
+            const checkboxes = document.querySelectorAll('#tableBody input[type="checkbox"]');
+            const isChecked = event.target.checked;
+
+            checkboxes.forEach((cb, index) => {
+                cb.checked = isChecked;
+                const id = cb.parentElement.textContent.trim().split('\s+')[0];
+                const data = currentSeaType === 'regional' ? regionalData : nationalData;
+                const customer = data[index];
+
+                if (isChecked) {
+                    if (!selectedCustomers.find(c => c.id === customer.id)) {
+                        selectedCustomers.push(customer);
+                    }
+                } else {
+                    selectedCustomers = selectedCustomers.filter(c => c.id !== customer.id);
+                }
+            });
+        }
+
+        // 切换选择
+        function toggleSelect(id) {
+            const data = currentSeaType === 'regional' ? regionalData : nationalData;
+            const customer = data.find(d => d.id === id);
+            if (customer) {
+                const index = selectedCustomers.findIndex(c => c.id === id);
+                if (index > -1) {
+                    selectedCustomers.splice(index, 1);
+                } else {
+                    selectedCustomers.push(customer);
+                }
+            }
+        }
+
+        // 批量认领
+        function batchClaim() {
+            if (selectedCustomers.length === 0) {
+                alert('请先选择客户');
+                return;
+            }
+            alert(`批量认领 ${selectedCustomers.length} 个客户成功\n\n客户已转入您的个人客户池，请在我的客户中查看。`);
+            selectedCustomers = [];
+            renderTable(currentSeaType === 'regional' ? regionalData : nationalData);
+        }
+
+        // 切换筛选面板
+        function toggleFilter() {
+            const panel = document.getElementById('filterPanel');
+            const text = document.getElementById('filter-text');
+
+            if (panel.classList.contains('expanded')) {
+                panel.classList.remove('expanded');
+                text.textContent = '展开筛选';
+            } else {
+                panel.classList.add('expanded');
+                text.textContent = '收起筛选';
+            }
+        }
+
+        // 搜索
+        function searchData() {
+            alert('执行筛选查询...');
+        }
+
+        // 重置
+        function resetData() {
+            document.querySelectorAll('.filter-item input, .filter-item select').forEach(el => {
+                if (el.type === 'checkbox') el.checked = false;
+                else el.value = '';
+            });
+            selectedCustomers = [];
+            renderTable(currentSeaType === 'regional' ? regionalData : nationalData);
+        }
+
+        // 排序
+        let currentSort = { field: null, order: null };
+        function sortTable(field) {
+            const data = currentSeaType === 'regional' ? [...regionalData] : [...nationalData];
+
+            if (currentSort.field === field) {
+                currentSort.order = currentSort.order === 'asc' ? 'desc' : (currentSort.order === 'desc' ? null : 'asc');
+            } else {
+                currentSort.field = field;
+                currentSort.order = 'asc';
+            }
+
+            document.querySelectorAll('.sortable').forEach(th => {
+                th.classList.remove('asc', 'desc');
+                th.querySelector('.sort-icon i').className = 'fas fa-sort';
+            });
+
+            if (currentSort.order) {
+                const activeTh = document.querySelector(`th[onclick="sortTable('${field}')"]`);
+                if (activeTh) {
+                    activeTh.classList.add(currentSort.order);
+                    const icon = activeTh.querySelector('.sort-icon i');
+                    if (icon) icon.className = `fas fa-sort-${currentSort.order === 'asc' ? 'up' : 'down'}`;
+                }
+
+                data.sort((a, b) => {
+                    let valA = a[field];
+                    let valB = b[field];
+
+                    if (field === 'lastDealDate' || field === 'enterDate') {
+                        valA = valA ? new Date(valA).getTime() : 0;
+                        valB = valB ? new Date(valB).getTime() : 0;
+                    } else if (typeof valA === 'string') {
+                        valA = valA.toLowerCase();
+                        valB = valB.toLowerCase();
+                    }
+
+                    if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
+                    if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            renderTable(data);
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTable(regionalData);
+            document.getElementById('regional-count').textContent = regionalData.length;
+            document.getElementById('national-count').textContent = nationalData.length;
+        });
+
+        // 点击弹窗外部关闭
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
