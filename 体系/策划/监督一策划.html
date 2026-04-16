@@ -312,7 +312,7 @@
             cursor: pointer;
             transition: all 0.3s;
             position: relative;
-            height: 100px;
+            min-height: 100px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
@@ -341,7 +341,11 @@
             border-top: 1px solid #1890ff;
             border-bottom: 1px solid #1890ff;
             box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
-            height: 100px;
+        }
+        
+        /* 监督一（当前审核类型）特殊高度处理 */
+        .vertical-nav-item[data-phase="surv1"] {
+            min-height: 132px;
         }
         
         .vertical-nav-content {
@@ -351,16 +355,24 @@
             align-items: center;
             width: 100%;
             flex: 1;
+            position: relative;
         }
         
         .vertical-nav-item[data-phase="initial"] .vertical-nav-content {
             height: auto;
         }
         
+        /* 监督一内容区域调整 */
+        .vertical-nav-item[data-phase="surv1"] .vertical-nav-content {
+            flex: 1;
+            min-height: 100px;
+        }
+        
         .nav-title-wrapper {
             display: flex;
             flex-direction: column;
             gap: 6px;
+            flex: 1;
         }
         
         .nav-title {
@@ -378,6 +390,7 @@
             font-size: 14px;
             font-weight: 500;
             white-space: nowrap;
+            transition: all 0.3s ease;
         }
         
         .status-filled {
@@ -1204,7 +1217,125 @@
             line-height: 1.5;
             padding: 4px 0;
         }
+
+        /* 审核阶段取消/恢复交互样式 - 仅应用于监督二 */
+        .nav-action-group {
+            position: relative;
+            width: 90px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .nav-status {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* 按钮基础样式（绝对定位居中）- 仅监督二使用 */
+        .vertical-nav-item.has-actions .cancel-btn,
+        .vertical-nav-item.has-actions .restore-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 10;
+            padding: 4px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        /* 取消按钮样式 - 红色边框白底，悬浮红底白字 */
+        .vertical-nav-item.has-actions .cancel-btn {
+            color: #ff4d4f;
+            background: white;
+            border-color: #ff4d4f;
+        }
+
+        .vertical-nav-item.has-actions .cancel-btn:hover {
+            background: #ff4d4f;
+            color: white;
+        }
+
+        /* 恢复按钮 - 使用与保存按钮相同的蓝色 */
+        .vertical-nav-item.has-actions .restore-btn {
+            background: #1890ff;
+            border-color: #1890ff;
+            color: white;
+        }
+
+        .vertical-nav-item.has-actions .restore-btn:hover {
+            background: #40a9ff;
+            border-color: #40a9ff;
+        }
+
+        /* 鼠标悬浮时：隐藏状态文字，显示取消按钮 */
+        .vertical-nav-item.has-actions:hover .nav-action-group .nav-status {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .vertical-nav-item.has-actions:hover .cancel-btn {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 已取消状态样式 */
+        .vertical-nav-item.has-actions.cancelled {
+            background: #f5f5f5;
+            border-color: #d9d9d9;
+        }
+
+        .vertical-nav-item.has-actions.cancelled .nav-status,
+        .vertical-nav-item.has-actions.cancelled .nav-title {
+            color: #bfbfbf;
+            text-decoration: line-through;
+        }
+
+        .vertical-nav-item.has-actions.cancelled .nav-time {
+            color: #bfbfbf;
+        }
+
+        /* 已取消状态下：隐藏取消按钮，悬浮时显示恢复按钮 */
+        .vertical-nav-item.has-actions.cancelled .cancel-btn {
+            display: none !important;
+        }
+
+        .vertical-nav-item.has-actions.cancelled:hover .nav-action-group .nav-status {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .vertical-nav-item.has-actions.cancelled:hover .restore-btn {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 待确认状态样式（橙色） */
+        .status-pending {
+            color: #fa8c16;
+        }
+
+        /* 已确认状态样式（绿色） */
+        .status-confirmed {
+            color: #52c41a;
+        }
     </style>
+<base target="_blank">
+<base target="_blank">
 </head>
 <body class="bg-gray-50">
 
@@ -1289,11 +1420,13 @@
                         <span class="nav-time">计划审核时间：2026-04</span>
                         <span class="nav-time">实际审核时间：2024-04-15</span>
                     </div>
-                    <div class="nav-status status-filled">已完成</div>
+                    <div class="nav-action-group">
+                        <div class="nav-status status-filled">已完成</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- 监督一 - 当前审核类型，待开始状态，可点击切换 -->
+            <!-- 监督一 - 当前审核类型，待确认状态，无取消/恢复功能，与初次认证和再认证一致 -->
             <div class="vertical-nav-item active" data-phase="surv1" onclick="switchPhase('surv1', this)">
                 <div class="nav-header-title-static">当前审核类型</div>
                 <div class="vertical-nav-content">
@@ -1301,29 +1434,37 @@
                         <span class="nav-title" id="navTitle_surv1">监督一<span class="change-indicator">+变更（包含一阶段）</span></span>
                         <span class="nav-time" id="navTime_surv1">计划审核时间：2027-04</span>
                     </div>
-                    <div class="nav-status status-unfilled" id="navStatus_surv1">待策划</div>
+                    <div class="nav-action-group">
+                        <div class="nav-status status-pending" id="navStatus_surv1">待确认</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- 监督二 - 待开始状态，可点击切换 -->
-            <div class="vertical-nav-item" data-phase="surv2" onclick="switchPhase('surv2', this)">
+            <!-- 监督二 - 已策划状态（绿色），支持取消/恢复 -->
+            <div class="vertical-nav-item has-actions" data-phase="surv2" onclick="switchPhase('surv2', this)">
                 <div class="vertical-nav-content">
                     <div class="nav-title-wrapper">
-                        <span class="nav-title">监督二</span>
-                        <span class="nav-time">计划审核时间：2028-04</span>
+                        <span class="nav-title" id="navTitle_surv2">监督二</span>
+                        <span class="nav-time" id="navTime_surv2">计划审核时间：2028-04</span>
                     </div>
-                    <div class="nav-status status-unfilled">已策划</div>
+                    <div class="nav-action-group">
+                        <div class="nav-status status-filled" id="navStatus_surv2">已策划</div>
+                        <button class="cancel-btn" id="surv2-cancel-btn" onclick="cancelAuditPhase('surv2')">取消</button>
+                        <button class="restore-btn hidden-section" id="surv2-restore-btn" onclick="restoreAuditPhase('surv2')">恢复</button>
+                    </div>
                 </div>
             </div>
 
-            <!-- 再认证 - 待开始状态，可点击切换 -->
+            <!-- 再认证 - 已策划状态（绿色），无取消/恢复功能 -->
             <div class="vertical-nav-item" data-phase="recert" onclick="switchPhase('recert', this)">
                 <div class="vertical-nav-content">
                     <div class="nav-title-wrapper">
-                        <span class="nav-title">再认证</span>
-                        <span class="nav-time">计划审核时间：2029-04</span>
+                        <span class="nav-title" id="navTitle_recert">再认证</span>
+                        <span class="nav-time" id="navTime_recert">计划审核时间：2029-04</span>
                     </div>
-                    <div class="nav-status status-unfilled">已策划</div>
+                    <div class="nav-action-group">
+                        <div class="nav-status status-filled" id="navStatus_recert">已策划</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1410,7 +1551,7 @@
                                             <label class="form-label">班次信息</label>
                                             <div class="shift-info-wrapper">
                                                 <div class="shift-info-display">
-                                                    <span class="shift-label">班次：1</span>，08:00-17:30
+                                                    <span class="shift-label">班次：1</span>، 08:00-17:30
                                                 </div>
                                                 <div class="shift-tooltip">
                                                     <div class="shift-tooltip-row"><span class="shift-label">班次1：</span>08:00-17:30（白班，正常工作时间段）</div>
@@ -2521,6 +2662,11 @@
                             <span class="text-sm text-orange-600 bg-orange-50 px-3 py-1 rounded border border-orange-200">
                                 根据抽样规则，本次策划需要选择全部场所
                             </span>
+                            <!-- 新增：证书内容确认件按钮 -->
+                            <button class="btn btn-orange btn-sm" onclick="openCertConfirmDrawer()">
+                                <i class="fas fa-certificate text-xs"></i>
+                                证书内容确认件
+                            </button>
                             <button class="btn btn-primary btn-sm" onclick="savePhase('recert')">
                                 <i class="fas fa-save"></i>
                                 保存
@@ -4520,6 +4666,108 @@
             alert(`已导入"${template.name}"的过程审核策划`);
             closeProcessTemplateDrawer();
         }
+
+        // 取消审核阶段
+        function cancelAuditPhase(phase) {
+            const phaseName = phase === 'surv1' ? '监督一' : '监督二';
+            
+            if (!confirm(`确定取消${phaseName}的审核策划吗？`)) {
+                return;
+            }
+            
+            // 添加取消样式
+            const navItem = document.querySelector(`.vertical-nav-item[data-phase="${phase}"]`);
+            navItem.classList.add('cancelled');
+            
+            // 切换按钮显示
+            document.getElementById(`${phase}-cancel-btn`).classList.add('hidden-section');
+            document.getElementById(`${phase}-restore-btn`).classList.remove('hidden-section');
+            
+            // 更新时间显示
+            const timeEl = document.getElementById(`${phase}-time`);
+            if (timeEl) timeEl.textContent = '计划审核时间：已取消';
+        }
+
+        // 恢复审核阶段
+        function restoreAuditPhase(phase) {
+            const phaseName = phase === 'surv1' ? '监督一' : '监督二';
+            
+            if (!confirm(`确定恢复${phaseName}的审核策划吗？`)) {
+                return;
+            }
+            
+            // 移除取消样式
+            const navItem = document.querySelector(`.vertical-nav-item[data-phase="${phase}"]`);
+            navItem.classList.remove('cancelled');
+            
+            // 切换按钮显示
+            document.getElementById(`${phase}-cancel-btn`).classList.remove('hidden-section');
+            document.getElementById(`${phase}-restore-btn`).classList.add('hidden-section');
+            
+            // 恢复时间显示
+            const timeEl = document.getElementById(`${phase}-time`);
+            if (timeEl) {
+                // 根据阶段恢复对应的时间
+                if (phase === 'surv1') {
+                    timeEl.textContent = '计划审核时间：2027-04';
+                } else if (phase === 'surv2') {
+                    timeEl.textContent = '计划审核时间：2028-04';
+                }
+            }
+        }
+
+        // 修改原有的savePhase函数以支持监督一的特殊逻辑
+        const originalSavePhase = savePhase;
+        savePhase = function(phase) {
+            if (phase === 'surv1') {
+                // 监督一保存后变为已确认
+                const statusEl = document.getElementById('navStatus_surv1');
+                if (statusEl && statusEl.textContent === '待确认') {
+                    if (confirm('确定确认该审核阶段吗？')) {
+                        statusEl.textContent = '已确认';
+                        statusEl.className = 'nav-status status-confirmed';
+                        
+                        // 更新时间显示
+                        const timeEl = document.getElementById('navTime_surv1');
+                        const timeInput = document.querySelector(`#phase_${phase} .plan-audit-time`);
+                        const timeValue = timeInput ? timeInput.value : '2027-04';
+                        if (timeEl) timeEl.textContent = `计划审核时间：${timeValue}`;
+                        
+                        alert('监督一审核阶段已确认！');
+                    }
+                    return;
+                }
+            }
+            
+            // 对于其他阶段，调用原逻辑或更新状态
+            phaseStatus[phase] = true;
+            
+            const navItem = document.querySelector(`.vertical-nav-item[data-phase="${phase}"]`);
+            if (navItem) {
+                const statusEl = navItem.querySelector('.nav-status');
+                if (statusEl) {
+                    statusEl.classList.remove('status-unfilled');
+                    statusEl.classList.add('status-filled');
+                }
+                
+                const timeEl = navItem.querySelector('.nav-time');
+                if (timeEl) {
+                    const timeInput = document.querySelector(`#phase_${phase} .plan-audit-time`);
+                    const timeValue = timeInput ? timeInput.value : '-';
+                    timeEl.textContent = `计划审核时间：${timeValue}`;
+                }
+            }
+            
+            // 显示保存成功提示
+            const btn = event ? event.target : null;
+            if (btn) {
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> 已保存';
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                }, 2000);
+            }
+        };
     </script>
 </body>
 </html>
