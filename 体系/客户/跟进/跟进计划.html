@@ -1,0 +1,3729 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跟进计划管理 - 客户营销管理系统V2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        /* 顶部栏 */
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* 统计卡片栏 */
+        .stats-bar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px 24px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 140px;
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            background: #f1f5f9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .stat-card.active {
+            background: #eff6ff;
+            border-color: #3b82f6;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .stat-icon.blue { background: #dbeafe; color: #1e40af; }
+        .stat-icon.purple { background: #f3e8ff; color: #7c3aed; }
+        .stat-icon.green { background: #dcfce7; color: #166534; }
+        .stat-icon.yellow { background: #fef3c7; color: #92400e; }
+        .stat-icon.red { background: #fee2e2; color: #991b1b; }
+        .stat-icon.gray { background: #f3f4f6; color: #4b5563; }
+
+        .stat-number {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .stat-card.active .stat-number {
+            color: #1e40af;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        /* 筛选栏 */
+        .filter-bar {
+            background: white;
+            margin: 20px 20px 0 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .quick-filters {
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #fafafa;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-item label {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .filter-item input,
+        .filter-item select {
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            background: white;
+        }
+
+        .filter-item input:focus,
+        .filter-item select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        /* 表格区域 */
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin: 20px;
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: calc(100vh - 340px);
+            position: relative;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 2200px;
+            table-layout: fixed;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 13px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            background: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table tbody tr:hover td {
+            background: #f8fafc;
+        }
+
+        /* 冻结列 - 参考客户列表布局 */
+        .col-sticky-left {
+            position: sticky;
+            left: 0;
+            z-index: 30;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
+
+        .col-sticky-left-2 {
+            position: sticky;
+            left: 160px;
+            z-index: 30;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
+
+        .col-sticky-right {
+            position: sticky;
+            right: 0;
+            z-index: 30;
+            background: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+        }
+
+        .data-table th.col-sticky-left,
+        .data-table th.col-sticky-left-2,
+        .data-table th.col-sticky-right {
+            z-index: 40;
+            background: #f8fafc;
+        }
+
+        .data-table tbody tr:hover .col-sticky-left,
+        .data-table tbody tr:hover .col-sticky-left-2,
+        .data-table tbody tr:hover .col-sticky-right {
+            background: #f8fafc;
+        }
+
+        /* 列宽定义 */
+        .col-plan-name { width: 220px; }
+        .col-customer { width: 240px; }
+        .col-opportunity { width: 200px; }
+        .col-type { width: 110px; }
+        .col-scene { width: 140px; }
+        .col-follower { width: 120px; }
+        .col-deadline { width: 110px; }
+        .col-reminder { width: 110px; }
+        .col-status { width: 100px; }
+        .col-creator { width: 110px; }
+        .col-create-time { width: 150px; }
+        .col-action { width: 160px; }
+
+        /* 标签样式 */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 4px;
+        }
+
+        .tag-auto { background: #f3e8ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+        .tag-manual { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .tag-scene { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .tag-government { background: #fce7f3; color: #9d174d; border: 1px solid #fbcfe8; }
+        .tag-key { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+
+        /* 状态徽章 */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-completed { background: #dcfce7; color: #166534; }
+        .status-overdue { background: #fee2e2; color: #991b1b; }
+        .status-cancelled { background: #f3f4f6; color: #4b5563; }
+
+        /* 按钮 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: white; border-color: #d1d5db; color: #374151; }
+        .btn-secondary:hover { background: #f9fafb; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-xs { padding: 4px 8px; font-size: 11px; }
+
+        .action-btn {
+            color: #3b82f6;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover { background: #eff6ff; color: #1d4ed8; }
+        .action-btn + .action-btn { margin-left: 4px; }
+
+        /* 分页 */
+        .pagination { display: flex; gap: 4px; align-items: center; }
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .page-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+        .page-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 40px;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-container {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            width: 800px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            background: white;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: #fafafa;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .btn-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            color: #6b7280;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-close:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        /* 表单样式 */
+        .form-section {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .form-label .required {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .form-textarea {
+            resize: none;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        
+        .form-radio-group {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .form-radio-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #374151;
+        }
+
+        .form-radio-item input[type="radio"] {
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+
+        .tag-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag-item {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            color: #374151;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tag-item:hover {
+            border-color: #bfdbfe;
+            background: #f9fafb;
+        }
+
+        .tag-item.selected {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+        }
+
+        .contact-tab {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            color: #6b7280;
+            font-size: 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .contact-tab.active {
+            background: #eff6ff;
+            color: #3b82f6;
+            font-weight: 500;
+        }
+
+/* 步骤条 */
+        .step-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 0 20px;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            color: #6b7280;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .step.active .step-number {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        .step-title {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .step.active .step-title {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .step-line {
+            flex: 1;
+            height: 2px;
+            background: #e5e7eb;
+            margin: 0 10px;
+            margin-top: -16px;
+        }
+
+        .step-line.completed {
+            background: #10b981;
+        }
+
+        /* 客户选择触发器 */
+        .customer-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .customer-trigger:hover {
+            border-color: #3b82f6;
+            background: #fafafa;
+        }
+
+        .customer-selected {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+        }
+
+        .customer-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .customer-icon {
+            width: 40px;
+            height: 40px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        /* 商机选择区域 */
+        .opportunity-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .opportunity-info {
+            flex: 1;
+        }
+
+        .opportunity-title {
+            font-weight: 600;
+            color: #1e40af;
+            font-size: 14px;
+        }
+
+        .opportunity-sub {
+            font-size: 12px;
+            color: #3b82f6;
+            margin-top: 2px;
+        }
+
+        /* 提醒选项 */
+        .reminder-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .reminder-option {
+            padding: 8px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .reminder-option:hover {
+            border-color: #bfdbfe;
+            background: #fafafa;
+        }
+
+        .reminder-option.selected {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+            font-weight: 500;
+        }
+
+        /* 联系人卡片 */
+        .contact-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 8px;
+        }
+
+        .contact-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #3b82f6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-name {
+            font-weight: 600;
+            color: #111827;
+            font-size: 14px;
+        }
+
+        .contact-detail {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        /* 商机选择弹窗 */
+        .opportunity-modal {
+            width: 600px;
+            max-height: 80vh;
+        }
+
+        .opportunity-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .opportunity-item {
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .opportunity-item:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .opportunity-item.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+        }
+
+        /* 详情页样式 */
+        .detail-container {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            background: #f1f5f9;
+        }
+
+        .detail-header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        /* 锚点Tab导航 */
+        .anchor-nav {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 24px;
+            display: flex;
+            gap: 32px;
+            position: sticky;
+            top: 73px;
+            z-index: 99;
+        }
+
+        .anchor-tab {
+            padding: 16px 4px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .anchor-tab:hover {
+            color: #3b82f6;
+        }
+
+        .anchor-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        .detail-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 24px;
+        }
+
+        .detail-main {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .detail-card {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            padding: 24px;
+            scroll-margin-top: 140px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #111827;
+            font-weight: 500;
+        }
+
+        /* 跟进记录列表样式 */
+        .record-list {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .record-item {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .record-item:hover {
+            background: #fafafa;
+        }
+
+        .record-item:last-child {
+            border-bottom: none;
+        }
+
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .record-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .record-type-phone { background: #dbeafe; color: #1e40af; }
+        .record-type-visit { background: #d1fae5; color: #065f46; }
+        .record-type-email { background: #fce7f3; color: #9d174d; }
+        .record-type-video { background: #f3e8ff; color: #7c3aed; }
+        .record-type-other { background: #f3f4f6; color: #374151; }
+
+        .record-time {
+            font-size: 12px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .record-content {
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.8;
+            margin-bottom: 12px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .record-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .record-meta {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .record-attachments {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .attachment-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #4b5563;
+        }
+
+        /* 跟进登记弹窗样式 - 参考03-跟进登记.html */
+        .follow-modal {
+            width: 720px;
+            height: 640px;
+        }
+
+        .radio-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .radio-card {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .radio-card input {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .radio-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .radio-card:hover .radio-label {
+            border-color: #bfdbfe;
+            background: #fafafa;
+        }
+
+        .radio-card input:checked + .radio-label {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .radio-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+
+        .radio-card input:checked + .radio-label .radio-icon {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .radio-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .radio-card input:checked + .radio-label .radio-text {
+            color: #1d4ed8;
+        }
+
+        .quick-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .quick-btn {
+            padding: 4px 10px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #2563eb;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .file-upload-area:hover {
+            border-color: #3b82f6;
+            background: #fafafa;
+        }
+
+        /* Toast提示 */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #111827;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 2000;
+        }
+
+        .toast.show { display: flex; }
+
+        /* 隐藏 */
+        .hidden { display: none !important; }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* 系统生成标识 */
+        .system-gen-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            background: #f3e8ff;
+            color: #7c3aed;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* 计划名称截断 */
+        .plan-name-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .plan-name-text {
+            font-weight: 600;
+            color: #111827;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .plan-name-rule {
+            font-size: 11px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 列表页 -->
+    <div id="listPage">
+        <!-- 顶部栏 -->
+        <div class="top-bar">
+            <div class="flex items-center gap-4">
+                <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-calendar-check text-blue-600"></i>
+                    跟进计划管理
+                </h1>
+                <span class="text-gray-300">|</span>
+                <div class="flex items-center gap-3 text-sm">
+                    <span class="text-gray-600">共 <strong class="text-gray-900 text-lg" id="totalCount">156</strong> 个计划</span>
+                    <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                        <i class="fas fa-robot mr-1"></i>系统自动 89
+                    </span>
+                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                        <i class="fas fa-hand-pointer mr-1"></i>手动创建 67
+                    </span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button class="btn btn-secondary btn-sm">
+                    <i class="fas fa-download"></i>
+                    导出
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="openPlanModal()">
+                    <i class="fas fa-plus"></i>
+                    新增计划
+                </button>
+            </div>
+        </div>
+
+        <!-- 统计栏 -->
+        <div class="stats-bar">
+            <div class="stat-card active" onclick="filterByType('all')">
+                <div class="stat-icon blue">
+                    <i class="fas fa-th-list"></i>
+                </div>
+                <div>
+                    <div class="stat-number">156</div>
+                    <div class="stat-label">全部计划</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByType('auto')">
+                <div class="stat-icon purple">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <div class="stat-number">89</div>
+                    <div class="stat-label">系统自动</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByType('manual')">
+                <div class="stat-icon blue">
+                    <i class="fas fa-hand-pointer"></i>
+                </div>
+                <div>
+                    <div class="stat-number">67</div>
+                    <div class="stat-label">手动创建</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('pending')">
+                <div class="stat-icon yellow">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <div class="stat-number">42</div>
+                    <div class="stat-label">待执行</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('completed')">
+                <div class="stat-icon green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <div class="stat-number">98</div>
+                    <div class="stat-label">已完成</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('overdue')">
+                <div class="stat-icon red">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <div class="stat-number">12</div>
+                    <div class="stat-label">已逾期</div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterByStatus('cancelled')">
+                <div class="stat-icon gray">
+                    <i class="fas fa-ban"></i>
+                </div>
+                <div>
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">已取消</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="filter-bar">
+            <div class="quick-filters">
+                <div class="filter-item">
+                    <label>计划名称</label>
+                    <input type="text" placeholder="输入计划名称" style="width: 180px;" id="filterPlanName">
+                </div>
+                <div class="filter-item">
+                    <label>客户名称</label>
+                    <input type="text" placeholder="输入客户" style="width: 150px;" id="filterCustomer">
+                </div>
+                <div class="filter-item">
+                    <label>跟进人</label>
+                    <select style="width: 120px;" id="filterFollower">
+                        <option value="">全部</option>
+                        <option value="王小红">王小红</option>
+                        <option value="李芳">李芳</option>
+                        <option value="刘强">刘强</option>
+                        <option value="张伟">张伟</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>创建类型</label>
+                    <select style="width: 110px;" id="filterCreateType">
+                        <option value="">全部</option>
+                        <option value="auto">系统自动</option>
+                        <option value="manual">手动创建</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>触发场景</label>
+                    <select style="width: 130px;" id="filterScene">
+                        <option value="">全部</option>
+                        <option value="cert_expire">证书临期</option>
+                        <option value="cert_issued">证书发证</option>
+                        <option value="follow_cycle">跟进周期</option>
+                        <option value="customer_tag">客户标签</option>
+                        <option value="manual">手动创建</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>执行状态</label>
+                    <select style="width: 100px;" id="filterStatus">
+                        <option value="">全部</option>
+                        <option value="pending">待执行</option>
+                        <option value="completed">已完成</option>
+                        <option value="overdue">已逾期</option>
+                        <option value="cancelled">已取消</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>截止日期</label>
+                    <input type="date" style="width: 130px;" id="filterStartDate">
+                    <span class="text-gray-400">至</span>
+                    <input type="date" style="width: 130px;" id="filterEndDate">
+                </div>
+                <div class="flex-1"></div>
+                <button class="btn btn-primary btn-sm" onclick="searchData()">
+                    <i class="fas fa-search"></i>
+                    查询
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="resetFilter()">
+                    重置
+                </button>
+            </div>
+        </div>
+
+        <!-- 表格区域 -->
+        <div class="table-container">
+            <div class="table-wrapper">
+                <table class="data-table" id="planTable">
+                    <thead>
+                        <tr>
+                            <th class="col-plan-name col-sticky-left">计划名称</th>
+                            <th class="col-customer col-sticky-left-2">客户名称</th>
+                            <th class="col-opportunity">关联商机</th>
+                            <th class="col-type">创建类型</th>
+                            <th class="col-scene">触发场景</th>
+                            <th class="col-follower">跟进人</th>
+                            <th class="col-deadline">截止日期</th>
+                            <th class="col-reminder">提醒设置</th>
+                            <th class="col-status">状态</th>
+                            <th class="col-creator">创建人</th>
+                            <th class="col-create-time">创建时间</th>
+                            <th class="col-action col-sticky-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- 数据通过JS填充 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            <div class="p-4 border-t border-gray-200 flex items-center justify-between bg-white">
+                <div class="text-sm text-gray-600">
+                    显示第 <span class="font-medium">1</span> 到 <span class="font-medium">15</span> 条，共 <span class="font-medium" id="pageTotal">156</span> 条
+                </div>
+                <div class="pagination">
+                    <button class="page-btn" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn">2</button>
+                    <button class="page-btn">3</button>
+                    <button class="page-btn">4</button>
+                    <button class="page-btn">5</button>
+                    <button class="page-btn">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="flex items-center gap-2 text-sm text-gray-600">
+                    <span>每页</span>
+                    <select class="border border-gray-300 rounded px-2 py-1 text-sm">
+                        <option>15</option>
+                        <option>30</option>
+                        <option>50</option>
+                    </select>
+                    <span>条</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情页 -->
+    <div class="detail-container" id="detailPage">
+        <div class="detail-header">
+            <div class="flex items-center gap-4">
+                <button class="btn btn-secondary btn-sm" onclick="backToList()">
+                    <i class="fas fa-arrow-left"></i>返回列表
+                </button>
+                <div>
+                    <h1 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        跟进计划详情
+                        <span class="system-gen-badge" id="detailSystemBadge" style="display: none;">
+                            <i class="fas fa-robot"></i>系统生成
+                        </span>
+                    </h1>
+                    <p class="text-sm text-gray-500 mt-1">计划编号：<span id="detailPlanId">PL-2026-0415-001</span></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button class="btn btn-secondary btn-sm">
+                    <i class="fas fa-print"></i>打印
+                </button>
+                <button class="btn btn-success btn-sm" onclick="completePlan()">
+                    <i class="fas fa-check"></i>标记完成
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="editPlan()">
+                    <i class="fas fa-edit"></i>编辑
+                </button>
+            </div>
+        </div>
+
+        <!-- 锚点Tab导航 -->
+        <div class="anchor-nav">
+            <a href="#section-basic" class="anchor-tab active" onclick="switchAnchor(this, 'section-basic')">
+                <i class="fas fa-info-circle mr-1"></i>基本信息
+            </a>
+            <a href="#section-customer" class="anchor-tab" onclick="switchAnchor(this, 'section-customer')">
+                <i class="fas fa-building mr-1"></i>客户信息
+            </a>
+            <a href="#section-records" class="anchor-tab" onclick="switchAnchor(this, 'section-records')">
+                <i class="fas fa-history mr-1"></i>跟进记录 <span class="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs" id="recordCount">3</span>
+            </a>
+            <a href="#section-contacts" class="anchor-tab" onclick="switchAnchor(this, 'section-contacts')">
+                <i class="fas fa-address-book mr-1"></i>联系人
+            </a>
+            <a href="#section-logs" class="anchor-tab" onclick="switchAnchor(this, 'section-logs')">
+                <i class="fas fa-list-alt mr-1"></i>操作日志
+            </a>
+        </div>
+
+        <div class="detail-content">
+            <!-- 左侧主要内容 -->
+            <div class="detail-main">
+                <!-- 基本信息 -->
+                <div class="detail-card" id="section-basic">
+                    <h3 class="card-title">
+                        <i class="fas fa-info-circle text-blue-600"></i>基本信息
+                    </h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">创建类型</span>
+                            <span class="info-value" id="detailCreateType">
+                                <span class="tag tag-manual">手动创建</span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">触发场景</span>
+                            <span class="info-value" id="detailScene">手动创建</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">计划截止日期</span>
+                            <span class="info-value" id="detailDeadline">2026-04-20</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">提醒设置</span>
+                            <span class="info-value" id="detailReminder">提前3天</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">当前状态</span>
+                            <span class="info-value" id="detailStatus">
+                                <span class="status-badge status-pending">
+                                    <i class="fas fa-clock"></i>待执行
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">创建时间</span>
+                            <span class="info-value" id="detailCreateTime">2026-04-10 14:30</span>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-6 border-t border-gray-100">
+                        <div class="mb-3">
+                            <div class="text-sm font-semibold text-gray-700 mb-2">跟进目的</div>
+                            <div class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg" id="detailPurpose">跟进证书年审材料准备进度，确认审核时间安排</div>
+                        </div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700 mb-2">详细内容</div>
+                            <div class="text-sm text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-lg" id="detailContent">
+                                1. 联系客户确认质量管理体系年审所需材料准备情况<br>
+                                2. 协调审核员时间安排，确定现场审核日期<br>
+                                3. 提醒客户准备相关法律法规更新文件
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 客户信息 -->
+                <div class="detail-card" id="section-customer">
+                    <h3 class="card-title">
+                        <i class="fas fa-building text-blue-600"></i>客户信息
+                    </h3>
+                    <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-lg">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-900 text-lg" id="detailCustomerName">北京科技有限公司</div>
+                                <div class="text-sm text-gray-500" id="detailCustomerId">客户编号：C20240315001</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 mt-3 text-sm">
+                            <div>
+                                <span class="text-gray-500">所属行业：</span>
+                                <span class="font-medium text-gray-700">制造业</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">客户等级：</span>
+                                <span class="tag tag-key">A级客户</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">所在区域：</span>
+                                <span class="font-medium text-gray-700">华东区域</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 关联商机 -->
+                    <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg" id="detailOpportunityBox">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-funnel-dollar text-purple-600 text-lg"></i>
+                            <span class="font-semibold text-gray-900" id="detailOpportunityName">ISO9001质量管理体系认证</span>
+                        </div>
+                        <div class="text-sm text-gray-600 ml-8">商机编号：<span id="detailOpportunityId">OP20240401001</span></div>
+                        <div class="ml-8 mt-2 flex gap-2">
+                            <span class="tag tag-scene">报价阶段</span>
+                            <span class="font-medium text-gray-700">预计金额：¥45,000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 跟进记录 - 高权重展示 -->
+                <div class="detail-card" id="section-records" style="border: 2px solid #3b82f6;">
+                    <h3 class="card-title" style="color: #1e40af;">
+                        <i class="fas fa-history text-blue-600"></i>跟进记录 
+                        <span class="text-sm font-normal text-gray-500 ml-2">共 <span id="recordCountBadge" class="font-bold text-blue-600">3</span> 条记录</span>
+                    </h3>
+                    
+                    <div class="mb-4 flex justify-between items-center">
+                        <div class="text-sm text-gray-600">
+                            <i class="fas fa-info-circle mr-1"></i>记录每次与客户的沟通详情，便于后续跟进分析
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="openFollowModal()">
+                            <i class="fas fa-plus"></i>新增跟进记录
+                        </button>
+                    </div>
+
+                    <div class="record-list" id="recordList">
+                        <!-- 跟进记录项 -->
+                        <div class="record-item">
+                            <div class="record-header">
+                                <span class="record-type record-type-phone">
+                                    <i class="fas fa-phone"></i>电话沟通
+                                </span>
+                                <span class="record-time">
+                                    <i class="fas fa-clock"></i>2026-04-14 15:30
+                                </span>
+                            </div>
+                            <div class="record-content">
+                                与客户张总电话沟通，确认年审材料已基本准备就绪，计划下周提交初审。客户反馈希望审核时间安排在5月上旬，避开月初的盘点期。已约定下周三（4月22日）上午9点进行二阶段审核。
+                            </div>
+                            <div class="record-footer">
+                                <div class="record-meta">
+                                    <span><i class="fas fa-user mr-1"></i>王小红</span>
+                                    <span><i class="fas fa-map-marker-alt mr-1"></i>客户公司会议室</span>
+                                    <span><i class="fas fa-check-circle text-green-500 mr-1"></i>已完成</span>
+                                </div>
+                                <div class="record-attachments">
+                                    <span class="attachment-tag"><i class="fas fa-file-pdf"></i>会议纪要.pdf</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="record-item">
+                            <div class="record-header">
+                                <span class="record-type record-type-email">
+                                    <i class="fas fa-envelope"></i>邮件往来
+                                </span>
+                                <span class="record-time">
+                                    <i class="fas fa-clock"></i>2026-04-12 09:15
+                                </span>
+                            </div>
+                            <div class="record-content">
+                                发送年审准备清单及注意事项给客户，提醒客户提前准备内审记录、管理评审记录、以及相关法律法规的更新文件。附件包含详细的材料准备指南和模板。
+                            </div>
+                            <div class="record-footer">
+                                <div class="record-meta">
+                                    <span><i class="fas fa-user mr-1"></i>王小红</span>
+                                    <span><i class="fas fa-check-circle text-green-500 mr-1"></i>已完成</span>
+                                </div>
+                                <div class="record-attachments">
+                                    <span class="attachment-tag"><i class="fas fa-file-word"></i>年审准备清单.docx</span>
+                                    <span class="attachment-tag"><i class="fas fa-file-excel"></i>材料模板.xlsx</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="record-item">
+                            <div class="record-header">
+                                <span class="record-type record-type-visit">
+                                    <i class="fas fa-handshake"></i>现场拜访
+                                </span>
+                                <span class="record-time">
+                                    <i class="fas fa-clock"></i>2026-04-08 14:00
+                                </span>
+                            </div>
+                            <div class="record-content">
+                                初次拜访客户，了解企业现状和认证需求。企业规模约200人，主要生产电子元器件。客户对ISO9001认证有明确需求，希望在6月底前完成取证。现场查看了生产车间和质量管理现状，初步判断具备认证基础条件。
+                            </div>
+                            <div class="record-footer">
+                                <div class="record-meta">
+                                    <span><i class="fas fa-user mr-1"></i>王小红</span>
+                                    <span><i class="fas fa-map-marker-alt mr-1"></i>北京科技有限公司会议室</span>
+                                    <span><i class="fas fa-user-tie mr-1"></i>联系人：张伟（质量经理）</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 联系人信息 -->
+                <div class="detail-card" id="section-contacts">
+                    <h3 class="card-title">
+                        <i class="fas fa-address-book text-blue-600"></i>联系人信息
+                    </h3>
+                    <div id="detailContacts">
+                        <div class="contact-card">
+                            <div class="contact-avatar">张</div>
+                            <div class="contact-info">
+                                <div class="contact-name">张伟</div>
+                                <div class="contact-detail">技术总监 | 138-1234-5678 | zhangwei@bj-tech.com</div>
+                            </div>
+                            <span class="tag tag-key">主要联系人</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作日志 -->
+                <div class="detail-card" id="section-logs">
+                    <h3 class="card-title">
+                        <i class="fas fa-list-alt text-blue-600"></i>操作日志
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex gap-4 text-sm">
+                            <div class="w-32 text-gray-500">2026-04-14 15:30</div>
+                            <div class="flex-1">
+                                <span class="font-medium text-gray-900">王小红</span>
+                                <span class="text-gray-600">新增跟进记录</span>
+                                <span class="text-blue-600">【电话沟通】</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 text-sm">
+                            <div class="w-32 text-gray-500">2026-04-12 09:15</div>
+                            <div class="flex-1">
+                                <span class="font-medium text-gray-900">王小红</span>
+                                <span class="text-gray-600">新增跟进记录</span>
+                                <span class="text-blue-600">【邮件往来】</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 text-sm">
+                            <div class="w-32 text-gray-500">2026-04-10 14:30</div>
+                            <div class="flex-1">
+                                <span class="font-medium text-gray-900">王小红</span>
+                                <span class="text-gray-600">创建跟进计划</span>
+                                <span class="text-purple-600">【手动创建】</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧边栏 -->
+            <div>
+                <!-- 执行操作 -->
+                <div class="detail-card">
+                    <h3 class="card-title">执行操作</h3>
+                    <div class="flex flex-col gap-3">
+                        <button class="btn btn-success w-full justify-center" onclick="completePlan()">
+                            <i class="fas fa-check-circle"></i>标记为已完成
+                        </button>
+                        <button class="btn btn-primary w-full justify-center" onclick="openFollowModal()">
+                            <i class="fas fa-plus"></i>新增跟进记录
+                        </button>
+                        <button class="btn btn-secondary w-full justify-center" onclick="editPlan()">
+                            <i class="fas fa-edit"></i>编辑计划
+                        </button>
+                        <button class="btn btn-danger w-full justify-center" onclick="cancelPlan()">
+                            <i class="fas fa-ban"></i>取消计划
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 跟进人信息 -->
+                <div class="detail-card">
+                    <h3 class="card-title">跟进人信息</h3>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-900" id="detailFollower">王小红</div>
+                            <div class="text-sm text-gray-500">华东区域 - 高级客户经理</div>
+                        </div>
+                    </div>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">联系电话</span>
+                            <span class="font-medium">138-0013-8000</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">邮箱</span>
+                            <span class="font-medium">wangxh@cqc.com</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">部门</span>
+                            <span class="font-medium">市场开发部</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 提醒记录 -->
+                <div class="detail-card">
+                    <h3 class="card-title">提醒记录</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                            <i class="fas fa-bell text-yellow-600 mt-0.5"></i>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">系统提醒</div>
+                                <div class="text-xs text-gray-500 mt-1">将于2026-04-17 09:00发送提醒</div>
+                                <div class="text-xs text-gray-400 mt-0.5">提前3天提醒设置</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增/编辑跟进计划模态框 -->
+    <!-- 新增/编辑跟进计划模态框 -->
+    <div class="modal-overlay" id="planModal">
+        <div class="modal-container" style="width: 800px; max-height: 90vh;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-calendar-plus"></i>
+                    <span id="modalTitle">新建跟进计划</span>
+                </div>
+                <button class="btn-close" onclick="closePlanModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body custom-scroll">
+                <form id="planForm">
+                    <!-- 客户选择 -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-building text-gray-500"></i>
+                            选择客户 <span style="color: #ef4444;">*</span>
+                        </div>
+
+                        <div id="customer-unselected" class="customer-trigger" onclick="openCustomerModal()">
+                            <div class="customer-info">
+                                <div class="customer-icon" style="background: #f3f4f6; color: #6b7280;">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: #6b7280;">点击选择客户</div>
+                                    <div style="font-size: 12px; color: #9ca3af; margin-top: 2px;">从企业库中搜索并选择客户（仅可选择本区域或已报备的跨区客户）</div>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+
+                        <div id="customer-selected" class="customer-selected hidden">
+                            <div class="customer-info">
+                                <div class="customer-icon">
+                                    <i class="fas fa-building"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: #111827;" id="selectedCustomerName">北京科技有限公司</div>
+                                    <div style="font-size: 12px; color: #059669;" id="selectedCustomerInfo">客户编号：C20240315001 · 本区域</div>
+                                </div>
+                            </div>
+                            <button type="button" class="change-btn" onclick="changeCustomer()">
+                                <i class="fas fa-edit"></i> 更换
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 商机关联 -->
+                    <div class="form-section" id="opportunitySection" style="display: none;">
+                        <div class="section-title">
+                            <i class="fas fa-funnel-dollar text-gray-500"></i>
+                            关联商机
+                        </div>
+
+                        <div class="form-radio-group" style="display: flex; gap: 16px; margin-bottom: 16px;">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                                <input type="radio" name="hasOpportunity" value="no" checked onchange="toggleOpportunitySection(false)">
+                                <span>不关联商机</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                                <input type="radio" name="hasOpportunity" value="yes" onchange="toggleOpportunitySection(true)">
+                                <span>关联商机</span>
+                            </label>
+                        </div>
+
+                        <div id="opportunitySelectArea" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; display: none;">
+                            <div id="opportunity-unselected">
+                                <button type="button" class="btn btn-secondary w-full justify-center" onclick="openOpportunitySelectModal()">
+                                    <i class="fas fa-plus"></i>点击选择关联商机
+                                </button>
+                            </div>
+
+                            <div id="opportunity-selected-card" class="opportunity-selector hidden">
+                                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                    <i class="fas fa-funnel-dollar text-blue-600 text-lg"></i>
+                                    <div>
+                                        <div style="font-weight: 600; color: #111827; font-size: 14px;" id="selectedOppName">环境管理体系扩项认证</div>
+                                        <div style="font-size: 12px; color: #6b7280; margin-top: 2px;" id="selectedOppInfo">预计金额：¥85,000 | 预计成交：2026-05</div>
+                                    </div>
+                                </div>
+                                <button type="button" class="text-blue-600 hover:text-blue-700" onclick="changeOpportunity()">
+                                    <i class="fas fa-edit"></i> 更换
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 基本信息 -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-tasks text-gray-500"></i>
+                            计划基本信息 <span style="color: #ef4444;">*</span>
+                        </div>
+
+                        <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div class="form-group">
+                                <label class="form-label">跟进人 <span style="color: #ef4444;">*</span></label>
+                                <select class="form-input" id="planFollower" required>
+                                    <option value="">请选择跟进人</option>
+                                    <option value="王小红">王小红 - 华东区域</option>
+                                    <option value="李芳">李芳 - 华北区域</option>
+                                    <option value="刘强">刘强 - 华南区域</option>
+                                    <option value="张伟">张伟 - 西南区域</option>
+                                    <option value="赵敏">赵敏 - 华中区域</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">截止日期 <span style="color: #ef4444;">*</span></label>
+                                <input type="date" class="form-input" id="planDeadline" required>
+                            </div>
+
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label class="form-label">计划类型 <span style="color: #ef4444;">*</span></label>
+                                <div class="tag-selector" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    <span class="tag-item selected" onclick="selectPlanType(this)" data-value="phone">
+                                        <i class="fas fa-phone mr-1"></i>电话沟通
+                                    </span>
+                                    <span class="tag-item" onclick="selectPlanType(this)" data-value="visit">
+                                        <i class="fas fa-handshake mr-1"></i>现场拜访
+                                    </span>
+                                    <span class="tag-item" onclick="selectPlanType(this)" data-value="email">
+                                        <i class="fas fa-envelope mr-1"></i>邮件往来
+                                    </span>
+                                    <span class="tag-item" onclick="selectPlanType(this)" data-value="video">
+                                        <i class="fas fa-video mr-1"></i>视频会议
+                                    </span>
+                                    <span class="tag-item" onclick="selectPlanType(this)" data-value="demo">
+                                        <i class="fas fa-laptop mr-1"></i>产品演示
+                                    </span>
+                                    <span class="tag-item" onclick="selectPlanType(this)" data-value="quotation">
+                                        <i class="fas fa-file-invoice-dollar mr-1"></i>报价跟进
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label class="form-label">优先级 <span style="color: #ef4444;">*</span></label>
+                                <div style="display: flex; gap: 12px;">
+                                    <label style="flex: 1; display: flex; align-items: center; padding: 10px; border: 2px solid #ef4444; border-radius: 8px; background: #fef2f2; cursor: pointer;">
+                                        <input type="radio" name="priority" value="high" style="margin-right: 8px;" checked>
+                                        <div>
+                                            <div style="font-weight: 600; color: #ef4444; font-size: 13px;">高</div>
+                                            <div style="font-size: 11px; color: #f87171;">紧急重要</div>
+                                        </div>
+                                    </label>
+                                    <label style="flex: 1; display: flex; align-items: center; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
+                                        <input type="radio" name="priority" value="medium" style="margin-right: 8px;">
+                                        <div>
+                                            <div style="font-weight: 600; color: #374151; font-size: 13px;">中</div>
+                                            <div style="font-size: 11px; color: #6b7280;">常规</div>
+                                        </div>
+                                    </label>
+                                    <label style="flex: 1; display: flex; align-items: center; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
+                                        <input type="radio" name="priority" value="low" style="margin-right: 8px;">
+                                        <div>
+                                            <div style="font-weight: 600; color: #374151; font-size: 13px;">低</div>
+                                            <div style="font-size: 11px; color: #6b7280;">灵活安排</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 提醒设置 -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-bell text-gray-500"></i>
+                            提醒设置 <span style="color: #ef4444;">*</span>
+                        </div>
+
+                        <div class="reminder-options" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <div class="reminder-option selected" onclick="selectReminder(this, '1')">
+                                <i class="fas fa-bell"></i>
+                                <span>提前1天</span>
+                            </div>
+                            <div class="reminder-option" onclick="selectReminder(this, '3')">
+                                <i class="fas fa-bell"></i>
+                                <span>提前3天</span>
+                            </div>
+                            <div class="reminder-option" onclick="selectReminder(this, '7')">
+                                <i class="fas fa-bell"></i>
+                                <span>提前7天</span>
+                            </div>
+                            <div class="reminder-option" onclick="selectReminder(this, '15')">
+                                <i class="fas fa-bell"></i>
+                                <span>提前15天</span>
+                            </div>
+                            <div class="reminder-option" onclick="selectReminder(this, 'custom')">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>自定义日期</span>
+                            </div>
+                            <div class="reminder-option" onclick="selectReminder(this, 'none')">
+                                <i class="fas fa-bell-slash"></i>
+                                <span>不提醒</span>
+                            </div>
+                        </div>
+
+                        <div id="customReminderInput" style="display: none; margin-top: 12px; padding: 12px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">选择提醒日期 <span style="color: #ef4444;">*</span></label>
+                            <input type="date" class="form-input" id="customReminderDate" style="max-width: 200px;">
+                            <p style="font-size: 12px; color: #6b7280; margin-top: 6px;">系统将在该日期发送提醒通知</p>
+                        </div>
+                    </div>
+
+                    <!-- 联系人信息 -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-address-book text-gray-500"></i>
+                            联系人信息 <span style="color: #ef4444;">*</span>
+                        </div>
+
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">
+                            <button type="button" class="contact-tab active" onclick="switchContactTab('existing')" style="padding: 6px 12px; border: none; background: #eff6ff; color: #3b82f6; font-weight: 500; font-size: 13px; border-radius: 6px; cursor: pointer;">从已有选择</button>
+                            <button type="button" class="contact-tab" onclick="switchContactTab('manual')" style="padding: 6px 12px; border: none; background: transparent; color: #6b7280; font-size: 13px; border-radius: 6px; cursor: pointer;">手动添加</button>
+                        </div>
+
+                        <!-- 已有联系人面板 -->
+                        <div id="existingContactPanel">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div class="form-group">
+                                    <label class="form-label">选择联系人 <span style="color: #ef4444;">*</span></label>
+                                    <select class="form-input" id="existingContactSelect" onchange="fillContactInfo(this)">
+                                        <option value="">请选择联系人</option>
+                                        <option value="张伟" data-phone="138-1234-5678" data-title="技术总监">张伟 - 技术总监</option>
+                                        <option value="李芳" data-phone="139-8765-4321" data-title="质量经理">李芳 - 质量经理</option>
+                                        <option value="王建国" data-phone="137-2468-1357" data-title="财务总监">王建国 - 财务总监</option>
+                                        <option value="陈秀英" data-phone="135-9876-5432" data-title="采购主管">陈秀英 - 采购主管</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">联系电话</label>
+                                    <input type="text" class="form-input" id="existingContactPhone" readonly style="background: #f9fafb;">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">职务</label>
+                                    <input type="text" class="form-input" id="existingContactTitle" readonly style="background: #f9fafb;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 手动添加面板 -->
+                        <div id="manualContactPanel" style="display: none;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div class="form-group">
+                                    <label class="form-label">联系人姓名 <span style="color: #ef4444;">*</span></label>
+                                    <input type="text" class="form-input" id="manualContactName" placeholder="请输入联系人姓名">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">联系电话 <span style="color: #ef4444;">*</span></label>
+                                    <input type="text" class="form-input" id="manualContactPhone" placeholder="请输入联系电话">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">职务</label>
+                                    <input type="text" class="form-input" id="manualContactTitle" placeholder="请输入职务">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">邮箱</label>
+                                    <input type="email" class="form-input" id="manualContactEmail" placeholder="请输入邮箱">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 计划内容 -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-edit text-gray-500"></i>
+                            计划内容 <span style="color: #ef4444;">*</span>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label">拜访目的 <span style="color: #ef4444;">*</span></label>
+                            <input type="text" class="form-input" id="planPurpose" placeholder="简要描述本次跟进的主要目的...">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">计划详情 <span style="color: #ef4444;">*</span></label>
+                            <textarea class="form-textarea" id="planContent" style="min-height: 100px;" placeholder="详细描述计划执行步骤、需要确认的事项、准备材料等..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 预期成果 -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-bullseye text-gray-500"></i>
+                            预期成果
+                        </div>
+
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f9fafb; border-radius: 6px; cursor: pointer; border: 1px solid #e5e7eb;">
+                                <input type="checkbox" class="expected-result" value="confirm_need" style="accent-color: #3b82f6;">
+                                <span style="font-size: 13px; color: #374151;">确认需求</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f9fafb; border-radius: 6px; cursor: pointer; border: 1px solid #e5e7eb;">
+                                <input type="checkbox" class="expected-result" value="submit_quotation" style="accent-color: #3b82f6;">
+                                <span style="font-size: 13px; color: #374151;">提交报价</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f9fafb; border-radius: 6px; cursor: pointer; border: 1px solid #e5e7eb;">
+                                <input type="checkbox" class="expected-result" value="push_approval" style="accent-color: #3b82f6;">
+                                <span style="font-size: 13px; color: #374151;">推进审批</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f9fafb; border-radius: 6px; cursor: pointer; border: 1px solid #e5e7eb;">
+                                <input type="checkbox" class="expected-result" value="sign_contract" style="accent-color: #3b82f6;">
+                                <span style="font-size: 13px; color: #374151;">签订合同</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f9fafb; border-radius: 6px; cursor: pointer; border: 1px solid #e5e7eb;">
+                                <input type="checkbox" class="expected-result" value="next_visit" style="accent-color: #3b82f6;">
+                                <span style="font-size: 13px; color: #374151;">约定下次</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f9fafb; border-radius: 6px; cursor: pointer; border: 1px solid #e5e7eb;">
+                                <input type="checkbox" class="expected-result" value="collect_info" style="accent-color: #3b82f6;">
+                                <span style="font-size: 13px; color: #374151;">收集资料</span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePlanModal()">取消</button>
+                <button class="btn btn-primary" onclick="savePlan()">
+                    <i class="fas fa-save"></i>保存计划
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 客户选择弹窗 -->
+    <div class="modal-overlay" id="customerSelectModal">
+        <div class="modal-container" style="width: 700px; max-height: 80vh;">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title">选择客户</div>
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">本区域客户可直接选择，跨区客户需先完成报备</div>
+                </div>
+                <button class="btn-close" onclick="closeCustomerModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="position: relative; margin-bottom: 16px;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+                    <input type="text" style="width: 100%; padding: 10px 12px 10px 36px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;" placeholder="搜索客户名称、编号..." oninput="filterCustomers(this.value)">
+                </div>
+                <div class="customer-list" id="customerSelectList" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- 本区域客户 - 可选 -->
+                    <div class="customer-item" onclick="selectCustomerFromModal('北京科技有限公司', 'C20240315001', 'local')" style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                北京科技有限公司
+                                <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #d1fae5; color: #065f46;">本区域</span>
+                            </div>
+                            <div style="font-size: 12px; color: #6b7280;">客户编号：C20240315001 | 行业：制造业</div>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #d1d5db;"></i>
+                    </div>
+
+                    <!-- 本区域客户 - 可选 -->
+                    <div class="customer-item" onclick="selectCustomerFromModal('北京创新软件有限公司', 'C20240320002', 'local')" style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                北京创新软件有限公司
+                                <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #d1fae5; color: #065f46;">本区域</span>
+                            </div>
+                            <div style="font-size: 12px; color: #6b7280;">客户编号：C20240320002 | 行业：IT互联网</div>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #d1d5db;"></i>
+                    </div>
+
+                    <!-- 跨区域已报备 - 可选 -->
+                    <div class="customer-item" onclick="selectCustomerFromModal('上海制造股份有限公司', 'C20240315003', 'cross', true)" style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                上海制造股份有限公司
+                                <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #fef3c7; color: #92400e;">跨区域</span>
+                                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; background: #dbeafe; color: #1e40af;">
+                                    <i class="fas fa-check-circle"></i>已报备
+                                </span>
+                            </div>
+                            <div style="font-size: 12px; color: #6b7280;">客户编号：C20240315003 | 行业：制造业 | 报备有效期至：2026-12-31</div>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #d1d5db;"></i>
+                    </div>
+
+                    <!-- 跨区域未报备 - 不可选 -->
+                    <div class="customer-item disabled" onclick="showReportAlert(event)" style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: not-allowed; display: flex; flex-direction: column; opacity: 0.7; background: #f9fafb;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                    深圳互联网科技有限公司
+                                    <span style="display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #fef3c7; color: #92400e;">跨区域</span>
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; background: #fee2e2; color: #991b1b;">
+                                        <i class="fas fa-exclamation-circle"></i>未报备
+                                    </span>
+                                </div>
+                                <div style="font-size: 12px; color: #6b7280;">客户编号：C20240315004 | 行业：IT互联网</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 8px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; font-size: 12px; color: #ef4444;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>该客户属于跨区域客户且未进行报备，请先完成跨区域报备申请</span>
+                            <button type="button" class="btn btn-sm" style="padding: 4px 10px; font-size: 11px; margin-left: 8px; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="goToReport(event, 'C20240315004')">
+                                去报备
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCustomerModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商机选择弹窗 -->
+    <div class="modal-overlay" id="opportunitySelectModal">
+        <div class="modal-container" style="width: 600px; max-height: 80vh;">
+            <div class="modal-header">
+                <div class="modal-title">选择关联商机</div>
+                <button class="btn-close" onclick="closeOpportunitySelectModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="position: relative; margin-bottom: 16px;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+                    <input type="text" style="width: 100%; padding: 10px 12px 10px 36px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;" placeholder="搜索商机名称..." oninput="filterOpportunities(this.value)">
+                </div>
+                <div class="opportunity-list" id="oppSelectList" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="opportunity-item" onclick="selectOpportunityFromModal('环境管理体系扩项认证', '85000', '2026-05')" style="padding: 14px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 4px;">环境管理体系扩项认证</div>
+                            <div style="font-size: 12px; color: #6b7280;">预计成交：2026-05 | 阶段：方案确认</div>
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: #059669;">¥85,000</div>
+                    </div>
+                    <div class="opportunity-item" onclick="selectOpportunityFromModal('质量管理体系初次认证', '120000', '2026-06')" style="padding: 14px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 4px;">质量管理体系初次认证</div>
+                            <div style="font-size: 12px; color: #6b7280;">预计成交：2026-06 | 阶段：需求确认</div>
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: #059669;">¥120,000</div>
+                    </div>
+                    <div class="opportunity-item" onclick="selectOpportunityFromModal('职业健康安全管理体系', '65000', '2026-04')" style="padding: 14px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 4px;">职业健康安全管理体系</div>
+                            <div style="font-size: 12px; color: #6b7280;">预计成交：2026-04 | 阶段：报价审批</div>
+                        </div>
+                        <div style="font-size: 14px; font-weight: 600; color: #059669;">¥65,000</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeOpportunitySelectModal()">取消</button>
+            </div>
+        </div>
+    </div><!-- 商机选择弹窗 -->
+    <div class="modal-overlay" id="followModal">
+        <div class="modal-container follow-modal">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title">
+                        <i class="fas fa-clipboard-check text-gray-700"></i>
+                        跟进登记
+                    </div>
+                    <div class="text-sm text-gray-500 mt-1">记录客户跟进详情，关联商机或跟进计划</div>
+                </div>
+                <button class="btn-close" onclick="closeFollowModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- 关联信息 -->
+                <div class="form-section" style="background: #eff6ff; border-color: #bfdbfe;">
+                    <div class="section-title" style="color: #1e40af; margin-bottom: 12px;">
+                        <i class="fas fa-link"></i>
+                        关联信息
+                    </div>
+                    <div class="flex gap-3 flex-wrap">
+                        <span class="px-3 py-1.5 bg-white rounded text-sm border border-blue-200 text-blue-800">
+                            <i class="fas fa-calendar-check mr-1"></i>计划：证书年审跟进
+                        </span>
+                        <span class="px-3 py-1.5 bg-white rounded text-sm border border-purple-200 text-purple-800">
+                            <i class="fas fa-funnel-dollar mr-1"></i>商机：ISO9001质量管理体系认证
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 拜访方式 -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-walking text-gray-500"></i>
+                        拜访方式 <span class="text-red-500">*</span>
+                    </div>
+                    <div class="radio-cards">
+                        <label class="radio-card">
+                            <input type="radio" name="visit-type" value="phone" checked>
+                            <div class="radio-label">
+                                <div class="radio-icon">
+                                    <i class="fas fa-phone"></i>
+                                </div>
+                                <span class="radio-text">电话沟通</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="visit-type" value="email">
+                            <div class="radio-label">
+                                <div class="radio-icon">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <span class="radio-text">邮件往来</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="visit-type" value="visit">
+                            <div class="radio-label">
+                                <div class="radio-icon">
+                                    <i class="fas fa-handshake"></i>
+                                </div>
+                                <span class="radio-text">现场拜访</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="visit-type" value="video">
+                            <div class="radio-label">
+                                <div class="radio-icon">
+                                    <i class="fas fa-video"></i>
+                                </div>
+                                <span class="radio-text">视频会议</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="visit-type" value="wechat">
+                            <div class="radio-label">
+                                <div class="radio-icon">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <span class="radio-text">微信/QQ</span>
+                            </div>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="visit-type" value="other">
+                            <div class="radio-label">
+                                <div class="radio-icon">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </div>
+                                <span class="radio-text">其他方式</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 拜访信息 -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-clock text-gray-500"></i>
+                        拜访信息
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">拜访时间 <span class="required">*</span></label>
+                            <input type="datetime-local" class="form-input" id="visitTime">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">拜访地点</label>
+                            <input type="text" class="form-input" placeholder="客户公司/第三方地点/线上">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">联系人 <span class="required">*</span></label>
+                            <select class="form-input" id="visitContact">
+                                <option value="">请选择联系人</option>
+                                <option value="zhangwei" selected>张伟 - 技术总监</option>
+                                <option value="lisi">李四 - 质量经理</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">客户状态</label>
+                            <select class="form-input">
+                                <option>潜在</option>
+                                <option selected>跟进中</option>
+                                <option>意向明确</option>
+                                <option>报价阶段</option>
+                                <option>签约成交</option>
+                                <option>已流失</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 跟进内容 -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-edit text-gray-500"></i>
+                        跟进内容 <span class="text-red-500">*</span>
+                    </div>
+                    <div class="form-group">
+                        <textarea class="form-textarea" id="followup-content" style="min-height: 140px;" placeholder="详细记录本次沟通内容、客户反馈、痛点需求及下一步行动计划..."></textarea>
+                    </div>
+                    <div class="quick-inputs">
+                        <span style="width: 100%; font-size: 12px; color: #6b7280; margin-bottom: 4px;">快捷输入：</span>
+                        <button type="button" class="quick-btn" onclick="insertQuickText('客户对价格方案基本认可')">客户对价格方案基本认可</button>
+                        <button type="button" class="quick-btn" onclick="insertQuickText('需进一步提供案例参考')">需进一步提供案例参考</button>
+                        <button type="button" class="quick-btn" onclick="insertQuickText('客户内部需走审批流程')">客户内部需走审批流程</button>
+                        <button type="button" class="quick-btn" onclick="insertQuickText('约定下次沟通时间')">约定下次沟通时间</button>
+                        <button type="button" class="quick-btn" onclick="insertQuickText('发送正式报价单')">发送正式报价单</button>
+                    </div>
+                </div>
+
+                <!-- 相关附件 -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-paperclip text-gray-500"></i>
+                        相关附件
+                    </div>
+                    <div class="file-upload-area" onclick="document.getElementById('file-input').click()">
+                        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="text-sm font-medium text-gray-700 mb-1">点击上传附件</div>
+                        <div class="text-xs text-gray-400">支持 PDF、Word、Excel、图片，单个不超过 20MB</div>
+                        <input type="file" id="file-input" hidden multiple onchange="handleFiles(this)">
+                    </div>
+                    <div id="file-list" class="mt-3"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="saveFollowDraft()">保存草稿</button>
+                <button class="btn btn-primary" onclick="submitFollowRecord()">
+                    <i class="fas fa-save"></i>
+                    提交登记
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMessage">操作成功</span>
+    </div>
+
+    <script>
+        // 假数据 - 跟进计划
+        const mockData = [
+            {
+                id: 'PL20260415001',
+                name: '【手动创建】北京科技有限公司 - ISO9001跟进',
+                customerId: 'C20240315001',
+                customerName: '北京科技有限公司',
+                opportunityId: 'OP20240401001',
+                opportunityName: 'ISO9001质量管理体系认证',
+                createType: 'manual',
+                scene: 'manual',
+                sceneName: '手动创建',
+                follower: '王小红',
+                deadline: '2026-04-20',
+                reminder: '3',
+                reminderName: '提前3天',
+                status: 'pending',
+                statusName: '待执行',
+                creator: '王小红',
+                createTime: '2026-04-10 14:30',
+                purpose: '跟进证书年审材料准备进度',
+                content: '1. 联系客户确认质量管理体系年审所需材料准备情况\n2. 协调审核员时间安排，确定现场审核日期',
+                contacts: [
+                    { name: '张伟', title: '技术总监', phone: '138-1234-5678', email: 'zhangwei@bj-tech.com' }
+                ],
+                records: 3
+            },
+            {
+                id: 'PL20260414002',
+                name: '【系统自动】华能电力发展有限公司 - 证书临期提醒',
+                customerId: 'C20240201002',
+                customerName: '华能电力发展有限公司',
+                opportunityId: null,
+                opportunityName: null,
+                createType: 'auto',
+                scene: 'cert_expire',
+                sceneName: '证书临期提醒',
+                follower: '李芳',
+                deadline: '2026-04-18',
+                reminder: '15',
+                reminderName: '提前15天',
+                status: 'pending',
+                statusName: '待执行',
+                creator: '系统',
+                createTime: '2026-04-01 00:00',
+                purpose: '证书将于30天后到期，提醒客户准备换证审核',
+                content: '系统自动触发：客户证书将于2026年5月15日到期，需提醒客户提前准备换证审核申请材料。',
+                contacts: [],
+                records: 0
+            },
+            {
+                id: 'PL20260413003',
+                name: '【系统自动】中建材国际贸易有限公司 - 跟进周期提醒',
+                customerId: 'C20240110003',
+                customerName: '中建材国际贸易有限公司',
+                opportunityId: 'OP20240320001',
+                opportunityName: 'ISO14001环境管理体系认证',
+                createType: 'auto',
+                scene: 'follow_cycle',
+                sceneName: '跟进周期提醒',
+                follower: '刘强',
+                deadline: '2026-04-25',
+                reminder: '1',
+                reminderName: '提前1天',
+                status: 'overdue',
+                statusName: '已逾期',
+                creator: '系统',
+                createTime: '2026-03-25 00:00',
+                purpose: '定期跟进客户，了解认证进展',
+                content: '系统根据客户标签【A级客户】设置的跟进周期（每30天）自动创建。',
+                contacts: [],
+                records: 1
+            },
+            {
+                id: 'PL20260412004',
+                name: '【系统自动】北京市朝阳区人民政府机关事务管理局 - 季度回访',
+                customerId: 'C20231205004',
+                customerName: '北京市朝阳区人民政府机关事务管理局',
+                opportunityId: null,
+                opportunityName: null,
+                createType: 'auto',
+                scene: 'customer_tag',
+                sceneName: '客户标签触发',
+                follower: '王小红',
+                deadline: '2026-04-15',
+                reminder: '3',
+                reminderName: '提前3天',
+                status: 'completed',
+                statusName: '已完成',
+                creator: '系统',
+                createTime: '2026-04-05 00:00',
+                purpose: '政府客户季度回访',
+                content: '系统根据【政府客户】标签设置的固定周期自动创建季度回访计划。',
+                contacts: [],
+                records: 2
+            },
+            {
+                id: 'PL20260410005',
+                name: '【手动创建】中国航天科技集团第五研究院 - 保密资质咨询',
+                customerId: 'C20231120005',
+                customerName: '中国航天科技集团第五研究院',
+                opportunityId: 'OP20240405001',
+                opportunityName: '保密资质认证咨询',
+                createType: 'manual',
+                scene: 'manual',
+                sceneName: '手动创建',
+                follower: '李芳',
+                deadline: '2026-04-12',
+                reminder: '7',
+                reminderName: '提前7天',
+                status: 'overdue',
+                statusName: '已逾期',
+                creator: '李芳',
+                createTime: '2026-04-02 10:15',
+                purpose: '跟进保密资质认证资料准备情况',
+                content: '客户申请保密资质认证，需跟进资料准备进度及现场整改情况。',
+                contacts: [
+                    { name: '李建国', title: '保密办主任', phone: '139-8765-4321', email: 'lijg@space.com' }
+                ],
+                records: 0
+            },
+            {
+                id: 'PL20260409006',
+                name: '【系统自动】京东世纪贸易有限公司 - 发证后回访',
+                customerId: 'C20240301006',
+                customerName: '京东世纪贸易有限公司',
+                opportunityId: null,
+                opportunityName: null,
+                createType: 'auto',
+                scene: 'cert_issued',
+                sceneName: '证书发证提醒',
+                follower: '刘强',
+                deadline: '2026-04-30',
+                reminder: '1',
+                reminderName: '提前1天',
+                status: 'pending',
+                statusName: '待执行',
+                creator: '系统',
+                createTime: '2026-04-09 00:00',
+                purpose: '证书已发放，跟进客户满意度',
+                content: '系统触发：客户证书已于2026年4月8日发放，需在7日内进行首次满意度回访。',
+                contacts: [],
+                records: 0
+            },
+            {
+                id: 'PL20260408007',
+                name: '【手动创建】上汽通用五菱汽车股份有限公司 - 二阶段审核协调',
+                customerId: 'C20240215007',
+                customerName: '上汽通用五菱汽车股份有限公司',
+                opportunityId: 'OP20240315001',
+                opportunityName: 'IATF16949汽车质量体系认证',
+                createType: 'manual',
+                scene: 'manual',
+                sceneName: '手动创建',
+                follower: '刘强',
+                deadline: '2026-04-22',
+                reminder: '3',
+                reminderName: '提前3天',
+                status: 'pending',
+                statusName: '待执行',
+                creator: '刘强',
+                createTime: '2026-04-08 09:30',
+                purpose: '协调二阶段审核时间',
+                content: '客户已完成一阶段审核，需协调二阶段现场审核时间，确认审核组成员。',
+                contacts: [
+                    { name: '王明', title: '质量经理', phone: '137-2468-1357', email: 'wangming@sgmw.com' }
+                ],
+                records: 1
+            },
+            {
+                id: 'PL20260405008',
+                name: '【手动创建】字节跳动科技有限公司 - 认证延期跟进',
+                customerId: 'C20240320009',
+                customerName: '字节跳动科技有限公司',
+                opportunityId: null,
+                opportunityName: null,
+                createType: 'manual',
+                scene: 'manual',
+                sceneName: '手动创建',
+                follower: '王磊',
+                deadline: '2026-04-10',
+                reminder: 'none',
+                reminderName: '不提醒',
+                status: 'cancelled',
+                statusName: '已取消',
+                creator: '王磊',
+                createTime: '2026-04-05 16:45',
+                purpose: '临时取消，客户延期至下季度',
+                content: '客户因内部调整，申请延期至下季度再启动认证流程。',
+                contacts: [],
+                records: 0
+            }
+        ];
+
+        // 商机假数据
+        const opportunityData = [
+            { id: 'OP20240401001', name: 'ISO9001质量管理体系认证', customerId: 'C20240315001', amount: '¥45,000', stage: '报价阶段' },
+            { id: 'OP20240402002', name: 'ISO14001环境管理体系扩项', customerId: 'C20240315001', amount: '¥32,000', stage: '洽谈阶段' },
+            { id: 'OP20240320001', name: 'ISO14001环境管理体系认证', customerId: 'C20240110003', amount: '¥38,000', stage: '需求确认' },
+            { id: 'OP20240405001', name: '保密资质认证咨询', customerId: 'C20231120005', amount: '¥85,000', stage: '合同签署' },
+            { id: 'OP20240315001', name: 'IATF16949汽车质量体系认证', customerId: 'C20240215007', amount: '¥120,000', stage: '审核准备' }
+        ];
+
+        let currentStep = 1;
+        let selectedCustomer = null;
+        let selectedOpportunity = null;
+        let currentFilter = { type: 'all', status: 'all' };
+        let contacts = [];
+        let currentDetailId = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTable();
+            
+            // 设置默认日期
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            document.getElementById('planDeadline').value = dateStr;
+            document.getElementById('customReminderDate').value = dateStr;
+            
+            // 设置默认拜访时间
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('visitTime').value = now.toISOString().slice(0, 16);
+        });
+
+        // 渲染表格
+        function renderTable(data = mockData) {
+            const tbody = document.getElementById('tableBody');
+            let html = '';
+
+            data.forEach(row => {
+                const typeTag = row.createType === 'auto' 
+                    ? '<span class="tag tag-auto"><i class="fas fa-robot mr-1"></i>系统自动</span>'
+                    : '<span class="tag tag-manual"><i class="fas fa-hand-pointer mr-1"></i>手动创建</span>';
+
+                const statusClass = {
+                    'pending': 'status-pending',
+                    'completed': 'status-completed',
+                    'overdue': 'status-overdue',
+                    'cancelled': 'status-cancelled'
+                }[row.status] || 'status-pending';
+
+                const statusIcon = {
+                    'pending': 'fa-clock',
+                    'completed': 'fa-check-circle',
+                    'overdue': 'fa-exclamation-circle',
+                    'cancelled': 'fa-ban'
+                }[row.status] || 'fa-clock';
+
+                const oppDisplay = row.opportunityName 
+                    ? `<div class="font-medium text-gray-900">${row.opportunityName}</div>
+                       <div class="text-xs text-gray-500">${row.opportunityId}</div>`
+                    : '<span class="text-gray-400">-</span>';
+
+                // 计划名称显示
+                const planNameDisplay = `
+                    <div class="plan-name-cell">
+                        <div class="plan-name-text" title="${row.name}">${row.name}</div>
+                        <div class="plan-name-rule">
+                            ${row.createType === 'auto' ? '<i class="fas fa-robot text-purple-500 mr-1"></i>系统按规则自动生成' : '<i class="fas fa-hand-pointer text-blue-500 mr-1"></i>手动创建时生成'}
+                        </div>
+                    </div>
+                `;
+
+                html += `
+                    <tr onclick="showDetail('${row.id}')">
+                        <td class="col-plan-name col-sticky-left">${planNameDisplay}</td>
+                        <td class="col-customer col-sticky-left-2">
+                            <div class="font-semibold text-gray-900">${row.customerName}</div>
+                            <div class="text-xs text-gray-500">${row.customerId}</div>
+                        </td>
+                        <td class="col-opportunity">${oppDisplay}</td>
+                        <td class="col-type">${typeTag}</td>
+                        <td class="col-scene">
+                            <span class="tag tag-scene">${row.sceneName}</span>
+                        </td>
+                        <td class="col-follower">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                    ${row.follower.charAt(0)}
+                                </div>
+                                <span>${row.follower}</span>
+                            </div>
+                        </td>
+                        <td class="col-deadline font-medium ${row.status === 'overdue' ? 'text-red-600' : 'text-gray-900'}">${row.deadline}</td>
+                        <td class="col-reminder text-gray-600">${row.reminderName}</td>
+                        <td class="col-status">
+                            <span class="status-badge ${statusClass}">
+                                <i class="fas ${statusIcon}"></i>${row.statusName}
+                            </span>
+                        </td>
+                        <td class="col-creator">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold">
+                                    ${row.creator.charAt(0)}
+                                </div>
+                                <span>${row.creator}</span>
+                            </div>
+                        </td>
+                        <td class="col-create-time text-gray-600">${row.createTime}</td>
+                        <td class="col-action col-sticky-right">
+                            <div class="flex gap-1">
+                                <button class="action-btn" onclick="event.stopPropagation(); showDetail('${row.id}')" title="详情">
+                                    <i class="fas fa-eye"></i>详情
+                                </button>
+                                ${row.status === 'pending' ? `
+                                    <button class="action-btn" onclick="event.stopPropagation(); openFollowModal('${row.id}')" title="登记">
+                                        <i class="fas fa-clipboard-check text-green-600"></i>登记
+                                    </button>
+                                ` : ''}
+                                ${row.status === 'pending' ? `
+                                    <button class="action-btn" onclick="event.stopPropagation(); completePlanById('${row.id}')" title="完成">
+                                        <i class="fas fa-check text-blue-600"></i>完成
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            document.getElementById('totalCount').textContent = data.length;
+            document.getElementById('pageTotal').textContent = data.length;
+        }
+
+        // 筛选功能
+        function filterByType(type) {
+            currentFilter.type = type;
+            
+            // 更新统计卡片样式
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            let filtered = mockData;
+            if (type !== 'all') {
+                filtered = mockData.filter(item => item.createType === type);
+            }
+            renderTable(filtered);
+        }
+
+        function filterByStatus(status) {
+            currentFilter.status = status;
+            
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            let filtered = mockData;
+            if (status !== 'all') {
+                filtered = mockData.filter(item => item.status === status);
+            }
+            renderTable(filtered);
+        }
+
+        function searchData() {
+            const planName = document.getElementById('filterPlanName').value;
+            const customer = document.getElementById('filterCustomer').value;
+            const follower = document.getElementById('filterFollower').value;
+            const createType = document.getElementById('filterCreateType').value;
+            const scene = document.getElementById('filterScene').value;
+            const status = document.getElementById('filterStatus').value;
+
+            let filtered = mockData.filter(item => {
+                if (planName && !item.name.includes(planName)) return false;
+                if (customer && !item.customerName.includes(customer)) return false;
+                if (follower && item.follower !== follower) return false;
+                if (createType && item.createType !== createType) return false;
+                if (scene && item.scene !== scene) return false;
+                if (status && item.status !== status) return false;
+                return true;
+            });
+
+            renderTable(filtered);
+            showToast(`查询完成，找到 ${filtered.length} 条记录`);
+        }
+
+        function resetFilter() {
+            document.getElementById('filterPlanName').value = '';
+            document.getElementById('filterCustomer').value = '';
+            document.getElementById('filterFollower').value = '';
+            document.getElementById('filterCreateType').value = '';
+            document.getElementById('filterScene').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            
+            document.querySelectorAll('.stat-card').forEach((card, index) => {
+                card.classList.toggle('active', index === 0);
+            });
+            
+            renderTable(mockData);
+            showToast('筛选条件已重置');
+        }
+
+        // 新增计划模态框控制
+        function openPlanModal(editId = null) {
+            document.getElementById('planModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            if (editId) {
+                document.getElementById('modalTitle').textContent = '编辑跟进计划';
+            } else {
+                document.getElementById('modalTitle').textContent = '新建跟进计划';
+                resetModal();
+            }
+        }
+
+        function closePlanModal() {
+            document.getElementById('planModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            resetModal();
+        }
+
+        function resetModal() {
+            currentStep = 1;
+            selectedCustomer = null;
+            selectedOpportunity = null;
+            contacts = [];
+            
+            updateStepBar();
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            
+            document.getElementById('customerUnselected').classList.remove('hidden');
+            document.getElementById('customerSelected').classList.add('hidden');
+            
+            document.getElementById('opportunitySelectSection').style.display = 'none';
+            document.querySelector('input[name="linkOpp"][value="no"]').checked = true;
+            document.getElementById('opportunityUnselected').classList.remove('hidden');
+            document.getElementById('opportunitySelected').classList.add('hidden');
+            
+            document.getElementById('planPurpose').value = '';
+            document.getElementById('planContent').value = '';
+            document.getElementById('contactsList').innerHTML = '<div class="text-gray-500 text-sm">暂无联系人，点击下方按钮添加</div>';
+            document.getElementById('planFollower').value = '';
+            
+            document.getElementById('btnPrev').style.display = 'none';
+            document.getElementById('btnNext').textContent = '下一步';
+            document.getElementById('btnNext').classList.remove('hidden');
+            document.getElementById('btnSave').classList.add('hidden');
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('planDeadline').value = today;
+            document.getElementById('customReminderGroup').classList.add('hidden');
+            document.getElementById('planReminder').value = '3';
+            
+            updatePlanNamePreview();
+        }
+
+        // 步骤控制
+        function updateStepBar() {
+            document.querySelectorAll('.step').forEach((step, index) => {
+                step.classList.remove('active', 'completed');
+                if (index + 1 < currentStep) {
+                    step.classList.add('completed');
+                } else if (index + 1 === currentStep) {
+                    step.classList.add('active');
+                }
+            });
+            
+            document.querySelectorAll('.step-line').forEach((line, index) => {
+                line.classList.toggle('completed', index + 1 < currentStep);
+            });
+        }
+
+        function nextStep() {
+            if (currentStep === 1) {
+                if (!selectedCustomer) {
+                    showToast('请先选择客户', 'error');
+                    return;
+                }
+                if (!document.getElementById('planFollower').value) {
+                    showToast('请选择跟进人', 'error');
+                    return;
+                }
+                
+                currentStep = 2;
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+                document.getElementById('btnPrev').style.display = 'inline-flex';
+                
+                // 显示关联商机选项
+                document.getElementById('opportunitySelectSection').style.display = 'block';
+                updatePlanNamePreview();
+            } else if (currentStep === 2) {
+                currentStep = 3;
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('step3').classList.remove('hidden');
+                document.getElementById('btnNext').classList.add('hidden');
+                document.getElementById('btnSave').classList.remove('hidden');
+            }
+            
+            updateStepBar();
+        }
+
+        function prevStep() {
+            if (currentStep === 2) {
+                currentStep = 1;
+                document.getElementById('step2').classList.add('hidden');
+                document.getElementById('step1').classList.remove('hidden');
+                document.getElementById('btnPrev').style.display = 'none';
+            } else if (currentStep === 3) {
+                currentStep = 2;
+                document.getElementById('step3').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+                document.getElementById('btnNext').classList.remove('hidden');
+                document.getElementById('btnNext').textContent = '下一步';
+                document.getElementById('btnSave').classList.add('hidden');
+            }
+            updateStepBar();
+        }
+
+        // 客户选择
+        function selectCustomer() {
+            // 模拟选择客户弹窗
+            selectedCustomer = {
+                id: 'C20240315001',
+                name: '北京科技有限公司'
+            };
+            
+            document.getElementById('selectedCustomerName').textContent = selectedCustomer.name;
+            document.getElementById('selectedCustomerId').textContent = '客户编号：' + selectedCustomer.id;
+            
+            document.getElementById('customerUnselected').classList.add('hidden');
+            document.getElementById('customerSelected').classList.remove('hidden');
+            
+            updatePlanNamePreview();
+            showToast('客户选择成功');
+        }
+
+        function changeCustomer() {
+            selectedCustomer = null;
+            selectedOpportunity = null;
+            document.getElementById('customerUnselected').classList.remove('hidden');
+            document.getElementById('customerSelected').classList.add('hidden');
+            document.getElementById('opportunityUnselected').classList.remove('hidden');
+            document.getElementById('opportunitySelected').classList.add('hidden');
+            updatePlanNamePreview();
+        }
+
+        // 商机关联切换
+        function toggleOpportunitySection(show) {
+            document.getElementById('opportunitySelectSection').style.display = show ? 'block' : 'none';
+            if (!show) {
+                selectedOpportunity = null;
+                document.getElementById('opportunityUnselected').classList.remove('hidden');
+                document.getElementById('opportunitySelected').classList.add('hidden');
+            }
+            updatePlanNamePreview();
+        }
+
+        // 更新计划名称预览
+        function updatePlanNamePreview() {
+            if (!selectedCustomer) return;
+            
+            const typePrefix = '【手动创建】';
+            const customerName = selectedCustomer.name;
+            let suffix = '跟进';
+            
+            if (selectedOpportunity) {
+                suffix = selectedOpportunity.name;
+            } else if (document.getElementById('planPurpose').value) {
+                suffix = document.getElementById('planPurpose').value;
+            }
+            
+            document.getElementById('previewPlanName').textContent = `${typePrefix}${customerName} - ${suffix}`;
+        }
+
+        // 商机选择弹窗
+        function openOpportunitySelectModal() {
+            if (!selectedCustomer) {
+                showToast('请先选择客户', 'error');
+                return;
+            }
+            document.getElementById('opportunityModal').classList.add('active');
+            renderOpportunities();
+        }
+
+        function closeOpportunitySelectModal() {
+            document.getElementById('opportunityModal').classList.remove('active');
+        }
+
+        function renderOpportunities(search = '') {
+            const list = document.getElementById('opportunityList');
+            const filtered = opportunityData.filter(opp => {
+                if (opp.customerId !== selectedCustomer.id) return false;
+                if (search && !opp.name.includes(search) && !opp.id.includes(search)) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-500 py-8">该客户下暂无商机</div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(opp => `
+                <div class="opportunity-item ${selectedOpportunity?.id === opp.id ? 'selected' : ''}" 
+                     onclick="selectOpportunityItem('${opp.id}')" data-id="${opp.id}">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="font-semibold text-gray-900">${opp.name}</div>
+                        <span class="text-sm text-blue-600 font-medium">${opp.amount}</span>
+                    </div>
+                    <div class="text-sm text-gray-500">商机编号：${opp.id}</div>
+                    <div class="mt-2 inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                        ${opp.stage}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function searchOpportunities() {
+            const search = document.getElementById('oppSearchInput').value;
+            renderOpportunities(search);
+        }
+
+        function selectOpportunityItem(id) {
+            selectedOpportunity = opportunityData.find(o => o.id === id);
+            document.querySelectorAll('.opportunity-item').forEach(item => {
+                item.classList.toggle('selected', item.dataset.id === id);
+            });
+        }
+
+        function confirmOpportunity() {
+            if (!selectedOpportunity) {
+                showToast('请选择商机', 'error');
+                return;
+            }
+            
+            document.getElementById('selectedOppName').textContent = selectedOpportunity.name;
+            document.getElementById('selectedOppId').textContent = '商机编号：' + selectedOpportunity.id;
+            
+            document.getElementById('opportunityUnselected').classList.add('hidden');
+            document.getElementById('opportunitySelected').classList.remove('hidden');
+            
+            updatePlanNamePreview();
+            closeOpportunitySelectModal();
+            showToast('商机关联成功');
+        }
+
+        function changeOpportunity() {
+            selectedOpportunity = null;
+            document.getElementById('opportunityUnselected').classList.remove('hidden');
+            document.getElementById('opportunitySelected').classList.add('hidden');
+            updatePlanNamePreview();
+        }
+
+        // 提醒设置
+        function handleReminderChange() {
+            const value = document.getElementById('planReminder').value;
+            const customGroup = document.getElementById('customReminderGroup');
+            
+            if (value === 'custom') {
+                customGroup.classList.remove('hidden');
+            } else {
+                customGroup.classList.add('hidden');
+            }
+        }
+
+        // 添加联系人
+        function addContact() {
+            const name = prompt('请输入联系人姓名');
+            if (!name) return;
+            
+            const title = prompt('请输入职位');
+            const phone = prompt('请输入电话');
+            
+            const contact = { name, title: title || '', phone: phone || '' };
+            contacts.push(contact);
+            renderContacts();
+        }
+
+        function renderContacts() {
+            const container = document.getElementById('contactsList');
+            if (contacts.length === 0) {
+                container.innerHTML = '<div class="text-gray-500 text-sm">暂无联系人，点击下方按钮添加</div>';
+                return;
+            }
+            
+            container.innerHTML = contacts.map((c, index) => `
+                <div class="contact-card">
+                    <div class="contact-avatar">${c.name.charAt(0)}</div>
+                    <div class="contact-info">
+                        <div class="contact-name">${c.name}</div>
+                        <div class="contact-detail">${c.title} ${c.phone ? '| ' + c.phone : ''}</div>
+                    </div>
+                    <button class="text-red-500 hover:text-red-700" onclick="removeContact(${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function removeContact(index) {
+            contacts.splice(index, 1);
+            renderContacts();
+        }
+
+        // 保存计划
+        function savePlan() {
+            const deadline = document.getElementById('planDeadline').value;
+            const purpose = document.getElementById('planPurpose').value;
+            const content = document.getElementById('planContent').value;
+            const follower = document.getElementById('planFollower').value;
+            
+            if (!deadline || !purpose || !content) {
+                showToast('请填写完整信息', 'error');
+                return;
+            }
+            
+            showToast('跟进计划保存成功');
+            setTimeout(() => {
+                closePlanModal();
+                renderTable();
+            }, 1000);
+        }
+
+        // 详情页
+        function showDetail(id) {
+            const data = mockData.find(item => item.id === id);
+            if (!data) return;
+            
+            currentDetailId = id;
+            
+            document.getElementById('listPage').style.display = 'none';
+            document.getElementById('detailPage').style.display = 'block';
+            
+            // 填充详情数据
+            document.getElementById('detailPlanId').textContent = data.id;
+            document.getElementById('detailCreateType').innerHTML = data.createType === 'auto' 
+                ? '<span class="tag tag-auto">系统自动</span>' 
+                : '<span class="tag tag-manual">手动创建</span>';
+            document.getElementById('detailScene').textContent = data.sceneName;
+            document.getElementById('detailDeadline').textContent = data.deadline;
+            document.getElementById('detailReminder').textContent = data.reminderName;
+            document.getElementById('detailCreateTime').textContent = data.createTime;
+            document.getElementById('detailPurpose').textContent = data.purpose;
+            document.getElementById('detailContent').textContent = data.content;
+            document.getElementById('detailFollower').textContent = data.follower;
+            document.getElementById('recordCount').textContent = data.records;
+            document.getElementById('recordCountBadge').textContent = data.records;
+            
+            // 系统生成标识
+            document.getElementById('detailSystemBadge').style.display = data.createType === 'auto' ? 'inline-flex' : 'none';
+            
+            // 状态
+            const statusClass = {
+                'pending': 'status-pending',
+                'completed': 'status-completed',
+                'overdue': 'status-overdue',
+                'cancelled': 'status-cancelled'
+            }[data.status];
+            const statusName = { 'pending': '待执行', 'completed': '已完成', 'overdue': '已逾期', 'cancelled': '已取消' }[data.status];
+            document.getElementById('detailStatus').innerHTML = `<span class="status-badge ${statusClass}"><i class="fas fa-clock"></i>${statusName}</span>`;
+            
+            // 客户信息
+            document.getElementById('detailCustomerName').textContent = data.customerName;
+            document.getElementById('detailCustomerId').textContent = '客户编号：' + data.customerId;
+            document.getElementById('sideCustomerName').textContent = data.customerName;
+            
+            // 商机信息
+            if (data.opportunityName) {
+                document.getElementById('detailOpportunityBox').classList.remove('hidden');
+                document.getElementById('detailOpportunityName').textContent = data.opportunityName;
+                document.getElementById('detailOpportunityId').textContent = data.opportunityId;
+            } else {
+                document.getElementById('detailOpportunityBox').classList.add('hidden');
+            }
+            
+            // 联系人
+            const contactsHtml = data.contacts.length > 0 
+                ? data.contacts.map(c => `
+                    <div class="contact-card">
+                        <div class="contact-avatar">${c.name.charAt(0)}</div>
+                        <div class="contact-info">
+                            <div class="contact-name">${c.name}</div>
+                            <div class="contact-detail">${c.title} ${c.phone ? '| ' + c.phone : ''} ${c.email ? '| ' + c.email : ''}</div>
+                        </div>
+                    </div>
+                `).join('')
+                : '<div class="text-gray-500 text-sm">暂无联系人</div>';
+            document.getElementById('detailContacts').innerHTML = contactsHtml;
+            
+            // 重置锚点Tab
+            document.querySelectorAll('.anchor-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector('.anchor-tab').classList.add('active');
+            
+            window.scrollTo(0, 0);
+        }
+
+        function backToList() {
+            document.getElementById('detailPage').style.display = 'none';
+            document.getElementById('listPage').style.display = 'block';
+            currentDetailId = null;
+        }
+
+        // 锚点Tab切换
+        function switchAnchor(element, sectionId) {
+            event.preventDefault();
+            
+            document.querySelectorAll('.anchor-tab').forEach(tab => tab.classList.remove('active'));
+            element.classList.add('active');
+            
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // 完成计划
+        function completePlan() {
+            if (confirm('确认将该计划标记为已完成？')) {
+                showToast('计划已标记为完成');
+            }
+        }
+
+        function completePlanById(id) {
+            if (confirm('确认将该计划标记为已完成？')) {
+                showToast('计划已标记为完成');
+                renderTable();
+            }
+        }
+
+        // 编辑计划
+        function editPlan() {
+            if (currentDetailId) {
+                openPlanModal(currentDetailId);
+            }
+        }
+
+        // 取消计划
+        function cancelPlan() {
+            if (confirm('确认取消该跟进计划？')) {
+                showToast('计划已取消');
+                backToList();
+            }
+        }
+
+        // 跟进登记弹窗
+        function openFollowModal(planId = null) {
+            document.getElementById('followModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFollowModal() {
+            document.getElementById('followModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            
+            // 重置表单
+            document.getElementById('followup-content').value = '';
+            document.getElementById('file-list').innerHTML = '';
+            document.querySelectorAll('input[name="visit-type"]')[0].checked = true;
+        }
+
+        function insertQuickText(text) {
+            const textarea = document.getElementById('followup-content');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const value = textarea.value;
+            textarea.value = value.substring(0, start) + text + value.substring(end);
+            textarea.focus();
+            textarea.setSelectionRange(start + text.length, start + text.length);
+        }
+
+        function handleFiles(input) {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+
+            Array.from(input.files).forEach(file => {
+                const size = (file.size / 1024 / 1024).toFixed(2);
+                const fileItem = document.createElement('div');
+                fileItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded mb-2 text-sm';
+                fileItem.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-file text-gray-400"></i>
+                        <span>${file.name}</span>
+                        <span class="text-gray-400 text-xs">(${size} MB)</span>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        function saveFollowDraft() {
+            showToast('草稿已保存');
+        }
+
+        function submitFollowRecord() {
+            const content = document.getElementById('followup-content').value;
+            if (!content.trim()) {
+                showToast('请填写跟进内容', 'error');
+                return;
+            }
+            showToast('跟进登记成功');
+            setTimeout(() => {
+                closeFollowModal();
+                // 刷新记录数
+                if (currentDetailId) {
+                    const data = mockData.find(item => item.id === currentDetailId);
+                    if (data) {
+                        data.records++;
+                        document.getElementById('recordCount').textContent = data.records;
+                        document.getElementById('recordCountBadge').textContent = data.records;
+                    }
+                }
+            }, 1000);
+        }
+
+        // Toast提示
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('i');
+            const msg = document.getElementById('toastMessage');
+            
+            msg.textContent = message;
+            
+            if (type === 'error') {
+                icon.className = 'fas fa-times-circle text-red-400';
+            } else {
+                icon.className = 'fas fa-check-circle text-green-400';
+            }
+            
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 点击遮罩关闭
+        document.getElementById('planModal').addEventListener('click', function(e) {
+            if (e.target === this) closePlanModal();
+        });
+        document.getElementById('opportunityModal').addEventListener('click', function(e) {
+            if (e.target === this) closeOpportunitySelectModal();
+        });
+        document.getElementById('followModal').addEventListener('click', function(e) {
+            if (e.target === this) closeFollowModal();
+        });
+    
+
+        // 客户选择弹窗
+        function openCustomerModal() {
+            document.getElementById('customerSelectModal').classList.add('active');
+        }
+
+        function closeCustomerModal() {
+            document.getElementById('customerSelectModal').classList.remove('active');
+        }
+
+        function selectCustomerFromModal(name, code, region, isReported = false) {
+            if (region === 'cross' && !isReported) return;
+
+            let regionText = region === 'local' ? '本区域' : '跨区域（已报备）';
+            document.getElementById('selectedCustomerName').textContent = name;
+            document.getElementById('selectedCustomerInfo').textContent = `客户编号：${code} · ${regionText}`;
+            document.getElementById('customer-unselected').classList.add('hidden');
+            document.getElementById('customer-selected').classList.remove('hidden');
+            document.getElementById('opportunitySection').style.display = 'block';
+
+            selectedCustomer = { id: code, name: name, region: region };
+
+            // 更新商机列表（过滤当前客户的商机）
+            updateOpportunityList(code);
+
+            closeCustomerModal();
+            showToast('客户选择成功');
+        }
+
+        function changeCustomer() {
+            selectedCustomer = null;
+            selectedOpportunity = null;
+            document.getElementById('customer-unselected').classList.remove('hidden');
+            document.getElementById('customer-selected').classList.add('hidden');
+            document.getElementById('opportunitySection').style.display = 'none';
+            document.querySelector('input[name="hasOpportunity"][value="no"]').checked = true;
+            toggleOpportunitySection(false);
+        }
+
+        function filterCustomers(keyword) {
+            const items = document.querySelectorAll('#customerSelectList .customer-item');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(keyword.toLowerCase()) ? 'flex' : 'none';
+            });
+        }
+
+        function showReportAlert(event) {
+            event.stopPropagation();
+            alert('该客户属于跨区域客户且未进行报备，请先完成跨区域报备申请。点击"去报备"按钮可快速跳转。');
+        }
+
+        function goToReport(event, customerCode) {
+            event.stopPropagation();
+            alert(`即将跳转到跨区域报备申请页面，客户编号：${customerCode}`);
+        }
+
+        // 商机选择
+        function openOpportunitySelectModal() {
+            document.getElementById('opportunitySelectModal').classList.add('active');
+        }
+
+        function closeOpportunitySelectModal() {
+            document.getElementById('opportunitySelectModal').classList.remove('active');
+        }
+
+        function selectOpportunityFromModal(name, amount, date) {
+            document.getElementById('selectedOppName').textContent = name;
+            document.getElementById('selectedOppInfo').textContent = `预计金额：¥${parseInt(amount).toLocaleString()} | 预计成交：${date}`;
+            document.getElementById('opportunity-unselected').classList.add('hidden');
+            document.getElementById('opportunity-selected-card').classList.remove('hidden');
+
+            selectedOpportunity = { name: name, amount: amount, date: date };
+            closeOpportunitySelectModal();
+            showToast('商机关联成功');
+        }
+
+        function changeOpportunity() {
+            selectedOpportunity = null;
+            document.getElementById('opportunity-unselected').classList.remove('hidden');
+            document.getElementById('opportunity-selected-card').classList.add('hidden');
+        }
+
+        function toggleOpportunitySection(show) {
+            const area = document.getElementById('opportunitySelectArea');
+            if (show) {
+                area.style.display = 'block';
+            } else {
+                area.style.display = 'none';
+                changeOpportunity();
+            }
+        }
+
+        function updateOpportunityList(customerId) {
+            // 根据客户ID过滤商机数据
+            const filteredOpps = opportunityData.filter(opp => opp.customerId === customerId);
+            const list = document.getElementById('oppSelectList');
+
+            if (filteredOpps.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #6b7280; padding: 20px;">该客户下暂无商机</div>';
+                return;
+            }
+
+            list.innerHTML = filteredOpps.map(opp => `
+                <div class="opportunity-item" onclick="selectOpportunityFromModal('${opp.name}', '${opp.amount.replace(/[^0-9]/g, '')}', '2026-05')" style="padding: 14px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 4px;">${opp.name}</div>
+                        <div style="font-size: 12px; color: #6b7280;">商机编号：${opp.id}</div>
+                    </div>
+                    <div style="font-size: 14px; font-weight: 600; color: #059669;">${opp.amount}</div>
+                </div>
+            `).join('');
+        }
+
+        function filterOpportunities(keyword) {
+            const items = document.querySelectorAll('#oppSelectList .opportunity-item');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(keyword.toLowerCase()) ? 'flex' : 'none';
+            });
+        }
+
+        // 计划类型选择
+        function selectPlanType(element) {
+            document.querySelectorAll('.tag-selector .tag-item').forEach(tag => {
+                tag.classList.remove('selected');
+            });
+            element.classList.add('selected');
+        }
+
+        // 提醒设置选择
+        function selectReminder(element, type) {
+            document.querySelectorAll('.reminder-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            element.classList.add('selected');
+
+            const customInput = document.getElementById('customReminderInput');
+            if (type === 'custom') {
+                customInput.style.display = 'block';
+            } else {
+                customInput.style.display = 'none';
+            }
+        }
+
+        // 联系人标签切换
+        function switchContactTab(tab) {
+            const tabs = document.querySelectorAll('.contact-tab');
+            tabs.forEach(t => {
+                t.classList.remove('active');
+                t.style.background = 'transparent';
+                t.style.color = '#6b7280';
+            });
+
+            if (tab === 'existing') {
+                tabs[0].classList.add('active');
+                tabs[0].style.background = '#eff6ff';
+                tabs[0].style.color = '#3b82f6';
+                document.getElementById('existingContactPanel').style.display = 'block';
+                document.getElementById('manualContactPanel').style.display = 'none';
+            } else {
+                tabs[1].classList.add('active');
+                tabs[1].style.background = '#eff6ff';
+                tabs[1].style.color = '#3b82f6';
+                document.getElementById('existingContactPanel').style.display = 'none';
+                document.getElementById('manualContactPanel').style.display = 'block';
+            }
+        }
+
+        // 填充联系人信息
+        function fillContactInfo(select) {
+            const option = select.options[select.selectedIndex];
+            if (option.value) {
+                document.getElementById('existingContactPhone').value = option.dataset.phone || '';
+                document.getElementById('existingContactTitle').value = option.dataset.title || '';
+            } else {
+                document.getElementById('existingContactPhone').value = '';
+                document.getElementById('existingContactTitle').value = '';
+            }
+        }
+
+        // 更新保存计划函数
+        function savePlan() {
+            // 验证必填项
+            if (!selectedCustomer) {
+                showToast('请先选择客户', 'error');
+                return;
+            }
+
+            const follower = document.getElementById('planFollower').value;
+            if (!follower) {
+                showToast('请选择跟进人', 'error');
+                return;
+            }
+
+            const deadline = document.getElementById('planDeadline').value;
+            if (!deadline) {
+                showToast('请选择截止日期', 'error');
+                return;
+            }
+
+            const purpose = document.getElementById('planPurpose').value;
+            if (!purpose) {
+                showToast('请填写拜访目的', 'error');
+                return;
+            }
+
+            const content = document.getElementById('planContent').value;
+            if (!content) {
+                showToast('请填写计划详情', 'error');
+                return;
+            }
+
+            // 验证自定义提醒日期
+            const isCustomReminder = document.querySelector('.reminder-option.selected').textContent.includes('自定义');
+            if (isCustomReminder && !document.getElementById('customReminderDate').value) {
+                showToast('请选择自定义提醒日期', 'error');
+                return;
+            }
+
+            // 收集联系人信息
+            let contacts = [];
+            const useExisting = document.getElementById('existingContactPanel').style.display !== 'none';
+            if (useExisting) {
+                const contactName = document.getElementById('existingContactSelect').value;
+                if (contactName) {
+                    contacts.push({
+                        name: contactName,
+                        phone: document.getElementById('existingContactPhone').value,
+                        title: document.getElementById('existingContactTitle').value
+                    });
+                }
+            } else {
+                const manualName = document.getElementById('manualContactName').value;
+                if (manualName) {
+                    contacts.push({
+                        name: manualName,
+                        phone: document.getElementById('manualContactPhone').value,
+                        title: document.getElementById('manualContactTitle').value
+                    });
+                }
+            }
+
+            // 获取选中的计划类型
+            const selectedPlanType = document.querySelector('.tag-item.selected');
+            const planType = selectedPlanType ? selectedPlanType.textContent.trim() : '电话沟通';
+
+            // 获取提醒设置
+            const selectedReminder = document.querySelector('.reminder-option.selected');
+            const reminderText = selectedReminder.textContent.trim();
+            let reminderValue = '1';
+            if (reminderText.includes('3')) reminderValue = '3';
+            else if (reminderText.includes('7')) reminderValue = '7';
+            else if (reminderText.includes('15')) reminderValue = '15';
+            else if (reminderText.includes('不')) reminderValue = 'none';
+            else if (reminderText.includes('自定义')) reminderValue = 'custom';
+
+            // 构造新计划数据
+            const now = new Date();
+            const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+
+            const newPlan = {
+                id: 'PL' + dateStr.replace(/-/g, '') + String(Math.floor(Math.random() * 1000)).padStart(3, '0'),
+                name: `【手动创建】${selectedCustomer.name} - ${planType}`,
+                customerId: selectedCustomer.id,
+                customerName: selectedCustomer.name,
+                opportunityId: selectedOpportunity ? 'OP' + dateStr.replace(/-/g, '') + '001' : null,
+                opportunityName: selectedOpportunity ? selectedOpportunity.name : null,
+                createType: 'manual',
+                scene: 'manual',
+                sceneName: '手动创建',
+                follower: follower,
+                deadline: deadline,
+                reminder: reminderValue,
+                reminderName: reminderText,
+                status: 'pending',
+                statusName: '待执行',
+                creator: follower,
+                createTime: `${dateStr} ${timeStr}`,
+                purpose: purpose,
+                content: content,
+                contacts: contacts,
+                records: 0
+            };
+
+            // 添加到数据列表
+            mockData.unshift(newPlan);
+
+            showToast('跟进计划保存成功');
+            setTimeout(() => {
+                closePlanModal();
+                renderTable(mockData);
+            }, 1000);
+        }
+
+        // 重置模态框
+        function resetModal() {
+            selectedCustomer = null;
+            selectedOpportunity = null;
+
+            document.getElementById('customer-unselected').classList.remove('hidden');
+            document.getElementById('customer-selected').classList.add('hidden');
+            document.getElementById('opportunitySection').style.display = 'none';
+
+            document.querySelector('input[name="hasOpportunity"][value="no"]').checked = true;
+            toggleOpportunitySection(false);
+
+            document.getElementById('planFollower').value = '';
+            document.getElementById('planDeadline').value = '';
+            document.getElementById('planPurpose').value = '';
+            document.getElementById('planContent').value = '';
+
+            // 重置计划类型
+            document.querySelectorAll('.tag-item').forEach(tag => tag.classList.remove('selected'));
+            document.querySelector('.tag-item').classList.add('selected');
+
+            // 重置提醒
+            document.querySelectorAll('.reminder-option').forEach(opt => opt.classList.remove('selected'));
+            document.querySelector('.reminder-option').classList.add('selected');
+            document.getElementById('customReminderInput').style.display = 'none';
+
+            // 重置联系人
+            document.getElementById('existingContactSelect').value = '';
+            document.getElementById('existingContactPhone').value = '';
+            document.getElementById('existingContactTitle').value = '';
+            document.getElementById('manualContactName').value = '';
+            document.getElementById('manualContactPhone').value = '';
+            document.getElementById('manualContactTitle').value = '';
+            document.getElementById('manualContactEmail').value = '';
+            switchContactTab('existing');
+        }
+
+        // 点击遮罩关闭客户选择弹窗
+        document.getElementById('customerSelectModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCustomerModal();
+        });
+
+        // 点击遮罩关闭商机选择弹窗
+        document.getElementById('opportunitySelectModal').addEventListener('click', function(e) {
+            if (e.target === this) closeOpportunitySelectModal();
+        });
+
+        // 优先级单选框样式切换
+        document.querySelectorAll('input[name="priority"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.querySelectorAll('input[name="priority"]').forEach(r => {
+                    const label = r.closest('label');
+                    if (r.checked) {
+                        if (r.value === 'high') {
+                            label.style.border = '2px solid #ef4444';
+                            label.style.background = '#fef2f2';
+                        } else if (r.value === 'medium') {
+                            label.style.border = '2px solid #f59e0b';
+                            label.style.background = '#fffbeb';
+                        } else {
+                            label.style.border = '2px solid #6b7280';
+                            label.style.background = '#f9fafb';
+                        }
+                    } else {
+                        label.style.border = '1px solid #e5e7eb';
+                        label.style.background = 'white';
+                    }
+                });
+            });
+        });
+</script>
+</body>
+</html>
