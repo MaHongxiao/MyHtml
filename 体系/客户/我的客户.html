@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客户管理 - 客户列表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .customer-type-tabs {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 4px;
+            margin-left: 20px;
+        }
+
+        .customer-type-tab {
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            color: #64748b;
+        }
+
+        .customer-type-tab.active {
+            background: white;
+            color: #3b82f6;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .customer-type-tab:hover:not(.active) {
+            color: #374151;
+        }
+
+        .filter-bar {
+            background: white;
+            margin: 20px 20px 0 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .quick-filters {
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #fafafa;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-item label {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .filter-item input,
+        .filter-item select {
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            background: white;
+        }
+
+        .filter-item input:focus,
+        .filter-item select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .filter-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .filter-panel.expanded {
+            max-height: 300px;
+        }
+
+        .advanced-filters {
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: white;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin: 20px;
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: calc(100vh - 320px);
+            position: relative;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 2400px;
+            table-layout: fixed;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 13px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            background: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table tbody tr:hover td {
+            background: #f8fafc;
+        }
+
+        /* 左侧冻结列 */
+        .col-sticky-left {
+            position: sticky;
+            left: 0;
+            z-index: 30;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            width: 140px;
+            min-width: 140px;
+        }
+
+        .col-sticky-left-2 {
+            position: sticky;
+            left: 140px;
+            z-index: 30;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            width: 260px;
+            min-width: 260px;
+        }
+
+        /* 右侧冻结列 */
+        .col-sticky-right {
+            position: sticky;
+            right: 100px;
+            z-index: 30;
+            background: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+            width: 100px;
+            min-width: 100px;
+        }
+
+        .col-sticky-right-2 {
+            position: sticky;
+            right: 0;
+            z-index: 30;
+            background: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+            width: 100px;
+            min-width: 100px;
+        }
+
+        /* 表头冻结需要更高层级 */
+        .data-table th.col-sticky-left,
+        .data-table th.col-sticky-left-2 {
+            z-index: 40;
+            background: #f8fafc;
+        }
+
+        .data-table th.col-sticky-right,
+        .data-table th.col-sticky-right-2 {
+            z-index: 40;
+            background: #f8fafc;
+        }
+
+        /* 悬停时冻结列背景色保持一致 */
+        .data-table tbody tr:hover .col-sticky-left,
+        .data-table tbody tr:hover .col-sticky-left-2,
+        .data-table tbody tr:hover .col-sticky-right,
+        .data-table tbody tr:hover .col-sticky-right-2 {
+            background: #f8fafc;
+        }
+
+        /* 列宽定义 - 国内客户 */
+        .domestic .col-id { width: 140px; }
+        .domestic .col-name { width: 260px; }
+        .domestic .col-type { width: 110px; }
+        .domestic .col-tags { width: 180px; }
+        .domestic .col-industry { width: 120px; }
+        .domestic .col-region-zone { width: 100px; }
+        .domestic .col-region { width: 80px; }
+        .domestic .col-grade { width: 90px; }
+        .domestic .col-follower { width: 120px; }
+        .domestic .col-days { width: 130px; }
+        .domestic .col-warning { width: 220px; }
+        .domestic .col-rule { width: 130px; }
+        .domestic .col-lock { width: 110px; }
+        .domestic .col-expiry { width: 160px; }
+        .domestic .col-time { width: 120px; }
+        .domestic .col-status { width: 100px; }
+        .domestic .col-action { width: 100px; }
+
+        /* 列宽定义 - 国外客户 */
+        .foreign .col-id { width: 140px; }
+        .foreign .col-name { width: 260px; }
+        .foreign .col-country { width: 120px; }
+        .foreign .col-type { width: 110px; }
+        .foreign .col-tags { width: 180px; }
+        .foreign .col-industry { width: 120px; }
+        .foreign .col-region-zone { width: 100px; }
+        .foreign .col-tax { width: 140px; }
+        .foreign .col-grade { width: 90px; }
+        .foreign .col-follower { width: 120px; }
+        .foreign .col-days { width: 130px; }
+        .foreign .col-warning { width: 220px; }
+        .foreign .col-rule { width: 130px; }
+        .foreign .col-lock { width: 110px; }
+        .foreign .col-expiry { width: 160px; }
+        .foreign .col-time { width: 120px; }
+        .foreign .col-status { width: 100px; }
+        .foreign .col-action { width: 100px; }
+
+        /* 排序样式 */
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 20px !important;
+        }
+
+        .sortable:hover {
+            background: #e2e8f0;
+        }
+
+        .sort-icon {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .sortable.asc .sort-icon,
+        .sortable.desc .sort-icon {
+            color: #3b82f6;
+        }
+
+        /* 标签样式 */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 4px;
+            margin-bottom: 2px;
+        }
+
+        .tag-enterprise { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .tag-government { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .tag-strategic { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; }
+        .tag-normal { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+        .tag-foreign { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+
+        /* 企业分类 */
+        .grade-a-plus { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; display: inline-block; }
+        .grade-a { background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; display: inline-block; }
+        .grade-b { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; display: inline-block; }
+        .grade-c { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; display: inline-block; }
+        .grade-d { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; display: inline-block; }
+
+        /* 状态 */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-unsigned { background: #fef3c7; color: #92400e; }
+        .status-signed { background: #dcfce7; color: #166534; }
+        .status-protected { background: #dbeafe; color: #1e40af; }
+
+        /* 预警 */
+        .warning-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .warning-tag.critical { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .warning-tag.high { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+        .warning-tag.medium { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .urgent-pulse { animation: pulse-red 2s infinite; }
+
+        /* 按钮 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: white; border-color: #d1d5db; color: #374151; }
+        .btn-secondary:hover { background: #f9fafb; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        /* 操作按钮 */
+        .action-btns { display: flex; gap: 8px; }
+        .action-btn {
+            color: #3b82f6;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .action-btn:hover { background: #eff6ff; color: #1d4ed8; }
+
+        /* 进度条 */
+        .progress-bar {
+            width: 50px;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+        .progress-fill { height: 100%; border-radius: 2px; }
+        .progress-fill.red { background: #ef4444; }
+        .progress-fill.orange { background: #f97316; }
+        .progress-fill.yellow { background: #eab308; }
+        .progress-fill.green { background: #22c55e; }
+
+        /* 客户名称 */
+        .customer-name {
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .customer-name i { color: #3b82f6; font-size: 14px; }
+        .customer-name .foreign-icon { color: #6366f1; }
+
+        /* 区域标签 */
+        .region-zone-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+        .region-zone-badge.domestic {
+            background: #f0fdf4;
+            color: #166534;
+            border-color: #86efac;
+        }
+        .region-zone-badge.foreign {
+            background: #eff6ff;
+            color: #1e40af;
+            border-color: #93c5fd;
+        }
+
+        /* 金额 */
+        .amount { font-family: 'Courier New', monospace; font-weight: 600; color: #059669; }
+        .amount-empty { color: #9ca3af; }
+
+        /* 分页 */
+        .pagination { display: flex; gap: 4px; align-items: center; }
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .page-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+        .page-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+
+        /* 跟进天数高亮 */
+        .days-highlight-red { color: #dc2626; font-weight: 700; background: #fef2f2; }
+        .days-highlight-orange { color: #ea580c; font-weight: 700; background: #fff7ed; }
+        .days-highlight-yellow { color: #ca8a04; font-weight: 600; background: #fefce8; }
+
+        /* 国家标签 */
+        .country-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+        }
+        .country-badge .flag {
+            font-size: 14px;
+        }
+
+        /* 隐藏列 */
+        .hidden-col {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部栏 -->
+    <div class="top-bar">
+        <div class="flex items-center">
+            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-users text-blue-600"></i>
+                客户列表
+            </h1>
+
+            <!-- 国内/国外切换 -->
+            <div class="customer-type-tabs">
+                <button class="customer-type-tab active" id="tab-domestic" onclick="switchCustomerType('domestic')">
+                    <i class="fas fa-flag mr-1"></i>国内客户
+                </button>
+                <button class="customer-type-tab" id="tab-foreign" onclick="switchCustomerType('foreign')">
+                    <i class="fas fa-globe mr-1"></i>国外客户
+                </button>
+            </div>
+
+            <span class="text-gray-300 mx-4">|</span>
+            <div class="flex items-center gap-3 text-sm">
+                <span class="text-gray-600">共 <strong class="text-gray-900 text-lg" id="total-count">14</strong> 家客户</span>
+                <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium" id="warning-count">
+                    <i class="fas fa-exclamation-circle mr-1"></i>预警 3
+                </span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button class="btn btn-secondary btn-sm" onclick="toggleFilter()">
+                <i class="fas fa-filter"></i>
+                <span id="filter-text">收起筛选</span>
+                <i class="fas fa-chevron-up ml-1" id="filter-icon" style="transition: transform 0.3s;"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm">
+                <i class="fas fa-download"></i>
+                导出
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="addNewCustomer()">
+                <i class="fas fa-plus"></i>
+                新增客户
+            </button>
+        </div>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+        <div class="quick-filters">
+            <div class="filter-item">
+                <label>客户编号</label>
+                <input type="text" placeholder="输入编号" style="width: 130px;">
+            </div>
+            <div class="filter-item">
+                <label>客户名称</label>
+                <input type="text" placeholder="输入名称" style="width: 150px;">
+            </div>
+            <div class="filter-item">
+                <label>客户类型</label>
+                <select style="width: 110px;" id="filter-customer-type">
+                    <option value="">全部</option>
+                    <option value="central_enterprise">中央企业</option>
+                    <option value="local_soe">地方国企</option>
+                    <option value="private">民营企业</option>
+                    <option value="institution">事业单位</option>
+                    <option value="individual">个体工商户</option>
+                    <option value="foreign_invested">外资企业</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>企业分类</label>
+                <select style="width: 80px;">
+                    <option value="">全部</option>
+                    <option>A+</option>
+                    <option>A</option>
+                    <option>B</option>
+                    <option>C</option>
+                    <option>D</option>
+                </select>
+            </div>
+
+            <!-- 国内专属筛选 - 所在区域 -->
+            <div class="filter-item domestic-filter" id="domestic-region-filter">
+                <label>所在区域</label>
+                <select style="width: 100px;">
+                    <option value="">全部</option>
+                    <option>东北区域</option>
+                    <option>东南区域</option>
+                    <option>华东区域</option>
+                    <option>华中区域</option>
+                    <option>华北区域</option>
+                    <option>华南区域</option>
+                    <option>山东公司</option>
+                    <option>江苏公司</option>
+                    <option>西北区域</option>
+                    <option>西南区域</option>
+                </select>
+            </div>
+
+            <!-- 国外专属筛选 - 所在区域 -->
+            <div class="filter-item foreign-filter hidden-col" id="foreign-region-filter">
+                <label>所在区域</label>
+                <select style="width: 100px;">
+                    <option value="">全部</option>
+                    <option>非洲区域</option>
+                    <option>欧洲区域</option>
+                    <option>港澳台区域</option>
+                    <option>东南亚区域</option>
+                    <option>日韩区域</option>
+                    <option>美洲区域</option>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label>跟进人</label>
+                <select style="width: 90px;">
+                    <option value="">全部</option>
+                    <option>刘明</option>
+                    <option>王芳</option>
+                    <option>李明</option>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label>预警状态</label>
+                <select style="width: 130px;">
+                    <option value="">全部</option>
+                    <option value="critical">即将入区域池</option>
+                    <option value="high">即将入公海</option>
+                    <option value="medium">保护期将到期</option>
+                </select>
+            </div>
+            <div class="flex-1"></div>
+            <button class="btn btn-primary btn-sm" onclick="searchData()">
+                <i class="fas fa-search"></i>
+                查询
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="resetData()">
+                重置
+            </button>
+        </div>
+
+        <div class="filter-panel expanded" id="filterPanel">
+            <div class="advanced-filters">
+                <div class="filter-item">
+                    <label>行业分类</label>
+                    <select style="width: 110px;">
+                        <option value="">全部</option>
+                        <option>制造业</option>
+                        <option>电力</option>
+                        <option>互联网</option>
+                        <option>金融</option>
+                        <option>建筑</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>客户状态</label>
+                    <select style="width: 100px;">
+                        <option value="">全部</option>
+                        <option>未签单</option>
+                        <option>已签单</option>
+                        <option>保护期内</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>距上次跟进</label>
+                    <select style="width: 130px;">
+                        <option value="">全部</option>
+                        <option value="90">≥90天(将入池)</option>
+                        <option value="80">≥80天(预警)</option>
+                        <option value="60">≥60天</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>保护期剩余</label>
+                    <select style="width: 120px;">
+                        <option value="">全部</option>
+                        <option value="30"><30天</option>
+                        <option value="90"><90天</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>客户标签</label>
+                    <div class="flex gap-3 items-center">
+                        <label class="flex items-center gap-1 text-sm cursor-pointer">
+                            <input type="checkbox" class="rounded text-blue-600"> 战略客户
+                        </label>
+                        <label class="flex items-center gap-1 text-sm cursor-pointer">
+                            <input type="checkbox" class="rounded text-blue-600"> 政府客户
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表格区域 -->
+    <div class="table-container">
+        <div class="table-wrapper">
+            <table class="data-table domestic" id="customerTable">
+                <thead id="tableHead">
+                    <!-- 表头由JS动态生成 -->
+                </thead>
+                <tbody id="tableBody">
+                    <!-- 数据通过JS填充 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="p-4 border-t border-gray-200 flex items-center justify-between bg-white">
+            <div class="text-sm text-gray-600">
+                显示第 <span class="font-medium">1</span> 到 <span class="font-medium" id="page-size">14</span> 条，共 <span class="font-medium" id="page-total">14</span> 条
+            </div>
+            <div class="pagination">
+                <button class="page-btn" disabled>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn" disabled>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+                <span>每页</span>
+                <select class="border border-gray-300 rounded px-2 py-1 text-sm">
+                    <option>15</option>
+                    <option>30</option>
+                    <option>50</option>
+                </select>
+                <span>条</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 国内客户假数据 - 增加所在区域字段
+        const domesticData = [
+            {
+                id: 'C20240315001',
+                name: '中国石油天然气集团有限公司',
+                type: '中央企业',
+                typeCode: 'central_enterprise',
+                tags: ['战略客户', '集团客户'],
+                industry: '采矿业',
+                regionZone: '华北区域',
+                region: '北京',
+                certNo: '91110000100010433W',
+                grade: 'A+',
+                follower: '刘明',
+                followDays: 88,
+                lastFollowDate: '2026-01-17',
+                warningLevel: 'high',
+                warningText: '88天未跟进，即将入区域池',
+                protectRule: '标准(90天)',
+                lockType: '区域锁定',
+                lockExpiry: '2026-04-20',
+                lockDaysLeft: 5,
+                status: '未签单',
+                source: '自主开发'
+            },
+            {
+                id: 'C20240201002',
+                name: '华能电力发展有限公司',
+                type: '地方国企',
+                typeCode: 'local_soe',
+                tags: ['集团客户'],
+                industry: '电力、热力、燃气及水生产和供应业',
+                regionZone: '华东区域',
+                region: '上海',
+                certNo: '9111000010006289X1',
+                grade: 'A',
+                follower: '刘明',
+                followDays: 45,
+                lastFollowDate: '2026-03-01',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-05-15',
+                lockDaysLeft: 30,
+                status: '已签单',
+                source: '内部推荐'
+            },
+            {
+                id: 'C20240110003',
+                name: '中建材国际贸易有限公司',
+                type: '地方国企',
+                typeCode: 'local_soe',
+                tags: ['B级客户'],
+                industry: '批发和零售业',
+                regionZone: '西北区域',
+                region: '西安',
+                certNo: '9111000010001065XA',
+                grade: 'B',
+                follower: '王芳',
+                followDays: 45,
+                lastFollowDate: '2026-03-01',
+                warningLevel: 'high',
+                warningText: '区域锁定360天，即将入公海',
+                protectRule: '标准(365天)',
+                lockType: '区域锁定',
+                lockExpiry: '2026-04-25',
+                lockDaysLeft: 10,
+                status: '未签单',
+                source: '自主开发'
+            },
+            {
+                id: 'C20231205004',
+                name: '北京市朝阳区人民政府机关事务管理局',
+                type: '地方政府',
+                typeCode: 'local_gov',
+                tags: ['政府客户', '战略客户'],
+                industry: '公共管理、社会保障和社会组织',
+                regionZone: '华北区域',
+                region: '北京',
+                certNo: '11110005000098765',
+                grade: 'A+',
+                follower: '李明',
+                followDays: 5,
+                lastFollowDate: '2026-04-10',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '政府(延长)',
+                lockType: '签单保护',
+                lockExpiry: '2027-03-15',
+                lockDaysLeft: 334,
+                status: '保护期内',
+                source: '内部推荐'
+            },
+            {
+                id: 'C20231120005',
+                name: '中国航天科技集团第五研究院',
+                type: '中央企业',
+                typeCode: 'central_enterprise',
+                tags: ['重大客户', '保密单位'],
+                industry: '科学研究和技术服务业',
+                regionZone: '华北区域',
+                region: '北京',
+                certNo: '91110000100011111',
+                grade: 'A+',
+                follower: '张华',
+                followDays: 12,
+                lastFollowDate: '2026-04-03',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '重大(2年)',
+                lockType: '签单保护',
+                lockExpiry: '2028-03-20',
+                lockDaysLeft: 705,
+                status: '保护期内',
+                source: '内部推荐'
+            },
+            {
+                id: 'C20240301006',
+                name: '京东世纪贸易有限公司',
+                type: '民营企业',
+                typeCode: 'private',
+                tags: ['A级客户'],
+                industry: '批发和零售业',
+                regionZone: '华北区域',
+                region: '北京',
+                certNo: '91110000717834567',
+                grade: 'A',
+                follower: '陈静',
+                followDays: 3,
+                lastFollowDate: '2026-04-12',
+                warningLevel: 'medium',
+                warningText: '保护期剩余25天',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-05-10',
+                lockDaysLeft: 25,
+                status: '已签单',
+                source: '自主开发'
+            },
+            {
+                id: 'C20240215007',
+                name: '上汽通用五菱汽车股份有限公司',
+                type: '外资企业',
+                typeCode: 'foreign_invested',
+                tags: ['集团客户', '战略客户'],
+                industry: '制造业',
+                regionZone: '华南区域',
+                region: '广西',
+                certNo: '91450000198205967A',
+                grade: 'A+',
+                follower: '刘强',
+                followDays: 8,
+                lastFollowDate: '2026-04-07',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-08-15',
+                lockDaysLeft: 122,
+                status: '已签单',
+                source: '外部渠道'
+            },
+            {
+                id: 'C20240320009',
+                name: '字节跳动科技有限公司',
+                type: '民营企业',
+                typeCode: 'private',
+                tags: ['战略客户', 'A+级'],
+                industry: '信息传输、软件和信息技术服务业',
+                regionZone: '华北区域',
+                region: '北京',
+                certNo: '91110108MA004E1G2X',
+                grade: 'A+',
+                follower: '王磊',
+                followDays: 15,
+                lastFollowDate: '2026-03-31',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(90天)',
+                lockType: '个人锁定',
+                lockExpiry: '2026-05-01',
+                lockDaysLeft: 16,
+                status: '未签单',
+                source: '自主开发'
+            },
+            {
+                id: 'C20240310010',
+                name: '中国工商银行股份有限公司',
+                type: '中央企业',
+                typeCode: 'central_enterprise',
+                tags: ['集团客户'],
+                industry: '金融业',
+                regionZone: '华东区域',
+                region: '上海',
+                certNo: '91110000100003962T',
+                grade: 'A+',
+                follower: '李芳',
+                followDays: 20,
+                lastFollowDate: '2026-03-26',
+                warningLevel: 'medium',
+                warningText: '保护期剩余45天',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-05-30',
+                lockDaysLeft: 45,
+                status: '已签单',
+                source: '内部推荐'
+            },
+            {
+                id: 'C20240125011',
+                name: '深圳市腾讯计算机系统有限公司',
+                type: '民营企业',
+                typeCode: 'private',
+                tags: ['战略客户'],
+                industry: '信息传输、软件和信息技术服务业',
+                regionZone: '华南区域',
+                region: '广东',
+                certNo: '91440300708461136T',
+                grade: 'A',
+                follower: '张伟',
+                followDays: 2,
+                lastFollowDate: '2026-04-13',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-12-31',
+                lockDaysLeft: 260,
+                status: '已签单',
+                source: '外部渠道'
+            },
+            {
+                id: 'C20240228012',
+                name: '中国建筑第八工程局有限公司',
+                type: '中央企业',
+                typeCode: 'central_enterprise',
+                tags: ['A级客户'],
+                industry: '建筑业',
+                regionZone: '山东公司',
+                region: '山东',
+                certNo: '9131000063126503X1',
+                grade: 'A',
+                follower: '赵敏',
+                followDays: 92,
+                lastFollowDate: '2026-01-13',
+                warningLevel: 'critical',
+                warningText: '已超90天，即将释放',
+                protectRule: '标准(90天)',
+                lockType: '区域锁定',
+                lockExpiry: '2026-04-18',
+                lockDaysLeft: 3,
+                status: '未签单',
+                source: '自主开发'
+            },
+            {
+                id: 'C20240305013',
+                name: '国家电网有限公司',
+                type: '中央企业',
+                typeCode: 'central_enterprise',
+                tags: ['重大客户', '集团客户'],
+                industry: '电力、热力、燃气及水生产和供应业',
+                regionZone: '华北区域',
+                region: '北京',
+                certNo: '9111000010001065XA',
+                grade: 'A+',
+                follower: '孙强',
+                followDays: 7,
+                lastFollowDate: '2026-04-08',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '重大(延长)',
+                lockType: '签单保护',
+                lockExpiry: '2027-04-15',
+                lockDaysLeft: 365,
+                status: '保护期内',
+                source: '内部推荐'
+            },
+            {
+                id: 'C20231015014',
+                name: '小米通讯技术有限公司',
+                type: '民营企业',
+                typeCode: 'private',
+                tags: ['A级客户'],
+                industry: '制造业',
+                regionZone: '江苏公司',
+                region: '江苏',
+                certNo: '91110108MA004E1G2Y',
+                grade: 'A',
+                follower: '周杰',
+                followDays: 60,
+                lastFollowDate: '2026-02-14',
+                warningLevel: 'high',
+                warningText: '区域锁定355天，即将入公海',
+                protectRule: '标准(365天)',
+                lockType: '区域锁定',
+                lockExpiry: '2026-04-30',
+                lockDaysLeft: 15,
+                status: '未签单',
+                source: '自主开发'
+            },
+            {
+                id: 'C20240312015',
+                name: '国家医疗保障局',
+                type: '中央部委',
+                typeCode: 'central_ministry',
+                tags: ['政府客户', '保密单位'],
+                industry: '卫生和社会工作',
+                regionZone: '华北区域',
+                region: '北京',
+                certNo: '11100000MB0X12345',
+                grade: 'A+',
+                follower: '吴刚',
+                followDays: 1,
+                lastFollowDate: '2026-04-14',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '政府(延长)',
+                lockType: '签单保护',
+                lockExpiry: '2027-04-15',
+                lockDaysLeft: 365,
+                status: '保护期内',
+                source: '内部推荐'
+            }
+        ];
+
+        // 国外客户假数据 - 增加所在区域字段
+        const foreignData = [
+            {
+                id: 'F20240315001',
+                name: 'Apple Inc.',
+                country: 'US',
+                countryCode: 'USA',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['战略客户', 'A+级'],
+                industry: '信息传输、软件和信息技术服务业',
+                regionZone: '美洲区域',
+                taxNo: '94-2404110',
+                taxType: 'EIN',
+                grade: 'A+',
+                follower: 'Michael Chen',
+                followDays: 5,
+                lastFollowDate: '2026-04-10',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-12-31',
+                lockDaysLeft: 260,
+                status: '已签单',
+                source: '外部渠道',
+                legalPerson: 'Tim Cook',
+                capital: '500000000',
+                currency: 'USD'
+            },
+            {
+                id: 'F20240201002',
+                name: 'Microsoft Corporation',
+                country: 'US',
+                countryCode: 'USA',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['集团客户'],
+                industry: '信息传输、软件和信息技术服务业',
+                regionZone: '美洲区域',
+                taxNo: '91-1144442',
+                taxType: 'EIN',
+                grade: 'A+',
+                follower: 'Sarah Wang',
+                followDays: 12,
+                lastFollowDate: '2026-04-03',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2027-01-15',
+                lockDaysLeft: 275,
+                status: '已签单',
+                source: '自主开发',
+                legalPerson: 'Satya Nadella',
+                capital: '800000000',
+                currency: 'USD'
+            },
+            {
+                id: 'F20240110003',
+                name: 'Siemens AG',
+                country: 'DE',
+                countryCode: 'DEU',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['制造业龙头'],
+                industry: '制造业',
+                regionZone: '欧洲区域',
+                taxNo: 'DE123456789',
+                taxType: 'VAT',
+                grade: 'A',
+                follower: '刘明',
+                followDays: 88,
+                lastFollowDate: '2026-01-17',
+                warningLevel: 'high',
+                warningText: '88天未跟进，即将入区域池',
+                protectRule: '标准(90天)',
+                lockType: '区域锁定',
+                lockExpiry: '2026-04-20',
+                lockDaysLeft: 5,
+                status: '未签单',
+                source: '展会获客',
+                legalPerson: 'Roland Busch',
+                capital: '400000000',
+                currency: 'EUR'
+            },
+            {
+                id: 'F20231205004',
+                name: 'Toyota Motor Corporation',
+                country: 'JP',
+                countryCode: 'JPN',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['战略客户', '制造业'],
+                industry: '制造业',
+                regionZone: '日韩区域',
+                taxNo: 'J987654321',
+                taxType: 'TAX',
+                grade: 'A+',
+                follower: '王芳',
+                followDays: 3,
+                lastFollowDate: '2026-04-12',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '重大(延长)',
+                lockType: '签单保护',
+                lockExpiry: '2028-03-20',
+                lockDaysLeft: 705,
+                status: '保护期内',
+                source: '合作伙伴',
+                legalPerson: 'Akio Toyoda',
+                capital: '600000000',
+                currency: 'JPY'
+            },
+            {
+                id: 'F20231120005',
+                name: 'Shell plc',
+                country: 'NL',
+                countryCode: 'NLD',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['能源客户'],
+                industry: '采矿业',
+                regionZone: '欧洲区域',
+                taxNo: 'NL123456789B01',
+                taxType: 'VAT',
+                grade: 'A',
+                follower: '李明',
+                followDays: 45,
+                lastFollowDate: '2026-03-01',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-09-15',
+                lockDaysLeft: 153,
+                status: '已签单',
+                source: 'LinkedIn',
+                legalPerson: 'Wael Sawan',
+                capital: '350000000',
+                currency: 'EUR'
+            },
+            {
+                id: 'F20240301006',
+                name: 'Nestlé S.A.',
+                country: 'CH',
+                countryCode: 'CHE',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['消费品'],
+                industry: '制造业',
+                regionZone: '欧洲区域',
+                taxNo: 'CHE-123.456.789',
+                taxType: 'REG',
+                grade: 'A+',
+                follower: '陈静',
+                followDays: 25,
+                lastFollowDate: '2026-03-21',
+                warningLevel: 'medium',
+                warningText: '保护期剩余30天',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-05-15',
+                lockDaysLeft: 30,
+                status: '已签单',
+                source: '官网访问',
+                legalPerson: 'Ulf Mark Schneider',
+                capital: '450000000',
+                currency: 'CHF'
+            },
+            {
+                id: 'F20240215007',
+                name: 'Volkswagen Group',
+                country: 'DE',
+                countryCode: 'DEU',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['汽车巨头', '战略客户'],
+                industry: '制造业',
+                regionZone: '欧洲区域',
+                taxNo: 'DE111111111',
+                taxType: 'VAT',
+                grade: 'A+',
+                follower: '刘强',
+                followDays: 7,
+                lastFollowDate: '2026-04-08',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2027-02-28',
+                lockDaysLeft: 319,
+                status: '已签单',
+                source: '展会获客',
+                legalPerson: 'Oliver Blume',
+                capital: '550000000',
+                currency: 'EUR'
+            },
+            {
+                id: 'F20240320009',
+                name: 'Samsung Electronics Co., Ltd.',
+                country: 'KR',
+                countryCode: 'KOR',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['科技巨头', '战略客户'],
+                industry: '制造业',
+                regionZone: '日韩区域',
+                taxNo: 'KRA123456',
+                taxType: 'TAX',
+                grade: 'A+',
+                follower: '李芳',
+                followDays: 9,
+                lastFollowDate: '2026-04-06',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '重大(延长)',
+                lockType: '签单保护',
+                lockExpiry: '2027-06-30',
+                lockDaysLeft: 441,
+                status: '保护期内',
+                source: '合作伙伴',
+                legalPerson: 'Jae-yong Lee',
+                capital: '300000000',
+                currency: 'USD'
+            },
+            {
+                id: 'F20240310010',
+                name: 'HSBC Holdings plc',
+                country: 'GB',
+                countryCode: 'GBR',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['金融客户'],
+                industry: '金融业',
+                regionZone: '欧洲区域',
+                taxNo: 'GB123456789',
+                taxType: 'VAT',
+                grade: 'A',
+                follower: '张伟',
+                followDays: 35,
+                lastFollowDate: '2026-03-11',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-08-20',
+                lockDaysLeft: 127,
+                status: '已签单',
+                source: 'LinkedIn',
+                legalPerson: 'Noel Quinn',
+                capital: '200000000',
+                currency: 'GBP'
+            },
+            {
+                id: 'F20240125011',
+                name: 'Alibaba Group Holding Limited',
+                country: 'SG',
+                countryCode: 'SGP',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['电商巨头'],
+                industry: '批发和零售业',
+                regionZone: '东南亚区域',
+                taxNo: 'SG12345678A',
+                taxType: 'TAX',
+                grade: 'A',
+                follower: '周杰',
+                followDays: 60,
+                lastFollowDate: '2026-02-14',
+                warningLevel: 'high',
+                warningText: '区域锁定355天，即将入公海',
+                protectRule: '标准(365天)',
+                lockType: '区域锁定',
+                lockExpiry: '2026-04-30',
+                lockDaysLeft: 15,
+                status: '未签单',
+                source: '合作伙伴',
+                legalPerson: 'Eddie Wu',
+                capital: '320000000',
+                currency: 'USD'
+            },
+            {
+                id: 'F20240228012',
+                name: 'Amazon.com Inc.',
+                country: 'US',
+                countryCode: 'USA',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['电商巨头'],
+                industry: '批发和零售业',
+                regionZone: '美洲区域',
+                taxNo: '91-1646860',
+                taxType: 'EIN',
+                grade: 'A+',
+                follower: '赵敏',
+                followDays: 92,
+                lastFollowDate: '2026-01-13',
+                warningLevel: 'critical',
+                warningText: '已超90天，即将释放',
+                protectRule: '标准(90天)',
+                lockType: '区域锁定',
+                lockExpiry: '2026-04-18',
+                lockDaysLeft: 3,
+                status: '未签单',
+                source: '自主开发',
+                legalPerson: 'Andy Jassy',
+                capital: '1500000000',
+                currency: 'USD'
+            },
+            {
+                id: 'F20240305013',
+                name: 'Standard Chartered Bank',
+                country: 'HK',
+                countryCode: 'HKG',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['金融客户'],
+                industry: '金融业',
+                regionZone: '港澳台区域',
+                taxNo: 'HK12345678',
+                taxType: 'TAX',
+                grade: 'A',
+                follower: '孙强',
+                followDays: 18,
+                lastFollowDate: '2026-03-28',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-11-30',
+                lockDaysLeft: 229,
+                status: '已签单',
+                source: '合作伙伴',
+                legalPerson: 'Bill Winters',
+                capital: '180000000',
+                currency: 'USD'
+            },
+            {
+                id: 'F20231015014',
+                name: 'Tesla Inc.',
+                country: 'US',
+                countryCode: 'USA',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['新能源汽车'],
+                industry: '制造业',
+                regionZone: '美洲区域',
+                taxNo: '91-2197729',
+                taxType: 'EIN',
+                grade: 'A',
+                follower: '吴刚',
+                followDays: 4,
+                lastFollowDate: '2026-04-11',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-10-15',
+                lockDaysLeft: 183,
+                status: '已签单',
+                source: '自主开发',
+                legalPerson: 'Elon Musk',
+                capital: '800000000',
+                currency: 'USD'
+            },
+            {
+                id: 'F20240312015',
+                name: 'MTN Group Limited',
+                country: 'ZA',
+                countryCode: 'ZAF',
+                type: '企业',
+                typeCode: 'enterprise',
+                tags: ['电信客户'],
+                industry: '信息传输、软件和信息技术服务业',
+                regionZone: '非洲区域',
+                taxNo: 'ZA123456789',
+                taxType: 'TAX',
+                grade: 'A',
+                follower: '郑华',
+                followDays: 22,
+                lastFollowDate: '2026-03-24',
+                warningLevel: 'none',
+                warningText: '',
+                protectRule: '标准(1年)',
+                lockType: '签单保护',
+                lockExpiry: '2026-12-20',
+                lockDaysLeft: 249,
+                status: '已签单',
+                source: '展会获客',
+                legalPerson: 'Ralph Mupita',
+                capital: '120000000',
+                currency: 'USD'
+            }
+        ];
+
+        let currentType = 'domestic';
+        let currentSort = { field: null, order: null };
+
+        // 表头定义 - 添加所在区域列
+        const domesticHeaders = [
+            { field: 'id', label: '客户编号', width: '140px', sortable: true, sticky: 'left' },
+            { field: 'name', label: '客户名称', width: '260px', sortable: false, sticky: 'left-2' },
+            { field: 'type', label: '客户类型', width: '110px', sortable: false },
+            { field: 'tags', label: '客户标签', width: '180px', sortable: false },
+            { field: 'industry', label: '行业分类', width: '120px', sortable: false },
+            { field: 'regionZone', label: '所在区域', width: '100px', sortable: false },
+            { field: 'region', label: '省市', width: '80px', sortable: false },
+            { field: 'grade', label: '企业分类', width: '90px', sortable: true },
+            { field: 'follower', label: '跟进人', width: '120px', sortable: false },
+            { field: 'followDays', label: '距上次跟进(天)', width: '130px', sortable: true },
+            { field: 'warning', label: '预警状态', width: '220px', sortable: false },
+            { field: 'protectRule', label: '保护期规则', width: '130px', sortable: false },
+            { field: 'lockType', label: '锁定类型', width: '110px', sortable: false },
+            { field: 'lockDaysLeft', label: '保护期剩余', width: '160px', sortable: true },
+            { field: 'lastFollowDate', label: '最后跟进时间', width: '120px', sortable: true },
+            { field: 'status', label: '客户状态', width: '100px', sortable: true, sticky: 'right' },
+            { field: 'action', label: '操作', width: '100px', sortable: false, sticky: 'right-2' }
+        ];
+
+        const foreignHeaders = [
+            { field: 'id', label: '客户编号', width: '140px', sortable: true, sticky: 'left' },
+            { field: 'name', label: '客户名称(外文)', width: '260px', sortable: false, sticky: 'left-2' },
+            { field: 'country', label: '国家及代码', width: '120px', sortable: false },
+            { field: 'type', label: '客户类型', width: '110px', sortable: false },
+            { field: 'tags', label: '客户标签', width: '180px', sortable: false },
+            { field: 'industry', label: '行业分类', width: '120px', sortable: false },
+            { field: 'regionZone', label: '所在区域', width: '100px', sortable: false },
+            { field: 'taxNo', label: '税号/登记号', width: '140px', sortable: false },
+            { field: 'grade', label: '企业分类', width: '90px', sortable: true },
+            { field: 'follower', label: '跟进人', width: '120px', sortable: false },
+            { field: 'followDays', label: '距上次跟进(天)', width: '130px', sortable: true },
+            { field: 'warning', label: '预警状态', width: '220px', sortable: false },
+            { field: 'protectRule', label: '保护期规则', width: '130px', sortable: false },
+            { field: 'lockType', label: '锁定类型', width: '110px', sortable: false },
+            { field: 'lockDaysLeft', label: '保护期剩余', width: '160px', sortable: true },
+            { field: 'lastFollowDate', label: '最后跟进时间', width: '120px', sortable: true },
+            { field: 'status', label: '客户状态', width: '100px', sortable: true, sticky: 'right' },
+            { field: 'action', label: '操作', width: '100px', sortable: false, sticky: 'right-2' }
+        ];
+
+        // 渲染表头
+        function renderHeaders() {
+            const headers = currentType === 'domestic' ? domesticHeaders : foreignHeaders;
+            const thead = document.getElementById('tableHead');
+
+            let html = '<tr>';
+            headers.forEach(h => {
+                let className = `col-${h.field}`;
+                if (h.sticky === 'left') className += ' col-sticky-left';
+                if (h.sticky === 'left-2') className += ' col-sticky-left-2';
+                if (h.sticky === 'right') className += ' col-sticky-right';
+                if (h.sticky === 'right-2') className += ' col-sticky-right-2';
+                if (h.sortable) className += ' sortable';
+
+                if (h.sortable) {
+                    html += `<th class="${className}" onclick="sortTable('${h.field}')">${h.label}<span class="sort-icon"><i class="fas fa-sort"></i></span></th>`;
+                } else {
+                    html += `<th class="${className}">${h.label}</th>`;
+                }
+            });
+            html += '</tr>';
+            thead.innerHTML = html;
+        }
+
+        // 获取国家emoji
+        function getCountryFlag(country) {
+            const flags = { 'US': '🇺🇸', 'GB': '🇬🇧', 'DE': '🇩🇪', 'FR': '🇫🇷', 'JP': '🇯🇵', 'KR': '🇰🇷', 'SG': '🇸🇬', 'AU': '🇦🇺', 'CA': '🇨🇦', 'NL': '🇳🇱', 'CH': '🇨🇭', 'SE': '🇸🇪', 'IT': '🇮🇹', 'ES': '🇪🇸', 'RU': '🇷🇺', 'IN': '🇮🇳', 'BR': '🇧🇷', 'IE': '🇮🇪', 'BE': '🇧🇪', 'ZA': '🇿🇦', 'HK': '🇭🇰' };
+            return flags[country] || '🏳️';
+        }
+
+        // 获取国家名称
+        function getCountryName(country) {
+            const names = { 'US': '美国', 'GB': '英国', 'DE': '德国', 'FR': '法国', 'JP': '日本', 'KR': '韩国', 'SG': '新加坡', 'AU': '澳大利亚', 'CA': '加拿大', 'NL': '荷兰', 'CH': '瑞士', 'SE': '瑞典', 'IT': '意大利', 'ES': '西班牙', 'RU': '俄罗斯', 'IN': '印度', 'BR': '巴西', 'ZA': '南非', 'HK': '香港' };
+            return names[country] || country;
+        }
+
+        // 渲染表格
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            const isDomestic = currentType === 'domestic';
+            let html = '';
+
+            data.forEach((row, index) => {
+                // 预警样式
+                const warningClass = row.warningLevel === 'critical' ? 'warning-tag critical urgent-pulse' : 
+                                   row.warningLevel === 'high' ? 'warning-tag high' : 
+                                   row.warningLevel === 'medium' ? 'warning-tag medium' : '';
+
+                const warningIcon = row.warningLevel === 'critical' ? '<i class="fas fa-exclamation-circle"></i>' : 
+                                   row.warningLevel === 'high' ? '<i class="fas fa-exclamation-triangle"></i>' : 
+                                   row.warningLevel === 'medium' ? '<i class="fas fa-clock"></i>' : '';
+
+                // 企业分类样式
+                const gradeClass = {
+                    'A+': 'grade-a-plus',
+                    'A': 'grade-a',
+                    'B': 'grade-b',
+                    'C': 'grade-c',
+                    'D': 'grade-d'
+                }[row.grade] || 'grade-d';
+
+                // 客户标签渲染
+                const tagsHtml = row.tags.map(tag => {
+                    let tagClass = 'tag-normal';
+                    if (tag.includes('战略')) tagClass = 'tag-strategic';
+                    if (tag.includes('政府')) tagClass = 'tag-government';
+                    if (tag.includes('集团') || tag.includes('重大') || tag.includes('保密')) tagClass = 'tag-enterprise';
+                    if (!isDomestic && (tag.includes('客户') || tag.includes('A+') || tag.includes('A级'))) tagClass = 'tag-foreign';
+                    return `<span class="tag ${tagClass}">${tag}</span>`;
+                }).join('');
+
+                // 保护期进度条颜色
+                let progressColor = 'green';
+                if (row.lockDaysLeft !== null) {
+                    if (row.lockDaysLeft <= 30) progressColor = 'red';
+                    else if (row.lockDaysLeft <= 90) progressColor = 'orange';
+                    else if (row.lockDaysLeft <= 180) progressColor = 'yellow';
+                }
+
+                let totalDays = 365;
+                if (row.protectRule.includes('2年')) totalDays = 730;
+                else if (row.protectRule.includes('政府') || row.protectRule.includes('重大')) totalDays = 545;
+
+                const protectDisplay = row.lockDaysLeft !== null 
+                    ? `${row.lockDaysLeft}天<div class="progress-bar"><div class="progress-fill ${progressColor}" style="width: ${Math.min(100, (row.lockDaysLeft / totalDays) * 100)}%"></div></div>`
+                    : '-';
+
+                // 状态样式
+                const statusClass = row.status === '未签单' ? 'status-unsigned' : 
+                                   row.status === '已签单' ? 'status-signed' : 'status-protected';
+
+                // 跟进天数高亮
+                let daysClass = '';
+                if (row.followDays >= 90) daysClass = 'days-highlight-red';
+                else if (row.followDays >= 80) daysClass = 'days-highlight-orange';
+                else if (row.followDays >= 60) daysClass = 'days-highlight-yellow';
+
+                // 所在区域标签样式
+                const regionZoneClass = isDomestic ? 'region-zone-badge domestic' : 'region-zone-badge foreign';
+
+                if (isDomestic) {
+                    // 国内客户行
+                    html += `
+                        <tr>
+                            <td class="col-id col-sticky-left font-mono text-gray-600">${row.id}</td>
+                            <td class="col-name col-sticky-left-2">
+                                <div class="customer-name">
+                                    ${row.name}
+                                    ${row.type === '政府机构' || row.type === '中央部委' || row.tags.some(t => t.includes('重大')) ? '<i class="fas fa-landmark" title="政府/重大客户"></i>' : ''}
+                                </div>
+                            </td>
+                            <td class="col-type">${row.type}</td>
+                            <td class="col-tags">${tagsHtml}</td>
+                            <td class="col-industry">${row.industry}</td>
+                            <td class="col-region-zone">
+                                <span class="${regionZoneClass}">${row.regionZone}</span>
+                            </td>
+                            <td class="col-region">${row.region}</td>
+                            <td class="col-grade"><span class="${gradeClass}">${row.grade}</span></td>
+                            <td class="col-follower">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                        ${row.follower.charAt(0)}
+                                    </div>
+                                    <span>${row.follower}</span>
+                                </div>
+                            </td>
+                            <td class="col-days ${daysClass}">${row.followDays}</td>
+                            <td class="col-warning">
+                                ${row.warningLevel !== 'none' ? `
+                                    <div class="${warningClass}">
+                                        ${warningIcon} ${row.warningText}
+                                    </div>
+                                ` : '<span class="text-gray-400">-</span>'}
+                            </td>
+                            <td class="col-rule">
+                                <span class="tag ${row.protectRule.includes('延长') || row.protectRule.includes('政府') || row.protectRule.includes('重大') ? 'tag-strategic' : 'tag-normal'}">
+                                    ${row.protectRule}
+                                </span>
+                            </td>
+                            <td class="col-lock">${row.lockType}</td>
+                            <td class="col-expiry">${protectDisplay}</td>
+                            <td class="col-time" style="color: #64748b; font-size: 12px;">${row.lastFollowDate}</td>
+                            <td class="col-status col-sticky-right">
+                                <span class="status-badge ${statusClass}">${row.status}</span>
+                            </td>
+                            <td class="col-action col-sticky-right-2">
+                                <button class="action-btn" onclick="viewCustomer('${row.id}')">
+                                    <i class="fas fa-eye"></i> 详情
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    // 国外客户行
+                    html += `
+                        <tr>
+                            <td class="col-id col-sticky-left font-mono text-gray-600">${row.id}</td>
+                            <td class="col-name col-sticky-left-2">
+                                <div class="customer-name">
+                                    <i class="fas fa-building foreign-icon"></i>
+                                    ${row.name}
+                                </div>
+                            </td>
+                            <td class="col-country">
+                                <div class="country-badge">
+                                    <span class="flag">${getCountryFlag(row.country)}</span>
+                                    <span>${getCountryName(row.country)} (${row.countryCode})</span>
+                                </div>
+                            </td>
+                            <td class="col-type">${row.type}</td>
+                            <td class="col-tags">${tagsHtml}</td>
+                            <td class="col-industry">${row.industry}</td>
+                            <td class="col-region-zone">
+                                <span class="${regionZoneClass}">${row.regionZone}</span>
+                            </td>
+                            <td class="col-tax font-mono text-xs">${row.taxNo || '-'}</td>
+                            <td class="col-grade"><span class="${gradeClass}">${row.grade}</span></td>
+                            <td class="col-follower">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                                        ${row.follower.charAt(0)}
+                                    </div>
+                                    <span>${row.follower}</span>
+                                </div>
+                            </td>
+                            <td class="col-days ${daysClass}">${row.followDays}</td>
+                            <td class="col-warning">
+                                ${row.warningLevel !== 'none' ? `
+                                    <div class="${warningClass}">
+                                        ${warningIcon} ${row.warningText}
+                                    </div>
+                                ` : '<span class="text-gray-400">-</span>'}
+                            </td>
+                            <td class="col-rule">
+                                <span class="tag ${row.protectRule.includes('延长') || row.protectRule.includes('重大') ? 'tag-strategic' : 'tag-normal'}">
+                                    ${row.protectRule}
+                                </span>
+                            </td>
+                            <td class="col-lock">${row.lockType}</td>
+                            <td class="col-expiry">${protectDisplay}</td>
+                            <td class="col-time" style="color: #64748b; font-size: 12px;">${row.lastFollowDate}</td>
+                            <td class="col-status col-sticky-right">
+                                <span class="status-badge ${statusClass}">${row.status}</span>
+                            </td>
+                            <td class="col-action col-sticky-right-2">
+                                <button class="action-btn" onclick="viewCustomer('${row.id}')">
+                                    <i class="fas fa-eye"></i> 详情
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // 切换客户类型
+        function switchCustomerType(type) {
+            currentType = type;
+
+            // 更新标签样式
+            document.getElementById('tab-domestic').classList.toggle('active', type === 'domestic');
+            document.getElementById('tab-foreign').classList.toggle('active', type === 'foreign');
+
+            // 更新表格类名
+            const table = document.getElementById('customerTable');
+            table.className = `data-table ${type}`;
+
+            // 显示/隐藏特定筛选条件
+            if (type === 'domestic') {
+                document.getElementById('domestic-region-filter').classList.remove('hidden-col');
+                document.getElementById('foreign-region-filter').classList.add('hidden-col');
+            } else {
+                document.getElementById('domestic-region-filter').classList.add('hidden-col');
+                document.getElementById('foreign-region-filter').classList.remove('hidden-col');
+            }
+
+            // 更新统计数据
+            updateStats();
+
+            // 重新渲染
+            renderHeaders();
+            currentSort = { field: null, order: null };
+            renderTable(type === 'domestic' ? domesticData : foreignData);
+        }
+
+        // 更新统计数据
+        function updateStats() {
+            const data = currentType === 'domestic' ? domesticData : foreignData;
+            const warningCount = data.filter(d => d.warningLevel !== 'none').length;
+
+            document.getElementById('total-count').textContent = data.length;
+            document.getElementById('warning-count').innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>预警 ${warningCount}`;
+            document.getElementById('page-total').textContent = data.length;
+        }
+
+        // 排序功能
+        function sortTable(field) {
+            const data = currentType === 'domestic' ? [...domesticData] : [...foreignData];
+
+            if (currentSort.field === field) {
+                if (currentSort.order === 'asc') {
+                    currentSort.order = 'desc';
+                } else if (currentSort.order === 'desc') {
+                    currentSort.order = null;
+                    currentSort.field = null;
+                } else {
+                    currentSort.order = 'asc';
+                }
+            } else {
+                currentSort.field = field;
+                currentSort.order = 'asc';
+            }
+
+            // 更新排序图标
+            document.querySelectorAll('.sortable').forEach(th => {
+                th.classList.remove('asc', 'desc');
+                const icon = th.querySelector('.sort-icon i');
+                icon.className = 'fas fa-sort';
+            });
+
+            if (currentSort.field) {
+                const activeTh = document.querySelector(`th[onclick="sortTable('${field}')"]`);
+                if (activeTh) {
+                    activeTh.classList.add(currentSort.order);
+                    const icon = activeTh.querySelector('.sort-icon i');
+                    icon.className = currentSort.order === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+                }
+            }
+
+            if (!currentSort.order) {
+                renderTable(data);
+                return;
+            }
+
+            data.sort((a, b) => {
+                let valA = a[field];
+                let valB = b[field];
+
+                if (field === 'lockDaysLeft') {
+                    if (valA === null) valA = 9999;
+                    if (valB === null) valB = 9999;
+                } else if (field === 'lastFollowDate') {
+                    valA = new Date(valA).getTime();
+                    valB = new Date(valB).getTime();
+                } else {
+                    valA = String(valA).toLowerCase();
+                    valB = String(valB).toLowerCase();
+                }
+
+                if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            renderTable(data);
+        }
+
+        // 切换筛选面板
+        function toggleFilter() {
+            const panel = document.getElementById('filterPanel');
+            const icon = document.getElementById('filter-icon');
+            const text = document.getElementById('filter-text');
+
+            if (panel.classList.contains('expanded')) {
+                panel.classList.remove('expanded');
+                icon.style.transform = 'rotate(180deg)';
+                text.textContent = '展开筛选';
+            } else {
+                panel.classList.add('expanded');
+                icon.style.transform = 'rotate(0deg)';
+                text.textContent = '收起筛选';
+            }
+        }
+
+        // 搜索功能
+        function searchData() {
+            alert('执行筛选查询...');
+        }
+
+        // 重置功能
+        function resetData() {
+            document.querySelectorAll('.filter-item input, .filter-item select').forEach(el => {
+                if (el.type === 'checkbox') el.checked = false;
+                else el.value = '';
+            });
+            currentSort = { field: null, order: null };
+            document.querySelectorAll('.sortable').forEach(th => {
+                th.classList.remove('asc', 'desc');
+                th.querySelector('.sort-icon i').className = 'fas fa-sort';
+            });
+            renderTable(currentType === 'domestic' ? domesticData : foreignData);
+        }
+
+        // 查看详情
+        function viewCustomer(id) {
+            const data = currentType === 'domestic' ? domesticData : foreignData;
+            const customer = data.find(d => d.id === id);
+            if (customer) {
+                alert(`${currentType === 'domestic' ? '国内' : '国外'}客户详情：\n客户编号：${customer.id}\n客户名称：${customer.name}\n所在区域：${customer.regionZone}\n跟进人：${customer.follower}\n状态：${customer.status}`);
+            }
+        }
+
+        // 新增客户
+        function addNewCustomer() {
+            alert(`打开${currentType === 'domestic' ? '国内' : '国外'}客户新增页面`);
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderHeaders();
+            renderTable(domesticData);
+            updateStats();
+        });
+    </script>
+</body>
+</html>
