@@ -1,0 +1,3503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商机管理 - 商机列表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 当前用户区域标识 */
+        .user-region-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: #dbeafe;
+            color: #1e40af;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid #bfdbfe;
+        }
+
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* 视图切换标签 */
+        .view-switcher {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 4px;
+            margin-left: 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .view-tab {
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #64748b;
+            border: none;
+            background: transparent;
+        }
+
+        .view-tab:hover { color: #374151; }
+
+        .view-tab.active {
+            background: white;
+            color: #3b82f6;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-weight: 600;
+        }
+
+        .view-tab .count {
+            background: #e2e8f0;
+            color: #64748b;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .view-tab.active .count {
+            background: #dbeafe;
+            color: #3b82f6;
+        }
+
+        .filter-bar {
+            background: white;
+            margin: 20px 20px 0 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .quick-filters {
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #fafafa;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-item label {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .filter-item input,
+        .filter-item select {
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            background: white;
+        }
+
+        .filter-item input:focus,
+        .filter-item select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .filter-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .filter-panel.expanded {
+            max-height: 300px;
+        }
+
+        .advanced-filters {
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: white;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin: 20px;
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: calc(100vh - 320px);
+            position: relative;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 2000px;
+            table-layout: fixed;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 13px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+            background: white;
+            overflow: hidden;
+            /* text-overflow: ellipsis; */
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .data-table tbody tr:hover td {
+            background: #f8fafc;
+        }
+
+        /* 左侧冻结列 */
+        .col-sticky-left {
+            position: sticky;
+            left: 0;
+            z-index: 30;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            width: 140px;
+            min-width: 140px;
+        }
+
+        .col-sticky-left-2 {
+            position: sticky;
+            left: 140px;
+            z-index: 30;
+            background: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            width: 260px;
+            min-width: 260px;
+        }
+
+        /* 右侧冻结列 */
+        .col-sticky-right {
+            position: sticky;
+            right: 220px;
+            z-index: 30;
+            background: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+            width: 100px;
+            min-width: 100px;
+        }
+
+        .col-sticky-right-2 {
+            position: sticky;
+            right: 0;
+            z-index: 30;
+            background: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+            width: 140px;
+            min-width: 140px;
+        }
+
+        .data-table th.col-sticky-left,
+        .data-table th.col-sticky-left-2 {
+            z-index: 40;
+            background: #f8fafc;
+        }
+
+        .data-table th.col-sticky-right,
+        .data-table th.col-sticky-right-2 {
+            z-index: 40;
+            background: #f8fafc;
+        }
+
+        .data-table tbody tr:hover .col-sticky-left,
+        .data-table tbody tr:hover .col-sticky-left-2,
+        .data-table tbody tr:hover .col-sticky-right,
+        .data-table tbody tr:hover .col-sticky-right-2 {
+            background: #f8fafc;
+        }
+
+        .col-id { width: 140px; }
+        .col-name { width: 260px; }
+        .col-type { width: 100px; }
+        .col-business-type { width: 110px; }
+        .col-cert-field { width: 200px; }
+        .col-amount { width: 120px; }
+        .col-deal-time { width: 110px; }
+        .col-contact { width: 120px; }
+        .col-follower { width: 120px; }
+        .col-reg-time { width: 130px; }
+        .col-last-follow { width: 130px; }
+        .col-source { width: 100px; }
+        .col-status { width: 120px; }
+        .col-region { width: 120px; }
+        .col-action { width: 220px; }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 20px !important;
+        }
+
+        .sortable:hover {
+            background: #e2e8f0;
+        }
+
+        .sort-icon {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .sortable.asc .sort-icon,
+        .sortable.desc .sort-icon {
+            color: #3b82f6;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 4px;
+            margin-bottom: 2px;
+        }
+
+        .tag-cert { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .tag-service { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .tag-qms { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .tag-ems { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+        .tag-ohsms { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-new { background: #dbeafe; color: #1e40af; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-following { background: #dcfce7; color: #166534; }
+        .status-won { background: #d1fae5; color: #065f46; border: 1px solid #86efac; }
+        .status-lost { background: #fee2e2; color: #991b1b; }
+        .status-returned { background: #f3f4f6; color: #374151; }
+        .status-pool { background: #e0e7ff; color: #3730a3; }
+
+        .amount { font-family: 'Courier New', monospace; font-weight: 600; color: #059669; }
+        .amount-empty { color: #9ca3af; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: white; border-color: #d1d5db; color: #374151; }
+        .btn-secondary:hover { background: #f9fafb; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+        .btn-danger:hover { background: #fef2f2; }
+        .btn-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .btn-success:hover { background: #d1fae5; }
+        .btn-warning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .btn-warning:hover { background: #fde68a; }
+
+        .action-btns { display: flex; gap: 8px; }
+        .action-btn {
+            color: #3b82f6;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .action-btn:hover { background: #eff6ff; color: #1d4ed8; }
+        .action-btn.danger { color: #dc2626; }
+        .action-btn.danger:hover { background: #fef2f2; }
+        .action-btn.success { color: #059669; }
+        .action-btn.success:hover { background: #d1fae5; }
+
+        .pagination { display: flex; gap: 4px; align-items: center; }
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .page-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+        .page-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+
+        .customer-name {
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .customer-name i { color: #3b82f6; font-size: 14px; }
+
+        .stats-bar {
+            display: flex;
+            gap: 16px;
+            margin-left: 24px;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .stat-item:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .stat-item.active {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .stat-value {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 16px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .cert-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .follower-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .follower-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            color: #4338ca;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .pool-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: #e0e7ff;
+            color: #3730a3;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .region-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .region-local { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .region-cross { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        /* Toast提示 */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #111827;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 2000;
+        }
+
+        /* 侧边栏详情抽屉 */
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            right: -900px;
+            width: 900px;
+            height: 100vh;
+            background: white;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+            z-index: 1100;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .side-drawer.active {
+            right: 0;
+        }
+
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 1050;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .drawer-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .drawer-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            flex-shrink: 0;
+        }
+
+        .drawer-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+            background: #f8fafc;
+        }
+
+        .drawer-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        /* 详情页标签导航 */
+        .detail-tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .detail-tab {
+            padding: 16px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .detail-tab:hover {
+            color: #3b82f6;
+        }
+
+        .detail-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .detail-section {
+            padding: 24px;
+            display: none;
+        }
+
+        .detail-section.active {
+            display: block;
+        }
+
+        /* 卡片样式 */
+        .detail-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .detail-card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fafafa;
+        }
+
+        .detail-card-body {
+            padding: 20px;
+        }
+
+        /* 信息网格 */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #111827;
+            font-weight: 600;
+        }
+
+        .info-value.subtle {
+            font-weight: 400;
+            color: #4b5563;
+        }
+
+        /* 跟进计划卡片 */
+        .plan-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .plan-card:hover {
+            border-color: #bfdbfe;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.08);
+        }
+
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .plan-title {
+            font-weight: 600;
+            color: #111827;
+            font-size: 14px;
+        }
+
+        .plan-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .plan-status-pending { background: #fef3c7; color: #92400e; }
+        .plan-status-completed { background: #dcfce7; color: #166534; }
+        .plan-status-overdue { background: #fee2e2; color: #991b1b; }
+
+        .plan-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+
+        .plan-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 跟进记录时间线 */
+        .timeline {
+            position: relative;
+            padding-left: 28px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e5e7eb;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid #3b82f6;
+        }
+
+        .timeline-item.success::before { border-color: #22c55e; }
+        .timeline-item.warning::before { border-color: #f59e0b; }
+
+        .timeline-time {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .timeline-content {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .timeline-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .timeline-type-phone { background: #dbeafe; color: #1e40af; }
+        .timeline-type-visit { background: #d1fae5; color: #065f46; }
+        .timeline-type-email { background: #fce7f3; color: #9d174d; }
+
+        .timeline-text {
+            font-size: 13px;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        /* 操作日志 */
+        .log-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .log-icon.create { background: #dcfce7; color: #166534; }
+        .log-icon.update { background: #dbeafe; color: #1e40af; }
+        .log-icon.transfer { background: #fef3c7; color: #92400e; }
+        .log-icon.complete { background: #f3e8ff; color: #7c3aed; }
+
+        .log-content {
+            flex: 1;
+        }
+
+        .log-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .log-desc {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 2px;
+        }
+
+        .log-time {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .business-modal {
+            width: 720px;
+            height: 640px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .business-modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-subtitle {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: #fafafa;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .form-section {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 0;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .form-label .required {
+            color: #ef4444;
+            margin-left: 2px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.2s;
+            background: white;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+        }
+
+        .form-textarea {
+            resize: none;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        .info-card {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+        }
+
+        .info-card.warning {
+            background: #fef3c7;
+            border-color: #fcd34d;
+        }
+
+        .info-card.error {
+            background: #fee2e2;
+            border-color: #fecaca;
+        }
+
+        .info-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-card.warning .info-title { color: #92400e; }
+        .info-card.error .info-title { color: #991b1b; }
+
+        .company-select-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .company-select-trigger:hover {
+            border-color: #3b82f6;
+            background: #fafafa;
+        }
+
+        .company-select-trigger.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #f9fafb;
+        }
+
+        .company-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .company-icon {
+            width: 40px;
+            height: 40px;
+            background: #eff6ff;
+            color: #3b82f6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .company-detail h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .company-detail p {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .company-region-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+            font-weight: 500;
+        }
+
+        .tag-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag-item {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            color: #374151;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tag-item:hover {
+            border-color: #bfdbfe;
+            background: #f9fafb;
+        }
+
+        .tag-item.selected {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+        }
+
+        .contact-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .contact-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            position: relative;
+        }
+
+        .contact-card:hover {
+            border-color: #bfdbfe;
+            background: #fafafa;
+        }
+
+        .contact-card.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            box-shadow: 0 0 0 1px #3b82f6;
+        }
+
+        .contact-card.default::before {
+            content: '主联系人';
+            position: absolute;
+            top: -1px;
+            right: 8px;
+            background: #3b82f6;
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 0 0 4px 4px;
+            font-weight: 600;
+        }
+
+        .contact-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fce7f3;
+            color: #be185d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .contact-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .contact-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .contact-phone {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .contact-check {
+            color: #3b82f6;
+            display: none;
+        }
+
+        .contact-card.selected .contact-check {
+            display: block;
+        }
+
+        .company-list-modal {
+            width: 640px;
+            height: 520px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .search-box {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+        }
+
+        .search-input-wrapper i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 12px 10px 40px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+        }
+
+        .company-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 24px;
+        }
+
+        .company-list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .company-list-item:hover {
+            border-color: #3b82f6;
+            background: #fafafa;
+        }
+
+        .company-list-item.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .company-list-item.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #f9fafb;
+        }
+
+        .company-list-item.disabled:hover {
+            border-color: #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .company-list-icon {
+            width: 40px;
+            height: 40px;
+            background: #eff6ff;
+            color: #3b82f6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .company-list-info {
+            flex: 1;
+        }
+
+        .company-list-name {
+            font-weight: 600;
+            color: #111827;
+            font-size: 14px;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+        }
+
+        .company-list-meta {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .company-list-check {
+            color: #3b82f6;
+            display: none;
+        }
+
+        .company-list-item.selected .company-list-check {
+            display: block;
+        }
+
+        .company-list-item.disabled .company-list-check {
+            display: none;
+        }
+
+        .permission-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        .permission-ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .permission-missing {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .cross-region-notice {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #92400e;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            color: #6b7280;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-close:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .confirm-modal {
+            width: 480px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            padding: 32px;
+            text-align: center;
+        }
+
+        .confirm-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 28px;
+        }
+
+        .confirm-icon.warning { background: #fef3c7; color: #f59e0b; }
+        .confirm-icon.info { background: #dbeafe; color: #3b82f6; }
+        .confirm-icon.success { background: #dcfce7; color: #22c55e; }
+
+        .confirm-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .confirm-desc {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .confirm-btns {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        /* 隐藏 */
+        .hidden { display: none !important; }
+
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部栏 -->
+    <div class="top-bar">
+        <div class="flex items-center gap-4">
+            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-briefcase text-blue-600"></i>
+                商机管理
+            </h1>
+            
+            <!-- 当前用户区域标识 -->
+            <div class="user-region-badge">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>当前区域：华北区域</span>
+            </div>
+            
+            <!-- 视图切换标签 -->
+            <div class="view-switcher">
+                <button class="view-tab active" onclick="switchView('my')" id="tab-my">
+                    <i class="fas fa-user-check"></i>
+                    我的商机
+                    <span class="count" id="count-my">42</span>
+                </button>
+                <button class="view-tab" onclick="switchView('pool')" id="tab-pool">
+                    <i class="fas fa-users"></i>
+                    公共池
+                    <span class="count" id="count-pool">28</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3" id="top-actions">
+            <button class="btn btn-secondary btn-sm" onclick="toggleFilter()">
+                <i class="fas fa-filter"></i>
+                <span id="filter-text">收起筛选</span>
+                <i class="fas fa-chevron-up ml-1" id="filter-icon" style="transition: transform 0.3s;"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="exportData()">
+                <i class="fas fa-download"></i>
+                导出
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="openBusinessModal()">
+                <i class="fas fa-plus"></i>
+                登记商机
+            </button>
+        </div>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+        <div class="quick-filters">
+            <div class="filter-item">
+                <label>商机编号</label>
+                <input type="text" id="filter-id" placeholder="输入编号" style="width: 130px;">
+            </div>
+            <div class="filter-item">
+                <label>客户名称</label>
+                <input type="text" id="filter-name" placeholder="输入名称" style="width: 150px;">
+            </div>
+            <div class="filter-item">
+                <label>业务类型</label>
+                <select id="filter-biz-type" style="width: 110px;">
+                    <option value="">全部</option>
+                    <option value="体系认证">体系认证</option>
+                    <option value="技术服务">技术服务</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>认证领域</label>
+                <select id="filter-cert" style="width: 120px;">
+                    <option value="">全部</option>
+                    <option>QMS</option>
+                    <option>EMS</option>
+                    <option>OHSMS</option>
+                    <option>FSMS</option>
+                    <option>ISMS</option>
+                </select>
+            </div>
+            <div class="filter-item" id="filter-follower-wrapper">
+                <label>跟进人</label>
+                <select id="filter-follower" style="width: 90px;">
+                    <option value="">全部</option>
+                    <option>刘明</option>
+                    <option>王芳</option>
+                    <option>李明</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>商机状态</label>
+                <select id="filter-status" style="width: 110px;">
+                    <option value="">全部</option>
+                    <option value="new">新登记</option>
+                    <option value="pending">待确认</option>
+                    <option value="following">跟进中</option>
+                    <option value="won">已成交</option>
+                    <option value="lost">已失效</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>客户区域</label>
+                <select id="filter-region" style="width: 110px;">
+                    <option value="">全部</option>
+                    <option value="local">本区域</option>
+                    <option value="cross">跨区域</option>
+                </select>
+            </div>
+            <div class="flex-1"></div>
+            <button class="btn btn-primary btn-sm" onclick="searchData()">
+                <i class="fas fa-search"></i>
+                查询
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="resetData()">
+                重置
+            </button>
+        </div>
+
+        <div class="filter-panel expanded" id="filterPanel">
+            <div class="advanced-filters">
+                <div class="filter-item">
+                    <label>客户类型</label>
+                    <select id="filter-cust-type" style="width: 110px;">
+                        <option value="">全部</option>
+                        <option>中央企业</option>
+                        <option>国有企业</option>
+                        <option>政府机构</option>
+                        <option>民营企业</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>预计金额</label>
+                    <select id="filter-amount" style="width: 120px;">
+                        <option value="">全部</option>
+                        <option value="0-50000">5万以下</option>
+                        <option value="50000-100000">5-10万</option>
+                        <option value="100000-500000">10-50万</option>
+                        <option value="500000+">50万以上</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>预计成交时间</label>
+                    <input type="month" id="filter-deal-time" style="width: 140px;">
+                </div>
+                <div class="filter-item">
+                    <label>商机来源</label>
+                    <select id="filter-source" style="width: 100px;">
+                        <option value="">全部</option>
+                        <option>主动登记</option>
+                        <option>区域分配</option>
+                        <option>转介绍</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>登记时间</label>
+                    <select id="filter-reg-time" style="width: 110px;">
+                        <option value="">全部</option>
+                        <option value="today">今天</option>
+                        <option value="week">本周</option>
+                        <option value="month">本月</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表格区域 -->
+    <div class="table-container">
+        <div class="table-wrapper">
+            <table class="data-table" id="businessTable">
+                <thead>
+                    <tr>
+                        <th class="col-id col-sticky-left sortable" onclick="sortTable('id')">
+                            商机编号
+                            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+                        </th>
+                        <th class="col-name col-sticky-left-2 sortable" onclick="sortTable('customerName')">
+                            客户名称
+                            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+                        </th>
+                        <th class="col-type">客户类型</th>
+                        <th class="col-business-type">业务类型</th>
+                        <th class="col-cert-field">认证领域/服务内容</th>
+                        <th class="col-amount sortable" onclick="sortTable('amount')">
+                            预计金额
+                            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+                        </th>
+                        <th class="col-deal-time sortable" onclick="sortTable('dealTime')">
+                            预计成交
+                            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+                        </th>
+                        <th class="col-contact">联系人</th>
+                        <th class="col-follower" id="th-follower">跟进人</th>
+                        <th class="col-region sortable" onclick="sortTable('region')">
+                            客户区域
+                            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+                        </th>
+                        <th class="col-reg-time sortable" onclick="sortTable('regTime')">
+                            登记时间
+                            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+                        </th>
+                        <th class="col-last-follow sortable" onclick="sortTable('lastFollow')">
+                            最后跟进
+                            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+                        </th>
+                        <th class="col-source">商机来源</th>
+                        <th class="col-status col-sticky-right sortable" onclick="sortTable('status')">
+                            商机状态
+                            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+                        </th>
+                        <th class="col-action col-sticky-right-2">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页 -->
+        <div class="p-4 border-t border-gray-200 flex items-center justify-between bg-white">
+            <div class="text-sm text-gray-600">
+                显示第 <span class="font-medium" id="page-start">1</span> 到 <span class="font-medium" id="page-end">15</span> 条，共 <span class="font-medium" id="total-count">42</span> 条
+            </div>
+            <div class="pagination" id="pagination">
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-600">
+                <span>每页</span>
+                <select class="border border-gray-300 rounded px-2 py-1 text-sm" onchange="changePageSize(this.value)">
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="50">50</option>
+                </select>
+                <span>条</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast提示 -->
+    <div id="toast">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toast-message">操作成功</span>
+    </div>
+
+    <!-- 侧边栏详情抽屉 -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeSideDrawer()"></div>
+    <div class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+            <div>
+                <div class="drawer-title">
+                    <i class="fas fa-file-alt text-gray-700"></i>
+                    商机详情
+                </div>
+                <div class="text-sm text-gray-500 mt-1" id="drawerSubtitle">编号：B20260415001</div>
+            </div>
+            <button class="btn-close" onclick="closeSideDrawer()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="detail-tabs">
+            <div class="detail-tab active" onclick="switchDetailTab('basic')">基本信息</div>
+            <div class="detail-tab" onclick="switchDetailTab('followup')">跟进计划</div>
+            <div class="detail-tab" onclick="switchDetailTab('records')">跟进记录</div>
+            <div class="detail-tab" onclick="switchDetailTab('logs')">操作日志</div>
+        </div>
+
+        <div class="drawer-body custom-scroll">
+            <!-- 基本信息 -->
+            <div class="detail-section active" id="tab-basic">
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-building text-blue-600"></i>
+                        客户信息
+                    </div>
+                    <div class="detail-card-body">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">客户名称</span>
+                                <span class="info-value" id="detail-customer-name">丰源新能源集团有限公司</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">客户类型</span>
+                                <span class="info-value" id="detail-customer-type">中央企业</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">所属区域</span>
+                                <span class="info-value" id="detail-customer-region">
+                                    <span class="region-tag region-local">华北区域（本区域）</span>
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">所属行业</span>
+                                <span class="info-value" id="detail-industry">新能源</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">统一社会信用代码</span>
+                                <span class="info-value subtle" id="detail-credit-code">91110000123456789X</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">注册地址</span>
+                                <span class="info-value subtle" id="detail-address">北京市朝阳区建国路88号</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-briefcase text-blue-600"></i>
+                        业务信息
+                    </div>
+                    <div class="detail-card-body">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">商机来源</span>
+                                <span class="info-value" id="detail-source">主动登记</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">业务类型</span>
+                                <span class="info-value" id="detail-business-type">体系认证</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">认证领域</span>
+                                <span class="info-value" id="detail-cert-fields">QMS、EMS、OHSMS</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">预计金额</span>
+                                <span class="info-value" style="color: #059669;" id="detail-amount">¥85,000</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">预计成交时间</span>
+                                <span class="info-value" id="detail-deal-time">2026年6月</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">当前状态</span>
+                                <span class="info-value" id="detail-status">
+                                    <span class="status-badge status-following">跟进中</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-address-book text-blue-600"></i>
+                        联系人与跟进
+                    </div>
+                    <div class="detail-card-body">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">联系人</span>
+                                <span class="info-value" id="detail-contact">张伟 138****8888</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">跟进人</span>
+                                <span class="info-value" id="detail-follower">刘明（华北区域）</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">登记时间</span>
+                                <span class="info-value subtle" id="detail-reg-time">2026-04-15 09:30</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">登记人</span>
+                                <span class="info-value subtle" id="detail-reg-by">刘明</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 跟进计划 -->
+            <div class="detail-section" id="tab-followup">
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-calendar-check text-blue-600"></i>
+                        关联跟进计划
+                    </div>
+                    <div class="detail-card-body" id="followup-plans">
+                        <!-- 动态生成计划列表 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 跟进记录 -->
+            <div class="detail-section" id="tab-records">
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-history text-blue-600"></i>
+                        跟进记录时间线
+                    </div>
+                    <div class="detail-card-body">
+                        <div class="timeline" id="followup-records">
+                            <!-- 动态生成时间线 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作日志 -->
+            <div class="detail-section" id="tab-logs">
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="fas fa-list-alt text-blue-600"></i>
+                        操作日志
+                    </div>
+                    <div class="detail-card-body" id="operation-logs">
+                        <!-- 动态生成日志 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-footer" id="drawer-footer">
+            <button class="btn btn-secondary" onclick="closeSideDrawer()">关闭</button>
+            <button class="btn btn-primary" onclick="addFollowFromDrawer()">
+                <i class="fas fa-comment-dots"></i>
+                添加跟进
+            </button>
+        </div>
+    </div>
+
+    <!-- ========== 弹窗区域 ========== -->
+
+    <!-- 1. 商机登记弹窗 -->
+    <div class="modal-overlay" id="businessModal">
+        <div class="business-modal">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title">
+                        <i class="fas fa-plus-circle text-gray-700"></i>
+                        商机登记
+                    </div>
+                    <div class="modal-subtitle">录入新的业务线索</div>
+                </div>
+                <button class="btn-close" onclick="closeModal('businessModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body custom-scroll">
+                <!-- 跨区域报备提示 -->
+                <div id="cross-region-warning" class="info-card warning hidden">
+                    <div class="info-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        跨区域报备提醒
+                    </div>
+                    <div style="font-size: 13px; color: #92400e; line-height: 1.5;">
+                        您选择的客户属于<span id="target-region"></span>，当前未获得跨区域跟进权限。
+                        请先申请<span id="target-region-2"></span>的跨区域跟进报备，审批通过后方可登记该客户商机。
+                    </div>
+                    <button class="btn btn-warning btn-sm mt-3" onclick="goToApplyCrossRegion()">
+                        <i class="fas fa-paper-plane"></i>立即申请跨区域报备
+                    </button>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-building text-gray-500"></i>
+                        企业信息 <span style="color: #ef4444;">*</span>
+                        <span class="text-xs text-gray-400 font-normal ml-2">（仅可选择已报备的本区域或跨区域客户）</span>
+                    </div>
+
+                    <div id="company-unselected" class="company-select-trigger" onclick="openCompanySelector()">
+                        <div class="company-info">
+                            <div class="company-icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <div class="company-detail">
+                                <h4>从企业库选择客户</h4>
+                                <p>点击搜索并选择系统中已有的企业客户</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right" style="color: #9ca3af;"></i>
+                    </div>
+
+                    <div id="company-selected" class="hidden" style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 48px; height: 48px; background: #dcfce7; color: #166534; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; color: #111827; font-size: 14px; margin-bottom: 2px;" id="selected-company-name">北京某科技有限公司</div>
+                                <div style="font-size: 12px; color: #059669;" id="selected-company-code">统一社会信用代码：91110108MA00XXXXXX</div>
+                                <div style="font-size: 11px; color: #6b7280; margin-top: 2px;" id="selected-company-region">
+                                    制造业 | 华北区域
+                                    <span class="company-region-tag region-local">本区域</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="changeCompany()" style="color: #059669; border: none; background: none; cursor: pointer; font-size: 13px;">
+                            <i class="fas fa-edit"></i> 更换
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-briefcase text-gray-500"></i>
+                        业务信息
+                    </div>
+
+                    <div class="form-grid" style="margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label class="form-label">商机来源 <span class="required">*</span></label>
+                            <select class="form-input" id="business-source">
+                                <option value="">请选择商机来源...</option>
+                                <option value="主动登记" selected>主动登记</option>
+                                <option value="区域分配">区域分配</option>
+                                <option value="转介绍">转介绍</option>
+                                <option value="官网咨询">官网咨询</option>
+                                <option value="电话咨询">电话咨询</option>
+                                <option value="展会获取">展会获取</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <!-- 占位保持对齐 -->
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <label class="form-label" style="margin-bottom: 8px;">业务类型</label>
+                        <div style="display: flex; gap: 12px;">
+                            <label id="label-cert" style="flex: 1; display: flex; align-items: center; padding: 12px; border: 2px solid #3b82f6; border-radius: 8px; background: #eff6ff; cursor: pointer; transition: all 0.2s;" onclick="toggleBusinessType('cert')">
+                                <input type="radio" name="business-type" value="cert" checked style="margin-right: 8px;" onchange="toggleBusinessType('cert')">
+                                <div>
+                                    <div style="font-weight: 600; color: #1e40af; font-size: 13px;">体系认证</div>
+                                    <div style="font-size: 11px; color: #3b82f6; margin-top: 2px;">ISO管理体系认证</div>
+                                </div>
+                            </label>
+                            <label id="label-service" style="flex: 1; display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onclick="toggleBusinessType('service')">
+                                <input type="radio" name="business-type" value="service" style="margin-right: 8px;" onchange="toggleBusinessType('service')">
+                                <div>
+                                    <div style="font-weight: 600; color: #374151; font-size: 13px;">技术服务</div>
+                                    <div style="font-size: 11px; color: #6b7280; margin-top: 2px;">培训、咨询等服务</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="cert-fields">
+                        <div style="margin-bottom: 16px;">
+                            <label class="form-label">认证领域 <span style="font-weight: normal; color: #6b7280;">（可多选）</span></label>
+                            <div class="tag-selector">
+                                <span class="tag-item selected" onclick="toggleTag(this)">
+                                    <i class="fas fa-check" style="margin-right: 4px;"></i>QMS（质量管理体系）
+                                </span>
+                                <span class="tag-item" onclick="toggleTag(this)">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>EMS（环境管理体系）
+                                </span>
+                                <span class="tag-item" onclick="toggleTag(this)">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>OHSMS（职业健康安全）
+                                </span>
+                                <span class="tag-item" onclick="toggleTag(this)">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>FSMS（食品安全）
+                                </span>
+                                <span class="tag-item" onclick="toggleTag(this)">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>ISMS（信息安全）
+                                </span>
+                                <span class="tag-item" onclick="toggleTag(this)">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>ITSMS（IT服务）
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="service-fields" class="hidden">
+                        <div class="form-group full-width" style="margin-bottom: 16px;">
+                            <label class="form-label">服务内容</label>
+                            <textarea class="form-textarea" rows="3" placeholder="请输入具体的服务内容，如培训、咨询、评估等项目..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">预计金额</label>
+                            <div style="position: relative;">
+                                <input type="text" id="estimated-amount" class="form-input" placeholder="输入金额（可选）" style="padding-left: 32px;">
+                                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6b7280;">¥</span>
+                            </div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">如不确定可留空，后续补充</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">预计成交时间</label>
+                            <input type="month" id="deal-time" class="form-input">
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">如不确定可留空</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section" id="contact-section" style="opacity: 0.5; pointer-events: none;">
+                    <div class="section-title">
+                        <i class="fas fa-address-book text-gray-500"></i>
+                        联系人信息 <span style="color: #ef4444;">*</span>
+                    </div>
+                    <div class="helper-text" style="margin-bottom: 12px; color: #6b7280; font-size: 12px;">
+                        请先选择企业，然后从企业关联联系人中选择（默认选中主联系人）
+                    </div>
+
+                    <div id="contact-cards" class="hidden contact-cards">
+                        <div class="contact-card default selected" onclick="selectContact(this)">
+                            <div class="contact-avatar">张</div>
+                            <div class="contact-info">
+                                <div class="contact-name">张伟</div>
+                                <div class="contact-phone">138****8888</div>
+                            </div>
+                            <i class="fas fa-check-circle contact-check"></i>
+                        </div>
+                        <div class="contact-card" onclick="selectContact(this)">
+                            <div class="contact-avatar" style="background: #dbeafe; color: #1e40af;">李</div>
+                            <div class="contact-info">
+                                <div class="contact-name">李芳</div>
+                                <div class="contact-phone">139****9999</div>
+                            </div>
+                            <i class="fas fa-check-circle contact-check"></i>
+                        </div>
+                        <div class="contact-card" onclick="selectContact(this)">
+                            <div class="contact-avatar" style="background: #fef3c7; color: #92400e;">王</div>
+                            <div class="contact-info">
+                                <div class="contact-name">王建国</div>
+                                <div class="contact-phone">137****7777</div>
+                            </div>
+                            <i class="fas fa-check-circle contact-check"></i>
+                        </div>
+                    </div>
+
+                    <div id="selected-contact-info" class="hidden" style="margin-top: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span style="font-weight: 600; color: #111827;">已选择：</span>
+                                <span id="selected-contact-name" style="color: #374151;"></span>
+                                <span id="selected-contact-phone" style="color: #6b7280; margin-left: 8px; font-size: 12px;"></span>
+                            </div>
+                            <button onclick="changeContact()" style="color: #3b82f6; border: none; background: none; cursor: pointer; font-size: 12px;">更换</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-align-left text-gray-500"></i>
+                        补充说明
+                    </div>
+                    <div class="form-group">
+                        <textarea class="form-textarea" id="business-remark" placeholder="补充客户需求背景、特殊要求或其他备注信息..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('businessModal')">取消</button>
+                <button class="btn btn-primary" onclick="submitBusiness()">
+                    <i class="fas fa-save"></i>
+                    保存商机
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 客户选择弹窗（带跨区域权限判断） -->
+    <div class="modal-overlay" id="companySelectorModal">
+        <div class="company-list-modal">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title">
+                        <i class="fas fa-building text-gray-700"></i>
+                        选择客户
+                    </div>
+                    <div class="modal-subtitle">
+                        仅显示已报备的本区域或跨区域客户
+                        <span class="permission-status permission-ok" style="margin-left: 8px;">
+                            <i class="fas fa-check-circle"></i>已报备
+                        </span>
+                    </div>
+                </div>
+                <button class="btn-close" onclick="closeModal('companySelectorModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="search-box">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="search-input" placeholder="搜索客户名称、统一社会信用代码..." id="company-search">
+                </div>
+            </div>
+            <div class="company-list custom-scroll" id="company-list">
+                <!-- 动态生成，包含跨区域权限状态 -->
+            </div>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <div class="text-xs text-gray-500">
+                    <i class="fas fa-info-circle"></i>
+                    跨区域客户需先完成报备方可选择
+                </div>
+                <div>
+                    <button class="btn btn-secondary" onclick="closeModal('companySelectorModal')">取消</button>
+                    <button class="btn btn-primary" onclick="confirmCompanySelect()">
+                        <i class="fas fa-check"></i>
+                        确认选择
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 申请跟进确认弹窗（跨区域判断） -->
+    <div class="modal-overlay" id="applyModal">
+        <div class="confirm-modal">
+            <div class="confirm-icon info">
+                <i class="fas fa-hand-paper"></i>
+            </div>
+            <div class="confirm-title">申请跟进此商机？</div>
+            <div class="confirm-desc" id="apply-desc">
+                您正在申请跟进公共池中的商机<br>
+                申请通过后您将成为该商机的跟进人<br>
+                客户：<strong>华能电力发展有限公司</strong>
+            </div>
+            
+            <!-- 区域信息提示 -->
+            <div id="apply-region-info" class="cross-region-notice" style="margin-bottom: 16px; justify-content: center;">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>客户区域：<strong id="apply-customer-region">华东区域</strong> | 您的区域：<strong>华北区域</strong></span>
+            </div>
+
+            <div id="apply-permission-status" class="info-card" style="margin-bottom: 16px; text-align: left;">
+                <div class="info-title" id="permission-title">
+                    <i class="fas fa-check-circle"></i>
+                    跨区域报备状态：已报备
+                </div>
+                <div style="font-size: 12px; color: #1e40af; margin-top: 4px;" id="permission-detail">
+                    您已获得华东区域客户跟进权限，申请将自动通过
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 24px; text-align: left;">
+                <label class="form-label">申请理由（选填）</label>
+                <textarea class="form-textarea" rows="3" placeholder="说明您跟进此商机的优势或计划..." id="apply-reason"></textarea>
+            </div>
+            <div class="confirm-btns">
+                <button class="btn btn-secondary" onclick="closeModal('applyModal')">取消</button>
+                <button class="btn btn-primary" onclick="submitApply()">
+                    <i class="fas fa-check"></i>
+                    确认申请
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 提示去申请跨区域报备的弹窗 -->
+    <div class="modal-overlay" id="crossRegionApplyModal">
+        <div class="confirm-modal">
+            <div class="confirm-icon warning">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="confirm-title">需要跨区域跟进报备</div>
+            <div class="confirm-desc" id="cross-region-desc">
+                该客户属于<strong>华东区域</strong>，您当前未获得该区域跟进权限。<br>
+                请先申请<strong>跨区域跟进报备</strong>，审批通过后方可跟进该商机。
+            </div>
+            <div class="form-group" style="margin-bottom: 24px; text-align: left; background: #f9fafb; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">
+                    <i class="fas fa-info-circle"></i> 报备信息预览
+                </div>
+                <div style="font-size: 13px; color: #374151;">
+                    <div style="margin-bottom: 4px;"><strong>客户：</strong><span id="cross-customer-name">上海某某科技有限公司</span></div>
+                    <div style="margin-bottom: 4px;"><strong>目标区域：</strong><span id="cross-target-region">华东区域</span></div>
+                    <div><strong>报备类型：</strong>跨区域跟进报备</div>
+                </div>
+            </div>
+            <div class="confirm-btns">
+                <button class="btn btn-secondary" onclick="closeModal('crossRegionApplyModal')">取消</button>
+                <button class="btn btn-warning" onclick="goApplyCrossRegion()">
+                    <i class="fas fa-paper-plane"></i>
+                    去申请报备
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 当前用户区域
+        const CURRENT_USER_REGION = '华北区域';
+        
+        // 当前视图：'my' 我的商机，'pool' 公共池
+        let currentView = 'my';
+        
+        // 跨区域报备记录（模拟数据）
+        const crossRegionPermissions = [
+            { region: '华东区域', status: 'approved', expireDate: '2026-12-31' },
+            { region: '华南区域', status: 'pending', expireDate: null },
+            // 华北区域是本区域，无需报备
+        ];
+
+        // 企业库数据（包含区域信息）
+        const companyLibrary = [
+            { name: '北京某科技有限公司', code: '91110108MA00XXXXXX', industry: '制造业', region: '华北区域', type: '民营企业' },
+            { name: '丰源新能源集团有限公司', code: '91110000123456789X', industry: '新能源', region: '华北区域', type: '中央企业' },
+            { name: '华能电力发展有限公司', code: '9111000087654321X', industry: '电力', region: '华北区域', type: '国有企业' },
+            { name: '北京市朝阳区人民政府机关事务管理局', code: '111100005678901234', industry: '公共管理', region: '华北区域', type: '政府机构' },
+            { name: '京东世纪贸易有限公司', code: '911100002345678901', industry: '电子商务', region: '华北区域', type: '民营企业' },
+            // 跨区域企业
+            { name: '上海某某科技有限公司', code: '91310110MA00XXXXXX', industry: '软件', region: '华东区域', type: '民营企业' },
+            { name: '深圳创新科技有限公司', code: '91440300MA00XXXXXX', industry: '电子', region: '华南区域', type: '民营企业' },
+            { name: '成都西南实业有限公司', code: '91510100MA00XXXXXX', industry: '制造', region: '西南区域', type: '国有企业' },
+            { name: '武汉华中建设集团', code: '91420100MA00XXXXXX', industry: '建筑', region: '华中区域', type: '国有企业' },
+            { name: '上海宝钢集团有限公司', code: '91310113MA00XXXXXX', industry: '钢铁', region: '华东区域', type: '中央企业' }
+        ];
+
+        // 假数据 - 区分我的商机和公共池（增加区域字段和跟进计划/记录）
+        let myBusinessData = [
+            {
+                id: 'B20260415001',
+                customerName: '丰源新能源集团有限公司',
+                customerType: '中央企业',
+                customerRegion: '华北区域', // 客户所属区域
+                businessType: '体系认证',
+                certFields: ['QMS', 'EMS', 'OHSMS'],
+                serviceContent: '',
+                amount: '¥85,000',
+                dealTime: '2026-06',
+                contactName: '张伟',
+                contactPhone: '138****8888',
+                follower: '刘明',
+                regTime: '2026-04-15 09:30',
+                lastFollow: '2026-04-15 09:30',
+                source: '主动登记',
+                status: 'new',
+                statusText: '新登记',
+                creditCode: '91110000123456789X',
+                industry: '新能源',
+                isPool: false,
+                // 跟进计划（参考跟进计划.html结构）
+                followupPlans: [
+                    {
+                        id: 'PL20260415001',
+                        title: 'ISO9001质量管理体系初次审核跟进',
+                        deadline: '2026-04-20',
+                        status: 'pending',
+                        statusText: '待执行',
+                        createType: 'manual',
+                        sceneName: '手动创建',
+                        purpose: '确认审核准备情况，协调审核时间',
+                        content: '1.联系客户确认审核准备情况\n2.确认审核组成员和时间安排\n3.提醒客户准备相关文件',
+                        reminder: '提前3天',
+                        contacts: [
+                            { name: '张伟', title: '质量经理', phone: '138-1234-5678' }
+                        ]
+                    },
+                    {
+                        id: 'PL20260410002',
+                        title: '证书年审材料准备提醒',
+                        deadline: '2026-04-12',
+                        status: 'completed',
+                        statusText: '已完成',
+                        createType: 'auto',
+                        sceneName: '证书临期提醒',
+                        purpose: '系统自动触发：提醒准备年审材料',
+                        content: '系统自动创建的跟进计划',
+                        reminder: '提前15天',
+                        contacts: []
+                    }
+                ],
+                // 跟进记录（参考跟进登记.html结构）
+                followupRecords: [
+                    {
+                        id: 'R001',
+                        type: 'phone',
+                        typeText: '电话沟通',
+                        time: '2026-04-14 15:30',
+                        content: '与张总电话沟通，确认审核时间定于4月25日，客户已准备好相关文件，审核组人员已确定。',
+                        operator: '刘明',
+                        location: '客户公司',
+                        contact: '张伟',
+                        stage: '审核准备',
+                        files: []
+                    },
+                    {
+                        id: 'R002',
+                        type: 'visit',
+                        typeText: '现场拜访',
+                        time: '2026-04-10 10:00',
+                        content: '上门拜访客户，实地查看生产现场，了解质量管理体系运行情况，客户配合度良好。',
+                        operator: '刘明',
+                        location: '丰源新能源集团总部',
+                        contact: '李芳',
+                        stage: '现场审核',
+                        files: ['现场照片.jpg', '审核计划.pdf']
+                    }
+                ],
+                // 操作日志
+                operationLogs: [
+                    { action: 'create', title: '商机创建', desc: '刘明登记了新商机', time: '2026-04-15 09:30:00', operator: '刘明' },
+                    { action: 'update', title: '信息更新', desc: '更新了预计成交金额', time: '2026-04-14 16:20:00', operator: '刘明' },
+                    { action: 'follow', title: '添加跟进', desc: '添加了电话跟进记录', time: '2026-04-14 15:30:00', operator: '刘明' }
+                ]
+            },
+            {
+                id: 'B20260414002',
+                customerName: '华能电力发展有限公司',
+                customerType: '国有企业',
+                customerRegion: '华北区域',
+                businessType: '体系认证',
+                certFields: ['QMS', 'FSMS'],
+                serviceContent: '',
+                amount: '¥45,000',
+                dealTime: '2026-05',
+                contactName: '李芳',
+                contactPhone: '139****9999',
+                follower: '待确认',
+                regTime: '2026-04-14 16:45',
+                lastFollow: '2026-04-14 16:45',
+                source: '区域分配',
+                status: 'pending',
+                statusText: '待跟进人确认',
+                creditCode: '9111000087654321X',
+                industry: '电力',
+                isPool: false,
+                followupPlans: [],
+                followupRecords: [],
+                operationLogs: [
+                    { action: 'create', title: '商机创建', desc: '系统区域分配', time: '2026-04-14 16:45:00', operator: '系统' }
+                ]
+            },
+            {
+                id: 'B20260413003',
+                customerName: '北京市朝阳区人民政府机关事务管理局',
+                customerType: '政府机构',
+                customerRegion: '华北区域',
+                businessType: '技术服务',
+                certFields: [],
+                serviceContent: '能源管理体系培训、内审员培训',
+                amount: '¥28,000',
+                dealTime: '2026-05',
+                contactName: '王科长',
+                contactPhone: '137****7777',
+                follower: '李明',
+                regTime: '2026-04-13 11:20',
+                lastFollow: '2026-04-14 15:30',
+                source: '主动登记',
+                status: 'following',
+                statusText: '跟进中',
+                creditCode: '111100005678901234',
+                industry: '公共管理',
+                isPool: false,
+                followupPlans: [],
+                followupRecords: [
+                    {
+                        id: 'R001',
+                        type: 'email',
+                        typeText: '邮件往来',
+                        time: '2026-04-14 15:30',
+                        content: '发送培训方案和报价单给客户，等待客户反馈。',
+                        operator: '李明',
+                        location: '线上',
+                        contact: '王科长',
+                        stage: '报价阶段',
+                        files: ['培训方案.pdf']
+                    }
+                ],
+                operationLogs: [
+                    { action: 'create', title: '商机创建', desc: '李明登记了新商机', time: '2026-04-13 11:20:00', operator: '李明' }
+                ]
+            }
+        ];
+
+        let poolBusinessData = [
+            {
+                id: 'B20260410005',
+                customerName: '上海某某科技有限公司',
+                customerType: '民营企业',
+                customerRegion: '华东区域', // 跨区域
+                businessType: '体系认证',
+                certFields: ['QMS', 'EMS', 'OHSMS'],
+                serviceContent: '',
+                amount: '¥68,000',
+                dealTime: '2026-06',
+                contactName: '孙主任',
+                contactPhone: '135****5555',
+                follower: '待申请',
+                regTime: '2026-04-10 09:00',
+                lastFollow: '2026-04-10 09:00',
+                source: '主动登记',
+                status: 'pool',
+                statusText: '公共池中',
+                creditCode: '91310110MA00XXXXXX',
+                industry: '软件',
+                isPool: true,
+                followupPlans: [],
+                followupRecords: [],
+                operationLogs: [
+                    { action: 'create', title: '商机创建', desc: '华东区域-张强登记', time: '2026-04-10 09:00:00', operator: '张强' },
+                    { action: 'pool', title: '进入公共池', desc: '因区域分配进入公共池', time: '2026-04-10 09:00:00', operator: '系统' }
+                ]
+            },
+            {
+                id: 'B20260409006',
+                customerName: '深圳创新科技有限公司',
+                customerType: '民营企业',
+                customerRegion: '华南区域',
+                businessType: '技术服务',
+                certFields: [],
+                serviceContent: '信息安全风险评估、体系建设咨询',
+                amount: '¥150,000',
+                dealTime: '2026-08',
+                contactName: '周工',
+                contactPhone: '134****4444',
+                follower: '待申请',
+                regTime: '2026-04-09 16:30',
+                lastFollow: '2026-04-09 16:30',
+                source: '主动登记',
+                status: 'pool',
+                statusText: '公共池中',
+                creditCode: '91440300MA00XXXXXX',
+                industry: '电子',
+                isPool: true,
+                followupPlans: [],
+                followupRecords: [],
+                operationLogs: [
+                    { action: 'create', title: '商机创建', desc: '华南区域-王芳登记', time: '2026-04-09 16:30:00', operator: '王芳' }
+                ]
+            },
+            {
+                id: 'B20260405010',
+                customerName: '中国建筑第八工程局有限公司',
+                customerType: '中央企业',
+                customerRegion: '华北区域', // 本区域
+                businessType: '体系认证',
+                certFields: ['QMS', 'EMS', 'OHSMS'],
+                serviceContent: '',
+                amount: '¥350,000',
+                dealTime: '2026-08',
+                contactName: '冯处长',
+                contactPhone: '130****0000',
+                follower: '待申请',
+                regTime: '2026-04-05 09:30',
+                lastFollow: '2026-04-05 09:30',
+                source: '区域分配',
+                status: 'pool',
+                statusText: '公共池中',
+                creditCode: '911100008901234567',
+                industry: '建筑工程',
+                isPool: true,
+                followupPlans: [],
+                followupRecords: [],
+                operationLogs: [
+                    { action: 'create', title: '商机创建', desc: '系统自动分配', time: '2026-04-05 09:30:00', operator: '系统' }
+                ]
+            },
+            {
+                id: 'B20260404011',
+                customerName: '上海宝钢集团有限公司',
+                customerType: '中央企业',
+                customerRegion: '华东区域', // 跨区域，但已报备
+                businessType: '体系认证',
+                certFields: ['IATF16949', 'QMS'],
+                serviceContent: '',
+                amount: '¥95,000',
+                dealTime: '2026-06',
+                contactName: '陈科长',
+                contactPhone: '139****1234',
+                follower: '待申请',
+                regTime: '2026-04-04 13:20',
+                lastFollow: '2026-04-04 13:20',
+                source: '转介绍',
+                status: 'pool',
+                statusText: '公共池中',
+                creditCode: '91310113MA00XXXXXX',
+                industry: '钢铁',
+                isPool: true,
+                followupPlans: [],
+                followupRecords: [],
+                operationLogs: [
+                    { action: 'create', title: '商机创建', desc: '转介绍登记', time: '2026-04-04 13:20:00', operator: '刘明' }
+                ]
+            }
+        ];
+
+        let currentSort = { field: null, order: null };
+        let filteredData = [];
+        let currentPage = 1;
+        let pageSize = 15;
+        let selectedCompany = null;
+        let currentBusinessId = null;
+        let currentDetailBusiness = null;
+
+        // 切换视图
+        function switchView(view) {
+            currentView = view;
+            currentPage = 1;
+            
+            document.getElementById('tab-my').classList.toggle('active', view === 'my');
+            document.getElementById('tab-pool').classList.toggle('active', view === 'pool');
+            
+            const followerFilter = document.getElementById('filter-follower-wrapper');
+            const thFollower = document.getElementById('th-follower');
+            
+            if (view === 'pool') {
+                followerFilter.style.display = 'none';
+                thFollower.textContent = '状态';
+            } else {
+                followerFilter.style.display = 'flex';
+                thFollower.textContent = '跟进人';
+            }
+            
+            const topActions = document.getElementById('top-actions');
+            if (view === 'pool') {
+                topActions.innerHTML = `
+                    <button class="btn btn-secondary btn-sm" onclick="toggleFilter()">
+                        <i class="fas fa-filter"></i>
+                        <span id="filter-text">收起筛选</span>
+                        <i class="fas fa-chevron-up ml-1" id="filter-icon" style="transition: transform 0.3s;"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="exportData()">
+                        <i class="fas fa-download"></i>
+                        导出
+                    </button>
+                `;
+            } else {
+                topActions.innerHTML = `
+                    <button class="btn btn-secondary btn-sm" onclick="toggleFilter()">
+                        <i class="fas fa-filter"></i>
+                        <span id="filter-text">收起筛选</span>
+                        <i class="fas fa-chevron-up ml-1" id="filter-icon" style="transition: transform 0.3s;"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="exportData()">
+                        <i class="fas fa-download"></i>
+                        导出
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="openBusinessModal()">
+                        <i class="fas fa-plus"></i>
+                        登记商机
+                    </button>
+                `;
+            }
+            
+            resetData();
+        }
+
+        // 检查跨区域权限
+        function hasCrossRegionPermission(region) {
+            if (region === CURRENT_USER_REGION) return true;
+            const permission = crossRegionPermissions.find(p => p.region === region);
+            return permission && permission.status === 'approved';
+        }
+
+        // 获取跨区域状态文本
+        function getCrossRegionStatus(region) {
+            if (region === CURRENT_USER_REGION) {
+                return { text: '本区域', class: 'region-local', permitted: true };
+            }
+            const permission = crossRegionPermissions.find(p => p.region === region);
+            if (permission && permission.status === 'approved') {
+                return { text: '跨区域（已报备）', class: 'region-cross', permitted: true };
+            }
+            return { text: '跨区域（未报备）', class: 'region-cross', permitted: false };
+        }
+
+        // Toast提示
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('i');
+            const msg = document.getElementById('toast-message');
+            msg.textContent = message;
+            if (type === 'error') icon.className = 'fas fa-times-circle text-red-400';
+            else if (type === 'warning') icon.className = 'fas fa-exclamation-circle text-yellow-400';
+            else icon.className = 'fas fa-check-circle text-green-400';
+            toast.style.display = 'flex';
+            setTimeout(() => toast.style.display = 'none', 3000);
+        }
+
+        // 获取当前数据源
+        function getCurrentData() {
+            return currentView === 'my' ? myBusinessData : poolBusinessData;
+        }
+
+        // 渲染表格
+        function renderTable(data = filteredData) {
+            const tbody = document.getElementById('tableBody');
+            let html = '';
+            
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, data.length);
+            const pageData = data.slice(start, end);
+            
+            document.getElementById('count-my').textContent = myBusinessData.length;
+            document.getElementById('count-pool').textContent = poolBusinessData.length;
+            document.getElementById('page-start').textContent = data.length > 0 ? start + 1 : 0;
+            document.getElementById('page-end').textContent = end;
+            document.getElementById('total-count').textContent = data.length;
+
+            pageData.forEach((row) => {
+                const bizTypeClass = row.businessType === '体系认证' ? 'tag-cert' : 'tag-service';
+                const bizTypeIcon = row.businessType === '体系认证' ? 'fa-certificate' : 'fa-tools';
+                
+                let certFieldsHtml = '';
+                if (row.businessType === '体系认证' && row.certFields.length > 0) {
+                    certFieldsHtml = '<div class="cert-tags">';
+                    row.certFields.forEach(field => {
+                        let fieldClass = 'tag-qms';
+                        if (field === 'EMS') fieldClass = 'tag-ems';
+                        else if (field === 'OHSMS' || field === 'FSMS') fieldClass = 'tag-ohsms';
+                        certFieldsHtml += `<span class="tag ${fieldClass}">${field}</span>`;
+                    });
+                    certFieldsHtml += '</div>';
+                } else {
+                    certFieldsHtml = `<span class="text-gray-600" style="font-size: 12px;">${row.serviceContent || '-'}</span>`;
+                }
+
+                const statusClassMap = {
+                    'new': 'status-new',
+                    'pending': 'status-pending',
+                    'following': 'status-following',
+                    'won': 'status-won',
+                    'lost': 'status-lost',
+                    'returned': 'status-returned',
+                    'pool': 'status-pool'
+                };
+                const statusClass = statusClassMap[row.status] || 'status-new';
+
+                let followerHtml;
+                if (currentView === 'pool') {
+                    followerHtml = '<span class="pool-badge"><i class="fas fa-users"></i> 待申请</span>';
+                } else if (row.follower === '待确认') {
+                    followerHtml = '<span class="text-orange-600 font-medium text-xs">待确认</span>';
+                } else {
+                    followerHtml = `<div class="follower-info"><div class="follower-avatar">${row.follower.charAt(0)}</div><span>${row.follower}</span></div>`;
+                }
+
+                // 区域标签
+                const regionStatus = getCrossRegionStatus(row.customerRegion);
+                const regionHtml = `<span class="region-tag ${regionStatus.class}">${regionStatus.text}</span>`;
+
+                let actionBtns = `<button class="action-btn" onclick="event.stopPropagation(); viewDetail('${row.id}')"><i class="fas fa-eye"></i> 详情</button>`;
+                
+                if (currentView === 'pool') {
+                    actionBtns += `<button class="action-btn success" onclick="event.stopPropagation(); applyBusiness('${row.id}')"><i class="fas fa-hand-paper"></i> 申请跟进</button>`;
+                } else {
+                    if (row.status === 'pending') {
+                        actionBtns += `<button class="action-btn" onclick="event.stopPropagation(); confirmFollow('${row.id}')"><i class="fas fa-check"></i> 确认</button>`;
+                    } else if (row.status === 'following') {
+                        actionBtns += `<button class="action-btn" onclick="event.stopPropagation(); addFollow('${row.id}')"><i class="fas fa-comment-dots"></i> 跟进</button>
+                                       <button class="action-btn" onclick="event.stopPropagation(); winBusiness('${row.id}')"><i class="fas fa-trophy"></i> 成交</button>`;
+                    }
+                    
+                    if (row.status === 'new' || row.status === 'pending') {
+                        actionBtns += `<button class="action-btn danger" onclick="event.stopPropagation(); cancelBusiness('${row.id}')"><i class="fas fa-times"></i> 撤销</button>`;
+                    }
+                }
+
+                html += `
+                    <tr onclick="viewDetail('${row.id}')">
+                        <td class="col-id col-sticky-left font-mono text-gray-600">${row.id}</td>
+                        <td class="col-name col-sticky-left-2">
+                            <div class="customer-name">
+                                ${row.customerName}
+                                ${row.customerType === '政府机构' || row.customerType === '中央企业' ? '<i class="fas fa-landmark" title="重点客户"></i>' : ''}
+                            </div>
+                        </td>
+                        <td class="col-type">${row.customerType}</td>
+                        <td class="col-business-type">
+                            <span class="tag ${bizTypeClass}"><i class="fas ${bizTypeIcon}" style="margin-right: 4px;"></i>${row.businessType}</span>
+                        </td>
+                        <td class="col-cert-field">${certFieldsHtml}</td>
+                        <td class="col-amount"><span class="amount">${row.amount || '-'}</span></td>
+                        <td class="col-deal-time">${row.dealTime || '-'}</td>
+                        <td class="col-contact">
+                            <div style="font-weight: 500;">${row.contactName}</div>
+                            <div style="font-size: 11px; color: #6b7280;">${row.contactPhone}</div>
+                        </td>
+                        <td class="col-follower">${followerHtml}</td>
+                        <td class="col-region">${regionHtml}</td>
+                        <td class="col-reg-time" style="color: #64748b; font-size: 12px;">${row.regTime}</td>
+                        <td class="col-last-follow" style="color: #64748b; font-size: 12px;">${row.lastFollow}</td>
+                        <td class="col-source"><span class="tag" style="background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb;">${row.source}</span></td>
+                        <td class="col-status col-sticky-right"><span class="status-badge ${statusClass}">${row.statusText}</span></td>
+                        <td class="col-action col-sticky-right-2"><div class="action-btns">${actionBtns}</div></td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            renderPagination(data.length);
+        }
+
+        function renderPagination(total) {
+            const totalPages = Math.ceil(total / pageSize);
+            let html = `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})"><i class="fas fa-chevron-left"></i></button>`;
+            
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    html += `<button class="page-btn">...</button>`;
+                }
+            }
+            
+            html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})"><i class="fas fa-chevron-right"></i></button>`;
+            document.getElementById('pagination').innerHTML = html;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderTable();
+        }
+
+        function changePageSize(size) {
+            pageSize = parseInt(size);
+            currentPage = 1;
+            renderTable();
+        }
+
+        // 排序、筛选函数保持不变...
+        function sortTable(field) {
+            const data = getCurrentData();
+            if (currentSort.field === field) {
+                if (currentSort.order === 'asc') currentSort.order = 'desc';
+                else if (currentSort.order === 'desc') { currentSort.order = null; currentSort.field = null; }
+                else currentSort.order = 'asc';
+            } else {
+                currentSort.field = field;
+                currentSort.order = 'asc';
+            }
+
+            document.querySelectorAll('.sortable').forEach(th => {
+                th.classList.remove('asc', 'desc');
+                th.querySelector('.sort-icon i').className = 'fas fa-sort';
+            });
+
+            if (currentSort.field) {
+                const activeTh = document.querySelector(`th[onclick="sortTable('${field}')"]`);
+                if (activeTh) {
+                    activeTh.classList.add(currentSort.order);
+                    activeTh.querySelector('.sort-icon i').className = currentSort.order === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+                }
+            }
+
+            if (!currentSort.order) {
+                filteredData = [...data];
+                applyFilters();
+                return;
+            }
+
+            filteredData.sort((a, b) => {
+                let valA = a[field];
+                let valB = b[field];
+                if (field === 'amount') {
+                    valA = !valA || valA === '-' ? 0 : parseInt(valA.replace(/[¥,]/g, ''));
+                    valB = !valB || valB === '-' ? 0 : parseInt(valB.replace(/[¥,]/g, ''));
+                } else if (field === 'dealTime') {
+                    valA = valA ? new Date(valA + '-01').getTime() : 0;
+                    valB = valB ? new Date(valB + '-01').getTime() : 0;
+                } else if (field === 'regTime' || field === 'lastFollow') {
+                    valA = new Date(valA).getTime();
+                    valB = new Date(valB).getTime();
+                } else {
+                    valA = String(valA || '').toLowerCase();
+                    valB = String(valB || '').toLowerCase();
+                }
+                if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
+                return 0;
+            });
+            renderTable();
+        }
+
+        function searchData() {
+            currentPage = 1;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const data = getCurrentData();
+            const id = document.getElementById('filter-id').value.toLowerCase();
+            const name = document.getElementById('filter-name').value.toLowerCase();
+            const bizType = document.getElementById('filter-biz-type').value;
+            const cert = document.getElementById('filter-cert').value;
+            const follower = document.getElementById('filter-follower').value;
+            const status = document.getElementById('filter-status').value;
+            const custType = document.getElementById('filter-cust-type').value;
+            const source = document.getElementById('filter-source').value;
+            const regionFilter = document.getElementById('filter-region').value;
+
+            filteredData = data.filter(row => {
+                if (id && !row.id.toLowerCase().includes(id)) return false;
+                if (name && !row.customerName.toLowerCase().includes(name)) return false;
+                if (bizType && row.businessType !== bizType) return false;
+                if (cert && !row.certFields.includes(cert)) return false;
+                if (currentView === 'my' && follower && row.follower !== follower) return false;
+                if (status && row.status !== status) return false;
+                if (custType && row.customerType !== custType) return false;
+                if (source && row.source !== source) return false;
+                if (regionFilter) {
+                    if (regionFilter === 'local' && row.customerRegion !== CURRENT_USER_REGION) return false;
+                    if (regionFilter === 'cross' && row.customerRegion === CURRENT_USER_REGION) return false;
+                }
+                return true;
+            });
+            renderTable();
+        }
+
+        function resetData() {
+            document.querySelectorAll('.filter-item input, .filter-item select').forEach(el => el.value = '');
+            currentSort = { field: null, order: null };
+            document.querySelectorAll('.sortable').forEach(th => {
+                th.classList.remove('asc', 'desc');
+                th.querySelector('.sort-icon i').className = 'fas fa-sort';
+            });
+            filteredData = [...getCurrentData()];
+            currentPage = 1;
+            renderTable();
+        }
+
+        function toggleFilter() {
+            const panel = document.getElementById('filterPanel');
+            const icon = document.getElementById('filter-icon');
+            const text = document.getElementById('filter-text');
+            if (panel.classList.contains('expanded')) {
+                panel.classList.remove('expanded');
+                icon.style.transform = 'rotate(180deg)';
+                text.textContent = '展开筛选';
+            } else {
+                panel.classList.add('expanded');
+                icon.style.transform = 'rotate(0deg)';
+                text.textContent = '收起筛选';
+            }
+        }
+
+        function exportData() {
+            showToast('正在导出数据...', 'success');
+            setTimeout(() => showToast('导出成功！'), 1500);
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // 商机登记弹窗
+        function openBusinessModal() {
+            resetBusinessForm();
+            openModal('businessModal');
+        }
+
+        function resetBusinessForm() {
+            document.getElementById('company-unselected').classList.remove('hidden');
+            document.getElementById('company-selected').classList.add('hidden');
+            document.getElementById('contact-section').style.opacity = '0.5';
+            document.getElementById('contact-section').style.pointerEvents = 'none';
+            document.getElementById('contact-cards').classList.add('hidden');
+            document.getElementById('selected-contact-info').classList.add('hidden');
+            document.querySelector('#contact-section .helper-text').style.display = 'block';
+            document.getElementById('estimated-amount').value = '';
+            document.getElementById('deal-time').value = '';
+            document.getElementById('business-remark').value = '';
+            document.getElementById('business-source').value = '主动登记';
+            document.getElementById('cross-region-warning').classList.add('hidden');
+            selectedCompany = null;
+            toggleBusinessType('cert');
+            
+            document.querySelectorAll('.tag-item').forEach((el, idx) => {
+                if (idx === 0) {
+                    el.classList.add('selected');
+                    el.querySelector('i').className = 'fas fa-check';
+                } else {
+                    el.classList.remove('selected');
+                    el.querySelector('i').className = 'fas fa-plus';
+                }
+            });
+        }
+
+        // 客户选择（带跨区域权限判断）
+        function openCompanySelector() {
+            renderCompanyList();
+            openModal('companySelectorModal');
+        }
+
+        function renderCompanyList(search = '') {
+            const list = document.getElementById('company-list');
+            let html = '';
+            
+            companyLibrary.forEach((comp, idx) => {
+                if (search && !comp.name.includes(search) && !comp.code.includes(search)) return;
+                
+                const isLocal = comp.region === CURRENT_USER_REGION;
+                const hasPermission = hasCrossRegionPermission(comp.region);
+                const isDisabled = !isLocal && !hasPermission;
+                
+                const regionStatus = getCrossRegionStatus(comp.region);
+                
+                html += `
+                    <div class="company-list-item ${selectedCompany === idx ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}" 
+                         onclick="${isDisabled ? 'showCrossRegionWarning(' + idx + ')' : 'selectCompany(' + idx + ')'}">
+                        <div class="company-list-icon"><i class="fas fa-building"></i></div>
+                        <div class="company-list-info">
+                            <div class="company-list-name">
+                                ${comp.name}
+                                <span class="permission-status ${regionStatus.permitted ? 'permission-ok' : 'permission-missing'}">
+                                    <i class="fas ${regionStatus.permitted ? 'fa-check-circle' : 'fa-lock'}"></i>
+                                    ${regionStatus.text}
+                                </span>
+                            </div>
+                            <div class="company-list-meta">${comp.code} | ${comp.industry} | ${comp.region}</div>
+                        </div>
+                        ${isDisabled ? 
+                            '<i class="fas fa-lock" style="color: #9ca3af;"></i>' : 
+                            '<i class="fas fa-check-circle company-list-check"></i>'
+                        }
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html;
+        }
+
+        function showCrossRegionWarning(idx) {
+            const comp = companyLibrary[idx];
+            document.getElementById('target-region').textContent = comp.region;
+            document.getElementById('target-region-2').textContent = comp.region;
+            document.getElementById('cross-region-warning').classList.remove('hidden');
+            closeModal('companySelectorModal');
+        }
+
+        function selectCompany(idx) {
+            selectedCompany = idx;
+            renderCompanyList(document.getElementById('company-search').value);
+        }
+
+        function confirmCompanySelect() {
+            if (selectedCompany === null) {
+                showToast('请选择客户', 'error');
+                return;
+            }
+            
+            const comp = companyLibrary[selectedCompany];
+            const isLocal = comp.region === CURRENT_USER_REGION;
+            const hasPermission = hasCrossRegionPermission(comp.region);
+            
+            if (!isLocal && !hasPermission) {
+                showToast('该客户需要跨区域报备权限，请先申请', 'error');
+                return;
+            }
+            
+            document.getElementById('selected-company-name').textContent = comp.name;
+            document.getElementById('selected-company-code').textContent = '统一社会信用代码：' + comp.code;
+            
+            const regionStatus = getCrossRegionStatus(comp.region);
+            document.getElementById('selected-company-region').innerHTML = 
+                `${comp.industry} | ${comp.region} <span class="company-region-tag ${regionStatus.class}">${regionStatus.text}</span>`;
+            
+            document.getElementById('company-unselected').classList.add('hidden');
+            document.getElementById('company-selected').classList.remove('hidden');
+            document.getElementById('contact-section').style.opacity = '1';
+            document.getElementById('contact-section').style.pointerEvents = 'auto';
+            document.getElementById('contact-cards').classList.remove('hidden');
+            document.querySelector('#contact-section .helper-text').style.display = 'none';
+            
+            const defaultContact = document.querySelector('.contact-card.default');
+            if (defaultContact) selectContact(defaultContact);
+            
+            closeModal('companySelectorModal');
+        }
+
+        document.getElementById('company-search')?.addEventListener('input', function() {
+            renderCompanyList(this.value);
+        });
+
+        function changeCompany() {
+            document.getElementById('company-unselected').classList.remove('hidden');
+            document.getElementById('company-selected').classList.add('hidden');
+            document.getElementById('contact-section').style.opacity = '0.5';
+            document.getElementById('contact-section').style.pointerEvents = 'none';
+            document.getElementById('contact-cards').classList.add('hidden');
+            document.getElementById('selected-contact-info').classList.add('hidden');
+            document.querySelector('#contact-section .helper-text').style.display = 'block';
+            document.getElementById('cross-region-warning').classList.add('hidden');
+            selectedCompany = null;
+        }
+
+        function goToApplyCrossRegion() {
+            showToast('跳转到跨区域报备申请页面...', 'success');
+            closeModal('businessModal');
+        }
+
+        function selectContact(card) {
+            document.querySelectorAll('.contact-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            const name = card.querySelector('.contact-name').textContent;
+            const phone = card.querySelector('.contact-phone').textContent;
+            document.getElementById('selected-contact-info').classList.remove('hidden');
+            document.getElementById('selected-contact-name').textContent = name;
+            document.getElementById('selected-contact-phone').textContent = phone;
+        }
+
+        function changeContact() {
+            document.getElementById('selected-contact-info').classList.add('hidden');
+            document.querySelectorAll('.contact-card').forEach(c => c.classList.remove('selected'));
+        }
+
+        function toggleBusinessType(type) {
+            const certFields = document.getElementById('cert-fields');
+            const serviceFields = document.getElementById('service-fields');
+            const labelCert = document.getElementById('label-cert');
+            const labelService = document.getElementById('label-service');
+            
+            if (type === 'cert') {
+                certFields.classList.remove('hidden');
+                serviceFields.classList.add('hidden');
+                labelCert.style.border = '2px solid #3b82f6';
+                labelCert.style.background = '#eff6ff';
+                labelService.style.border = '1px solid #e5e7eb';
+                labelService.style.background = 'white';
+            } else {
+                certFields.classList.add('hidden');
+                serviceFields.classList.remove('hidden');
+                labelService.style.border = '2px solid #3b82f6';
+                labelService.style.background = '#eff6ff';
+                labelCert.style.border = '1px solid #e5e7eb';
+                labelCert.style.background = 'white';
+            }
+        }
+
+        function toggleTag(element) {
+            const isSelected = element.classList.contains('selected');
+            const icon = element.querySelector('i');
+            if (isSelected) {
+                element.classList.remove('selected');
+                icon.className = 'fas fa-plus';
+            } else {
+                element.classList.add('selected');
+                icon.className = 'fas fa-check';
+            }
+        }
+
+        function submitBusiness() {
+            if (document.getElementById('company-selected').classList.contains('hidden')) {
+                showToast('请先选择企业', 'error');
+                return;
+            }
+            
+            if (!document.getElementById('business-source').value) {
+                showToast('请选择商机来源', 'error');
+                return;
+            }
+
+            const source = document.getElementById('business-source').value;
+            const amount = document.getElementById('estimated-amount').value;
+            const dealTime = document.getElementById('deal-time').value;
+            
+            showToast('商机登记成功' + (source === '主动登记' ? '，进入公共池等待分配' : ''), 'success');
+            closeModal('businessModal');
+            
+            setTimeout(() => {
+                const comp = companyLibrary[selectedCompany];
+                const newBusiness = {
+                    id: 'B' + new Date().toISOString().slice(0,10).replace(/-/g,'') + String(Math.random()).slice(2,5),
+                    customerName: comp.name,
+                    customerType: comp.type,
+                    customerRegion: comp.region,
+                    businessType: document.querySelector('input[name="business-type"]:checked').value === 'cert' ? '体系认证' : '技术服务',
+                    certFields: ['QMS'],
+                    serviceContent: '',
+                    amount: amount ? '¥' + amount : '',
+                    dealTime: dealTime || '',
+                    contactName: document.getElementById('selected-contact-name').textContent || '张伟',
+                    contactPhone: document.getElementById('selected-contact-phone').textContent || '138****8888',
+                    follower: '待申请',
+                    regTime: new Date().toLocaleString('zh-CN'),
+                    lastFollow: new Date().toLocaleString('zh-CN'),
+                    source: source,
+                    status: 'pool',
+                    statusText: '公共池中',
+                    isPool: true,
+                    followupPlans: [],
+                    followupRecords: [],
+                    operationLogs: [
+                        { action: 'create', title: '商机创建', desc: `${source}登记`, time: new Date().toLocaleString('zh-CN'), operator: '刘明' }
+                    ]
+                };
+                
+                poolBusinessData.unshift(newBusiness);
+                
+                if (currentView === 'pool') {
+                    filteredData = [...poolBusinessData];
+                    renderTable();
+                }
+            }, 500);
+        }
+
+        // 申请跟进（带跨区域判断）
+        function applyBusiness(id) {
+            currentBusinessId = id;
+            const data = getCurrentData();
+            const row = data.find(r => r.id === id);
+            
+            document.getElementById('apply-desc').innerHTML = 
+                `您正在申请跟进公共池中的商机<br>申请通过后您将成为该商机的跟进人<br>客户：<strong>${row.customerName}</strong>`;
+            document.getElementById('apply-reason').value = '';
+            
+            // 设置区域信息
+            document.getElementById('apply-customer-region').textContent = row.customerRegion;
+            
+            const isLocal = row.customerRegion === CURRENT_USER_REGION;
+            const hasPermission = hasCrossRegionPermission(row.customerRegion);
+            
+            const permissionCard = document.getElementById('apply-permission-status');
+            const permissionTitle = document.getElementById('permission-title');
+            const permissionDetail = document.getElementById('permission-detail');
+            
+            if (isLocal) {
+                // 本区域，自动通过
+                permissionCard.className = 'info-card';
+                permissionTitle.innerHTML = '<i class="fas fa-check-circle"></i> 本区域商机';
+                permissionDetail.textContent = '该客户属于您所在的华北区域，申请将自动通过';
+                document.querySelector('#applyModal .btn-primary').onclick = submitApply;
+                openModal('applyModal');
+            } else if (hasPermission) {
+                // 跨区域，但已报备
+                permissionCard.className = 'info-card';
+                permissionTitle.innerHTML = '<i class="fas fa-check-circle"></i> 跨区域报备状态：已报备';
+                permissionDetail.textContent = `您已获得${row.customerRegion}客户跟进权限，申请将自动通过`;
+                document.querySelector('#applyModal .btn-primary').onclick = submitApply;
+                openModal('applyModal');
+            } else {
+                // 跨区域，未报备
+                closeModal('applyModal');
+                document.getElementById('cross-region-desc').innerHTML = 
+                    `该客户属于<strong>${row.customerRegion}</strong>，您当前未获得该区域跟进权限。<br>请先申请<strong>跨区域跟进报备</strong>，审批通过后方可跟进该商机。`;
+                document.getElementById('cross-customer-name').textContent = row.customerName;
+                document.getElementById('cross-target-region').textContent = row.customerRegion;
+                openModal('crossRegionApplyModal');
+            }
+        }
+
+        function goApplyCrossRegion() {
+            showToast('跳转到跨区域报备申请页面...', 'success');
+            closeModal('crossRegionApplyModal');
+        }
+
+        function submitApply() {
+            const data = getCurrentData();
+            const idx = data.findIndex(r => r.id === currentBusinessId);
+            if (idx > -1) {
+                const business = data[idx];
+                business.follower = '刘明';
+                business.status = 'following';
+                business.statusText = '跟进中';
+                business.isPool = false;
+                
+                // 添加到操作日志
+                if (!business.operationLogs) business.operationLogs = [];
+                business.operationLogs.unshift({
+                    action: 'transfer',
+                    title: '权限申请',
+                    desc: '申请跟进公共池商机并自动通过',
+                    time: new Date().toLocaleString('zh-CN'),
+                    operator: '刘明'
+                });
+                
+                myBusinessData.unshift(business);
+                poolBusinessData.splice(idx, 1);
+                
+                showToast('申请成功！您已成为该商机的跟进人', 'success');
+                closeModal('applyModal');
+                
+                if (currentView === 'pool') {
+                    filteredData = [...poolBusinessData];
+                } else {
+                    filteredData = [...myBusinessData];
+                }
+                renderTable();
+            }
+        }
+
+        // 侧边栏详情
+        function viewDetail(id) {
+            const data = getCurrentData();
+            const row = data.find(r => r.id === id);
+            if (!row) return;
+            
+            currentDetailBusiness = row;
+            
+            document.getElementById('drawerSubtitle').textContent = `编号：${row.id} | 状态：${row.statusText}`;
+            
+            // 基本信息
+            document.getElementById('detail-customer-name').textContent = row.customerName;
+            document.getElementById('detail-customer-type').textContent = row.customerType;
+            const regionStatus = getCrossRegionStatus(row.customerRegion);
+            document.getElementById('detail-customer-region').innerHTML = 
+                `<span class="region-tag ${regionStatus.class}">${row.customerRegion}（${regionStatus.text}）</span>`;
+            document.getElementById('detail-industry').textContent = row.industry || '-';
+            document.getElementById('detail-credit-code').textContent = row.creditCode || '-';
+            document.getElementById('detail-address').textContent = '北京市朝阳区建国路88号（示例地址）';
+            
+            document.getElementById('detail-source').textContent = row.source;
+            document.getElementById('detail-business-type').textContent = row.businessType;
+            document.getElementById('detail-cert-fields').textContent = 
+                row.businessType === '体系认证' ? row.certFields.join('、') : row.serviceContent;
+            document.getElementById('detail-amount').textContent = row.amount || '-';
+            document.getElementById('detail-deal-time').textContent = row.dealTime || '-';
+            
+            const statusClass = {
+                'new': 'status-new',
+                'pending': 'status-pending',
+                'following': 'status-following',
+                'won': 'status-won',
+                'lost': 'status-lost',
+                'returned': 'status-returned',
+                'pool': 'status-pool'
+            }[row.status] || 'status-new';
+            document.getElementById('detail-status').innerHTML = 
+                `<span class="status-badge ${statusClass}">${row.statusText}</span>`;
+            
+            document.getElementById('detail-contact').textContent = `${row.contactName} ${row.contactPhone}`;
+            document.getElementById('detail-follower').textContent = 
+                currentView === 'pool' ? '待申请（公共池）' : (row.follower === '待确认' ? '待确认' : `${row.follower}（华北区域）`);
+            document.getElementById('detail-reg-time').textContent = row.regTime;
+            document.getElementById('detail-reg-by').textContent = '刘明';
+            
+            // 跟进计划
+            const plansContainer = document.getElementById('followup-plans');
+            if (row.followupPlans && row.followupPlans.length > 0) {
+                plansContainer.innerHTML = row.followupPlans.map(plan => `
+                    <div class="plan-card">
+                        <div class="plan-header">
+                            <div class="plan-title">${plan.title}</div>
+                            <span class="plan-status plan-status-${plan.status}">${plan.statusText}</span>
+                        </div>
+                        <div class="plan-meta">
+                            <span><i class="fas fa-calendar"></i> 截止：${plan.deadline}</span>
+                            <span><i class="fas fa-clock"></i> ${plan.reminder}</span>
+                            <span><i class="fas fa-tag"></i> ${plan.createType === 'auto' ? '系统自动' : '手动创建'}</span>
+                            <span><i class="fas fa-crosshairs"></i> ${plan.sceneName}</span>
+                        </div>
+                        <div style="font-size: 13px; color: #374151; margin-bottom: 8px;">
+                            <strong>目的：</strong>${plan.purpose}
+                        </div>
+                        <div style="font-size: 12px; color: #6b7280; line-height: 1.5; white-space: pre-line;">
+                            ${plan.content}
+                        </div>
+                        ${plan.contacts && plan.contacts.length > 0 ? `
+                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
+                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">关联联系人：</div>
+                                ${plan.contacts.map(c => `
+                                    <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; background: #f3f4f6; border-radius: 4px; margin-right: 8px; font-size: 12px;">
+                                        <i class="fas fa-user text-gray-400"></i>
+                                        ${c.name} ${c.title ? '('+c.title+')' : ''} ${c.phone}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            } else {
+                plansContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #9ca3af;">暂无跟进计划</div>';
+            }
+            
+            // 跟进记录（时间线）
+            const recordsContainer = document.getElementById('followup-records');
+            if (row.followupRecords && row.followupRecords.length > 0) {
+                recordsContainer.innerHTML = row.followupRecords.map(record => `
+                    <div class="timeline-item ${record.type === 'visit' ? 'success' : ''}">
+                        <div class="timeline-time">${record.time}</div>
+                        <div class="timeline-content">
+                            <div class="timeline-header">
+                                <span class="timeline-type timeline-type-${record.type}">
+                                    <i class="fas ${record.type === 'phone' ? 'fa-phone' : record.type === 'visit' ? 'fa-walking' : 'fa-envelope'}"></i>
+                                    ${record.typeText}
+                                </span>
+                                <span style="font-size: 12px; color: #6b7280;">
+                                    <i class="fas fa-user"></i> ${record.operator}
+                                </span>
+                            </div>
+                            <div class="timeline-text">${record.content}</div>
+                            ${record.files && record.files.length > 0 ? `
+                                <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                    ${record.files.map(f => `
+                                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: #eff6ff; color: #1e40af; border-radius: 4px; font-size: 11px; cursor: pointer;">
+                                            <i class="fas fa-paperclip"></i> ${f}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                recordsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #9ca3af;">暂无跟进记录</div>';
+            }
+            
+            // 操作日志
+            const logsContainer = document.getElementById('operation-logs');
+            if (row.operationLogs && row.operationLogs.length > 0) {
+                logsContainer.innerHTML = row.operationLogs.map(log => `
+                    <div class="log-item">
+                        <div class="log-icon ${log.action}">
+                            <i class="fas ${log.action === 'create' ? 'fa-plus' : log.action === 'update' ? 'fa-edit' : log.action === 'transfer' ? 'fa-exchange-alt' : 'fa-check'}"></i>
+                        </div>
+                        <div class="log-content">
+                            <div class="log-title">${log.title}</div>
+                            <div class="log-desc">${log.desc}</div>
+                            <div class="log-time">
+                                <i class="fas fa-clock"></i> ${log.time} | 操作人：${log.operator}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                logsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #9ca3af;">暂无操作日志</div>';
+            }
+            
+            // 底部按钮根据视图调整
+            const footer = document.getElementById('drawer-footer');
+            if (currentView === 'pool') {
+                footer.innerHTML = `
+                    <button class="btn btn-secondary" onclick="closeSideDrawer()">关闭</button>
+                    <button class="btn btn-success" onclick="addFollowFromDrawer()">
+                        <i class="fas fa-hand-paper"></i>
+                        申请跟进
+                    </button>
+                `;
+            } else {
+                footer.innerHTML = `
+                    <button class="btn btn-secondary" onclick="closeSideDrawer()">关闭</button>
+                    <button class="btn btn-primary" onclick="addFollowFromDrawer()">
+                        <i class="fas fa-comment-dots"></i>
+                        添加跟进
+                    </button>
+                `;
+            }
+            
+            // 打开侧边栏
+            document.getElementById('drawerOverlay').classList.add('active');
+            document.getElementById('sideDrawer').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // 默认显示基本信息
+            switchDetailTab('basic');
+        }
+
+        function closeSideDrawer() {
+            document.getElementById('drawerOverlay').classList.remove('active');
+            document.getElementById('sideDrawer').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function switchDetailTab(tab) {
+            document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.detail-section').forEach(s => s.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+
+        function addFollowFromDrawer() {
+            if (currentView === 'pool' && currentDetailBusiness) {
+                closeSideDrawer();
+                applyBusiness(currentDetailBusiness.id);
+            } else {
+                showToast('打开跟进登记页面');
+            }
+        }
+
+        // 其他函数保持原有逻辑...
+        function confirmFollow(id) {
+            currentBusinessId = id;
+            const row = myBusinessData.find(r => r.id === id);
+            document.getElementById('apply-desc').innerHTML = 
+                `您将成为商机 <strong>${row.id}</strong> 的跟进人<br>客户：${row.customerName}<br>确认后需在 <strong>2天内</strong> 完成首次跟进`;
+            document.getElementById('apply-reason').value = '';
+            document.querySelector('#applyModal .confirm-title').textContent = '确认跟进此商机？';
+            document.querySelector('#applyModal .confirm-icon').innerHTML = '<i class="fas fa-user-check"></i>';
+            
+            document.getElementById('apply-customer-region').textContent = row.customerRegion;
+            document.getElementById('apply-permission-status').style.display = 'none';
+            
+            openModal('applyModal');
+            
+            const btn = document.querySelector('#applyModal .btn-primary');
+            btn.onclick = function() {
+                showToast('确认成功，您已成为该商机的跟进人');
+                closeModal('applyModal');
+                const idx = myBusinessData.findIndex(r => r.id === currentBusinessId);
+                if (idx > -1) {
+                    myBusinessData[idx].status = 'following';
+                    myBusinessData[idx].statusText = '跟进中';
+                    myBusinessData[idx].follower = '刘明';
+                    
+                    // 添加日志
+                    if (!myBusinessData[idx].operationLogs) myBusinessData[idx].operationLogs = [];
+                    myBusinessData[idx].operationLogs.unshift({
+                        action: 'transfer',
+                        title: '跟进确认',
+                        desc: '确认成为商机跟进人',
+                        time: new Date().toLocaleString('zh-CN'),
+                        operator: '刘明'
+                    });
+                    
+                    filteredData = [...myBusinessData];
+                    renderTable();
+                }
+                setTimeout(() => {
+                    btn.onclick = submitApply;
+                    document.querySelector('#applyModal .confirm-title').textContent = '申请跟进此商机？';
+                    document.querySelector('#applyModal .confirm-icon').innerHTML = '<i class="fas fa-hand-paper"></i>';
+                    document.getElementById('apply-permission-status').style.display = 'block';
+                }, 100);
+            };
+        }
+
+        function addFollow(id) {
+            showToast('打开跟进登记弹窗');
+        }
+
+        function winBusiness(id) {
+            showToast('打开成交确认弹窗');
+        }
+
+        function cancelBusiness(id) {
+            showToast('打开撤销商机弹窗');
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            filteredData = [...myBusinessData];
+            renderTable();
+            
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('deal-time').value = `${year}-${month}`;
+        });
+
+        // 点击遮罩关闭弹窗
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
