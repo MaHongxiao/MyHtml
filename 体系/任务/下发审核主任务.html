@@ -1387,7 +1387,7 @@
             return venues.reduce((sum, v) => sum + (v.auditDays || 0), 0);
         }
         
-        // 修改：删除100%折扣（无折扣）逻辑
+        // 修改：运营一分公司和运营二分公司折扣率改为100%
         function updateSiteTimeTable() {
             const tbody = document.getElementById('siteTimeTableBody');
             let totalFinalDays = 0;
@@ -1396,8 +1396,8 @@
                 const qmsDays = venue.qmsPeople ? roundManDays(venue.qmsPeople * 0.0116) : 0;
                 const emsDays = venue.emsPeople ? roundManDays(venue.emsPeople * 0.0094) : 0;
                 const subtotal = roundManDays(qmsDays + emsDays);
-                // 修改：所有场所统一使用85%折扣率，不再特殊处理100%无折扣
-                const discountRate = 0.85;
+                // 运营一分公司(site_1)和运营二分公司(site_2)使用100%折扣率，其余使用85%
+                const discountRate = (venue.id === 'site_1' || venue.id === 'site_2') ? 1.0 : 0.85;
                 
                 const discounted = roundManDays(subtotal * discountRate);
                 const finalDays = roundManDays(discounted);
@@ -1410,7 +1410,7 @@
                 else if (venue.qmsPeople) tooltipContent = `QMS有效人数：${venue.qmsPeople}`;
                 else if (venue.emsPeople) tooltipContent = `EMS有效人数：${venue.emsPeople}`;
                 
-                const discountText = `× ${(discountRate * 100).toFixed(0)}%`;
+                const discountText = discountRate === 1.0 ? '× 100%' : `× ${(discountRate * 100).toFixed(0)}%`;
                 
                 return `
                     <tr>
