@@ -21,64 +21,46 @@
         .risk-level-1 { @apply bg-green-100 text-green-700 border-green-300; }
         .required::after { content: '*'; color: #ef4444; margin-left: 4px; }
         
-        /* 自定义滚动条 */
-        .custom-scroll::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* 悬停提示框样式 */
         .detail-tooltip {
-            position: fixed;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
+            position: fixed; background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            padding: 0.75rem;
-            z-index: 1000;
-            min-width: 280px;
-            max-width: 320px;
-            display: none;
-            pointer-events: none;
+            padding: 0.75rem; z-index: 1000; min-width: 320px; max-width: 400px; display: none; pointer-events: none;
         }
         .detail-tooltip::before {
-            content: '';
-            position: absolute;
-            top: -6px;
-            left: 20px;
-            width: 10px;
-            height: 10px;
-            background: white;
-            border-left: 1px solid #e5e7eb;
-            border-top: 1px solid #e5e7eb;
-            transform: rotate(45deg);
+            content: ''; position: absolute; top: -6px; left: 20px; width: 10px; height: 10px;
+            background: white; border-left: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb; transform: rotate(45deg);
         }
         .detail-tooltip.bottom::before {
-            top: auto;
-            bottom: -6px;
-            border-left: none;
-            border-top: none;
-            border-right: 1px solid #e5e7eb;
-            border-bottom: 1px solid #e5e7eb;
+            top: auto; bottom: -6px; border-left: none; border-top: none;
+            border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;
         }
 
-        /* 分区标签样式 */
         .section-badge {
             @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800;
         }
-        .section-badge.green {
-            @apply bg-green-100 text-green-800;
+        .section-badge.green { @apply bg-green-100 text-green-800; }
+        .section-badge.orange { @apply bg-orange-100 text-orange-800; }
+        .section-badge.purple { @apply bg-purple-100 text-purple-800; }
+        
+        .fee-input-readonly {
+            background-color: #f3f4f6 !important;
+            cursor: not-allowed;
+            color: #374151;
+            font-weight: 500;
+        }
+        .fee-row-hidden { display: none !important; }
+        .fee-row-gray { background-color: #f9fafb; }
+        .fee-row-gray input { background-color: #f3f4f6; color: #9ca3af; }
+        
+        .hover-detail-trigger {
+            position: relative;
+            cursor: pointer;
+            border-bottom: 1px dashed #9ca3af;
         }
     </style>
 </head>
@@ -93,7 +75,7 @@
 <div class="h-full flex flex-col">
     <!-- 顶部导航 -->
     <header class="bg-white shadow-sm border-b border-gray-200 z-20">
-        <div class="w-full px-6 py-4 flex items-center justify-between">
+        <!-- <div class="w-full px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <div class="bg-blue-600 text-white p-2 rounded-lg">
                     <i class="fas fa-file-invoice-dollar text-xl"></i>
@@ -113,7 +95,7 @@
                     <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                 </button>
             </div>
-        </div>
+        </div> -->
         
         <!-- 二级导航 -->
         <div class="px-6 border-t border-gray-200">
@@ -252,9 +234,7 @@
                             <th class="px-4 py-3 text-center">操作</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200" id="quotationTableBody">
-                        <!-- 动态生成的行 -->
-                    </tbody>
+                    <tbody class="divide-y divide-gray-200" id="quotationTableBody"></tbody>
                 </table>
                 
                 <!-- 分页 -->
@@ -262,9 +242,7 @@
                     <div class="text-sm text-gray-600">
                         共 <span class="font-medium">34</span> 条记录，每页 
                         <select class="border border-gray-300 rounded px-2 py-1 text-sm">
-                            <option>10</option>
-                            <option>20</option>
-                            <option>50</option>
+                            <option>10</option><option>20</option><option>50</option>
                         </select> 条
                     </div>
                     <div class="flex gap-1">
@@ -337,9 +315,7 @@
                                 <th class="px-4 py-3 text-center">操作</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-200" id="priceTableBody">
-                            <!-- 动态生成 -->
-                        </tbody>
+                        <tbody class="divide-y divide-gray-200" id="priceTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -362,7 +338,7 @@
             </button>
         </div>
 
-        <!-- 步骤指示器 - 简化为3步 -->
+        <!-- 步骤指示器 -->
         <div class="px-6 py-4 border-b border-gray-200 bg-white">
             <div class="flex items-center justify-between relative max-w-2xl mx-auto">
                 <div class="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -translate-y-1/2 z-0"></div>
@@ -385,7 +361,8 @@
 
         <!-- 步骤内容 -->
         <div class="flex-1 overflow-auto p-6 custom-scroll bg-gray-50" id="modalBody">
-            <!-- 步骤1: 基础信息（客户信息 + 认证领域与服务 集成） -->
+            
+            <!-- 步骤1: 基础信息 -->
             <div id="step1" class="step-content">
                 <div class="max-w-6xl mx-auto space-y-6">
                     
@@ -397,13 +374,10 @@
                                 <h3 class="font-bold text-gray-800">客户信息</h3>
                             </div>
                             <button type="button" onclick="openCustomerSelector()" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2 shadow-sm hover:shadow transition-all">
-                                <i class="fas fa-building"></i>
-                                从企业库选择
+                                <i class="fas fa-building"></i> 从企业库选择
                             </button>
                         </div>
-                        
                         <div class="p-6">
-                            <!-- 客户信息回显区 -->
                             <div id="customerInfoDisplay" class="hidden">
                                 <div class="flex justify-between items-start mb-4 pb-4 border-b border-gray-200">
                                     <div>
@@ -414,7 +388,6 @@
                                         <i class="fas fa-exchange-alt mr-1"></i>更换客户
                                     </button>
                                 </div>
-                                
                                 <div class="grid grid-cols-4 gap-6 text-sm">
                                     <div>
                                         <label class="block text-xs font-medium text-gray-500 mb-1">客户类型</label>
@@ -445,7 +418,6 @@
                                         <div class="font-medium text-gray-800" id="displayCapital">--</div>
                                     </div>
                                 </div>
-
                                 <div class="mt-4 pt-4 border-t border-gray-200">
                                     <label class="block text-xs font-medium text-gray-700 mb-2">客户联系人 <span class="text-red-500">*</span></label>
                                     <div class="flex gap-2">
@@ -456,8 +428,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- 未选择提示 -->
                             <div id="customerEmptyState" class="text-center py-12 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
                                 <i class="fas fa-building text-4xl mb-3 text-gray-300"></i>
                                 <p>尚未选择客户，请点击上方按钮从企业库选择</p>
@@ -477,13 +447,11 @@
                                 <i class="fas fa-plus mr-1"></i>添加认证领域
                             </button>
                         </div>
-                        
                         <div class="p-4 space-y-3" id="certificationRows">
                             <div class="text-center py-8 text-gray-400 text-sm bg-gray-50 rounded-lg border border-dashed border-gray-200" id="emptyCertMsg">
                                 <i class="fas fa-certificate text-2xl mb-2 text-gray-300"></i>
                                 <p>请添加认证领域</p>
                             </div>
-                            <!-- 动态生成的认证领域行 -->
                         </div>
                     </div>
 
@@ -499,50 +467,211 @@
                                 <i class="fas fa-plus mr-1"></i>添加技术服务
                             </button>
                         </div>
-                        
                         <div class="p-4 space-y-3" id="techServiceRows">
                             <div class="text-center py-6 text-gray-400 text-sm bg-gray-50 rounded-lg border border-dashed border-gray-200" id="emptyTechMsg">
                                 <p class="text-xs">如需技术服务请添加（可选）</p>
                             </div>
-                            <!-- 动态生成的技术服务行 -->
+                        </div>
+                    </div>
+
+                    <!-- 第四部分：费用明细 -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" id="feeDetailSection">
+                        <div class="px-4 py-3 bg-orange-50 border-b border-orange-100 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="section-badge orange">4</span>
+                                <h3 class="font-bold text-gray-800">费用明细</h3>
+                                <span class="text-xs text-orange-600 ml-2"><i class="fas fa-info-circle mr-1"></i>上半部分为认证审核费用，下半部分为监督审核费用（如有）</span>
+                            </div>
+                            <div class="text-xs text-orange-600 font-medium" id="feeCalcStatus">
+                                <span id="nonSupCountBadge">认证: 0</span> | <span id="supCountBadge">监督: 0</span>
+                            </div>
+                        </div>
+                        <div class="p-6 space-y-6">
+                            <!-- 主费用表：认证审核 -->
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <h4 class="text-sm font-bold text-gray-700">认证审核费用</h4>
+                                    <span class="text-xs text-gray-400">（初次认证/再认证/认证转换/证书变更/特殊审核）</span>
+                                </div>
+                                <table class="w-full text-sm border border-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-3 py-2 border border-gray-200 text-center w-12">序号</th>
+                                            <th class="px-3 py-2 border border-gray-200 text-center w-24">项目</th>
+                                            <th class="px-3 py-2 border border-gray-200 text-center">标准（RMB）</th>
+                                            <th class="px-3 py-2 border border-gray-200 text-center w-44">实际（RMB元）</th>
+                                            <th class="px-3 py-2 border border-gray-200 text-center">备注</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr id="fee-row-application" class="border border-gray-200">
+                                            <td class="px-3 py-2 border border-gray-200 text-center">1</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center font-medium">申请费用</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center">1000元/体系</td>
+                                            <td class="px-3 py-2 border border-gray-200">
+                                                <input type="number" id="fee-application" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-center fee-input-readonly" placeholder="自动计算" readonly>
+                                            </td>
+                                            <td class="px-3 py-2 border border-gray-200 text-xs text-gray-500 leading-relaxed">
+                                                再认证/获证组织变更认证此项不发生，转换及初次认证有。
+                                                <span id="app-fee-detail" class="block mt-1 text-blue-600 font-medium"></span>
+                                            </td>
+                                        </tr>
+                                        <tr id="fee-row-audit" class="border border-gray-200">
+                                            <td class="px-3 py-2 border border-gray-200 text-center">2</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center font-medium">审核费用</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center text-gray-600">市场调节价格</td>
+                                            <td class="px-3 py-2 border border-gray-200">
+                                                <input type="number" id="fee-audit" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-center fee-input-readonly" placeholder="自动带入" readonly>
+                                            </td>
+                                            <td class="px-3 py-2 border border-gray-200 text-xs text-gray-500 leading-relaxed">
+                                                审核时间总计 <span id="audit-days-total" class="font-medium text-blue-600 text-sm">0</span> 人天
+                                                <span id="audit-fee-detail" class="block mt-1 text-gray-400"></span>
+                                            </td>
+                                        </tr>
+                                        <tr id="fee-row-registration" class="border border-gray-200">
+                                            <td class="px-3 py-2 border border-gray-200 text-center">3</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center font-medium">审定和<br>注册费用</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center">2000元/体系</td>
+                                            <td class="px-3 py-2 border border-gray-200">
+                                                <input type="number" id="fee-registration" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-center fee-input-readonly" placeholder="自动计算" readonly>
+                                            </td>
+                                            <td class="px-3 py-2 border border-gray-200 text-xs text-gray-500 leading-relaxed">
+                                                1.包括中英文正副本证书各1份，如加印副本证书，每份50元。<br>
+                                                2.IQNet证书(限于Q/E/S/En/ISO27001领域中被认可专业)<br>
+                                                3.H/F领域的子证书需缴纳审定注册费。
+                                            </td>
+                                        </tr>
+                                        <tr id="fee-row-annual" class="border border-gray-200">
+                                            <td class="px-3 py-2 border border-gray-200 text-center">4</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center font-medium">管理年金</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center">每年2000元</td>
+                                            <td class="px-3 py-2 border border-gray-200">
+                                                <input type="number" id="fee-annual" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-center fee-input-readonly" placeholder="自动计算" readonly>
+                                            </td>
+                                            <td class="px-3 py-2 border border-gray-200 text-xs text-gray-500">-</td>
+                                        </tr>
+                                        <tr id="fee-row-test" class="border border-gray-200">
+                                            <td class="px-3 py-2 border border-gray-200 text-center">5</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center font-medium">检测费用</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center text-gray-600">按实验室标准收费计</td>
+                                            <td class="px-3 py-2 border border-gray-200">
+                                                <input type="number" id="fee-test" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-center" placeholder="请输入" onchange="calculateFeeTotal()">
+                                            </td>
+                                            <td class="px-3 py-2 border border-gray-200 text-xs text-gray-500">只适用于绿色市场认证</td>
+                                        </tr>
+                                        <tr class="bg-gray-50 border border-gray-200 font-medium">
+                                            <td class="px-3 py-2 border border-gray-200 text-center" colspan="2">合计</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center">-</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center text-blue-600 font-bold text-base" id="main-fee-total">0</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-xs text-gray-500">
+                                                大写：<span id="main-fee-total-chinese" class="font-medium text-gray-700">零元整</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- 监督审核费用明细：动态显示 -->
+                            <div id="supervision-fee-section" class="fee-row-hidden">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <h4 class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                        <i class="fas fa-clipboard-check text-orange-500"></i>监督审核费用
+                                    </h4>
+                                    <span class="text-xs text-gray-400">（仅当配置中存在监督审核类型时显示）</span>
+                                </div>
+                                <table class="w-full text-sm border border-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-3 py-2 border border-gray-200 text-center w-12">序号</th>
+                                            <th class="px-3 py-2 border border-gray-200 text-center w-24">项目</th>
+                                            <th class="px-3 py-2 border border-gray-200 text-center">标准（RMB）</th>
+                                            <th class="px-3 py-2 border border-gray-200 text-center w-44">实际（RMB元）</th>
+                                            <th class="px-3 py-2 border border-gray-200 text-center">备注</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="border border-gray-200">
+                                            <td class="px-3 py-2 border border-gray-200 text-center">1</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center font-medium">审核费用</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center text-gray-600">市场调节价格</td>
+                                            <td class="px-3 py-2 border border-gray-200">
+                                                <input type="number" id="fee-supervision-audit" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-center fee-input-readonly" placeholder="自动带入" readonly>
+                                            </td>
+                                            <td class="px-3 py-2 border border-gray-200 text-xs text-gray-500 leading-relaxed">
+                                                审核时间总计 <span id="supervision-audit-days" class="font-medium text-blue-600 text-sm">0</span> 人天。在证书有效期内，将对获证方进行监督审核，监督审核的时间间隔根据相关规定和获证方的管理体系运行情况确定。若受审核方规模及相关认证准则发生变更，监督审核费用双方重新确认。
+                                                <span id="supervision-audit-detail" class="block mt-1 text-gray-400"></span>
+                                            </td>
+                                        </tr>
+                                        <tr class="border border-gray-200">
+                                            <td class="px-3 py-2 border border-gray-200 text-center">2</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center font-medium">管理年金</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center">每年2000元</td>
+                                            <td class="px-3 py-2 border border-gray-200">
+                                                <input type="number" id="fee-supervision-annual" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm text-center fee-input-readonly" placeholder="自动计算" readonly>
+                                            </td>
+                                            <td class="px-3 py-2 border border-gray-200 text-xs text-gray-500">-</td>
+                                        </tr>
+                                        <tr class="bg-gray-50 border border-gray-200 font-medium">
+                                            <td class="px-3 py-2 border border-gray-200 text-center" colspan="2">每次合计</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center">-</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-center text-blue-600 font-bold text-base" id="supervision-fee-total">0</td>
+                                            <td class="px-3 py-2 border border-gray-200 text-xs text-gray-500">
+                                                大写：<span id="supervision-fee-total-chinese" class="font-medium text-gray-700">零元整</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
                 </div>
             </div>
 
-            <!-- 步骤2: 费用计算（原步骤3） -->
+            <!-- 步骤2: 费用计算 -->
             <div id="step2" class="step-content hidden">
                 <div class="grid grid-cols-3 gap-6">
                     <!-- 左侧：费用明细 -->
                     <div class="col-span-2 space-y-4">
-                        <!-- 认证费用明细 -->
+                        <!-- 费用明细（标准）- 认证审核 -->
                         <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 font-medium text-gray-700 flex justify-between items-center">
-                                <span>认证费用明细</span>
-                                <span class="text-xs text-gray-500">根据价格库自动匹配单价</span>
+                            <div class="bg-orange-50 px-4 py-3 border-b border-orange-200 font-medium text-orange-800 flex justify-between items-center">
+                                <span>费用明细（标准）- 认证审核</span>
+                                <span class="text-xs text-gray-500">按CQC标准收费</span>
                             </div>
                             <table class="w-full text-sm">
                                 <thead class="bg-gray-50 text-gray-600">
                                     <tr>
-                                        <th class="px-4 py-2 text-left">认证领域</th>
-                                        <th class="px-4 py-2 text-center">风险等级</th>
-                                        <th class="px-4 py-2 text-right">人天数</th>
-                                        <th class="px-4 py-2 text-right">单价(元)</th>
-                                        <th class="px-4 py-2 text-right">小计(元)</th>
+                                        <th class="px-4 py-2 text-left">费用项目</th>
+                                        <th class="px-4 py-2 text-right">标准</th>
+                                        <th class="px-4 py-2 text-right">金额(元)</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200" id="certFeeDetailBody">
-                                    <!-- 动态生成 -->
-                                </tbody>
+                                <tbody class="divide-y divide-gray-200" id="certFeeStandardBody"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- 监督审核费用 -->
+                        <div id="step2-supervision-section" class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm fee-row-hidden">
+                            <div class="bg-orange-50 px-4 py-3 border-b border-orange-200 font-medium text-orange-800 flex justify-between items-center">
+                                <span>监督审核费用</span>
+                                <span class="text-xs text-gray-500">按CQC标准收费</span>
+                            </div>
+                            <table class="w-full text-sm">
+                                <thead class="bg-gray-50 text-gray-600">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">费用项目</th>
+                                        <th class="px-4 py-2 text-right">标准</th>
+                                        <th class="px-4 py-2 text-right">金额(元)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200" id="supervisionFeeStandardBody"></tbody>
                             </table>
                         </div>
 
                         <!-- 技术服务费明细 -->
                         <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                            <div class="bg-green-50 px-4 py-3 border-b border-green-200 font-medium text-green-800">
-                                技术服务费明细
-                            </div>
+                            <div class="bg-green-50 px-4 py-3 border-b border-green-200 font-medium text-green-800">技术服务费明细</div>
                             <table class="w-full text-sm">
                                 <thead class="bg-gray-50 text-gray-600">
                                     <tr>
@@ -550,9 +679,7 @@
                                         <th class="px-4 py-2 text-right">金额(元)</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200" id="techFeeDetailBody">
-                                    <!-- 动态生成 -->
-                                </tbody>
+                                <tbody class="divide-y divide-gray-200" id="techFeeDetailBody"></tbody>
                             </table>
                         </div>
 
@@ -560,7 +687,7 @@
                         <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                             <div class="flex justify-between items-center mb-3">
                                 <h4 class="font-medium text-gray-700">折扣控制</h4>
-                                <span class="text-xs text-gray-500">认证费用下浮不得超过10%</span>
+                                <span class="text-xs text-gray-500">认证领域费用下浮不得超过10%</span>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
@@ -571,7 +698,7 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-sm text-gray-600 mb-1">折扣后认证费</label>
+                                    <label class="block text-sm text-gray-600 mb-1">折扣后认证领域费用</label>
                                     <input type="text" id="discountedCertAmount" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 font-medium" readonly>
                                 </div>
                             </div>
@@ -586,16 +713,24 @@
 
                     <!-- 右侧：价格汇总 -->
                     <div class="space-y-4">
-                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 sticky top-0 shadow-sm">
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 sticky top-4 shadow-sm">
                             <h3 class="font-bold text-blue-900 mb-4">报价汇总</h3>
                             <div class="space-y-3 text-sm">
                                 <div class="flex justify-between text-blue-800">
-                                    <span>认证费用(标准)</span>
+                                    <span>认证审核-认证领域费用(标准)</span>
                                     <span id="summaryCertStandard">¥0</span>
                                 </div>
                                 <div class="flex justify-between text-blue-800" id="discountRow" style="display:none;">
-                                    <span>折扣后认证费</span>
+                                    <span>折扣后认证领域费用</span>
                                     <span id="summaryCertDiscounted">¥0</span>
+                                </div>
+                                <div class="flex justify-between text-blue-800">
+                                    <span>认证审核-费用明细合计</span>
+                                    <span id="summaryCertFee">¥0</span>
+                                </div>
+                                <div id="summarySupFeeRow" class="flex justify-between text-orange-700" style="display:none;">
+                                    <span>监督审核-费用合计</span>
+                                    <span id="summarySupFee">¥0</span>
                                 </div>
                                 <div class="flex justify-between text-blue-800">
                                     <span>技术服务费</span>
@@ -607,7 +742,7 @@
                                 </div>
                                 <div class="text-xs text-blue-700 mt-2" id="summaryChinese">人民币：零元整</div>
                             </div>
-                            
+
                             <div class="mt-6 pt-4 border-t border-blue-200 space-y-2">
                                 <div class="text-xs text-blue-700">
                                     <i class="fas fa-shield-alt mr-1"></i>价格保护有效期：30天
@@ -624,7 +759,7 @@
                 </div>
             </div>
 
-            <!-- 步骤3: 审批提交（原步骤4） -->
+            <!-- 步骤3: 审批提交 -->
             <div id="step3" class="step-content hidden">
                 <div class="max-w-3xl mx-auto">
                     <div class="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
@@ -640,7 +775,7 @@
                                     <div class="text-sm text-gray-600">有效期至：2026-05-11</div>
                                 </div>
                             </div>
-                            
+
                             <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
                                 <div>
                                     <div class="text-gray-500">客户名称</div>
@@ -659,9 +794,7 @@
                                         <th class="py-2 text-right pr-2">金额(元)</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200" id="previewItems">
-                                    <!-- 动态生成 -->
-                                </tbody>
+                                <tbody class="divide-y divide-gray-200" id="previewItems"></tbody>
                                 <tfoot class="font-bold">
                                     <tr>
                                         <td class="py-3 text-right">合计：</td>
@@ -671,7 +804,7 @@
                             </table>
 
                             <div class="text-xs text-gray-500 space-y-1">
-                                <p>备注：1. 本报价含认证审核费用；</p>
+                                <p>备注：1. 本报价含认证审核费用及认证收费；</p>
                                 <p>　　　2. 具体审核时间以合同签订后排期为准；</p>
                                 <p>　　　3. 本报价有效期30天，逾期请重新确认价格。</p>
                             </div>
@@ -689,15 +822,9 @@
                     </div>
 
                     <div class="flex justify-center gap-4">
-                        <button onclick="prevStep()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-                            上一步
-                        </button>
-                        <button onclick="saveDraft()" class="px-6 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
-                            保存草稿
-                        </button>
-                        <button onclick="submitApproval()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
-                            提交审批
-                        </button>
+                        <button onclick="prevStep()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">上一步</button>
+                        <button onclick="saveDraft()" class="px-6 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">保存草稿</button>
+                        <button onclick="submitApproval()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">提交审批</button>
                     </div>
                 </div>
             </div>
@@ -705,23 +832,17 @@
 
         <!-- 模态框底部 -->
         <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-between" id="modalFooter">
-            <button onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
-                取消
-            </button>
+            <button onclick="closeModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
             <div class="flex gap-2">
-                <button onclick="prevStep()" id="prevBtn" class="hidden px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
-                    上一步
-                </button>
-                <button onclick="nextStep()" id="nextBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
-                    下一步
-                </button>
+                <button onclick="prevStep()" id="prevBtn" class="hidden px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">上一步</button>
+                <button onclick="nextStep()" id="nextBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">下一步</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 客户选择弹窗 - 提升z-index确保在最上层 -->
-<div id="customerSelectorModal" class="fixed inset-0 bg-black bg-opacity-60 z-[100] hidden flex items-center justify-center" style="display: none;">
+<!-- 客户选择弹窗 -->
+<div id="customerSelectorModal" class="fixed inset-0 bg-black bg-opacity-60 z-[100] hidden flex items-center justify-center">
     <div class="bg-white rounded-2xl w-full max-w-4xl m-4 max-h-[80vh] flex flex-col shadow-2xl border border-gray-200">
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
             <h3 class="font-bold text-gray-800">选择企业客户</h3>
@@ -753,15 +874,11 @@
                         <th class="px-4 py-3 text-center">操作</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200" id="customerListBody">
-                    <!-- 动态生成 -->
-                </tbody>
+                <tbody class="divide-y divide-gray-200" id="customerListBody"></tbody>
             </table>
         </div>
         <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-            <button onclick="closeCustomerSelector()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
-                取消
-            </button>
+            <button onclick="closeCustomerSelector()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
         </div>
     </div>
 </div>
@@ -818,12 +935,8 @@
             </div>
         </div>
         <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-2">
-            <button onclick="closePriceEditModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
-                取消
-            </button>
-            <button onclick="savePriceData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                保存
-            </button>
+            <button onclick="closePriceEditModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">取消</button>
+            <button onclick="savePriceData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">保存</button>
         </div>
     </div>
 </div>
@@ -849,15 +962,11 @@
                         <th class="px-4 py-3 text-left">操作人</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200" id="priceHistoryBody">
-                    <!-- 动态生成 -->
-                </tbody>
+                <tbody class="divide-y divide-gray-200" id="priceHistoryBody"></tbody>
             </table>
         </div>
         <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-            <button onclick="closeHistoryModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
-                关闭
-            </button>
+            <button onclick="closeHistoryModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">关闭</button>
         </div>
     </div>
 </div>
@@ -875,19 +984,11 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div class="flex-1 overflow-auto custom-scroll p-6" id="drawerBody">
-            <!-- 动态生成详情 -->
-        </div>
+        <div class="flex-1 overflow-auto custom-scroll p-6" id="drawerBody"></div>
         <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex gap-2">
-            <button class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-white text-sm transition-colors">
-                <i class="fas fa-print mr-2"></i>打印
-            </button>
-            <button class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-white text-sm transition-colors">
-                <i class="fas fa-download mr-2"></i>下载PDF
-            </button>
-            <button class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm transition-colors">
-                <i class="fas fa-edit mr-2"></i>编辑
-            </button>
+            <button class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-white text-sm transition-colors"><i class="fas fa-print mr-2"></i>打印</button>
+            <button class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-white text-sm transition-colors"><i class="fas fa-download mr-2"></i>下载PDF</button>
+            <button class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm transition-colors"><i class="fas fa-edit mr-2"></i>编辑</button>
         </div>
     </div>
 </div>
@@ -898,66 +999,22 @@ let currentStep = 1;
 let selectedCustomer = null;
 let certificationItems = [];
 let techServiceItems = [];
-let currentRegion = '华北区'; // 当前用户所在区域
+let currentRegion = '华北区';
 let editingPriceId = null;
+
+// 缓存分类数据，供步骤2使用
+let cachedNonSupItems = [];
+let cachedSupItems = [];
 
 // 模拟企业库数据
 const mockCustomers = [
-    {
-        id: 'CUST001',
-        name: '北京某科技有限公司',
-        code: '91110108MA00123456',
-        type: '民营企业',
-        industry: '信息技术',
-        region: '华北区',
-        address: '北京市朝阳区建国路88号',
-        legal: '张三',
-        capital: '5000万元',
-        establishDate: '2015-06-18',
-        status: '正常经营'
-    },
-    {
-        id: 'CUST002',
-        name: '上海某建设集团有限公司',
-        code: '91310000MA00234567',
-        type: '地方国企',
-        industry: '建筑业',
-        region: '华东区',
-        address: '上海市浦东新区陆家嘴环路1000号',
-        legal: '李四',
-        capital: '20000万元',
-        establishDate: '2008-03-12',
-        status: '正常经营'
-    },
-    {
-        id: 'CUST003',
-        name: '广州某食品股份有限公司',
-        code: '91440101MA00345678',
-        type: '外资企业',
-        industry: '食品饮料',
-        region: '华南区',
-        address: '广州市天河区珠江新城',
-        legal: '王五',
-        capital: '8000万元',
-        establishDate: '2010-09-25',
-        status: '正常经营'
-    },
-    {
-        id: 'CUST004',
-        name: '成都某化工集团有限公司',
-        code: '91510000MA00456789',
-        type: '中央企业',
-        industry: '化工',
-        region: '华西区',
-        address: '成都市高新区天府大道',
-        legal: '赵六',
-        capital: '50000万元',
-        establishDate: '2005-11-08',
-        status: '正常经营'
-    }
+    { id: 'CUST001', name: '北京某科技有限公司', code: '91110108MA00123456', type: '民营企业', industry: '信息技术', region: '华北区', address: '北京市朝阳区建国路88号', legal: '张三', capital: '5000万元', establishDate: '2015-06-18', status: '正常经营' },
+    { id: 'CUST002', name: '上海某建设集团有限公司', code: '91310000MA00234567', type: '地方国企', industry: '建筑业', region: '华东区', address: '上海市浦东新区陆家嘴环路1000号', legal: '李四', capital: '20000万元', establishDate: '2008-03-12', status: '正常经营' },
+    { id: 'CUST003', name: '广州某食品股份有限公司', code: '91440101MA00345678', type: '外资企业', industry: '食品饮料', region: '华南区', address: '广州市天河区珠江新城', legal: '王五', capital: '8000万元', establishDate: '2010-09-25', status: '正常经营' },
+    { id: 'CUST004', name: '成都某化工集团有限公司', code: '91510000MA00456789', type: '中央企业', industry: '化工', region: '华西区', address: '成都市高新区天府大道', legal: '赵六', capital: '50000万元', establishDate: '2005-11-08', status: '正常经营' }
 ];
 
-// 模拟价格库数据 - 按区域+认证领域+风险等级
+// 模拟价格库数据
 let mockPriceLibrary = [
     {id: 1, region: '华北区', field: '质量管理体系(QMS)', riskLevel: 1, riskName: '一级', price: 4000},
     {id: 2, region: '华北区', field: '质量管理体系(QMS)', riskLevel: 2, riskName: '二级', price: 4500},
@@ -980,120 +1037,130 @@ const priceHistory = [
     {time: '2026-03-01 09:00', region: '华北区', field: '职业健康安全(OHSMS)', risk: '一级', oldPrice: 4000, newPrice: 4300, operator: '李主管'},
 ];
 
-// 模拟报价单数据
+// 模拟报价单数据（按认证/监督分离逻辑重构）
 const mockQuotations = [
     {
-        id: 'BJ-2026-00432',
-        customer: '北京某科技有限公司',
-        code: '91110108MA00123456',
-        region: '华北区',
+        id: 'BJ-2026-00432', customer: '北京某科技有限公司', code: '91110108MA00123456', region: '华北区',
         fields: [
             {name: '质量管理体系(QMS)', type: '初次认证', risk: '二级', days: 12, unitPrice: 4500, amount: 54000},
             {name: '环境管理体系(EMS)', type: '初次认证', risk: '一级', days: 8, unitPrice: 4200, amount: 33600}
         ],
-        techServices: [
-            {name: '内审员培训', amount: 8000}
-        ],
-        certTotal: 87600,
-        techTotal: 8000,
-        total: 95600,
-        discount: 95,
-        finalAmount: 91220,
-        status: 'approved',
-        statusName: '已通过',
-        createDate: '2026-04-10',
-        validDate: '2026-05-10'
+        techServices: [{name: '内审员培训', amount: 8000}],
+        certTotal: 87600, techTotal: 8000, total: 95600, discount: 95, finalAmount: 91220,
+        status: 'approved', statusName: '已通过', createDate: '2026-04-10', validDate: '2026-05-10'
     },
     {
-        id: 'BJ-2026-00431',
-        customer: '成都某化工集团有限公司',
-        code: '91510000MA00456789',
-        region: '华西区',
+        id: 'BJ-2026-00431', customer: '成都某化工集团有限公司', code: '91510000MA00456789', region: '华西区',
         fields: [
             {name: '职业健康安全(OHSMS)', type: '监督审核', risk: '三级', days: 6, unitPrice: 5600, amount: 33600},
             {name: '环境管理体系(EMS)', type: '监督审核', risk: '三级', days: 6, unitPrice: 5500, amount: 33000}
         ],
         techServices: [],
-        certTotal: 66600,
-        techTotal: 0,
-        total: 66600,
-        discount: 85,
-        finalAmount: 56610,
-        status: 'pending_director',
-        statusName: '总监审批中',
-        createDate: '2026-04-09',
-        validDate: '2026-05-09'
+        certTotal: 66600, techTotal: 0, total: 66600, discount: 85, finalAmount: 56610,
+        status: 'pending_director', statusName: '总监审批中', createDate: '2026-04-09', validDate: '2026-05-09'
+    },
+    {
+        id: 'BJ-2026-00430', customer: '上海某建设集团有限公司', code: '91310000MA00234567', region: '华东区',
+        fields: [
+            {name: '质量管理体系(QMS)', type: '初次认证', risk: '二级', days: 10, unitPrice: 4700, amount: 47000},
+            {name: '环境管理体系(EMS)', type: '监督审核', risk: '一级', days: 5, unitPrice: 4200, amount: 21000},
+            {name: '职业健康安全(OHSMS)', type: '再认证', risk: '三级', days: 8, unitPrice: 4900, amount: 39200}
+        ],
+        techServices: [{name: '管理体系咨询辅导', amount: 15000}],
+        certTotal: 107200, techTotal: 15000, total: 122200, discount: 100, finalAmount: 122200,
+        status: 'pending', statusName: '待审批', createDate: '2026-04-08', validDate: '2026-05-08'
     }
 ];
 
 // 技术服务固定类型
 const techServiceTypes = [
-    '内审员培训',
-    '管理体系咨询辅导',
-    '管理诊断与评估',
-    '供应商管理二方审核',
-    '定制化培训方案',
-    '文件编写指导',
-    '现场整改辅导',
-    '其他技术服务'
+    '内审员培训', '管理体系咨询辅导', '管理诊断与评估', '供应商管理二方审核',
+    '定制化培训方案', '文件编写指导', '现场整改辅导', '其他技术服务'
 ];
+
+// 判断是否为监督审核类型
+function isSupervisionType(type) {
+    return type === '监督审核';
+}
 
 // 初始化
 document.addEventListener('DOMContentLoaded', function() {
     renderQuotationTable();
     renderPriceTable();
     
-    // 监听价格输入，实时计算限价
     const priceInput = document.getElementById('editPriceValue');
     if (priceInput) {
         priceInput.addEventListener('input', function() {
             const val = parseFloat(this.value) || 0;
             const preview = document.getElementById('previewLimitPrice');
-            if (preview) {
-                preview.textContent = '¥' + Math.round(val * 0.9).toLocaleString();
-            }
+            if (preview) preview.textContent = '¥' + Math.round(val * 0.9).toLocaleString();
         });
     }
 });
 
-// 切换标签页
-function switchTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-    const target = document.getElementById(tabName);
-    if (target) target.classList.remove('hidden');
-    
-    document.querySelectorAll('.nav-tab').forEach(el => {
-        el.classList.remove('border-blue-600', 'text-blue-600');
-        el.classList.add('border-transparent', 'text-gray-600');
-    });
-    const navTab = document.getElementById('nav-' + tabName);
-    if (navTab) {
-        navTab.classList.add('border-blue-600', 'text-blue-600');
-        navTab.classList.remove('border-transparent', 'text-gray-600');
-    }
-}
+// ==================== 列表展示：按认证/监督分离 ====================
 
-// 生成悬停提示内容
+/**
+ * 生成列表hover提示内容 - 按认证审核和监督审核分组
+ */
 function generateTooltipContent(q) {
-    let fieldsHtml = q.fields.map(f => `
-        <div class="flex justify-between items-center py-1.5 border-b border-gray-100 last:border-0">
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-medium text-gray-700">${f.name}</span>
-                <span class="px-1.5 py-0.5 rounded text-xs ${f.risk === '三级' ? 'bg-red-100 text-red-700' : f.risk === '二级' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">
-                    ${f.risk}
-                </span>
-            </div>
-            <div class="text-xs text-gray-600 text-right">
-                <div>${f.type}</div>
-                <div class="text-gray-500">${f.days}人天 × ¥${f.unitPrice}</div>
-            </div>
-        </div>
-    `).join('');
+    const nonSupFields = q.fields.filter(f => !isSupervisionType(f.type));
+    const supFields = q.fields.filter(f => isSupervisionType(f.type));
     
-    let techHtml = '';
+    let html = '<div class="text-sm">';
+    
+    // 认证审核部分
+    if (nonSupFields.length > 0) {
+        html += `
+            <div class="font-bold text-gray-800 mb-2 pb-1.5 border-b border-gray-200 flex justify-between items-center">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span>认证审核</span>
+                <span class="text-xs font-normal text-gray-500">共${nonSupFields.length}项</span>
+            </div>
+            <div class="space-y-1.5 mb-3">
+                ${nonSupFields.map(f => `
+                    <div class="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
+                        <div>
+                            <div class="text-xs font-medium text-gray-700">${f.name}</div>
+                            <div class="text-xs text-gray-500">${f.type}</div>
+                        </div>
+                        <div class="text-right">
+                            <span class="px-1.5 py-0.5 rounded text-xs ${f.risk === '三级' ? 'bg-red-100 text-red-700' : f.risk === '二级' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">${f.risk}</span>
+                            <div class="text-xs text-gray-500 mt-0.5">${f.days}人天 × ¥${f.unitPrice.toLocaleString()}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    // 监督审核部分
+    if (supFields.length > 0) {
+        html += `
+            <div class="font-bold text-orange-800 mb-2 pb-1.5 border-b border-orange-200 flex justify-between items-center">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-orange-500"></span>监督审核</span>
+                <span class="text-xs font-normal text-gray-500">共${supFields.length}项</span>
+            </div>
+            <div class="space-y-1.5 mb-3">
+                ${supFields.map(f => `
+                    <div class="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
+                        <div>
+                            <div class="text-xs font-medium text-gray-700">${f.name}</div>
+                            <div class="text-xs text-orange-600">${f.type}</div>
+                        </div>
+                        <div class="text-right">
+                            <span class="px-1.5 py-0.5 rounded text-xs ${f.risk === '三级' ? 'bg-red-100 text-red-700' : f.risk === '二级' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">${f.risk}</span>
+                            <div class="text-xs text-gray-500 mt-0.5">${f.days}人天 × ¥${f.unitPrice.toLocaleString()}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    // 技术服务
     if (q.techServices.length > 0) {
-        techHtml = `
-            <div class="mt-3 pt-2 border-t border-gray-200">
+        html += `
+            <div class="mt-2 pt-2 border-t border-gray-200">
                 <div class="text-xs font-medium text-green-700 mb-1.5"><i class="fas fa-tools mr-1"></i>技术服务</div>
                 ${q.techServices.map(t => `
                     <div class="flex justify-between text-xs py-0.5">
@@ -1105,40 +1172,28 @@ function generateTooltipContent(q) {
         `;
     }
     
-    return `
-        <div class="text-sm">
-            <div class="font-bold text-gray-800 mb-2 pb-1.5 border-b border-gray-200 flex justify-between items-center">
-                <span>认证领域明细</span>
-                <span class="text-xs font-normal text-gray-500">共${q.fields.length}项</span>
-            </div>
-            <div class="space-y-1">
-                ${fieldsHtml}
-            </div>
-            ${techHtml}
-            <div class="mt-3 pt-2 border-t border-gray-200 flex justify-between items-center">
-                <span class="text-xs text-gray-500">小计</span>
-                <span class="text-sm font-bold text-blue-600">¥${q.finalAmount.toLocaleString()}</span>
-            </div>
+    // 合计
+    html += `
+        <div class="mt-3 pt-2 border-t border-gray-200 flex justify-between items-center">
+            <span class="text-xs text-gray-500">报价合计</span>
+            <span class="text-sm font-bold text-blue-600">¥${q.finalAmount.toLocaleString()}</span>
         </div>
-    `;
+    </div>`;
+    
+    return html;
 }
 
-// 显示悬停提示
 function showDetailTooltip(event, quotationId) {
     const tooltip = document.getElementById('globalTooltip');
     const content = document.getElementById('tooltipContent');
     const q = mockQuotations.find(item => item.id === quotationId);
-    
     if (!q) return;
     
     content.innerHTML = generateTooltipContent(q);
-    
-    // 计算位置
     const rect = event.target.getBoundingClientRect();
     const tooltipHeight = tooltip.offsetHeight || 300;
     const windowHeight = window.innerHeight;
     
-    // 判断下方空间是否足够，不够则显示在上方
     if (rect.bottom + tooltipHeight > windowHeight - 20) {
         tooltip.style.top = (rect.top - tooltipHeight - 10) + 'px';
         tooltip.classList.add('bottom');
@@ -1147,22 +1202,36 @@ function showDetailTooltip(event, quotationId) {
         tooltip.classList.remove('bottom');
     }
     
-    tooltip.style.left = Math.min(rect.left, window.innerWidth - 340) + 'px';
+    tooltip.style.left = Math.min(rect.left, window.innerWidth - 420) + 'px';
     tooltip.style.display = 'block';
 }
 
-// 隐藏悬停提示
 function hideDetailTooltip() {
     const tooltip = document.getElementById('globalTooltip');
     if (tooltip) tooltip.style.display = 'none';
 }
 
-// 渲染报价单列表
+/**
+ * 渲染报价单列表 - 认证领域/服务列按认证/监督展示
+ */
 function renderQuotationTable() {
     const tbody = document.getElementById('quotationTableBody');
     if (!tbody) return;
     
-    tbody.innerHTML = mockQuotations.map(q => `
+    tbody.innerHTML = mockQuotations.map(q => {
+        const nonSupCount = q.fields.filter(f => !isSupervisionType(f.type)).length;
+        const supCount = q.fields.filter(f => isSupervisionType(f.type)).length;
+        
+        // 构建认证领域展示标签
+        let fieldTags = '';
+        if (nonSupCount > 0) {
+            fieldTags += `<span class="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700 font-medium">认证 ${nonSupCount}个</span>`;
+        }
+        if (supCount > 0) {
+            fieldTags += `<span class="px-2 py-0.5 rounded text-xs bg-orange-100 text-orange-700 font-medium ml-1">监督 ${supCount}个</span>`;
+        }
+        
+        return `
         <tr class="table-row transition-colors border-b border-gray-100 hover:bg-blue-50/30">
             <td class="px-4 py-3"><input type="checkbox" class="rounded border-gray-300"></td>
             <td class="px-4 py-3">
@@ -1174,12 +1243,11 @@ function renderQuotationTable() {
                 <div class="text-xs text-gray-500">${q.code}</div>
             </td>
             <td class="px-4 py-3">
-                <div class="cursor-pointer text-blue-600 hover:text-blue-800 text-sm inline-flex items-center gap-1.5 py-1 px-2 rounded hover:bg-blue-50 transition-colors"
-                     onmouseenter="showDetailTooltip(event, '${q.id}')"
-                     onmouseleave="hideDetailTooltip()">
-                    <span class="font-medium">共${q.fields.length}个认证领域</span>
-                    <i class="fas fa-chevron-down text-xs"></i>
+                <div class="cursor-pointer text-sm inline-flex items-center gap-1.5 py-1 px-2 rounded hover:bg-blue-50 transition-colors"
+                     onmouseenter="showDetailTooltip(event, '${q.id}')" onmouseleave="hideDetailTooltip()">
+                    <div class="flex items-center gap-1">${fieldTags}</div>
                     ${q.techServices.length > 0 ? `<span class="text-green-600 text-xs ml-1">+${q.techServices.length}项服务</span>` : ''}
+                    <i class="fas fa-chevron-down text-xs text-gray-400"></i>
                 </div>
             </td>
             <td class="px-4 py-3 text-right">
@@ -1197,21 +1265,15 @@ function renderQuotationTable() {
             <td class="px-4 py-3 text-sm text-gray-600">${q.validDate}</td>
             <td class="px-4 py-3 text-center">
                 <div class="flex justify-center gap-2">
-                    <button onclick="viewDetail('${q.id}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="查看">
-                        <i class="fas fa-eye"></i>
-                    </button>
+                    <button onclick="viewDetail('${q.id}')" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="查看"><i class="fas fa-eye"></i></button>
                     ${q.status === 'draft' ? `
-                        <button onclick="editQuotation('${q.id}')" class="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors" title="编辑">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteQuotation('${q.id}')" class="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors" title="删除">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <button onclick="editQuotation('${q.id}')" class="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors" title="编辑"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteQuotation('${q.id}')" class="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors" title="删除"><i class="fas fa-trash"></i></button>
                     ` : ''}
                 </div>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 function getStatusStyle(status) {
@@ -1226,12 +1288,799 @@ function getStatusStyle(status) {
     return styles[status] || 'bg-gray-100 text-gray-700';
 }
 
-// 打开新增模态框
+// ==================== 详情抽屉：按认证/监督分离展示 ====================
+
+function viewDetail(id) {
+    const drawer = document.getElementById('detailDrawer');
+    const content = document.getElementById('drawerContent');
+    const q = mockQuotations.find(item => item.id === id);
+    if (!q) return;
+    
+    const nonSupFields = q.fields.filter(f => !isSupervisionType(f.type));
+    const supFields = q.fields.filter(f => isSupervisionType(f.type));
+    
+    // 计算认证审核费用小计
+    const nonSupAuditAmount = nonSupFields.reduce((sum, f) => sum + f.amount, 0);
+    const nonSupAppFee = nonSupFields.filter(f => f.type === '初次认证' || f.type === '认证转换').length * 1000;
+    const nonSupRegFee = nonSupFields.length * 2000;
+    const nonSupAnnualFee = nonSupFields.length * 2000;
+    const nonSupTotal = nonSupAppFee + nonSupAuditAmount + nonSupRegFee + nonSupAnnualFee;
+    
+    // 计算监督审核费用小计
+    const supAuditAmount = supFields.reduce((sum, f) => sum + f.amount, 0);
+    const supAnnualFee = supFields.length * 2000;
+    const supTotal = supAuditAmount + supAnnualFee;
+    
+    const drawerBody = document.getElementById('drawerBody');
+    if (drawerBody) {
+        let html = `
+            <div class="space-y-6">
+                <div class="flex gap-2 mb-4">
+                    <span class="status-badge ${getStatusStyle(q.status)}">${q.statusName}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="text-gray-500 mb-1">客户名称</div>
+                        <div class="font-medium">${q.customer}</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="text-gray-500 mb-1">客户编码</div>
+                        <div class="font-medium">${q.code}</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="text-gray-500 mb-1">所属区域</div>
+                        <div class="font-medium">${q.region}</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="text-gray-500 mb-1">跟进人</div>
+                        <div class="font-medium">张经理</div>
+                    </div>
+                </div>
+        `;
+        
+        // 认证审核明细
+        if (nonSupFields.length > 0) {
+            html += `
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-gray-800 flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-blue-500"></span>认证审核明细
+                        </h4>
+                        <span class="text-xs text-gray-500">共${nonSupFields.length}个体系</span>
+                    </div>
+                    <div class="space-y-3">
+                        ${nonSupFields.map(f => `
+                            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow bg-white">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <div class="font-medium text-gray-800">${f.name}</div>
+                                        <div class="text-xs text-gray-500 mt-1">${f.type} | ${f.days}人天</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-bold text-blue-600">¥${f.amount.toLocaleString()}</div>
+                                        <div class="text-xs text-gray-500">¥${f.unitPrice.toLocaleString()}/人天</div>
+                                    </div>
+                                </div>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <span class="px-2 py-1 rounded text-xs ${f.risk === '三级' ? 'bg-red-100 text-red-700' : f.risk === '二级' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">${f.risk}风险</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <!-- 认证费用小计 -->
+                    <div class="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="text-xs font-medium text-blue-800 mb-2">认证审核费用小计</div>
+                        <div class="space-y-1 text-xs text-blue-700">
+                            ${nonSupAppFee > 0 ? `<div class="flex justify-between"><span>申请费用</span><span>¥${nonSupAppFee.toLocaleString()}</span></div>` : ''}
+                            <div class="flex justify-between"><span>审核费用</span><span>¥${nonSupAuditAmount.toLocaleString()}</span></div>
+                            <div class="flex justify-between"><span>审定注册费</span><span>¥${nonSupRegFee.toLocaleString()}</span></div>
+                            <div class="flex justify-between"><span>管理年金</span><span>¥${nonSupAnnualFee.toLocaleString()}</span></div>
+                            <div class="border-t border-blue-200 pt-1 mt-1 flex justify-between font-bold text-sm">
+                                <span>认证合计</span>
+                                <span>¥${nonSupTotal.toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 监督审核明细
+        if (supFields.length > 0) {
+            html += `
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-gray-800 flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-orange-500"></span>监督审核明细
+                        </h4>
+                        <span class="text-xs text-gray-500">共${supFields.length}个体系</span>
+                    </div>
+                    <div class="space-y-3">
+                        ${supFields.map(f => `
+                            <div class="border border-orange-200 rounded-lg p-4 hover:shadow-sm transition-shadow bg-orange-50/30">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <div class="font-medium text-gray-800">${f.name}</div>
+                                        <div class="text-xs text-orange-600 mt-1">${f.type} | ${f.days}人天</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-bold text-orange-600">¥${f.amount.toLocaleString()}</div>
+                                        <div class="text-xs text-gray-500">¥${f.unitPrice.toLocaleString()}/人天</div>
+                                    </div>
+                                </div>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <span class="px-2 py-1 rounded text-xs ${f.risk === '三级' ? 'bg-red-100 text-red-700' : f.risk === '二级' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">${f.risk}风险</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <!-- 监督费用小计 -->
+                    <div class="mt-3 bg-orange-50 border border-orange-200 rounded-lg p-4">
+                        <div class="text-xs font-medium text-orange-800 mb-2">监督审核费用小计</div>
+                        <div class="space-y-1 text-xs text-orange-700">
+                            <div class="flex justify-between"><span>审核费用</span><span>¥${supAuditAmount.toLocaleString()}</span></div>
+                            <div class="flex justify-between"><span>管理年金</span><span>¥${supAnnualFee.toLocaleString()}</span></div>
+                            <div class="border-t border-orange-200 pt-1 mt-1 flex justify-between font-bold text-sm">
+                                <span>监督合计（每次）</span>
+                                <span>¥${supTotal.toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 技术服务
+        if (q.techServices.length > 0) {
+            html += `
+                <div>
+                    <h4 class="font-bold text-gray-800 mb-3">技术服务费</h4>
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        ${q.techServices.map(t => `
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>${t.name}</span>
+                                <span class="font-medium text-green-700">¥${t.amount.toLocaleString()}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 报价合计
+        html += `
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-medium text-blue-900">报价合计</span>
+                        <span class="text-2xl font-bold text-blue-600">¥${q.finalAmount.toLocaleString()}</span>
+                    </div>
+                    ${q.discount < 100 ? `
+                        <div class="flex justify-between text-sm text-blue-700 mb-1">
+                            <span>标准金额</span>
+                            <span class="line-through">¥${q.total.toLocaleString()}</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-blue-700">
+                            <span>折扣率</span>
+                            <span>${q.discount}%</span>
+                        </div>
+                    ` : ''}
+                    <div class="mt-2 pt-2 border-t border-blue-200 text-xs text-blue-600 space-y-1">
+                        ${nonSupFields.length > 0 ? `<div class="flex justify-between"><span>认证审核费用</span><span>¥${nonSupTotal.toLocaleString()}</span></div>` : ''}
+                        ${supFields.length > 0 ? `<div class="flex justify-between"><span>监督审核费用</span><span>¥${supTotal.toLocaleString()}</span></div>` : ''}
+                        ${q.techServices.length > 0 ? `<div class="flex justify-between"><span>技术服务费</span><span>¥${q.techTotal.toLocaleString()}</span></div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        drawerBody.innerHTML = html;
+    }
+    
+    if (drawer) drawer.classList.remove('hidden');
+    setTimeout(() => {
+        if (content) content.classList.remove('translate-x-full');
+    }, 10);
+}
+
+function closeDrawer() {
+    const content = document.getElementById('drawerContent');
+    const drawer = document.getElementById('detailDrawer');
+    if (content) content.classList.add('translate-x-full');
+    setTimeout(() => {
+        if (drawer) drawer.classList.add('hidden');
+    }, 300);
+}
+
+// ==================== 费用明细核心计算逻辑（拆分认证/监督） ====================
+
+function recalcFeeDetail() {
+    const certRows = document.querySelectorAll('[id^="cert-row-"]');
+    
+    let nonSupCount = 0;
+    let supCount = 0;
+    
+    certRows.forEach(row => {
+        const type = row.querySelector('.cert-type')?.value || '';
+        if (isSupervisionType(type)) supCount++;
+        else nonSupCount++;
+    });
+    
+    const nonSupBadge = document.getElementById('nonSupCountBadge');
+    const supBadge = document.getElementById('supCountBadge');
+    if (nonSupBadge) nonSupBadge.textContent = '认证: ' + nonSupCount;
+    if (supBadge) supBadge.textContent = '监督: ' + supCount;
+    
+    if (certRows.length === 0) {
+        resetFeeDetail();
+        return;
+    }
+    
+    let nonSupAppSystems = 0;
+    let nonSupAuditFee = 0;
+    let nonSupAuditDays = 0;
+    let nonSupSystems = 0;
+    
+    let supAuditFee = 0;
+    let supAuditDays = 0;
+    let supSystems = 0;
+    
+    cachedNonSupItems = [];
+    cachedSupItems = [];
+    
+    certRows.forEach(row => {
+        const type = row.querySelector('.cert-type')?.value || '';
+        const field = row.querySelector('.cert-field')?.value || '';
+        const riskSelect = row.querySelector('.cert-risk');
+        const riskText = riskSelect?.options[riskSelect.selectedIndex]?.text || '';
+        const days = parseFloat(row.querySelector('.cert-days')?.value) || 0;
+        const price = parseFloat(row.querySelector('.cert-price')?.value) || 0;
+        const amount = days * price;
+        
+        const item = { field, type, risk: riskText.split('(')[0], days, price, amount };
+        
+        if (isSupervisionType(type)) {
+            supSystems++;
+            supAuditFee += amount;
+            supAuditDays += days;
+            if (amount > 0) cachedSupItems.push(item);
+        } else {
+            nonSupSystems++;
+            nonSupAuditFee += amount;
+            nonSupAuditDays += days;
+            if (amount > 0) cachedNonSupItems.push(item);
+            
+            if (type === '初次认证' || type === '认证转换') {
+                nonSupAppSystems++;
+            }
+        }
+    });
+    
+    // 上半部分：认证审核费用
+    const appFee = nonSupAppSystems * 1000;
+    const appInput = document.getElementById('fee-application');
+    const appRow = document.getElementById('fee-row-application');
+    const appDetail = document.getElementById('app-fee-detail');
+    
+    if (appInput && appRow) {
+        if (nonSupAppSystems > 0) {
+            appInput.value = appFee;
+            appRow.classList.remove('fee-row-gray');
+            if (appDetail) appDetail.textContent = `（${nonSupAppSystems}个认证体系需缴纳申请费）`;
+        } else {
+            appInput.value = 0;
+            appRow.classList.add('fee-row-gray');
+            if (appDetail) appDetail.textContent = '（当前无认证初次认证/认证转换体系，此项不发生）';
+        }
+    }
+    
+    const auditInput = document.getElementById('fee-audit');
+    const auditDaysEl = document.getElementById('audit-days-total');
+    const auditDetail = document.getElementById('audit-fee-detail');
+    
+    if (auditInput) auditInput.value = nonSupAuditFee;
+    if (auditDaysEl) auditDaysEl.textContent = nonSupAuditDays;
+    if (auditDetail) {
+        if (cachedNonSupItems.length > 0) {
+            auditDetail.textContent = cachedNonSupItems.map(r => 
+                `${r.field}(${r.type}): ${r.days}人天×¥${r.price}=¥${r.amount.toLocaleString()}`
+            ).join('；');
+        } else {
+            auditDetail.textContent = '';
+        }
+    }
+    
+    const regFee = nonSupSystems * 2000;
+    const regInput = document.getElementById('fee-registration');
+    if (regInput) regInput.value = regFee;
+    
+    const annualFee = nonSupSystems * 2000;
+    const annualInput = document.getElementById('fee-annual');
+    if (annualInput) annualInput.value = annualFee;
+    
+    calculateFeeTotal();
+    
+    // 下半部分：监督审核费用
+    const supSection = document.getElementById('supervision-fee-section');
+    const supAuditInput = document.getElementById('fee-supervision-audit');
+    const supAnnualInput = document.getElementById('fee-supervision-annual');
+    const supDaysEl = document.getElementById('supervision-audit-days');
+    const supDetail = document.getElementById('supervision-audit-detail');
+    
+    if (supSection) {
+        if (supSystems > 0) {
+            supSection.classList.remove('fee-row-hidden');
+            
+            if (supAuditInput) supAuditInput.value = supAuditFee;
+            if (supAnnualInput) supAnnualInput.value = supSystems * 2000;
+            if (supDaysEl) supDaysEl.textContent = supAuditDays;
+            if (supDetail) {
+                supDetail.textContent = cachedSupItems.map(r => 
+                    `${r.field}: ${r.days}人天×¥${r.price}=¥${r.amount.toLocaleString()}`
+                ).join('；');
+            }
+        } else {
+            supSection.classList.add('fee-row-hidden');
+            if (supAuditInput) supAuditInput.value = '';
+            if (supAnnualInput) supAnnualInput.value = '';
+            if (supDaysEl) supDaysEl.textContent = '0';
+            if (supDetail) supDetail.textContent = '';
+        }
+    }
+    
+    calculateSupervisionTotal();
+}
+
+/** 清空费用明细 */
+function resetFeeDetail() {
+    const ids = ['fee-application', 'fee-audit', 'fee-registration', 'fee-annual'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    
+    const auditDaysEl = document.getElementById('audit-days-total');
+    if (auditDaysEl) auditDaysEl.textContent = '0';
+    
+    const appDetail = document.getElementById('app-fee-detail');
+    if (appDetail) appDetail.textContent = '';
+    
+    const auditDetail = document.getElementById('audit-fee-detail');
+    if (auditDetail) auditDetail.textContent = '';
+    
+    const supSection = document.getElementById('supervision-fee-section');
+    if (supSection) supSection.classList.add('fee-row-hidden');
+    
+    calculateFeeTotal();
+    calculateSupervisionTotal();
+    
+    const nonSupBadge = document.getElementById('nonSupCountBadge');
+    const supBadge = document.getElementById('supCountBadge');
+    if (nonSupBadge) nonSupBadge.textContent = '认证: 0';
+    if (supBadge) supBadge.textContent = '监督: 0';
+    
+    cachedNonSupItems = [];
+    cachedSupItems = [];
+}
+
+/** 计算主费用表合计 */
+function calculateFeeTotal() {
+    const mainIds = ['fee-application', 'fee-audit', 'fee-registration', 'fee-annual', 'fee-test'];
+    let mainTotal = 0;
+    mainIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value !== '') {
+            const val = parseFloat(el.value);
+            if (!isNaN(val)) mainTotal += val;
+        }
+    });
+    
+    const mainTotalEl = document.getElementById('main-fee-total');
+    const mainChineseEl = document.getElementById('main-fee-total-chinese');
+    if (mainTotalEl) mainTotalEl.textContent = mainTotal.toLocaleString();
+    if (mainChineseEl) mainChineseEl.textContent = numberToChinese(mainTotal);
+    
+    window.currentMainFeeTotal = mainTotal;
+}
+
+/** 计算监督审核合计 */
+function calculateSupervisionTotal() {
+    const supIds = ['fee-supervision-audit', 'fee-supervision-annual'];
+    let supTotal = 0;
+    supIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value !== '') {
+            const val = parseFloat(el.value);
+            if (!isNaN(val)) supTotal += val;
+        }
+    });
+    
+    const supTotalEl = document.getElementById('supervision-fee-total');
+    const supChineseEl = document.getElementById('supervision-fee-total-chinese');
+    if (supTotalEl) supTotalEl.textContent = supTotal.toLocaleString();
+    if (supChineseEl) supChineseEl.textContent = numberToChinese(supTotal);
+    
+    window.currentSupervisionFeeTotal = supTotal;
+}
+
+/** 数字转中文大写 */
+function numberToChinese(num) {
+    if (num === 0 || num === undefined || num === null) return '零元整';
+    const units = ['', '拾', '佰', '仟'];
+    const nums = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
+    const bigUnits = ['', '万', '亿'];
+
+    let integer = Math.floor(num);
+    let decimal = Math.round((num - integer) * 100);
+
+    if (integer === 0 && decimal === 0) return '零元整';
+
+    let intStr = integer.toString();
+    let len = intStr.length;
+    let result = '';
+    let zeroFlag = false;
+
+    for (let i = 0; i < len; i++) {
+        let n = parseInt(intStr[i]);
+        let unitIndex = (len - 1 - i) % 4;
+        let bigUnitIndex = Math.floor((len - 1 - i) / 4);
+
+        if (n === 0) {
+            if (!zeroFlag && unitIndex !== 0 && result.length > 0) {
+                result += '零';
+                zeroFlag = true;
+            }
+            if (unitIndex === 0 && bigUnitIndex > 0) {
+                result += bigUnits[bigUnitIndex];
+                zeroFlag = false;
+            }
+        } else {
+            zeroFlag = false;
+            result += nums[n] + units[unitIndex];
+            if (unitIndex === 0 && bigUnitIndex > 0) {
+                result += bigUnits[bigUnitIndex];
+            }
+        }
+    }
+
+    result = result.replace(/零+$/, '').replace(/零+/g, '零');
+    if (!result) result = '零';
+
+    let str = result + '元';
+
+    if (decimal > 0) {
+        let jiao = Math.floor(decimal / 10);
+        let fen = decimal % 10;
+        if (jiao > 0) str += nums[jiao] + '角';
+        if (fen > 0) str += nums[fen] + '分';
+    } else {
+        str += '整';
+    }
+
+    return str;
+}
+
+// ==================== 步骤2：费用计算汇总（移入查看明细） ====================
+
+function initFeeCalculation() {
+    // 认证审核费用明细（标准）
+    const standardBody = document.getElementById('certFeeStandardBody');
+    if (standardBody) {
+        const appFee = parseFloat(document.getElementById('fee-application')?.value) || 0;
+        const auditFee = parseFloat(document.getElementById('fee-audit')?.value) || 0;
+        const regFee = parseFloat(document.getElementById('fee-registration')?.value) || 0;
+        const annualFee = parseFloat(document.getElementById('fee-annual')?.value) || 0;
+        const testFee = parseFloat(document.getElementById('fee-test')?.value) || 0;
+        
+        let html = '';
+        if (appFee > 0) html += `<tr><td class="px-4 py-3">申请费用</td><td class="px-4 py-3 text-right text-gray-500">1000元/体系</td><td class="px-4 py-3 text-right font-medium">${appFee.toLocaleString()}</td></tr>`;
+        
+        if (auditFee > 0) {
+            html += `<tr onmouseenter="showAuditDetailTooltip(event, 'nonSup')" onmouseleave="hideDetailTooltip()">
+                <td class="px-4 py-3">
+                    <span class="hover-detail-trigger text-blue-600">审核费用 <i class="fas fa-info-circle text-xs text-gray-400"></i></span>
+                </td>
+                <td class="px-4 py-3 text-right text-gray-500">市场调节价格</td>
+                <td class="px-4 py-3 text-right font-medium">${auditFee.toLocaleString()}</td>
+            </tr>`;
+        }
+        
+        if (regFee > 0) html += `<tr><td class="px-4 py-3">审定和注册费用</td><td class="px-4 py-3 text-right text-gray-500">2000元/体系</td><td class="px-4 py-3 text-right font-medium">${regFee.toLocaleString()}</td></tr>`;
+        if (annualFee > 0) html += `<tr><td class="px-4 py-3">管理年金</td><td class="px-4 py-3 text-right text-gray-500">每年2000元</td><td class="px-4 py-3 text-right font-medium">${annualFee.toLocaleString()}</td></tr>`;
+        if (testFee > 0) html += `<tr><td class="px-4 py-3">检测费用</td><td class="px-4 py-3 text-right text-gray-500">按实验室标准</td><td class="px-4 py-3 text-right font-medium">${testFee.toLocaleString()}</td></tr>`;
+        
+        standardBody.innerHTML = html || '<tr><td colspan="3" class="px-4 py-4 text-center text-gray-400">暂无认证审核费用数据</td></tr>';
+    }
+    
+    // 监督审核费用（动态）
+    const supSection = document.getElementById('step2-supervision-section');
+    const supBody = document.getElementById('supervisionFeeStandardBody');
+    const supAuditFee = parseFloat(document.getElementById('fee-supervision-audit')?.value) || 0;
+    const supAnnualFee = parseFloat(document.getElementById('fee-supervision-annual')?.value) || 0;
+    
+    if (supSection && supBody) {
+        if (supAuditFee > 0 || supAnnualFee > 0) {
+            supSection.classList.remove('fee-row-hidden');
+            
+            let html = '';
+            if (supAuditFee > 0) {
+                html += `<tr onmouseenter="showAuditDetailTooltip(event, 'sup')" onmouseleave="hideDetailTooltip()">
+                    <td class="px-4 py-3">
+                        <span class="hover-detail-trigger text-blue-600">审核费用 <i class="fas fa-info-circle text-xs text-gray-400"></i></span>
+                    </td>
+                    <td class="px-4 py-3 text-right text-gray-500">市场调节价格</td>
+                    <td class="px-4 py-3 text-right font-medium">${supAuditFee.toLocaleString()}</td>
+                </tr>`;
+            }
+            if (supAnnualFee > 0) {
+                html += `<tr><td class="px-4 py-3">管理年金</td><td class="px-4 py-3 text-right text-gray-500">每年2000元</td><td class="px-4 py-3 text-right font-medium">${supAnnualFee.toLocaleString()}</td></tr>`;
+            }
+            const supTotal = supAuditFee + supAnnualFee;
+            html += `<tr class="bg-gray-50 font-medium"><td class="px-4 py-3" colspan="2">每次合计</td><td class="px-4 py-3 text-right text-blue-600 font-bold">${supTotal.toLocaleString()}</td></tr>`;
+            
+            supBody.innerHTML = html;
+        } else {
+            supSection.classList.add('fee-row-hidden');
+            supBody.innerHTML = '';
+        }
+    }
+    
+    // 技术服务数据
+    const techRows = document.querySelectorAll('[id^="tech-row-"]');
+    const techData = [];
+    let techTotal = 0;
+    
+    techRows.forEach(row => {
+        const type = row.querySelector('.tech-type')?.value;
+        const amount = parseFloat(row.querySelector('.tech-amount')?.value) || 0;
+        if (type && amount > 0) {
+            techData.push({type, amount});
+            techTotal += amount;
+        }
+    });
+    
+    const techTbody = document.getElementById('techFeeDetailBody');
+    if (techTbody) {
+        techTbody.innerHTML = techData.length > 0 ? techData.map(t => `
+            <tr>
+                <td class="px-4 py-3">${t.type}</td>
+                <td class="px-4 py-3 text-right font-medium text-green-600">${t.amount.toLocaleString()}</td>
+            </tr>
+        `).join('') : '<tr><td colspan="2" class="px-4 py-4 text-center text-gray-400">未添加技术服务</td></tr>';
+    }
+    
+    const nonSupCertTotal = cachedNonSupItems.reduce((sum, item) => sum + item.amount, 0);
+    window.currentCertTotal = nonSupCertTotal;
+    window.currentTechTotal = techTotal;
+    
+    const summaryCert = document.getElementById('summaryCertStandard');
+    const summaryTech = document.getElementById('summaryTech');
+    const summaryRegion = document.getElementById('summaryRegion');
+    const summaryCustomer = document.getElementById('summaryCustomer');
+    const summaryCertFee = document.getElementById('summaryCertFee');
+    const summarySupFee = document.getElementById('summarySupFee');
+    const summarySupFeeRow = document.getElementById('summarySupFeeRow');
+    
+    if (summaryCert) summaryCert.textContent = '¥' + nonSupCertTotal.toLocaleString();
+    if (summaryTech) summaryTech.textContent = '¥' + techTotal.toLocaleString();
+    if (summaryRegion && selectedCustomer) summaryRegion.innerHTML = `<i class="fas fa-map-marker-alt mr-1"></i>报价区域：${selectedCustomer.region}`;
+    if (summaryCustomer && selectedCustomer) summaryCustomer.innerHTML = `<i class="fas fa-building mr-1"></i>客户：${selectedCustomer.name}`;
+    if (summaryCertFee) summaryCertFee.textContent = '¥' + (window.currentMainFeeTotal || 0).toLocaleString();
+    
+    const supTotalFee = (window.currentSupervisionFeeTotal || 0);
+    if (summarySupFee) summarySupFee.textContent = '¥' + supTotalFee.toLocaleString();
+    if (summarySupFeeRow) {
+        summarySupFeeRow.style.display = supTotalFee > 0 ? 'flex' : 'none';
+    }
+    
+    applyDiscount();
+}
+
+// 移入显示审核费用明细提示
+function showAuditDetailTooltip(event, type) {
+    const tooltip = document.getElementById('globalTooltip');
+    const content = document.getElementById('tooltipContent');
+    
+    let items = type === 'sup' ? cachedSupItems : cachedNonSupItems;
+    let title = type === 'sup' ? '监督审核-认证领域费用明细' : '认证审核-认证领域费用明细';
+    
+    if (items.length === 0) return;
+    
+    let total = items.reduce((sum, item) => sum + item.amount, 0);
+    
+    content.innerHTML = `
+        <div class="text-sm">
+            <div class="font-bold text-gray-800 mb-2 pb-1.5 border-b border-gray-200">${title}</div>
+            <div class="space-y-1.5">
+                ${items.map(f => `
+                    <div class="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
+                        <div>
+                            <div class="text-xs font-medium text-gray-700">${f.field}</div>
+                            <div class="text-xs text-gray-500">${f.type} | ${f.risk}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs font-medium text-blue-600">¥${f.amount.toLocaleString()}</div>
+                            <div class="text-xs text-gray-400">${f.days}人天 × ¥${f.price}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="mt-2 pt-2 border-t border-gray-200 flex justify-between items-center">
+                <span class="text-xs text-gray-500">小计</span>
+                <span class="text-sm font-bold text-blue-600">¥${total.toLocaleString()}</span>
+            </div>
+        </div>
+    `;
+    
+    const rect = event.target.getBoundingClientRect();
+    const tooltipHeight = tooltip.offsetHeight || 300;
+    const windowHeight = window.innerHeight;
+    
+    if (rect.bottom + tooltipHeight > windowHeight - 20) {
+        tooltip.style.top = (rect.top - tooltipHeight - 10) + 'px';
+        tooltip.classList.add('bottom');
+    } else {
+        tooltip.style.top = (rect.bottom + 10) + 'px';
+        tooltip.classList.remove('bottom');
+    }
+    
+    tooltip.style.left = Math.min(rect.left, window.innerWidth - 420) + 'px';
+    tooltip.style.display = 'block';
+}
+
+// ==================== 折扣与汇总 ====================
+
+function applyDiscount() {
+    const discountInput = document.getElementById('discountRate');
+    const discountRate = discountInput ? (parseFloat(discountInput.value) || 100) : 100;
+    const certTotal = window.currentCertTotal || 0;
+    const techTotal = window.currentTechTotal || 0;
+    const mainFee = window.currentMainFeeTotal || 0;
+    const supFee = window.currentSupervisionFeeTotal || 0;
+    
+    const discountedCert = certTotal * (discountRate / 100);
+    
+    const discountedInput = document.getElementById('discountedCertAmount');
+    if (discountedInput) discountedInput.value = '¥' + Math.round(discountedCert).toLocaleString();
+    
+    const nonSupOtherFees = mainFee - certTotal;
+    const correctTotal = discountedCert + nonSupOtherFees + supFee + techTotal;
+    
+    const summaryTotal = document.getElementById('summaryTotal');
+    if (summaryTotal) summaryTotal.textContent = '¥' + Math.round(correctTotal).toLocaleString();
+    
+    const discountRow = document.getElementById('discountRow');
+    if (discountRow) {
+        if (discountRate < 100) {
+            discountRow.style.display = 'flex';
+            const summaryCertDiscounted = document.getElementById('summaryCertDiscounted');
+            if (summaryCertDiscounted) summaryCertDiscounted.textContent = '¥' + Math.round(discountedCert).toLocaleString();
+        } else {
+            discountRow.style.display = 'none';
+        }
+    }
+    
+    const warning = document.getElementById('discountWarning');
+    if (warning) {
+        if (discountRate < 90) warning.classList.remove('hidden');
+        else warning.classList.add('hidden');
+    }
+}
+
+// ==================== 步骤3：预览 ====================
+
+function generatePreview() {
+    const discountInput = document.getElementById('discountRate');
+    const discountRate = discountInput ? (parseFloat(discountInput.value) || 100) : 100;
+    const certTotal = window.currentCertTotal || 0;
+    const techTotal = window.currentTechTotal || 0;
+    const discountedCert = certTotal * (discountRate / 100);
+    
+    const appFee = parseFloat(document.getElementById('fee-application')?.value) || 0;
+    const regFee = parseFloat(document.getElementById('fee-registration')?.value) || 0;
+    const annualFee = parseFloat(document.getElementById('fee-annual')?.value) || 0;
+    const testFee = parseFloat(document.getElementById('fee-test')?.value) || 0;
+    const supTotal = window.currentSupervisionFeeTotal || 0;
+    
+    const nonSupOtherFees = (window.currentMainFeeTotal || 0) - certTotal;
+    const finalTotal = discountedCert + nonSupOtherFees + supTotal + techTotal;
+    
+    const previewCustomer = document.getElementById('previewCustomer');
+    const previewCode = document.getElementById('previewCode');
+    
+    if (previewCustomer) previewCustomer.textContent = selectedCustomer ? selectedCustomer.name : '--';
+    if (previewCode) previewCode.textContent = selectedCustomer ? selectedCustomer.code : '--';
+    
+    const items = [];
+    if (appFee > 0) items.push({name: '申请费用', amount: appFee});
+    if (discountedCert > 0) items.push({name: `审核费用（认证）${discountRate < 100 ? ' - ' + discountRate + '%折扣' : ''}`, amount: discountedCert});
+    if (regFee > 0) items.push({name: '审定和注册费用', amount: regFee});
+    if (annualFee > 0) items.push({name: '管理年金（认证）', amount: annualFee});
+    if (testFee > 0) items.push({name: '检测费用', amount: testFee});
+    
+    const supAudit = parseFloat(document.getElementById('fee-supervision-audit')?.value) || 0;
+    const supAnnual = parseFloat(document.getElementById('fee-supervision-annual')?.value) || 0;
+    if (supAudit > 0) items.push({name: '监督审核-审核费', amount: supAudit});
+    if (supAnnual > 0) items.push({name: '监督审核-管理年金', amount: supAnnual});
+    
+    if (techTotal > 0) items.push({name: '技术服务费', amount: techTotal});
+    
+    const previewItems = document.getElementById('previewItems');
+    if (previewItems) {
+        previewItems.innerHTML = items.length > 0 ? items.map(i => `
+            <tr>
+                <td class="py-2 pl-2">${i.name}</td>
+                <td class="py-2 text-right pr-2">¥${Math.round(i.amount).toLocaleString()}</td>
+            </tr>
+        `).join('') : '<tr><td colspan="2" class="py-4 text-center text-gray-400">暂无费用明细</td></tr>';
+    }
+    
+    const previewTotal = document.getElementById('previewTotal');
+    if (previewTotal) previewTotal.textContent = '¥' + Math.round(finalTotal).toLocaleString();
+    
+    const flowText = document.getElementById('approvalFlowText');
+    if (flowText) {
+        if (discountRate < 90) {
+            flowText.innerHTML = '当前报价<span class="text-red-600 font-medium">折扣低于90%</span>，将提交至：部门负责人审批 → <span class="text-red-600 font-medium">区域总监审批</span> → 生成正式报价单';
+        } else {
+            flowText.textContent = '当前报价将提交至：部门负责人审批 → 生成正式报价单';
+        }
+    }
+}
+
+function saveDraft() {
+    alert('草稿已保存');
+    closeModal();
+}
+
+function submitApproval() {
+    const discountInput = document.getElementById('discountRate');
+    const discountRate = discountInput ? (parseFloat(discountInput.value) || 100) : 100;
+    
+    if (discountRate < 90) {
+        alert('报价单已提交，因折扣低于90%，需区域总监审批');
+    } else {
+        alert('报价单已提交审批');
+    }
+    closeModal();
+    
+    mockQuotations.unshift({
+        id: 'BJ-2026-00433',
+        customer: selectedCustomer ? selectedCustomer.name : '新客户',
+        code: selectedCustomer ? selectedCustomer.code : '--',
+        region: selectedCustomer ? selectedCustomer.region : '华北区',
+        fields: [{name: '质量管理体系', type: '初次认证', risk: '二级', days: 12, price: 4500, amount: 54000}],
+        techServices: [],
+        certTotal: 54000, techTotal: 0, total: 54000,
+        discount: discountRate, finalAmount: 54000 * (discountRate / 100),
+        status: discountRate < 90 ? 'pending_director' : 'pending',
+        statusName: discountRate < 90 ? '总监审批中' : '待审批',
+        createDate: '2026-04-11', validDate: '2026-05-11'
+    });
+    renderQuotationTable();
+}
+
+// ==================== 页面交互函数 ====================
+
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    const target = document.getElementById(tabName);
+    if (target) target.classList.remove('hidden');
+    
+    document.querySelectorAll('.nav-tab').forEach(el => {
+        el.classList.remove('border-blue-600', 'text-blue-600');
+        el.classList.add('border-transparent', 'text-gray-600');
+    });
+    const navTab = document.getElementById('nav-' + tabName);
+    if (navTab) {
+        navTab.classList.add('border-blue-600', 'text-blue-600');
+        navTab.classList.remove('border-transparent', 'text-gray-600');
+    }
+}
+
 function openCreateModal() {
     const modal = document.getElementById('quotationModal');
     if (modal) {
         modal.classList.remove('hidden');
-        // 确保模态框显示为flex
         modal.style.display = 'flex';
     }
     currentStep = 1;
@@ -1247,29 +2096,23 @@ function closeModal() {
     }
 }
 
-// 步骤控制 - 调整为3步流程
 function nextStep() {
     if (currentStep === 1) {
-        // 验证基础信息
         if (!selectedCustomer) {
             alert('请先选择客户');
             return;
         }
-        // 检查是否至少有一个认证领域
         const certRows = document.querySelectorAll('[id^="cert-row-"]');
         if (certRows.length === 0) {
             alert('请至少添加一个认证领域');
             return;
         }
-        // 验证所有认证领域是否填写完整
         let valid = true;
         certRows.forEach(row => {
             const field = row.querySelector('.cert-field')?.value;
             const risk = row.querySelector('.cert-risk')?.value;
             const days = row.querySelector('.cert-days')?.value;
-            if (!field || !risk || !days) {
-                valid = false;
-            }
+            if (!field || !risk || !days) valid = false;
         });
         if (!valid) {
             alert('请完善认证领域信息（领域、风险等级、人天数均为必填）');
@@ -1291,23 +2134,19 @@ function prevStep() {
 }
 
 function updateStepIndicator() {
-    // 隐藏所有步骤内容
     document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
     const currentStepEl = document.getElementById('step' + currentStep);
     if (currentStepEl) currentStepEl.classList.remove('hidden');
     
-    // 更新进度条
     const progressBar = document.getElementById('progressBar');
     if (progressBar) {
         const progress = ((currentStep - 1) / 2) * 100;
         progressBar.style.width = progress + '%';
     }
     
-    // 更新指示器样式
     for (let i = 1; i <= 3; i++) {
         const indicator = document.getElementById('step' + i + '-indicator');
         if (!indicator) continue;
-        
         const circle = indicator.querySelector('div');
         const text = indicator.querySelector('span');
         
@@ -1324,7 +2163,6 @@ function updateStepIndicator() {
         }
     }
     
-    // 控制按钮显示
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
     const modalFooter = document.getElementById('modalFooter');
@@ -1333,32 +2171,17 @@ function updateStepIndicator() {
     if (nextBtn) nextBtn.classList.toggle('hidden', currentStep === 3);
     if (modalFooter) modalFooter.classList.toggle('hidden', currentStep === 3);
     
-    // 如果是步骤2（费用计算），初始化费用计算
-    if (currentStep === 2) {
-        initFeeCalculation();
-    }
-    
-    // 如果是步骤3（审批提交），生成预览
-    if (currentStep === 3) {
-        generatePreview();
-    }
+    if (currentStep === 2) initFeeCalculation();
+    if (currentStep === 3) generatePreview();
 }
 
-// 打开客户选择弹窗 - 修复层级问题
+// ==================== 客户选择 ====================
+
 function openCustomerSelector() {
-    console.log('打开客户选择器'); // 调试日志
-    
     const modal = document.getElementById('customerSelectorModal');
-    if (!modal) {
-        console.error('找不到客户选择模态框');
-        return;
-    }
-    
-    // 确保模态框显示
+    if (!modal) return;
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
-    
-    // 渲染客户列表
     renderCustomerList(mockCustomers);
 }
 
@@ -1395,7 +2218,6 @@ function renderCustomerList(customers) {
 function searchCustomerList() {
     const keywordInput = document.getElementById('customerSearchInput');
     const regionSelect = document.getElementById('customerRegionFilter');
-    
     const keyword = keywordInput ? keywordInput.value.toLowerCase() : '';
     const region = regionSelect ? regionSelect.value : '';
     
@@ -1404,14 +2226,12 @@ function searchCustomerList() {
         const matchRegion = !region || c.region === region;
         return matchKeyword && matchRegion;
     });
-    
     renderCustomerList(filtered);
 }
 
 function selectCustomer(customerId) {
     selectedCustomer = mockCustomers.find(c => c.id === customerId);
     if (selectedCustomer) {
-        // 回显客户信息
         const fields = {
             'displayCustomerName': selectedCustomer.name,
             'displayCustomerCode': '统一社会信用代码：' + selectedCustomer.code,
@@ -1421,8 +2241,7 @@ function selectCustomer(customerId) {
             'displayAddress': selectedCustomer.address,
             'displayRegion': selectedCustomer.region,
             'displayLegal': selectedCustomer.legal,
-            'displayCapital': selectedCustomer.capital,
-            'displayEstablishDate': selectedCustomer.establishDate
+            'displayCapital': selectedCustomer.capital
         };
         
         for (const [id, value] of Object.entries(fields)) {
@@ -1430,7 +2249,6 @@ function selectCustomer(customerId) {
             if (el) el.textContent = value;
         }
         
-        // 显示信息区，隐藏空状态
         const infoDisplay = document.getElementById('customerInfoDisplay');
         const emptyState = document.getElementById('customerEmptyState');
         if (infoDisplay) infoDisplay.classList.remove('hidden');
@@ -1438,7 +2256,12 @@ function selectCustomer(customerId) {
         
         closeCustomerSelector();
         
-        // 如果跨区域，显示提示
+        document.querySelectorAll('[id^="cert-row-"]').forEach(row => {
+            const rowId = row.id.replace('cert-row-', '');
+            updatePriceByLibrary(rowId);
+        });
+        recalcFeeDetail();
+        
         if (selectedCustomer.region !== currentRegion) {
             setTimeout(() => {
                 alert(`提示：该客户属于${selectedCustomer.region}，跨区域报价将按属地价格标准执行`);
@@ -1447,9 +2270,9 @@ function selectCustomer(customerId) {
     }
 }
 
-// 添加认证领域行
+// ==================== 认证领域配置 ====================
+
 function addCertificationRow() {
-    // 检查是否已选客户
     if (!selectedCustomer) {
         alert('请先选择客户，以便系统匹配对应区域的价格标准');
         return;
@@ -1457,8 +2280,6 @@ function addCertificationRow() {
 
     const container = document.getElementById('certificationRows');
     const id = Date.now();
-    
-    // 隐藏空提示
     const emptyMsg = document.getElementById('emptyCertMsg');
     if (emptyMsg) emptyMsg.classList.add('hidden');
     
@@ -1472,7 +2293,7 @@ function addCertificationRow() {
         <div class="grid grid-cols-3 gap-4 mb-3 pr-8">
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1 required">认证领域</label>
-                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm cert-field focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updatePriceByLibrary('${id}')">
+                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm cert-field focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updatePriceByLibrary('${id}'); recalcFeeDetail();">
                     <option value="">请选择</option>
                     <option value="质量管理体系(QMS)">质量管理体系(QMS)</option>
                     <option value="环境管理体系(EMS)">环境管理体系(EMS)</option>
@@ -1484,16 +2305,19 @@ function addCertificationRow() {
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1 required">审核类型</label>
-                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option>初次认证</option>
-                    <option>监督审核</option>
-                    <option>再认证</option>
-                    <option>特殊审核</option>
+                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm cert-type focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="recalcFeeDetail();">
+                    <option value="">请选择</option>
+                    <option value="初次认证">初次认证</option>
+                    <option value="监督审核">监督审核</option>
+                    <option value="再认证">再认证</option>
+                    <option value="认证转换">认证转换</option>
+                    <option value="证书变更">证书变更</option>
+                    <option value="特殊审核">特殊审核</option>
                 </select>
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1 required">风险等级</label>
-                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm cert-risk focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updatePriceByLibrary('${id}')">
+                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm cert-risk focus:ring-2 focus:ring-blue-500 focus:border-blue-500" onchange="updatePriceByLibrary('${id}'); recalcFeeDetail();">
                     <option value="">请选择</option>
                     <option value="1" class="text-green-700">一级风险(低)</option>
                     <option value="2" class="text-yellow-700">二级风险(中)</option>
@@ -1508,7 +2332,7 @@ function addCertificationRow() {
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1 required">人天数</label>
-                <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm cert-days focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="请输入" min="1" onchange="calculateCertAmount('${id}')">
+                <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm cert-days focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="请输入" min="1" onchange="calculateCertAmount('${id}'); recalcFeeDetail();">
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">单价(元/人天)</label>
@@ -1522,19 +2346,20 @@ function addCertificationRow() {
         </div>
     `;
     if (container) container.appendChild(row);
+    recalcFeeDetail();
 }
 
 function removeCertRow(id) {
     const row = document.getElementById('cert-row-' + id);
     if (row) {
         row.remove();
-        // 如果没有行了，显示空提示
         const remaining = document.querySelectorAll('[id^="cert-row-"]');
         if (remaining.length === 0) {
             const emptyMsg = document.getElementById('emptyCertMsg');
             if (emptyMsg) emptyMsg.classList.remove('hidden');
         }
     }
+    recalcFeeDetail();
 }
 
 function updatePriceByLibrary(rowId) {
@@ -1545,26 +2370,24 @@ function updatePriceByLibrary(rowId) {
     const riskLevel = row.querySelector('.cert-risk').value;
     
     if (field && riskLevel && selectedCustomer) {
-        // 确定使用哪个区域的价格（客户所在区域）
         const region = selectedCustomer.region;
         const risk = parseInt(riskLevel);
         
-        // 查找价格库
         const priceItem = mockPriceLibrary.find(p => 
-            p.region === region && 
-            p.field === field && 
-            p.riskLevel === risk
+            p.region === region && p.field === field && p.riskLevel === risk
         );
         
         const priceInput = row.querySelector('.cert-price');
         if (priceItem) {
             priceInput.value = priceItem.price;
             calculateCertAmount(rowId);
+            recalcFeeDetail();
         } else {
             priceInput.value = '';
             priceInput.placeholder = '无匹配价格';
             const amountInput = row.querySelector('.cert-amount');
             if (amountInput) amountInput.value = '';
+            recalcFeeDetail();
         }
     }
 }
@@ -1582,12 +2405,11 @@ function calculateCertAmount(rowId) {
     }
 }
 
-// 添加技术服务行
+// ==================== 技术服务费 ====================
+
 function addTechServiceRow() {
     const container = document.getElementById('techServiceRows');
     const id = Date.now();
-    
-    // 隐藏空提示
     const emptyMsg = document.getElementById('emptyTechMsg');
     if (emptyMsg) emptyMsg.classList.add('hidden');
     
@@ -1616,7 +2438,6 @@ function removeTechRow(id) {
     const row = document.getElementById('tech-row-' + id);
     if (row) {
         row.remove();
-        // 如果没有行了，显示空提示
         const remaining = document.querySelectorAll('[id^="tech-row-"]');
         if (remaining.length === 0) {
             const emptyMsg = document.getElementById('emptyTechMsg');
@@ -1629,337 +2450,8 @@ function validateTechAmount(input) {
     if (input && input.value < 0) input.value = 0;
 }
 
-// 初始化费用计算
-function initFeeCalculation() {
-    // 获取所有认证领域数据
-    const certRows = document.querySelectorAll('[id^="cert-row-"]');
-    const certData = [];
-    let certTotal = 0;
-    
-    certRows.forEach(row => {
-        const field = row.querySelector('.cert-field')?.value;
-        const riskSelect = row.querySelector('.cert-risk');
-        const riskLevel = riskSelect?.value;
-        const riskText = riskSelect?.options[riskSelect.selectedIndex]?.text || '';
-        const days = parseFloat(row.querySelector('.cert-days')?.value) || 0;
-        const price = parseFloat(row.querySelector('.cert-price')?.value) || 0;
-        const amount = days * price;
-        
-        if (field && riskLevel && days > 0) {
-            certData.push({
-                field,
-                risk: riskText.split('(')[0],
-                riskLevel: parseInt(riskLevel),
-                days,
-                price,
-                amount
-            });
-            certTotal += amount;
-        }
-    });
-    
-    // 渲染认证费用明细
-    const certTbody = document.getElementById('certFeeDetailBody');
-    if (certTbody) {
-        if (certData.length > 0) {
-            certTbody.innerHTML = certData.map(c => `
-                <tr>
-                    <td class="px-4 py-3">${c.field}</td>
-                    <td class="px-4 py-3 text-center">
-                        <span class="px-2 py-1 rounded text-xs ${c.riskLevel === 3 ? 'bg-red-100 text-red-700' : c.riskLevel === 2 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">
-                            ${c.risk}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3 text-right">${c.days}</td>
-                    <td class="px-4 py-3 text-right">${c.price.toLocaleString()}</td>
-                    <td class="px-4 py-3 text-right font-medium">${c.amount.toLocaleString()}</td>
-                </tr>
-            `).join('');
-        } else {
-            certTbody.innerHTML = '<tr><td colspan="5" class="px-4 py-4 text-center text-gray-400">未添加认证领域</td></tr>';
-        }
-    }
-    
-    // 获取技术服务数据
-    const techRows = document.querySelectorAll('[id^="tech-row-"]');
-    const techData = [];
-    let techTotal = 0;
-    
-    techRows.forEach(row => {
-        const type = row.querySelector('.tech-type')?.value;
-        const amount = parseFloat(row.querySelector('.tech-amount')?.value) || 0;
-        if (type && amount > 0) {
-            techData.push({type, amount});
-            techTotal += amount;
-        }
-    });
-    
-    // 渲染技术服务明细
-    const techTbody = document.getElementById('techFeeDetailBody');
-    if (techTbody) {
-        techTbody.innerHTML = techData.length > 0 ? techData.map(t => `
-            <tr>
-                <td class="px-4 py-3">${t.type}</td>
-                <td class="px-4 py-3 text-right font-medium text-green-600">${t.amount.toLocaleString()}</td>
-            </tr>
-        `).join('') : '<tr><td colspan="2" class="px-4 py-4 text-center text-gray-400">未添加技术服务</td></tr>';
-    }
-    
-    // 存储数据供后续使用
-    window.currentCertTotal = certTotal;
-    window.currentTechTotal = techTotal;
-    
-    // 更新显示
-    const summaryCert = document.getElementById('summaryCertStandard');
-    const summaryTech = document.getElementById('summaryTech');
-    const summaryRegion = document.getElementById('summaryRegion');
-    const summaryCustomer = document.getElementById('summaryCustomer');
-    
-    if (summaryCert) summaryCert.textContent = '¥' + certTotal.toLocaleString();
-    if (summaryTech) summaryTech.textContent = '¥' + techTotal.toLocaleString();
-    if (summaryRegion && selectedCustomer) summaryRegion.innerHTML = `<i class="fas fa-map-marker-alt mr-1"></i>报价区域：${selectedCustomer.region}`;
-    if (summaryCustomer && selectedCustomer) summaryCustomer.innerHTML = `<i class="fas fa-building mr-1"></i>客户：${selectedCustomer.name}`;
-    
-    applyDiscount();
-}
+// ==================== 价格维护 ====================
 
-function applyDiscount() {
-    const discountInput = document.getElementById('discountRate');
-    const discountRate = discountInput ? (parseFloat(discountInput.value) || 100) : 100;
-    const certTotal = window.currentCertTotal || 0;
-    const techTotal = window.currentTechTotal || 0;
-    
-    const discountedCert = certTotal * (discountRate / 100);
-    const finalTotal = discountedCert + techTotal;
-    
-    const discountedInput = document.getElementById('discountedCertAmount');
-    if (discountedInput) discountedInput.value = '¥' + Math.round(discountedCert).toLocaleString();
-    
-    const summaryTotal = document.getElementById('summaryTotal');
-    if (summaryTotal) summaryTotal.textContent = '¥' + Math.round(finalTotal).toLocaleString();
-    
-    // 显示/隐藏折扣行
-    const discountRow = document.getElementById('discountRow');
-    if (discountRow) {
-        if (discountRate < 100) {
-            discountRow.style.display = 'flex';
-            const summaryCertDiscounted = document.getElementById('summaryCertDiscounted');
-            if (summaryCertDiscounted) summaryCertDiscounted.textContent = '¥' + Math.round(discountedCert).toLocaleString();
-        } else {
-            discountRow.style.display = 'none';
-        }
-    }
-    
-    // 折扣警告
-    const warning = document.getElementById('discountWarning');
-    if (warning) {
-        if (discountRate < 90) {
-            warning.classList.remove('hidden');
-        } else {
-            warning.classList.add('hidden');
-        }
-    }
-}
-
-// 生成预览
-function generatePreview() {
-    const discountInput = document.getElementById('discountRate');
-    const discountRate = discountInput ? (parseFloat(discountInput.value) || 100) : 100;
-    const certTotal = window.currentCertTotal || 0;
-    const techTotal = window.currentTechTotal || 0;
-    const discountedCert = certTotal * (discountRate / 100);
-    const finalTotal = discountedCert + techTotal;
-    
-    const previewCustomer = document.getElementById('previewCustomer');
-    const previewCode = document.getElementById('previewCode');
-    
-    if (previewCustomer) previewCustomer.textContent = selectedCustomer ? selectedCustomer.name : '--';
-    if (previewCode) previewCode.textContent = selectedCustomer ? selectedCustomer.code : '--';
-    
-    const items = [];
-    
-    // 认证费用项
-    if (certTotal > 0) {
-        items.push({name: `认证费用${discountRate < 100 ? '（' + discountRate + '%折扣）' : '（标准价）'}`, amount: discountedCert});
-    }
-    
-    // 技术服务项
-    if (techTotal > 0) {
-        items.push({name: '技术服务费', amount: techTotal});
-    }
-    
-    const previewItems = document.getElementById('previewItems');
-    if (previewItems) {
-        previewItems.innerHTML = items.length > 0 ? items.map(i => `
-            <tr>
-                <td class="py-2 pl-2">${i.name}</td>
-                <td class="py-2 text-right pr-2">¥${Math.round(i.amount).toLocaleString()}</td>
-            </tr>
-        `).join('') : '<tr><td colspan="2" class="py-4 text-center text-gray-400">暂无费用明细</td></tr>';
-    }
-    
-    const previewTotal = document.getElementById('previewTotal');
-    if (previewTotal) previewTotal.textContent = '¥' + Math.round(finalTotal).toLocaleString();
-    
-    // 更新审批流程文字
-    const flowText = document.getElementById('approvalFlowText');
-    if (flowText) {
-        if (discountRate < 90) {
-            flowText.innerHTML = '当前报价<span class="text-red-600 font-medium">折扣低于90%</span>，将提交至：部门负责人审批 → <span class="text-red-600 font-medium">区域总监审批</span> → 生成正式报价单';
-        } else {
-            flowText.textContent = '当前报价将提交至：部门负责人审批 → 生成正式报价单';
-        }
-    }
-}
-
-function saveDraft() {
-    alert('草稿已保存');
-    closeModal();
-}
-
-function submitApproval() {
-    const discountInput = document.getElementById('discountRate');
-    const discountRate = discountInput ? (parseFloat(discountInput.value) || 100) : 100;
-    
-    if (discountRate < 90) {
-        alert('报价单已提交，因折扣低于90%，需区域总监审批');
-    } else {
-        alert('报价单已提交审批');
-    }
-    closeModal();
-    
-    // 模拟添加到列表
-    mockQuotations.unshift({
-        id: 'BJ-2026-00433',
-        customer: selectedCustomer ? selectedCustomer.name : '新客户',
-        code: selectedCustomer ? selectedCustomer.code : '--',
-        region: selectedCustomer ? selectedCustomer.region : '华北区',
-        fields: [{name: '质量管理体系', type: '初次认证', risk: '二级', days: 12, price: 4500, amount: 54000}],
-        techServices: [],
-        certTotal: 54000,
-        techTotal: 0,
-        total: 54000,
-        discount: discountRate,
-        finalAmount: 54000 * (discountRate / 100),
-        status: discountRate < 90 ? 'pending_director' : 'pending',
-        statusName: discountRate < 90 ? '总监审批中' : '待审批',
-        createDate: '2026-04-11',
-        validDate: '2026-05-11'
-    });
-    renderQuotationTable();
-}
-
-// 查看详情抽屉
-function viewDetail(id) {
-    const drawer = document.getElementById('detailDrawer');
-    const content = document.getElementById('drawerContent');
-    const q = mockQuotations.find(item => item.id === id);
-    
-    if (!q) return;
-    
-    const drawerBody = document.getElementById('drawerBody');
-    if (drawerBody) {
-        drawerBody.innerHTML = `
-            <div class="space-y-6">
-                <div class="flex gap-2 mb-4">
-                    <span class="status-badge ${getStatusStyle(q.status)}">${q.statusName}</span>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <div class="text-gray-500 mb-1">客户名称</div>
-                        <div class="font-medium">${q.customer}</div>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <div class="text-gray-500 mb-1">客户编码</div>
-                        <div class="font-medium">${q.code}</div>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <div class="text-gray-500 mb-1">所属区域</div>
-                        <div class="font-medium">${q.region}</div>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <div class="text-gray-500 mb-1">跟进人</div>
-                        <div class="font-medium">张经理</div>
-                    </div>
-                </div>
-                
-                <div>
-                    <h4 class="font-bold text-gray-800 mb-3">认证领域明细</h4>
-                    <div class="space-y-3">
-                        ${q.fields.map(f => `
-                            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <div class="font-medium text-gray-800">${f.name}</div>
-                                        <div class="text-xs text-gray-500 mt-1">${f.type} | ${f.days}人天</div>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="font-bold text-blue-600">¥${f.amount.toLocaleString()}</div>
-                                        <div class="text-xs text-gray-500">¥${f.price}/人天</div>
-                                    </div>
-                                </div>
-                                <div class="mt-2">
-                                    <span class="px-2 py-1 rounded text-xs ${f.risk === '三级' ? 'bg-red-100 text-red-700' : f.risk === '二级' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">
-                                        ${f.risk}风险
-                                    </span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                
-                ${q.techServices.length > 0 ? `
-                    <div>
-                        <h4 class="font-bold text-gray-800 mb-3">技术服务费</h4>
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                            ${q.techServices.map(t => `
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span>${t.name}</span>
-                                    <span class="font-medium text-green-700">¥${t.amount.toLocaleString()}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-                
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-medium text-blue-900">报价合计</span>
-                        <span class="text-2xl font-bold text-blue-600">¥${q.finalAmount.toLocaleString()}</span>
-                    </div>
-                    ${q.discount < 100 ? `
-                        <div class="flex justify-between text-sm text-blue-700 mb-1">
-                            <span>标准金额</span>
-                            <span class="line-through">¥${q.total.toLocaleString()}</span>
-                        </div>
-                        <div class="flex justify-between text-sm text-blue-700">
-                            <span>折扣率</span>
-                            <span>${q.discount}%</span>
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-    }
-    
-    if (drawer) drawer.classList.remove('hidden');
-    setTimeout(() => {
-        if (content) content.classList.remove('translate-x-full');
-    }, 10);
-}
-
-function closeDrawer() {
-    const content = document.getElementById('drawerContent');
-    const drawer = document.getElementById('detailDrawer');
-    
-    if (content) content.classList.add('translate-x-full');
-    setTimeout(() => {
-        if (drawer) drawer.classList.add('hidden');
-    }, 300);
-}
-
-// 价格维护相关
 function renderPriceTable() {
     const tbody = document.getElementById('priceTableBody');
     if (!tbody) return;
@@ -1969,38 +2461,25 @@ function renderPriceTable() {
             <td class="px-4 py-3">${p.region}</td>
             <td class="px-4 py-3">${p.field}</td>
             <td class="px-4 py-3">
-                <span class="px-2 py-1 rounded text-xs ${p.riskLevel === 3 ? 'bg-red-100 text-red-700 font-medium' : p.riskLevel === 2 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">
-                    ${p.riskName}风险
-                </span>
+                <span class="px-2 py-1 rounded text-xs ${p.riskLevel === 3 ? 'bg-red-100 text-red-700 font-medium' : p.riskLevel === 2 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">${p.riskName}风险</span>
             </td>
             <td class="px-4 py-3 text-right font-medium">¥${p.price.toLocaleString()}</td>
             <td class="px-4 py-3 text-right text-gray-500">¥${Math.round(p.price * 0.9).toLocaleString()}</td>
             <td class="px-4 py-3 text-center">
-                <button onclick="editPrice(${p.id})" class="text-blue-600 hover:text-blue-800 mr-3 transition-colors" title="编辑">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button onclick="deletePrice(${p.id})" class="text-red-600 hover:text-red-800 transition-colors" title="删除">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <button onclick="editPrice(${p.id})" class="text-blue-600 hover:text-blue-800 mr-3 transition-colors" title="编辑"><i class="fas fa-edit"></i></button>
+                <button onclick="deletePrice(${p.id})" class="text-red-600 hover:text-red-800 transition-colors" title="删除"><i class="fas fa-trash"></i></button>
             </td>
         </tr>
     `).join('');
 }
 
 function filterPriceTable() {
-    const regionSelect = document.getElementById('filterRegion');
-    const fieldSelect = document.getElementById('filterField');
-    const riskSelect = document.getElementById('filterRisk');
-    
-    const region = regionSelect ? regionSelect.value : '';
-    const field = fieldSelect ? fieldSelect.value : '';
-    const risk = riskSelect ? riskSelect.value : '';
+    const region = document.getElementById('filterRegion')?.value || '';
+    const field = document.getElementById('filterField')?.value || '';
+    const risk = document.getElementById('filterRisk')?.value || '';
     
     let filtered = mockPriceLibrary.filter(p => {
-        const matchRegion = !region || p.region === region;
-        const matchField = !field || p.field === field;
-        const matchRisk = !risk || p.riskLevel === parseInt(risk);
-        return matchRegion && matchField && matchRisk;
+        return (!region || p.region === region) && (!field || p.field === field) && (!risk || p.riskLevel === parseInt(risk));
     });
     
     const tbody = document.getElementById('priceTableBody');
@@ -2010,77 +2489,53 @@ function filterPriceTable() {
                 <td class="px-4 py-3">${p.region}</td>
                 <td class="px-4 py-3">${p.field}</td>
                 <td class="px-4 py-3">
-                    <span class="px-2 py-1 rounded text-xs ${p.riskLevel === 3 ? 'bg-red-100 text-red-700 font-medium' : p.riskLevel === 2 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">
-                        ${p.riskName}风险
-                    </span>
+                    <span class="px-2 py-1 rounded text-xs ${p.riskLevel === 3 ? 'bg-red-100 text-red-700 font-medium' : p.riskLevel === 2 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">${p.riskName}风险</span>
                 </td>
                 <td class="px-4 py-3 text-right font-medium">¥${p.price.toLocaleString()}</td>
                 <td class="px-4 py-3 text-right text-gray-500">¥${Math.round(p.price * 0.9).toLocaleString()}</td>
                 <td class="px-4 py-3 text-center">
-                    <button onclick="editPrice(${p.id})" class="text-blue-600 hover:text-blue-800 mr-3 transition-colors" title="编辑">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="deletePrice(${p.id})" class="text-red-600 hover:text-red-800 transition-colors" title="删除">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <button onclick="editPrice(${p.id})" class="text-blue-600 hover:text-blue-800 mr-3 transition-colors" title="编辑"><i class="fas fa-edit"></i></button>
+                    <button onclick="deletePrice(${p.id})" class="text-red-600 hover:text-red-800 transition-colors" title="删除"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>
         `).join('');
     }
 }
 
-// 打开新增价格弹窗
 function openAddPriceModal() {
     editingPriceId = null;
-    const modalTitle = document.getElementById('priceModalTitle');
-    const regionSelect = document.getElementById('editPriceRegion');
-    const fieldSelect = document.getElementById('editPriceField');
-    const riskSelect = document.getElementById('editPriceRisk');
-    const priceInput = document.getElementById('editPriceValue');
-    const previewPrice = document.getElementById('previewLimitPrice');
+    document.getElementById('priceModalTitle').textContent = '新增价格基准';
+    document.getElementById('editPriceRegion').value = '';
+    document.getElementById('editPriceField').value = '';
+    document.getElementById('editPriceRisk').value = '';
+    document.getElementById('editPriceValue').value = '';
+    document.getElementById('previewLimitPrice').textContent = '--';
     const modal = document.getElementById('priceEditModal');
-    
-    if (modalTitle) modalTitle.textContent = '新增价格基准';
-    if (regionSelect) regionSelect.value = '';
-    if (fieldSelect) fieldSelect.value = '';
-    if (riskSelect) riskSelect.value = '';
-    if (priceInput) priceInput.value = '';
-    if (previewPrice) previewPrice.textContent = '--';
-    
     if (modal) {
         modal.classList.remove('hidden');
         modal.style.display = 'flex';
     }
 }
 
-// 编辑价格
 function editPrice(id) {
     editingPriceId = id;
     const price = mockPriceLibrary.find(p => p.id === id);
     if (!price) return;
     
-    const modalTitle = document.getElementById('priceModalTitle');
-    const regionSelect = document.getElementById('editPriceRegion');
-    const fieldSelect = document.getElementById('editPriceField');
-    const riskSelect = document.getElementById('editPriceRisk');
-    const priceInput = document.getElementById('editPriceValue');
-    const previewPrice = document.getElementById('previewLimitPrice');
+    document.getElementById('priceModalTitle').textContent = '编辑价格基准';
+    document.getElementById('editPriceRegion').value = price.region;
+    document.getElementById('editPriceField').value = price.field;
+    document.getElementById('editPriceRisk').value = price.riskLevel;
+    document.getElementById('editPriceValue').value = price.price;
+    document.getElementById('previewLimitPrice').textContent = '¥' + Math.round(price.price * 0.9).toLocaleString();
+    
     const modal = document.getElementById('priceEditModal');
-    
-    if (modalTitle) modalTitle.textContent = '编辑价格基准';
-    if (regionSelect) regionSelect.value = price.region;
-    if (fieldSelect) fieldSelect.value = price.field;
-    if (riskSelect) riskSelect.value = price.riskLevel;
-    if (priceInput) priceInput.value = price.price;
-    if (previewPrice) previewPrice.textContent = '¥' + Math.round(price.price * 0.9).toLocaleString();
-    
     if (modal) {
         modal.classList.remove('hidden');
         modal.style.display = 'flex';
     }
 }
 
-// 关闭价格编辑弹窗
 function closePriceEditModal() {
     const modal = document.getElementById('priceEditModal');
     if (modal) {
@@ -2089,87 +2544,52 @@ function closePriceEditModal() {
     }
 }
 
-// 保存价格数据
 function savePriceData() {
-    const regionSelect = document.getElementById('editPriceRegion');
-    const fieldSelect = document.getElementById('editPriceField');
-    const riskSelect = document.getElementById('editPriceRisk');
-    const priceInput = document.getElementById('editPriceValue');
-    
-    const region = regionSelect ? regionSelect.value : '';
-    const field = fieldSelect ? fieldSelect.value : '';
-    const risk = riskSelect ? parseInt(riskSelect.value) : 0;
-    const price = priceInput ? parseFloat(priceInput.value) : 0;
+    const region = document.getElementById('editPriceRegion')?.value || '';
+    const field = document.getElementById('editPriceField')?.value || '';
+    const risk = parseInt(document.getElementById('editPriceRisk')?.value) || 0;
+    const price = parseFloat(document.getElementById('editPriceValue')?.value) || 0;
     
     if (!region || !field || !risk || !price) {
         alert('请填写完整信息');
         return;
     }
     
-    // 检查是否已存在相同配置
     const existingIndex = mockPriceLibrary.findIndex(p => 
-        p.region === region && 
-        p.field === field && 
-        p.riskLevel === risk &&
-        p.id !== editingPriceId
+        p.region === region && p.field === field && p.riskLevel === risk && p.id !== editingPriceId
     );
     
     if (existingIndex !== -1) {
-        if (!confirm('该配置已存在，是否覆盖？')) {
-            return;
-        }
+        if (!confirm('该配置已存在，是否覆盖？')) return;
         mockPriceLibrary.splice(existingIndex, 1);
     }
     
     const riskNames = {1: '一级', 2: '二级', 3: '三级'};
     
     if (editingPriceId) {
-        // 编辑模式
         const index = mockPriceLibrary.findIndex(p => p.id === editingPriceId);
         if (index !== -1) {
-            // 记录历史
             const oldPrice = mockPriceLibrary[index].price;
             if (oldPrice !== price) {
                 priceHistory.unshift({
                     time: new Date().toLocaleString('zh-CN'),
-                    region: region,
-                    field: field,
-                    risk: riskNames[risk],
-                    oldPrice: oldPrice,
-                    newPrice: price,
-                    operator: '张经理'
+                    region, field, risk: riskNames[risk],
+                    oldPrice, newPrice: price, operator: '张经理'
                 });
             }
-            
             mockPriceLibrary[index] = {
                 ...mockPriceLibrary[index],
-                region,
-                field,
-                riskLevel: risk,
-                riskName: riskNames[risk],
-                price
+                region, field, riskLevel: risk, riskName: riskNames[risk], price
             };
         }
     } else {
-        // 新增模式
         mockPriceLibrary.push({
-            id: Date.now(),
-            region,
-            field,
-            riskLevel: risk,
-            riskName: riskNames[risk],
-            price
+            id: Date.now(), region, field, riskLevel: risk, riskName: riskNames[risk], price
         });
-        
-        // 记录历史
         priceHistory.unshift({
             time: new Date().toLocaleString('zh-CN'),
-            region: region,
-            field: field,
-            risk: riskNames[risk],
-            oldPrice: 0,
-            newPrice: price,
-            operator: '张经理'
+            region, field, risk: riskNames[risk],
+            oldPrice: 0, newPrice: price, operator: '张经理'
         });
     }
     
@@ -2178,7 +2598,6 @@ function savePriceData() {
     alert(editingPriceId ? '修改成功' : '新增成功');
 }
 
-// 删除价格
 function deletePrice(id) {
     if (confirm('确定删除该价格配置？此操作不可恢复。')) {
         const index = mockPriceLibrary.findIndex(p => p.id === id);
@@ -2190,7 +2609,6 @@ function deletePrice(id) {
     }
 }
 
-// 打开历史记录弹窗
 function openHistoryModal() {
     const tbody = document.getElementById('priceHistoryBody');
     const modal = document.getElementById('priceHistoryModal');
@@ -2242,14 +2660,14 @@ function resetForm() {
     selectedCustomer = null;
     certificationItems = [];
     techServiceItems = [];
+    cachedNonSupItems = [];
+    cachedSupItems = [];
     
-    // 重置客户显示
     const infoDisplay = document.getElementById('customerInfoDisplay');
     const emptyState = document.getElementById('customerEmptyState');
     if (infoDisplay) infoDisplay.classList.add('hidden');
     if (emptyState) emptyState.classList.remove('hidden');
     
-    // 清空行
     const certRows = document.getElementById('certificationRows');
     const techRows = document.getElementById('techServiceRows');
     
@@ -2276,18 +2694,28 @@ function resetForm() {
     const warning = document.getElementById('discountWarning');
     if (warning) warning.classList.add('hidden');
     
-    // 重置汇总
     const summaryCert = document.getElementById('summaryCertStandard');
     const summaryTech = document.getElementById('summaryTech');
     const summaryTotal = document.getElementById('summaryTotal');
     const summaryRegion = document.getElementById('summaryRegion');
     const summaryCustomer = document.getElementById('summaryCustomer');
+    const summaryCertFee = document.getElementById('summaryCertFee');
+    const summarySupFee = document.getElementById('summarySupFee');
+    const summarySupFeeRow = document.getElementById('summarySupFeeRow');
     
     if (summaryCert) summaryCert.textContent = '¥0';
     if (summaryTech) summaryTech.textContent = '¥0';
     if (summaryTotal) summaryTotal.textContent = '¥0';
     if (summaryRegion) summaryRegion.innerHTML = '<i class="fas fa-map-marker-alt mr-1"></i>报价区域：--';
     if (summaryCustomer) summaryCustomer.innerHTML = '<i class="fas fa-building mr-1"></i>客户：未选择';
+    if (summaryCertFee) summaryCertFee.textContent = '¥0';
+    if (summarySupFee) summarySupFee.textContent = '¥0';
+    if (summarySupFeeRow) summarySupFeeRow.style.display = 'none';
+    
+    resetFeeDetail();
+    
+    const testInput = document.getElementById('fee-test');
+    if (testInput) testInput.value = '';
 }
 
 function editQuotation(id) {
