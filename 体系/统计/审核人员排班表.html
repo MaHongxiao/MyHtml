@@ -6,28 +6,42 @@
     <title>CQC审核人员排班计划表</title>
     <style>
         :root {
-            --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg-color: #f1f5f9;
+            --primary-color: #4a5568;
+            --primary-hover: #2d3748;
+            --bg-color: #f7fafc;
             --card-bg: #ffffff;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --text-muted: #94a3b8;
+            --text-primary: #1a202c;
+            --text-secondary: #718096;
+            --text-muted: #a0aec0;
             --border-color: #e2e8f0;
-            --border-light: #f1f5f9;
-            --weekend-bg: #f0fdf4;
-            --weekend-text: #166534;
-            --holiday-bg: #fdf2f8;
-            --holiday-text: #be185d;
-            --hover-bg: #f8fafc;
-            --selected-bg: #eff6ff;
-            --audit-color: #3b82f6;
-            --non-audit-color: #f59e0b;
-            --leave-color: #ef4444;
-            --external-color: #8b5cf6;
-            --exceed-color: #dc2626;
-            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --border-light: #edf2f7;
+
+            --weekend-bg: #f0fff4;
+            --weekend-text: #22543d;
+            --holiday-bg: #fff5f5;
+            --holiday-text: #c53030;
+            --hover-bg: #f7fafc;
+            --selected-bg: #ebf8ff;
+
+            --audit-bg: #bee3f8;
+            --audit-text: #2c5282;
+            --audit-border: #90cdf4;
+
+            --non-audit-bg: #fefcbf;
+            --non-audit-text: #744210;
+            --non-audit-border: #f6e05e;
+
+            --leave-bg: #fed7d7;
+            --leave-text: #742a2a;
+            --leave-border: #fc8181;
+
+            --external-bg: #e9d8fd;
+            --external-text: #553c9a;
+            --external-border: #d6bcfa;
+
+            --exceed-color: #c53030;
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+            --shadow-lg: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
 
         * {
@@ -40,16 +54,15 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
             background-color: var(--bg-color);
             color: var(--text-primary);
-            font-size: 13px;
+            font-size: 14px;
             line-height: 1.5;
             overflow-x: hidden;
         }
 
-        /* 顶部查询栏 */
         .header {
             background: var(--card-bg);
             border-bottom: 1px solid var(--border-color);
-            padding: 16px 20px;
+            padding: 14px 20px;
             position: fixed;
             top: 0;
             left: 0;
@@ -62,7 +75,7 @@
             width: 100%;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
             flex-wrap: wrap;
         }
 
@@ -70,7 +83,7 @@
             font-size: 18px;
             font-weight: 600;
             color: var(--text-primary);
-            margin-right: 20px;
+            margin-right: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -80,60 +93,60 @@
         .filter-group {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .filter-label {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
             font-weight: 500;
             white-space: nowrap;
         }
 
         select, input[type="text"] {
-            padding: 6px 10px;
+            padding: 5px 10px;
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: 5px;
             font-size: 13px;
             background: var(--card-bg);
             color: var(--text-primary);
             transition: all 0.2s;
-            min-width: 100px;
+            min-width: 90px;
             height: 32px;
         }
 
         select:focus, input[type="text"]:focus {
             outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            border-color: #90cdf4;
+            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.15);
         }
 
         input[type="text"] {
-            min-width: 160px;
-            width: 160px;
+            min-width: 140px;
+            width: 140px;
         }
 
         .btn {
-            padding: 6px 16px;
+            padding: 5px 14px;
             border: none;
-            border-radius: 6px;
+            border-radius: 5px;
             font-size: 13px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             height: 32px;
         }
 
         .btn-primary {
-            background: var(--primary-color);
+            background: #4299e1;
             color: white;
         }
 
         .btn-primary:hover {
-            background: var(--primary-hover);
+            background: #3182ce;
         }
 
         .btn-secondary {
@@ -147,14 +160,13 @@
             color: var(--text-primary);
         }
 
-        /* 统计信息栏 */
         .stats-bar {
-            margin-top: 65px;
-            background: linear-gradient(to right, #eff6ff, #f0fdf4);
-            padding: 12px 20px;
+            margin-top: 62px;
+            background: linear-gradient(to right, #ebf8ff, #f0fff4);
+            padding: 10px 20px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
-            gap: 32px;
+            gap: 24px;
             font-size: 13px;
             align-items: center;
         }
@@ -162,12 +174,12 @@
         .stat-item {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .stat-value {
             font-weight: 700;
-            color: var(--primary-color);
+            color: #2b6cb0;
             font-size: 16px;
         }
 
@@ -181,55 +193,54 @@
             font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
+            font-size: 13px;
         }
 
-        /* 主体内容区 */
         .main-container {
-            padding: 16px 20px;
+            padding: 14px 20px;
             width: 100%;
         }
 
-        /* 工具栏 */
         .toolbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .toolbar-left {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
         }
 
         .legend {
             display: flex;
-            gap: 20px;
+            gap: 16px;
             font-size: 12px;
             background: white;
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: 6px 12px;
+            border-radius: 5px;
             border: 1px solid var(--border-color);
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .legend-color {
-            width: 14px;
-            height: 14px;
-            border-radius: 3px;
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid rgba(0,0,0,0.1);
         }
 
-        /* 排班表格容器 */
         .schedule-wrapper {
             background: var(--card-bg);
-            border-radius: 8px;
+            border-radius: 6px;
             box-shadow: var(--shadow);
             border: 1px solid var(--border-color);
             overflow: hidden;
@@ -237,11 +248,10 @@
 
         .schedule-container {
             overflow: auto;
-            max-height: calc(100vh - 220px);
+            max-height: calc(100vh - 200px);
             position: relative;
         }
 
-        /* 表格样式 */
         .schedule-table {
             border-collapse: separate;
             border-spacing: 0;
@@ -250,43 +260,40 @@
             table-layout: fixed;
         }
 
-        /* 固定列 */
         .sticky-col {
             position: sticky;
             left: 0;
             background: var(--card-bg);
             z-index: 20;
-            box-shadow: 2px 0 4px rgba(0,0,0,0.08);
+            box-shadow: 2px 0 3px rgba(0,0,0,0.06);
         }
 
         .sticky-col.header {
             z-index: 30;
-            background: #f8fafc;
+            background: #f7fafc;
         }
 
-        /* 表头 */
         .schedule-table th {
-            background: #f8fafc;
-            padding: 10px 6px;
+            background: #f7fafc;
+            padding: 8px 4px;
             font-weight: 600;
             font-size: 12px;
             color: var(--text-secondary);
             text-align: center;
-            border-bottom: 2px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
             border-right: 1px solid var(--border-light);
             white-space: nowrap;
             position: sticky;
             top: 0;
             z-index: 10;
-            height: 60px;
+            height: 52px;
         }
 
         .schedule-table th.date-header {
-            min-width: 50px;
-            max-width: 50px;
+            min-width: 46px;
+            max-width: 46px;
             cursor: pointer;
             transition: background 0.2s;
-            padding: 6px 2px;
         }
 
         .schedule-table th.date-header:hover {
@@ -294,12 +301,12 @@
         }
 
         .schedule-table th.date-header.weekend {
-            background: #dcfce7;
+            background: #f0fff4;
             color: var(--weekend-text);
         }
 
         .schedule-table th.date-header.holiday {
-            background: #fce7f3;
+            background: #fff5f5;
             color: var(--holiday-text);
         }
 
@@ -313,18 +320,17 @@
         .day-week {
             font-size: 11px;
             opacity: 0.8;
-            margin-top: 2px;
+            margin-top: 1px;
             display: block;
         }
 
         .holiday-name {
             font-size: 9px;
             font-weight: 600;
-            margin-top: 2px;
+            margin-top: 1px;
             display: block;
         }
 
-        /* 表格行 */
         .schedule-table tr {
             transition: background 0.15s;
         }
@@ -342,16 +348,15 @@
             border-bottom: 1px solid var(--border-light);
             border-right: 1px solid var(--border-light);
             vertical-align: top;
-            height: 50px;
-            position: relative;
+            height: 48px;
+            /* position: relative; */
         }
 
-        /* 人员信息列 */
         .person-info {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            padding: 8px 12px;
+            gap: 2px;
+            padding: 6px 10px;
             height: 100%;
             justify-content: center;
         }
@@ -362,7 +367,7 @@
             font-size: 14px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         .person-id {
@@ -373,65 +378,79 @@
 
         .person-meta {
             display: flex;
-            gap: 6px;
-            margin-top: 2px;
+            gap: 5px;
+            margin-top: 1px;
         }
 
         .badge {
             font-size: 10px;
-            padding: 1px 6px;
-            border-radius: 4px;
+            padding: 1px 4px;
+            border-radius: 3px;
             font-weight: 500;
             white-space: nowrap;
         }
 
         .badge-primary {
-            background: #dbeafe;
-            color: #1e40af;
+            background: #bee3f8;
+            color: #2c5282;
         }
 
         .badge-secondary {
-            background: #f3f4f6;
-            color: #4b5563;
+            background: #edf2f7;
+            color: #4a5568;
         }
 
         .badge-exceed {
-            background: #fee2e2;
-            color: #991b1b;
+            background: #fed7d7;
+            color: #9b2c2c;
             font-weight: 600;
         }
 
-        /* 定额/月度天数列 */
         .days-cell {
             text-align: center;
             font-weight: 700;
             font-size: 14px;
             color: var(--text-primary);
-            padding: 8px;
+            padding: 6px;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .days-cell:hover {
+            background: #e6fffa;
         }
 
         .days-cell.exceed {
             color: var(--exceed-color);
-            background: #fef2f2;
+            background: #fff5f5;
         }
 
-        /* 排班单元格 */
+        .days-cell.exceed:hover {
+            background: #fed7d7;
+        }
+
+        .days-cell .sort-icon {
+            font-size: 11px;
+            margin-top: 2px;
+            opacity: 0.6;
+        }
+
         .schedule-cell {
             position: relative;
-            height: 50px;
-            min-width: 50px;
-            max-width: 50px;
+            height: 48px;
+            min-width: 46px;
+            max-width: 46px;
             cursor: pointer;
             transition: all 0.2s;
         }
 
         .schedule-cell:hover {
-            background: rgba(37, 99, 235, 0.04);
+            background: rgba(66, 153, 225, 0.04);
         }
 
         .schedule-cell.weekend {
@@ -442,25 +461,25 @@
             background: var(--holiday-bg);
         }
 
-        /* 任务条 */
         .task-bar {
             position: absolute;
             top: 2px;
             bottom: 2px;
             left: 2px;
-            border-radius: 4px;
+            border-radius: 3px;
             font-size: 10px;
-            color: white;
             display: flex;
             flex-direction: column;
-            padding: 3px 4px;
+            padding: 2px 3px;
             overflow: hidden;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
             z-index: 5;
-            line-height: 1.3;
+            line-height: 1.25;
             text-align: left;
+            border: 1px solid transparent;
+            min-width: 16px;
         }
 
         .task-bar:hover {
@@ -470,19 +489,27 @@
         }
 
         .task-bar.audit {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            background: var(--audit-bg);
+            color: var(--audit-text);
+            border-color: var(--audit-border);
         }
 
         .task-bar.non-audit {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
+            background: var(--non-audit-bg);
+            color: var(--non-audit-text);
+            border-color: var(--non-audit-border);
         }
 
         .task-bar.leave {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
+            background: var(--leave-bg);
+            color: var(--leave-text);
+            border-color: var(--leave-border);
         }
 
         .task-bar.external {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            background: var(--external-bg);
+            color: var(--external-text);
+            border-color: var(--external-border);
         }
 
         .task-company {
@@ -496,7 +523,7 @@
 
         .task-type {
             font-size: 9px;
-            opacity: 0.95;
+            opacity: 0.9;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -504,7 +531,7 @@
 
         .task-days {
             font-size: 9px;
-            opacity: 0.9;
+            opacity: 0.85;
             margin-top: auto;
             display: flex;
             justify-content: space-between;
@@ -513,25 +540,42 @@
 
         .task-remaining {
             font-size: 8px;
-            opacity: 0.85;
-            font-weight: 500;
+            opacity: 0.8;
         }
 
-        /* 提示框 */
+        .task-bar.half-day {
+            padding: 1px 2px;
+            justify-content: center;
+        }
+
+        .task-bar.half-day .half-day-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .task-bar.half-day .half-day-type {
+            font-size: 8px;
+            opacity: 0.9;
+            text-align: center;
+            white-space: nowrap;
+        }
+
         .tooltip {
             position: fixed;
-            background: rgba(15, 23, 42, 0.95);
+            background: rgba(26, 32, 44, 0.95);
             color: white;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 10px 12px;
+            border-radius: 6px;
             font-size: 12px;
-            max-width: 360px;
+            max-width: 320px;
             z-index: 1000;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s;
             box-shadow: var(--shadow-lg);
-            line-height: 1.6;
+            line-height: 1.5;
             backdrop-filter: blur(4px);
         }
 
@@ -541,22 +585,22 @@
 
         .tooltip-title {
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-size: 13px;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            padding-bottom: 6px;
-            color: #fbbf24;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            padding-bottom: 5px;
+            color: #fbd38d;
         }
 
         .tooltip-row {
             display: flex;
-            gap: 8px;
-            margin: 4px 0;
+            gap: 6px;
+            margin: 3px 0;
         }
 
         .tooltip-label {
-            color: #94a3b8;
-            min-width: 70px;
+            color: #a0aec0;
+            min-width: 65px;
             flex-shrink: 0;
             font-size: 11px;
         }
@@ -568,24 +612,33 @@
 
         .tooltip-status {
             display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 2px 6px;
+            border-radius: 3px;
             font-size: 11px;
             font-weight: 600;
             margin-top: 4px;
         }
 
         .tooltip-status.approved {
-            background: #10b981;
+            background: #48bb78;
             color: white;
         }
 
         .tooltip-status.non-audit {
-            background: #f59e0b;
+            background: #ecc94b;
+            color: #744210;
+        }
+
+        .tooltip-status.leave {
+            background: #fc8181;
             color: white;
         }
 
-        /* 编辑弹窗 */
+        .tooltip-status.external {
+            background: #b794f4;
+            color: white;
+        }
+
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -609,12 +662,12 @@
 
         .modal {
             background: white;
-            border-radius: 12px;
+            border-radius: 8px;
             width: 90%;
-            max-width: 600px;
-            max-height: 85vh;
+            max-width: 480px;
+            max-height: 80vh;
             overflow: auto;
-            transform: translateY(-20px);
+            transform: translateY(-10px);
             transition: transform 0.3s;
             box-shadow: var(--shadow-lg);
         }
@@ -624,13 +677,13 @@
         }
 
         .modal-header {
-            padding: 16px 20px;
+            padding: 14px 18px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #f8fafc;
-            border-radius: 12px 12px 0 0;
+            background: #f7fafc;
+            border-radius: 8px 8px 0 0;
         }
 
         .modal-title {
@@ -642,15 +695,15 @@
         .modal-close {
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 20px;
             cursor: pointer;
             color: var(--text-secondary);
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 6px;
+            border-radius: 4px;
             transition: all 0.2s;
         }
 
@@ -660,16 +713,16 @@
         }
 
         .modal-body {
-            padding: 20px;
+            padding: 16px 18px;
         }
 
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .form-label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             font-size: 13px;
             font-weight: 500;
             color: var(--text-secondary);
@@ -677,38 +730,39 @@
 
         .form-input {
             width: 100%;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: 5px;
             font-size: 14px;
             transition: all 0.2s;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            border-color: #90cdf4;
+            box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.15);
         }
 
         .modal-footer {
-            padding: 16px 20px;
+            padding: 12px 18px;
             border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: flex-end;
-            gap: 12px;
-            background: #f8fafc;
-            border-radius: 0 0 12px 12px;
+            gap: 10px;
+            background: #f7fafc;
+            border-radius: 0 0 8px 8px;
         }
 
         .empty-state {
             text-align: center;
-            padding: 60px;
+            padding: 50px;
             color: var(--text-secondary);
+            font-size: 15px;
         }
 
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
         }
 
         ::-webkit-scrollbar-track {
@@ -716,28 +770,28 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
+            background: #cbd5e0;
+            border-radius: 3px;
         }
 
-        .col-person { width: 120px; min-width: 120px; }
-        .col-days { width: 70px; min-width: 70px; text-align: center; }
-        .col-date { width: 50px; min-width: 50px; max-width: 50px; }
+        .col-person { width: 165px; min-width: 165px; }
+        .col-days { width: 65px; min-width: 65px; text-align: center; }
+        .col-date { width: 46px; min-width: 46px; max-width: 46px; }
     </style>
 </head>
 <body>
     <header class="header">
         <div class="header-content">
             <div class="header-title">
-                <span style="font-size:20px;">📅</span> CQC审核人员排班计划表
+                <span style="font-size:20px;">📋</span> CQC审核人员排班计划表
             </div>
 
             <div class="filter-group">
                 <label class="filter-label">年份</label>
                 <select id="yearSelect">
-                    <option value="2024">2024年</option>
-                    <option value="2025">2025年</option>
-                    <option value="2026" selected>2026年</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
                 </select>
             </div>
 
@@ -769,7 +823,30 @@
             </div>
 
             <div class="filter-group">
-                <label class="filter-label">月度限额</label>
+                <label class="filter-label">排班状态</label>
+                <select id="scheduleStatusSelect">
+                    <option value="all" selected>全部</option>
+                    <option value="scheduled">已排班</option>
+                    <option value="empty">未排班</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">审核类型</label>
+                <select id="auditTypeSelect">
+                    <option value="all" selected>全部</option>
+                    <option value="初次认证">初次认证</option>
+                    <option value="监督一">监督一</option>
+                    <option value="监督二">监督二</option>
+                    <option value="再认证">再认证</option>
+                    <option value="二方审核">二方审核</option>
+                    <option value="非审核活动">非审核活动</option>
+                    <option value="休假">休假</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">月度天数</label>
                 <select id="limitSelect">
                     <option value="all" selected>全部</option>
                     <option value="exceed">超过15天</option>
@@ -779,16 +856,7 @@
 
             <div class="filter-group">
                 <label class="filter-label">人员查询</label>
-                <input type="text" id="personSearch" placeholder="姓名/聘用号，多人用/分隔">
-            </div>
-
-            <div class="filter-group">
-                <label class="filter-label">组织机构</label>
-                <select id="orgSelect">
-                    <option value="广州中心" selected>广州中心</option>
-                    <option value="深圳中心">深圳中心</option>
-                    <option value="东莞中心">东莞中心</option>
-                </select>
+                <input type="text" id="personSearch" placeholder="姓名/聘用号">
             </div>
 
             <button class="btn btn-primary" onclick="querySchedule()">查询</button>
@@ -815,7 +883,7 @@
         </div>
         <div class="stat-item">
             <span class="stat-value" id="exceedCount">0</span>
-            <span class="stat-label">超限人员(>15天)</span>
+            <span class="stat-label">超限人员</span>
         </div>
         <div class="stat-warning">⚠️ 红色表示月度累计超过15天</div>
     </div>
@@ -823,20 +891,24 @@
     <main class="main-container">
         <div class="toolbar">
             <div class="toolbar-left">
-                <button class="btn btn-secondary" onclick="exportData()">导出Excel</button>
-                <button class="btn btn-secondary" onclick="window.print()">打印</button>
+                <button class="btn btn-secondary" onclick="exportData()">📊 导出Excel</button>
+                <button class="btn btn-secondary" onclick="window.print()">🖨️ 打印</button>
             </div>
             <div class="legend">
                 <div class="legend-item">
-                    <div class="legend-color" style="background: var(--audit-color);"></div>
-                    <span>已安排（已批准）</span>
+                    <div class="legend-color" style="background: var(--audit-bg); border-color: var(--audit-border);"></div>
+                    <span>审核活动</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: var(--non-audit-color);"></div>
-                    <span>休假/非审核活动</span>
+                    <div class="legend-color" style="background: var(--non-audit-bg); border-color: var(--non-audit-border);"></div>
+                    <span>非审核活动</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background: var(--external-color);"></div>
+                    <div class="legend-color" style="background: var(--leave-bg); border-color: var(--leave-border);"></div>
+                    <span>休假/请假</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--external-bg); border-color: var(--external-border);"></div>
                     <span>二方审核</span>
                 </div>
             </div>
@@ -880,13 +952,14 @@
                         <option value="监督一">监督一</option>
                         <option value="监督二">监督二</option>
                         <option value="再认证">再认证</option>
+                        <option value="二方审核">二方审核</option>
                         <option value="非审核活动">非审核活动</option>
                         <option value="休假">休假</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">持续天数</label>
-                    <input type="number" class="form-input" id="modalDays" placeholder="支持0.5天为单位" step="0.5" min="0.5" value="1">
+                    <input type="number" class="form-input" id="modalDays" step="0.5" min="0.5" value="1">
                 </div>
             </div>
             <div class="modal-footer">
@@ -897,22 +970,41 @@
     </div>
 
     <script>
-        // 假数据
+        // ==================== 数据定义 ====================
         const surnames = ['张','王','李','刘','陈','杨','黄','赵','周','吴','徐','孙','马','朱','胡','郭','何','高','林','罗'];
-        const names = ['伟','芳','娜','敏','静','丽','强','磊','军','洋','勇','艳','杰','涛','明','超','秀','霞','平','刚'];
-        const companies = ['广东电子','深圳制造','广州食品','东莞包装','佛山机械','惠州光学','珠海智能','中山医疗','江门化工','肇庆纺织','清远自动化','汕头精密'];
+        const names = ['伟','芳','娜','敏','静','丽','强','磊','军','洋','勇','艳','杰','涛','明','超','秀','霞','平','刚','鹏','晶','辉','燕','鑫','雪'];
+        const companies = ['广东电子','深圳制造','广州食品','东莞包装','佛山机械','惠州光学','珠海智能','中山医疗','江门化工','肇庆纺织'];
         const addresses = ['广州市天河区','深圳市南山区','东莞市松山湖','佛山市顺德区','惠州市仲恺区'];
         const auditTypes = ['初次认证','监督一','监督二','再认证'];
-        const nonAuditTypes = ['年假','病假','调休','内部培训','外部培训','会议'];
+        const nonAuditTypes = ['内部培训','外部培训','会议','评审活动'];
+        const leaveTypes = ['年假','病假','调休','事假'];
 
-        // 生成审核人员
+        // 全局变量
+        let scheduleData = [];
+        let currentData = [];
+        let selectedRows = new Set();
+        let currentEditing = null;
+        let sortDirection = 'desc';
+        let currentSortColumn = 'monthlyDays';
+
+        // 节假日配置
+        const holidays = {
+            4: [{day: 4, name: "清明"}, {day: 5, name: "清明"}],
+            5: [{day: 1, name: "劳动"}, {day: 2, name: "劳动"}],
+            6: [{day: 22, name: "端午"}],
+            10: [{day: 1, name: "国庆"}, {day: 2, name: "国庆"}, {day: 3, name: "国庆"}]
+        };
+
+        // ==================== 生成审核人员 ====================
         function generateAuditors() {
             const auditors = [];
             for (let i = 0; i < 30; i++) {
                 const id = 'cqc' + String(Math.floor(Math.random() * 90000) + 10000).padStart(5, '0');
-                const name = surnames[Math.floor(Math.random() * surnames.length)] + names[Math.floor(Math.random() * names.length)];
+                const name = surnames[Math.floor(Math.random() * surnames.length)] + 
+                            names[Math.floor(Math.random() * names.length)];
                 const isFullTime = Math.random() > 0.3;
                 const initialRemaining = 160 + Math.floor(Math.random() * 20);
+
                 auditors.push({
                     id: id,
                     name: name,
@@ -926,80 +1018,153 @@
             return auditors;
         }
 
-        // 生成排班计划
+        // ==================== 生成不重叠的排班计划 ====================
+        // 业务规则：
+        // 1. 审核活动（初次认证/监督/再认证）必须 >= 1天（不能是0.5天）
+        // 2. 非审核活动、休假/请假、二方审核支持0.5天（纯半天）
         function generatePlans(auditor, year, month) {
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const plans = [];
             let currentDay = 1;
             let remaining = auditor.initialRemaining;
+            const occupiedDays = new Set();
 
             while (currentDay <= daysInMonth) {
                 const date = new Date(year, month, currentDay);
                 const weekDay = date.getDay();
 
-                // 跳过周末
-                if (weekDay === 0 || weekDay === 6) {
+                // 跳过周末和已占用的日期
+                if (weekDay === 0 || weekDay === 6 || occupiedDays.has(currentDay)) {
                     currentDay++;
                     continue;
                 }
 
-                // 随机安排任务（75%概率）
-                if (Math.random() > 0.25) {
-                    const isNonAudit = Math.random() > 0.85;
-                    // 随机天数：0.5, 1, 1.5, 2, 2.5, 3
-                    const durationOptions = [0.5, 1, 1, 1.5, 2, 2.5, 3];
-                    const duration = durationOptions[Math.floor(Math.random() * durationOptions.length)];
+                // 随机决定是否安排任务（72%概率）
+                if (Math.random() > 0.28) {
+                    const rand = Math.random();
+                    let taskCategory;
 
-                    const endDay = Math.min(currentDay + Math.ceil(duration) - 1, daysInMonth);
+                    // 分类概率：审核活动65%、非审核活动12%、休假10%、二方审核8%、空5%
+                    if (rand > 0.92) {
+                        taskCategory = 'external';
+                    } else if (rand > 0.82) {
+                        taskCategory = 'leave';
+                    } else if (rand > 0.70) {
+                        taskCategory = 'non-audit';
+                    } else {
+                        taskCategory = 'audit';
+                    }
 
-                    if (isNonAudit) {
+                    // 根据类别确定duration（天数）
+                    let duration;
+                    if (taskCategory === 'audit') {
+                        // 审核活动必须 >= 1天，不能是0.5天
+                        const auditWeights = [1,1,1,1.5,1.5,2,2,2.5,3];
+                        duration = auditWeights[Math.floor(Math.random() * auditWeights.length)];
+                    } else {
+                        // 其他类型支持0.5天（纯半天）
+                        const otherWeights = [0.5,0.5,0.5,1,1,1,1.5,1.5,2];
+                        duration = otherWeights[Math.floor(Math.random() * otherWeights.length)];
+                    }
+
+                    // 计算需要多少个工作日（0.5天也需要1个工作日）
+                    const neededWorkdays = Math.ceil(duration);
+
+                    // 收集连续可用工作日（跳过周末、节假日、已占用日）
+                    let workdays = [];
+                    let dayCounter = currentDay;
+                    while (workdays.length < neededWorkdays && dayCounter <= daysInMonth) {
+                        const checkDate = new Date(year, month, dayCounter);
+                        const checkWeekDay = checkDate.getDay();
+                        const isHoliday = getHoliday(month + 1, dayCounter);
+
+                        if (checkWeekDay !== 0 && checkWeekDay !== 6 && !isHoliday) {
+                            if (occupiedDays.has(dayCounter)) {
+                                break;
+                            }
+                            workdays.push(dayCounter);
+                        }
+                        dayCounter++;
+                    }
+
+                    // 如果收集到的工作日不足，跳过
+                    if (workdays.length < neededWorkdays) {
+                        currentDay++;
+                        continue;
+                    }
+
+                    const startDay = workdays[0];
+                    const endDay = workdays[workdays.length - 1];
+
+                    // 标记占用的日期
+                    workdays.forEach(d => occupiedDays.add(d));
+
+                    // 创建计划对象
+                    let planObj = {
+                        id: '',
+                        companyName: '',
+                        auditType: '',
+                        isNonAudit: false,
+                        isLeave: false,
+                        isExternal: false,
+                        days: duration,
+                        startDay: startDay,
+                        endDay: endDay,
+                        leader: auditor.name,
+                        members: '',
+                        address: '-',
+                        remainingAtStart: remaining.toFixed(1),
+                        status: ''
+                    };
+
+                    if (taskCategory === 'non-audit') {
                         const type = nonAuditTypes[Math.floor(Math.random() * nonAuditTypes.length)];
-                        plans.push({
-                            id: 'NA' + Math.random().toString(36).substr(2, 9),
-                            companyName: type,
-                            auditType: type,
-                            isNonAudit: true,
-                            days: duration,
-                            startDay: currentDay,
-                            endDay: endDay,
-                            leader: auditor.name,
-                            members: '',
-                            address: '-',
-                            remainingAtStart: remaining.toFixed(1),
-                            status: 'non-audit'
-                        });
+                        planObj.id = 'NA' + Math.random().toString(36).substr(2, 9);
+                        planObj.companyName = type;
+                        planObj.auditType = type;
+                        planObj.isNonAudit = true;
+                        planObj.status = 'non-audit';
+                    } else if (taskCategory === 'leave') {
+                        const type = leaveTypes[Math.floor(Math.random() * leaveTypes.length)];
+                        planObj.id = 'LV' + Math.random().toString(36).substr(2, 9);
+                        planObj.companyName = type;
+                        planObj.auditType = type;
+                        planObj.isLeave = true;
+                        planObj.status = 'leave';
+                    } else if (taskCategory === 'external') {
+                        const company = companies[Math.floor(Math.random() * companies.length)];
+                        planObj.id = 'EX' + Math.floor(Math.random() * 100000000);
+                        planObj.companyName = company + '有限公司';
+                        planObj.auditType = '二方审核';
+                        planObj.isExternal = true;
+                        planObj.members = Math.random() > 0.6 ? generateMembers() : '';
+                        planObj.address = addresses[Math.floor(Math.random() * addresses.length)];
+                        planObj.leader = Math.random() > 0.5 ? auditor.name : 
+                            surnames[Math.floor(Math.random() * surnames.length)] + names[Math.floor(Math.random() * names.length)];
+                        planObj.status = 'external';
+                        remaining -= duration;
                     } else {
                         const company = companies[Math.floor(Math.random() * companies.length)];
                         const type = auditTypes[Math.floor(Math.random() * auditTypes.length)];
-                        const address = addresses[Math.floor(Math.random() * addresses.length)];
-                        const isExternal = Math.random() > 0.92;
-
-                        plans.push({
-                            id: 'RZ' + Math.floor(Math.random() * 100000000),
-                            companyName: company + '有限公司',
-                            auditType: type,
-                            isNonAudit: false,
-                            isExternal: isExternal,
-                            days: duration,
-                            startDay: currentDay,
-                            endDay: endDay,
-                            leader: Math.random() > 0.5 ? auditor.name : surnames[Math.floor(Math.random() * surnames.length)] + names[Math.floor(Math.random() * names.length)],
-                            members: Math.random() > 0.6 ? generateMembers() : '',
-                            address: address,
-                            remainingAtStart: remaining.toFixed(1),
-                            status: 'approved'
-                        });
-
+                        planObj.id = 'RZ' + Math.floor(Math.random() * 100000000);
+                        planObj.companyName = company + '有限公司';
+                        planObj.auditType = type;
+                        planObj.members = Math.random() > 0.6 ? generateMembers() : '';
+                        planObj.address = addresses[Math.floor(Math.random() * addresses.length)];
+                        planObj.leader = Math.random() > 0.5 ? auditor.name : 
+                            surnames[Math.floor(Math.random() * surnames.length)] + names[Math.floor(Math.random() * names.length)];
+                        planObj.status = 'approved';
                         remaining -= duration;
                     }
 
+                    plans.push(planObj);
                     currentDay = endDay + 1;
                 } else {
                     currentDay++;
                 }
             }
 
-            // 计算月度累计天数
+            // 计算月度累计天数（支持小数）
             auditor.monthlyDays = plans.reduce((sum, p) => sum + parseFloat(p.days), 0);
             auditor.remainingDays = remaining;
 
@@ -1010,91 +1175,135 @@
             const count = Math.floor(Math.random() * 2) + 1;
             const members = [];
             for (let i = 0; i < count; i++) {
-                members.push(surnames[Math.floor(Math.random() * surnames.length)] + names[Math.floor(Math.random() * names.length)]);
+                members.push(surnames[Math.floor(Math.random() * surnames.length)] + 
+                           names[Math.floor(Math.random() * names.length)]);
             }
             return members.join('、');
         }
 
-        // 初始化数据
-        let scheduleData = generateAuditors();
-        let currentData = [];
-        let selectedRows = new Set();
-        let currentEditing = null;
-
-        // 节假日配置
-        const holidays = {
-            4: [{day: 4, name: "清明"}, {day: 5, name: "清明"}, {day: 6, name: "调休"}],
-            5: [{day: 1, name: "劳动节"}, {day: 2, name: "劳动节"}, {day: 3, name: "劳动节"}],
-            6: [{day: 22, name: "端午"}, {day: 23, name: "端午"}],
-            10: [{day: 1, name: "国庆"}, {day: 2, name: "国庆"}, {day: 3, name: "国庆"}]
-        };
-
-        // 初始化
+        // ==================== 初始化 ====================
         document.addEventListener('DOMContentLoaded', function() {
-            // 初始查询
-            querySchedule();
+            try {
+                scheduleData = generateAuditors();
+                querySchedule();
 
-            // 绑定自动刷新
-            ['yearSelect', 'monthSelect', 'typeSelect', 'limitSelect'].forEach(id => {
-                document.getElementById(id).addEventListener('change', querySchedule);
-            });
+                // 绑定筛选器
+                ['yearSelect', 'monthSelect', 'typeSelect', 'scheduleStatusSelect', 
+                 'auditTypeSelect', 'limitSelect'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('change', querySchedule);
+                    }
+                });
 
-            // 外部点击关闭弹窗
-            document.getElementById('editModal').addEventListener('click', function(e) {
-                if (e.target === this) closeModal();
-            });
+                // 外部点击关闭弹窗
+                const modalOverlay = document.getElementById('editModal');
+                if (modalOverlay) {
+                    modalOverlay.addEventListener('click', function(e) {
+                        if (e.target === this) closeModal();
+                    });
+                }
+            } catch (err) {
+                console.error('初始化错误:', err);
+                document.getElementById('tableBody').innerHTML = 
+                    '<tr><td colspan="33" class="empty-state" style="color:#c53030;">初始化出错，请刷新页面重试<br>错误：' + err.message + '</td></tr>';
+            }
         });
 
-        // 查询排班
+        // ==================== 查询排班 ====================
         function querySchedule() {
-            const year = parseInt(document.getElementById('yearSelect').value) || 2026;
-            const month = parseInt(document.getElementById('monthSelect').value) || 3;
-            const type = document.getElementById('typeSelect').value || 'all';
-            const limit = document.getElementById('limitSelect').value || 'all';
-            const search = document.getElementById('personSearch').value.trim();
+            try {
+                const year = parseInt(document.getElementById('yearSelect').value) || 2026;
+                const month = parseInt(document.getElementById('monthSelect').value) || 3;
+                const type = document.getElementById('typeSelect').value || 'all';
+                const scheduleStatus = document.getElementById('scheduleStatusSelect').value || 'all';
+                const auditType = document.getElementById('auditTypeSelect').value || 'all';
+                const limit = document.getElementById('limitSelect').value || 'all';
+                const search = document.getElementById('personSearch').value.trim();
 
-            // 为每个审核员生成该月的排班计划
-            scheduleData.forEach(auditor => {
-                auditor.plans = generatePlans(auditor, year, month);
-            });
+                // 为每个审核员生成该月的排班计划
+                scheduleData.forEach(auditor => {
+                    auditor.plans = generatePlans(auditor, year, month);
+                });
 
-            // 过滤数据
-            let filtered = scheduleData.filter(person => {
-                // 在职类型筛选
-                if (type !== 'all' && person.type !== type) return false;
+                // 过滤数据
+                let filtered = scheduleData.filter(person => {
+                    if (type !== 'all' && person.type !== type) return false;
+                    if (scheduleStatus === 'scheduled' && person.plans.length === 0) return false;
+                    if (scheduleStatus === 'empty' && person.plans.length > 0) return false;
 
-                // 月度限额筛选
-                if (limit === 'exceed' && person.monthlyDays <= 15) return false;
-                if (limit === 'normal' && person.monthlyDays > 15) return false;
-
-                // 人员搜索筛选
-                if (search) {
-                    const terms = search.split('/').map(s => s.trim()).filter(s => s);
-                    if (terms.length > 0) {
-                        const matchName = terms.some(t => person.name.includes(t));
-                        const matchId = terms.some(t => person.id.toLowerCase().includes(t.toLowerCase()));
-                        if (!matchName && !matchId) return false;
+                    if (auditType !== 'all') {
+                        if (auditType === '非审核活动') {
+                            if (!person.plans.some(p => p.isNonAudit)) return false;
+                        } else if (auditType === '休假') {
+                            if (!person.plans.some(p => p.isLeave)) return false;
+                        } else if (auditType === '二方审核') {
+                            if (!person.plans.some(p => p.isExternal)) return false;
+                        } else {
+                            if (!person.plans.some(p => p.auditType === auditType)) return false;
+                        }
                     }
-                }
 
-                return true;
-            });
+                    if (limit === 'exceed' && person.monthlyDays <= 15) return false;
+                    if (limit === 'normal' && person.monthlyDays > 15) return false;
 
-            currentData = filtered;
-            updateStats(filtered);
-            renderSchedule(filtered, year, month);
+                    if (search) {
+                        const terms = search.split(/[\/\s]/).map(s => s.trim()).filter(s => s);
+                        if (terms.length > 0) {
+                            const matchName = terms.some(t => person.name.includes(t));
+                            const matchId = terms.some(t => person.id.toLowerCase().includes(t.toLowerCase()));
+                            if (!matchName && !matchId) return false;
+                        }
+                    }
+
+                    return true;
+                });
+
+                // 排序
+                filtered.sort((a, b) => {
+                    if (currentSortColumn === 'monthlyDays') {
+                        return sortDirection === 'desc' ? b.monthlyDays - a.monthlyDays : a.monthlyDays - b.monthlyDays;
+                    }
+                    return 0;
+                });
+
+                currentData = filtered;
+                updateStats(filtered);
+                renderSchedule(filtered, year, month);
+            } catch (err) {
+                console.error('查询错误:', err);
+                document.getElementById('tableBody').innerHTML = 
+                    '<tr><td colspan="33" class="empty-state" style="color:#c53030;">查询出错：' + err.message + '</td></tr>';
+            }
         }
 
-        // 重置筛选
+        // ==================== 排序功能 ====================
+        function sortByMonthlyDays() {
+            sortDirection = sortDirection === 'desc' ? 'asc' : 'desc';
+            currentSortColumn = 'monthlyDays';
+
+            currentData.sort((a, b) => {
+                return sortDirection === 'desc' ? b.monthlyDays - a.monthlyDays : a.monthlyDays - b.monthlyDays;
+            });
+
+            const year = parseInt(document.getElementById('yearSelect').value) || 2026;
+            const month = parseInt(document.getElementById('monthSelect').value) || 3;
+            renderSchedule(currentData, year, month);
+        }
+
+        // ==================== 重置筛选 ====================
         function resetFilter() {
             document.getElementById('typeSelect').value = 'all';
+            document.getElementById('scheduleStatusSelect').value = 'all';
+            document.getElementById('auditTypeSelect').value = 'all';
             document.getElementById('limitSelect').value = 'all';
             document.getElementById('personSearch').value = '';
-            document.getElementById('orgSelect').value = '广州中心';
+            sortDirection = 'desc';
+            currentSortColumn = 'monthlyDays';
             querySchedule();
         }
 
-        // 更新统计
+        // ==================== 更新统计 ====================
         function updateStats(data) {
             document.getElementById('totalCount').textContent = data.length;
             document.getElementById('scheduledCount').textContent = data.filter(p => p.plans && p.plans.length > 0).length;
@@ -1103,13 +1312,14 @@
             document.getElementById('exceedCount').textContent = data.filter(p => p.monthlyDays > 15).length;
         }
 
-        // 渲染排班表
+        // ==================== 渲染排班表 ====================
         function renderSchedule(data, year, month) {
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
             if (!data || data.length === 0) {
                 document.getElementById('tableHead').innerHTML = '';
-                document.getElementById('tableBody').innerHTML = '<tr><td colspan="' + (daysInMonth + 2) + '" class="empty-state">暂无符合条件的数据</td></tr>';
+                document.getElementById('tableBody').innerHTML = 
+                    '<tr><td colspan="' + (daysInMonth + 2) + '" class="empty-state">暂无符合条件的数据</td></tr>';
                 return;
             }
 
@@ -1117,13 +1327,16 @@
             renderBody(data, daysInMonth, year, month);
         }
 
-        // 渲染表头
+        // ==================== 渲染表头 ====================
         function renderHeader(days, year, month) {
             const thead = document.getElementById('tableHead');
-            let html = '<tr>';
+            const sortIcon = sortDirection === 'desc' ? '▼' : '▲';
 
+            let html = '<tr>';
             html += '<th class="sticky-col header col-person">审核人员信息</th>';
-            html += '<th class="sticky-col header col-days" >月度<br>天数</th>';
+            html += `<th class="sticky-col header col-days" style="left:165px;cursor:pointer;" onclick="sortByMonthlyDays()">
+                月度天数<br><span class="sort-icon">${sortIcon}</span>
+            </th>`;
 
             for (let i = 1; i <= days; i++) {
                 const date = new Date(year, month, i);
@@ -1154,7 +1367,7 @@
             return null;
         }
 
-        // 渲染表格主体
+        // ==================== 渲染表格主体 ====================
         function renderBody(data, days, year, month) {
             const tbody = document.getElementById('tableBody');
             let html = '';
@@ -1168,20 +1381,22 @@
                     <div class="person-info">
                         <div class="person-name">
                             ${person.name}
-                            ${person.type === '专职' ? '<span class="badge badge-primary">专职</span>' : '<span class="badge badge-secondary">兼职</span>'}
+                            ${person.type === '专职' ? 
+                                '<span class="badge badge-primary">专职</span>' : 
+                                '<span class="badge badge-secondary">兼职</span>'}
                         </div>
                         <div class="person-id">${person.id}</div>
                         <div class="person-meta">
-                            <span style="font-size:10px;color:#64748b;">年度剩余: ${person.remainingDays.toFixed(1)}天</span>
+                            <span style="font-size:11px;color:#718096;">剩余 ${person.remainingDays.toFixed(1)}天</span>
                         </div>
                     </div>
                 </td>`;
 
                 // 月度天数列
-                html += `<td class="sticky-col col-days ${isExceed ? 'exceed' : ''}" >
+                html += `<td class="sticky-col col-days ${isExceed ? 'exceed' : ''}" style="left:165px;">
                     <div class="days-cell ${isExceed ? 'exceed' : ''}">
                         ${person.monthlyDays.toFixed(1)}
-                        ${isExceed ? '<span style="font-size:9px;color:#dc2626;font-weight:600;">超限</span>' : ''}
+                        ${isExceed ? '<span style="font-size:9px;color:#c53030;">超限</span>' : ''}
                     </div>
                 </td>`;
 
@@ -1204,31 +1419,44 @@
                         onmouseenter="showTooltip(event, '${person.id}', ${day}, ${month}, ${year})"
                         onmouseleave="hideTooltip()">`;
 
-                    // 渲染任务条
+                    // 渲染任务条 - 只在任务开始日渲染
                     if (plan && plan.isStart) {
                         let barClass = 'task-bar';
-                        if (plan.isNonAudit) {
+                        if (plan.isLeave) {
                             barClass += ' leave';
+                        } else if (plan.isNonAudit) {
+                            barClass += ' non-audit';
                         } else if (plan.isExternal) {
                             barClass += ' external';
                         } else {
                             barClass += ' audit';
                         }
 
-                        // 计算实际显示宽度（跨多少天）
-                        let spanDays = calculateDisplaySpan(plan.startDay, plan.days, days, year, month);
-                        let width = spanDays * 50 - 4;
+                        // 计算宽度：每个工作日46px，减去边距
+                        const actualWorkdays = countWorkdaysInRange(plan.startDay, plan.endDay, year, month);
+                        let width = Math.max(actualWorkdays * 46 - 4, 18);
 
-                        const company = plan.companyName.length > 4 ? plan.companyName.substring(0, 4) + '...' : plan.companyName;
+                        // 半天任务使用简化展示
+                        let taskContent = '';
+                        if (plan.days === 0.5) {
+                            barClass += ' half-day';
+                            const shortType = plan.auditType.length > 2 ? plan.auditType.substring(0, 2) : plan.auditType;
+                            taskContent = `<div class="half-day-label">${shortType}</div>
+                                           <div class="half-day-type">0.5天</div>`;
+                        } else {
+                            const company = plan.companyName.length > 4 ? 
+                                plan.companyName.substring(0, 4) + '..' : plan.companyName;
+                            taskContent = `<div class="task-company" title="${plan.companyName}">${company}</div>
+                                           <div class="task-type">${plan.auditType}</div>
+                                           <div class="task-days">
+                                               <span>${plan.days}天</span>
+                                               <span class="task-remaining">剩${plan.remainingAtStart}</span>
+                                           </div>`;
+                        }
 
-                        html += `<div class="${barClass}" style="width:${width}px;z-index:10;right:auto;"
+                        html += `<div class="${barClass}" style="width:${width}px;"
                             onclick="showPlanDetail('${plan.id}', event)">
-                            <div class="task-company" title="${plan.companyName}">${company}</div>
-                            <div class="task-type">${plan.auditType}</div>
-                            <div class="task-days">
-                                <span>${plan.days}天</span>
-                                <span class="task-remaining">剩${plan.remainingAtStart}</span>
-                            </div>
+                            ${taskContent}
                         </div>`;
                     }
 
@@ -1241,6 +1469,19 @@
             tbody.innerHTML = html;
         }
 
+        // 计算范围内的工作日数（排除周末和节假日）
+        function countWorkdaysInRange(startDay, endDay, year, month) {
+            let count = 0;
+            for (let d = startDay; d <= endDay; d++) {
+                const date = new Date(year, month, d);
+                const weekDay = date.getDay();
+                if (weekDay === 0 || weekDay === 6) continue;
+                if (getHoliday(month + 1, d)) continue;
+                count++;
+            }
+            return Math.max(count, 1);
+        }
+
         // 构建每天的计划映射
         function buildDayPlanMap(plans, daysInMonth, year, month) {
             const dayMap = {};
@@ -1248,55 +1489,30 @@
 
             plans.forEach(plan => {
                 const startDay = parseInt(plan.startDay);
-                const len = parseFloat(plan.days);
-                let daysAssigned = 0;
+                const endDay = parseInt(plan.endDay);
 
-                for (let d = 0; d < len && (startDay + d) <= daysInMonth; d++) {
-                    const currentDay = startDay + d;
-                    const date = new Date(year, month, currentDay);
+                for (let d = startDay; d <= endDay && d <= daysInMonth; d++) {
+                    const date = new Date(year, month, d);
                     const weekDay = date.getDay();
 
                     // 跳过周末和节假日
                     if (weekDay === 0 || weekDay === 6) continue;
-                    if (getHoliday(month + 1, currentDay)) continue;
+                    if (getHoliday(month + 1, d)) continue;
 
-                    dayMap[currentDay] = {
+                    dayMap[d] = {
                         ...plan,
-                        isStart: daysAssigned === 0,
-                        displayIndex: d
+                        isStart: d === startDay
                     };
-                    daysAssigned++;
                 }
             });
 
             return dayMap;
         }
 
-        // 计算显示跨度（考虑周末和节假日截断）
-        function calculateDisplaySpan(startDay, totalDays, daysInMonth, year, month) {
-            let span = 0;
-            let daysCounted = 0;
-            let currentDay = startDay;
-
-            while (daysCounted < totalDays && currentDay <= daysInMonth) {
-                const date = new Date(year, month, currentDay);
-                const weekDay = date.getDay();
-                const isWeekend = weekDay === 0 || weekDay === 6;
-                const holiday = getHoliday(month + 1, currentDay);
-
-                if (!isWeekend && !holiday) {
-                    daysCounted++;
-                }
-                span++;
-                currentDay++;
-            }
-
-            return Math.max(span, 1);
-        }
-
-        // 切换行选中
+        // ==================== 行选中 ====================
         function toggleRow(id) {
             const row = document.getElementById(`row-${id}`);
+            if (!row) return;
             if (selectedRows.has(id)) {
                 selectedRows.delete(id);
                 row.classList.remove('selected');
@@ -1306,7 +1522,7 @@
             }
         }
 
-        // 显示提示框
+        // ==================== 提示框 ====================
         function showTooltip(e, personId, day, month, year) {
             const person = currentData.find(p => p.id === personId);
             if (!person) return;
@@ -1317,7 +1533,7 @@
             if (!plan) return;
 
             const tooltip = document.getElementById('tooltip');
-            const isNonAudit = plan.isNonAudit;
+            if (!tooltip) return;
 
             let content = `<div class="tooltip-title">${plan.companyName}</div>`;
 
@@ -1336,7 +1552,62 @@
                 </div>
             `;
 
-            if (!isNonAudit) {
+            if (plan.isLeave) {
+                content += `
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">请假类型:</span>
+                        <span class="tooltip-value">${plan.auditType}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">剩余可用:</span>
+                        <span class="tooltip-value">${plan.remainingAtStart}天</span>
+                    </div>
+                    <div style="margin-top:6px;">
+                        <span class="tooltip-status leave">● 休假/请假</span>
+                    </div>
+                `;
+            } else if (plan.isNonAudit) {
+                content += `
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">活动类型:</span>
+                        <span class="tooltip-value">${plan.auditType}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">剩余可用:</span>
+                        <span class="tooltip-value">${plan.remainingAtStart}天</span>
+                    </div>
+                    <div style="margin-top:6px;">
+                        <span class="tooltip-status non-audit">◎ 非审核活动</span>
+                    </div>
+                `;
+            } else if (plan.isExternal) {
+                content += `
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">审核类型:</span>
+                        <span class="tooltip-value">二方审核</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">公司地址:</span>
+                        <span class="tooltip-value">${plan.address || '-'}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">审核组长:</span>
+                        <span class="tooltip-value">${plan.leader || '-'}</span>
+                    </div>
+                    ${plan.members ? `
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">审核组员:</span>
+                        <span class="tooltip-value">${plan.members}</span>
+                    </div>` : ''}
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">项目剩余:</span>
+                        <span class="tooltip-value">${plan.remainingAtStart}天</span>
+                    </div>
+                    <div style="margin-top:6px;">
+                        <span class="tooltip-status external">◆ 二方审核</span>
+                    </div>
+                `;
+            } else {
                 content += `
                     <div class="tooltip-row">
                         <span class="tooltip-label">审核类型:</span>
@@ -1359,22 +1630,8 @@
                         <span class="tooltip-label">项目剩余:</span>
                         <span class="tooltip-value">${plan.remainingAtStart}天</span>
                     </div>
-                    <div style="margin-top:8px;">
-                        <span class="tooltip-status approved">已安排（已批准）</span>
-                    </div>
-                `;
-            } else {
-                content += `
-                    <div class="tooltip-row">
-                        <span class="tooltip-label">活动类型:</span>
-                        <span class="tooltip-value">${plan.nonAuditType || plan.auditType}</span>
-                    </div>
-                    <div class="tooltip-row">
-                        <span class="tooltip-label">剩余可用:</span>
-                        <span class="tooltip-value">${plan.remainingAtStart}天</span>
-                    </div>
-                    <div style="margin-top:8px;">
-                        <span class="tooltip-status non-audit">非审核活动</span>
+                    <div style="margin-top:6px;">
+                        <span class="tooltip-status approved">✓ 已安排（已批准）</span>
                     </div>
                 `;
             }
@@ -1383,14 +1640,14 @@
             tooltip.classList.add('visible');
 
             const rect = e.target.getBoundingClientRect();
-            let left = rect.right + 10;
+            let left = rect.right + 8;
             let top = rect.top;
 
-            if (left + 360 > window.innerWidth) {
-                left = rect.left - 370;
+            if (left + 320 > window.innerWidth) {
+                left = rect.left - 330;
             }
-            if (top + 300 > window.innerHeight) {
-                top = window.innerHeight - 310;
+            if (top + 250 > window.innerHeight) {
+                top = window.innerHeight - 260;
             }
 
             tooltip.style.left = left + 'px';
@@ -1398,29 +1655,34 @@
         }
 
         function hideTooltip() {
-            document.getElementById('tooltip').classList.remove('visible');
+            const tooltip = document.getElementById('tooltip');
+            if (tooltip) tooltip.classList.remove('visible');
         }
 
-        // 打开编辑器
+        // ==================== 编辑弹窗 ====================
         function openPlanEditor(personId, year, month, day, event) {
-            event.stopPropagation();
+            if (event) event.stopPropagation();
             const person = currentData.find(p => p.id === personId);
             if (!person) return;
 
             document.getElementById('modalPerson').value = `${person.name} (${person.id})`;
             document.getElementById('modalDate').value = `${year}年${month+1}月${day}日`;
+            document.getElementById('modalCompany').value = '';
+            document.getElementById('modalType').value = '初次认证';
+            document.getElementById('modalDays').value = '1';
 
             currentEditing = { personId, year, month, day };
             document.getElementById('editModal').classList.add('active');
         }
 
         function showPlanDetail(planId, event) {
-            event.stopPropagation();
+            if (event) event.stopPropagation();
             console.log('Plan ID:', planId);
         }
 
         function closeModal() {
-            document.getElementById('editModal').classList.remove('active');
+            const modal = document.getElementById('editModal');
+            if (modal) modal.classList.remove('active');
             currentEditing = null;
         }
 
@@ -1436,18 +1698,24 @@
                 return;
             }
 
-            console.log('保存:', { ...currentEditing, company, type, days });
+            // 业务校验：审核活动必须 >= 1天
+            const auditActivities = ['初次认证', '监督一', '监督二', '再认证'];
+            if (auditActivities.includes(type) && days < 1) {
+                alert('审核活动（初次认证/监督/再认证）必须至少安排1天，不能为0.5天');
+                return;
+            }
+
             alert('排班信息已保存！');
             closeModal();
             querySchedule();
         }
 
-        // 导出数据
+        // ==================== 导出数据 ====================
         function exportData() {
             const year = document.getElementById('yearSelect').value;
             const month = parseInt(document.getElementById('monthSelect').value) + 1;
 
-            let csv = '﻿审核员编号,姓名,类型,初始剩余天数,月度累计天数,最终剩余天数\n';
+            let csv = '\uFEFF审核员编号,姓名,类型,初始剩余天数,月度累计天数,最终剩余天数\n';
 
             currentData.forEach(person => {
                 csv += `${person.id},${person.name},${person.type},${person.initialRemaining},${person.monthlyDays.toFixed(1)},${person.remainingDays.toFixed(1)}\n`;
