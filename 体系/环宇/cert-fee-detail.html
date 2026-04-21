@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>错证收费详情 - 体系认证管理平台</title>
+<style>
+  :root {
+    --primary: #1890ff;
+    --primary-light: #e6f7ff;
+    --primary-hover: #40a9ff;
+    --sidebar-bg: #001529;
+    --success: #52c41a;
+    --success-bg: #f6ffed;
+    --warning: #fa8c16;
+    --warning-bg: #fff7e6;
+    --danger: #f5222d;
+    --danger-bg: #fff2f0;
+    --info: #1890ff;
+    --info-bg: #e6f7ff;
+    --purple: #722ed1;
+    --purple-bg: #f9f0ff;
+    --bg-page: #f0f2f5;
+    --bg-card: #ffffff;
+    --border: #e8e8e8;
+    --border-light: #f0f0f0;
+    --text-primary: #262626;
+    --text-secondary: #595959;
+    --text-placeholder: #bfbfbf;
+    --text-disabled: #8c8c8c;
+    --shadow-card: 0 2px 8px rgba(0,0,0,0.08);
+    --radius: 4px;
+    --radius-lg: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 14px; color: var(--text-primary); background: var(--bg-page); line-height: 1.6;
+    overflow: hidden; height: 100vh;
+  }
+  .layout { display: flex; height: 100vh; }
+
+  /* ========== Sidebar ========== */
+  .sidebar {
+    width: 64px; min-width: 64px; background: var(--sidebar-bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 8px; position: relative; z-index: 100;
+  }
+  .sidebar-logo {
+    width: 40px; height: 40px; border-radius: 8px; background: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 12px;
+  }
+  .sidebar-menu { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; padding: 4px 0; }
+  .menu-item {
+    width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.65); cursor: pointer; transition: all 0.2s;
+    border-radius: 8px; text-decoration: none; position: relative; gap: 2px;
+  }
+  .menu-item .menu-icon { font-size: 18px; line-height: 1; }
+  .menu-item .menu-label { font-size: 10px; line-height: 1; white-space: nowrap; }
+  .menu-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .menu-item.active { color: #fff; background: var(--primary); }
+  .menu-item.active::before {
+    content: ''; position: absolute; left: 0; top: 10px; bottom: 10px;
+    width: 3px; background: #fff; border-radius: 0 2px 2px 0;
+  }
+
+  /* ========== Submenu ========== */
+  .submenu-wrapper { position: relative; }
+  .submenu {
+    display: none; position: absolute; left: 64px; top: 0;
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.08);
+    min-width: 200px; padding: 8px 0; z-index: 200;
+    border: 1px solid var(--border-light);
+  }
+  .submenu::before {
+    content: ''; position: absolute; left: -16px; top: 0; bottom: 0; width: 16px;
+  }
+  .submenu-wrapper:hover .submenu,
+  .submenu.open { display: block; }
+  .submenu-item {
+    display: flex; align-items: center; height: 36px; padding: 0 12px;
+    color: var(--text-primary); cursor: pointer; transition: all 0.15s;
+    font-size: 13px; border-radius: var(--radius); margin: 1px 0;
+    text-decoration: none; white-space: nowrap;
+  }
+  .submenu-item:hover { background: var(--primary-light); color: var(--primary); }
+  .submenu-item.active { color: var(--primary); font-weight: 500; background: var(--primary-light); }
+  .submenu-item .sub-dot {
+    width: 4px; height: 4px; border-radius: 50%; background: var(--border);
+    margin-right: 10px; flex-shrink: 0;
+  }
+  .submenu-item:hover .sub-dot, .submenu-item.active .sub-dot { background: var(--primary); }
+
+  /* ========== Main ========== */
+  .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ========== Header ========== */
+  .header {
+    height: 56px; background: var(--bg-card); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-title { font-size: 16px; font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-user { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .header-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+
+  /* ========== Page ========== */
+  .page-content { flex: 1; overflow-y: auto; padding: 16px 24px; }
+  .page-content::-webkit-scrollbar { width: 6px; }
+  .page-content::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+
+  /* ========== Page Header ========== */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .page-title-group { display: flex; align-items: center; gap: 12px; }
+  .page-title { font-size: 20px; font-weight: 600; }
+  .btn-back {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--text-secondary); cursor: pointer; font-size: 14px;
+    background: none; border: none; font-family: inherit; padding: 4px 0;
+  }
+  .btn-back:hover { color: var(--primary); }
+
+  /* ========== Buttons ========== */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 32px; padding: 0 16px; border-radius: var(--radius);
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+    border: 1px solid transparent; gap: 6px; white-space: nowrap; font-family: inherit;
+  }
+  .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+  .btn-default { background: var(--bg-card); color: var(--text-primary); border-color: var(--border); }
+  .btn-default:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+  .btn-success:hover { background: #389e0d; }
+
+  /* ========== Card ========== */
+  .card {
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card); margin-bottom: 12px; overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px; border-bottom: 1px solid var(--border-light);
+  }
+  .card-title { font-size: 15px; font-weight: 600; }
+  .card-body { padding: 16px 24px; }
+
+  /* ========== Info Grid ========== */
+  .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 24px; }
+  .info-item { display: flex; flex-direction: column; gap: 4px; }
+  .info-item.full { grid-column: 1 / -1; }
+  .info-label { font-size: 13px; color: var(--text-disabled); }
+  .info-value { font-size: 14px; color: var(--text-primary); }
+
+  /* ========== Form ========== */
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 14px; color: var(--text-primary); font-weight: 500; margin-bottom: 6px; display: block; }
+  .form-label .required { color: var(--danger); margin-left: 2px; }
+  .form-input, .form-textarea, .form-select {
+    width: 100%; height: 36px; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0 12px; font-size: 14px; color: var(--text-primary);
+    background: var(--bg-card); font-family: inherit; transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(24,144,255,0.1);
+  }
+  .form-textarea { height: 60px; padding: 8px 12px; resize: vertical; }
+
+  /* ========== Radio ========== */
+  .radio-group { display: flex; gap: 20px; margin-top: 4px; }
+  .radio-item { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .radio-item input[type="radio"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+  .radio-item label { cursor: pointer; font-size: 14px; }
+
+  /* ========== Checkbox ========== */
+  .checkbox {
+    width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 2px;
+    cursor: pointer; appearance: none; -webkit-appearance: none; transition: all 0.2s; position: relative;
+  }
+  .checkbox:checked { background: var(--primary); border-color: var(--primary); }
+  .checkbox:checked::after {
+    content: ''; position: absolute; left: 4px; top: 1px; width: 5px; height: 9px;
+    border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+
+  /* ========== Modify Table ========== */
+  .modify-table { width: 100%; border-collapse: collapse; }
+  .modify-table th, .modify-table td {
+    padding: 10px 12px; text-align: left; border: 1px solid var(--border-light);
+    font-size: 13px; vertical-align: top;
+  }
+  .modify-table th {
+    background: #fafafa; font-weight: 500; color: var(--text-secondary);
+    width: 100px;
+  }
+  .modify-table td { color: var(--text-primary); }
+  .modify-table .form-input, .modify-table .form-textarea {
+    height: 32px; font-size: 13px;
+  }
+  .modify-table .form-textarea { height: 50px; }
+
+  /* ========== Footer ========== */
+  .footer-actions {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 12px; padding: 12px 24px; background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    position: sticky; bottom: 0; z-index: 10;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+
+  /* ========== Animations ========== */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">📋</div>
+    <nav class="sidebar-menu">
+      <!-- 证书签发 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="证书签发" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🏅</span><span class="menu-label">签发</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-make-list.html"><span class="sub-dot"></span>体系证书签发</a>
+          <a class="submenu-item" href="cert-hf-list.html"><span class="sub-dot"></span>体系证书签发（HF）</a>
+          <a class="submenu-item" href="cert-reissue-auto-list.html"><span class="sub-dot"></span>再认证待签发（自动）</a>
+          <a class="submenu-item" href="cert-all-pending-list.html"><span class="sub-dot"></span>其余全部待签发</a>
+        </div>
+      </div>
+      <!-- 认监委上报 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委上报" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📤</span><span class="menu-label">上报</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-report.html"><span class="sub-dot"></span>认证数据报送认监委(汇总)</a>
+          <a class="submenu-item" href="cert-cnca-return-list.html"><span class="sub-dot"></span>认监委退回证书列表</a>
+        </div>
+      </div>
+      <!-- 认监委编号 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委编号" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📋</span><span class="menu-label">编号</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-list.html"><span class="sub-dot"></span>认监委编号证书管理</a>
+        </div>
+      </div>
+      <!-- 证书打印 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="证书打印" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🖨️</span><span class="menu-label">打印</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-manage-list.html"><span class="sub-dot"></span>证书管理(全量)</a>
+          <a class="submenu-item" href="cert-export-list.html"><span class="sub-dot"></span>证书导出</a>
+          <a class="submenu-item" href="cert-print-pending-list.html"><span class="sub-dot"></span>证书待打印</a>
+          <a class="submenu-item" href="cert-cnca-export-list.html"><span class="sub-dot"></span>农食证书导出</a>
+          <a class="submenu-item" href="cert-cnca-print-pending-list.html"><span class="sub-dot"></span>农食证书待打印</a>
+          <a class="submenu-item" href="cert-upload-manage-list.html"><span class="sub-dot"></span>上传证书文件管理</a>
+          <a class="submenu-item" href="cert-electronic-list.html"><span class="sub-dot"></span>电子证书管理</a>
+          <a class="submenu-item" href="cert-express-manage-list.html"><span class="sub-dot"></span>证书快递管理</a>
+        </div>
+      </div>
+      <!-- 错证管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item active" href="#" title="错证管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">❌</span><span class="menu-label">错证</span></a>
+        <div class="submenu">
+          <a class="submenu-item active" href="cert-fee-list.html"><span class="sub-dot"></span>错证收费管理</a>
+          <a class="submenu-item" href="cert-print-list.html"><span class="sub-dot"></span>错证打印管理</a>
+          <a class="submenu-item" href="cert-express-list.html"><span class="sub-dot"></span>错证快递管理</a>
+          <a class="submenu-item" href="cert-fee-export-list.html"><span class="sub-dot"></span>错证证书数据导出</a>
+        </div>
+      </div>
+      <!-- 模版管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="模版管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📐</span><span class="menu-label">模版</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-template-list.html"><span class="sub-dot"></span>证书模版管理</a>
+          <a class="submenu-item" href="cert-watermark-list.html"><span class="sub-dot"></span>证书底纹管理</a>
+        </div>
+      </div>
+
+      <!-- 通知单管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="通知单管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🔄</span><span class="menu-label">证后</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-suspend-list.html"><span class="sub-dot"></span>暂撤注恢证书通知单</a>
+          <a class="submenu-item" href="cert-recovery-list.html"><span class="sub-dot"></span>暂撤注恢证书电子通知单</a>
+          <a class="submenu-item" href="cert-supervision-list.html"><span class="sub-dot"></span>监督合格通知书</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <button class="btn-back" onclick="goBack()" style="display:inline-flex;align-items:center;gap:4px;color:var(--text-secondary);cursor:pointer;font-size:14px;background:none;border:none;font-family:inherit;padding:4px 0;">← 返回列表</button>
+        <span style="width:1px;height:20px;background:var(--border);"></span>
+        <span class="header-title">错证收费详情</span>
+      </div>
+      <div class="header-right">
+        <div class="header-user">
+          <div class="header-avatar">丛</div>
+          <span>丛思远 · 项目主管</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Page Header -->
+      <div class="page-header animate-in">
+        <div class="page-title-group">
+          <h1 class="page-title" id="pageTitle">00125Q306693R001</h1>
+        </div>
+      </div>
+
+      <!-- 证书基本信息 -->
+      <div class="card animate-in">
+        <div class="card-header">
+          <span class="card-title">证书基本信息</span>
+        </div>
+        <div class="card-body">
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">证书编号 <span style="color:var(--danger);">*</span></span>
+              <span class="info-value" id="valCertNo">00125Q306693R001</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">企业名称 <span style="color:var(--danger);">*</span></span>
+              <span class="info-value" id="valOrgName">关键场所公司项目，选择相应的非关键</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">企业名称(英文)</span>
+              <span class="info-value" id="valOrgNameEN">iiiiill</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">组织机构代码/统一社会信用代码</span>
+              <span class="info-value" id="valOrgCode">91230607777858479R</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">企业地址 <span style="color:var(--danger);">*</span></span>
+              <span class="info-value" id="valAddress">划与委托方所在地区的选择要求</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">企业地址(英文)</span>
+              <span class="info-value" id="valAddressEN">abc3</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">运营企业地址 <span style="color:var(--danger);">*</span></span>
+              <span class="info-value" id="valOperAddress">划与委托方所在地区的选择要求</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">运营企业地址(英文)</span>
+              <span class="info-value" id="valOperAddressEN">abc3</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">认证范围 <span style="color:var(--danger);">*</span></span>
+              <span class="info-value" id="valCertScope">某个更大的组织(如集团公司、上级机</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">认证范围(英文)</span>
+              <span class="info-value" id="valCertScopeEN">1</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">组织规模(员工数)</span>
+              <span class="info-value" id="valScale">小型 S(50 人以下)</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">发证日期 <span style="color:var(--danger);">*</span></span>
+              <span class="info-value" id="valIssueDate">2025-12-03</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">证书有效日期至 <span style="color:var(--danger);">*</span></span>
+              <span class="info-value" id="valValidDate">2027-11-27</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">证书类型 <span style="color:var(--danger);">*</span></span>
+              <span class="info-value" id="valCertType">电子证书</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 证书基本信息修改 -->
+      <div class="card animate-in">
+        <div class="card-header">
+          <span class="card-title">证书基本信息修改</span>
+        </div>
+        <div class="card-body">
+          <table class="modify-table">
+            <thead>
+              <tr>
+                <th style="width:80px;">修改项</th>
+                <th>内容</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>是否带CNAS标志</td>
+                <td>
+                  <div class="radio-group">
+                    <label class="radio-item"><input type="radio" name="cnasFlag" value="yes" disabled><label>带标</label></label>
+                    <label class="radio-item"><input type="radio" name="cnasFlag" value="no" disabled checked><label>不带标</label></label>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>企业名称(中文)</td>
+                <td><input type="text" class="form-input" value="关键场所公司项目，选择相应的非关键" readonly></td>
+              </tr>
+              <tr>
+                <td>企业名称(英文)</td>
+                <td><input type="text" class="form-input" value="iiiiill" readonly></td>
+              </tr>
+              <tr>
+                <td>组织机构代码/统一社会信用代码</td>
+                <td><input type="text" class="form-input" value="91230607777858479R" readonly></td>
+              </tr>
+              <tr>
+                <td>运营企业地址(中文)</td>
+                <td><textarea class="form-textarea" readonly>划与委托方所在地区的选择要求</textarea></td>
+              </tr>
+              <tr>
+                <td>运营企业地址(英文)</td>
+                <td><textarea class="form-textarea" readonly>abc3</textarea></td>
+              </tr>
+              <tr>
+                <td>注册企业地址(中文)</td>
+                <td><textarea class="form-textarea" readonly>划与委托方所在地区的选择要求</textarea></td>
+              </tr>
+              <tr>
+                <td>注册企业地址(英文)</td>
+                <td><textarea class="form-textarea" readonly>abc3</textarea></td>
+              </tr>
+              <tr>
+                <td>认证范围</td>
+                <td><textarea class="form-textarea" readonly>某个更大的组织(如集团公司、上级机</textarea></td>
+              </tr>
+              <tr>
+                <td>认证范围(英文)</td>
+                <td><textarea class="form-textarea" readonly>1</textarea></td>
+              </tr>
+              <tr>
+                <td>组织规模(员工数)</td>
+                <td>
+                  <div class="radio-group">
+                    <label class="radio-item"><input type="radio" name="scale" value="L" disabled><label>大型 L(1000 人以上)</label></label>
+                    <label class="radio-item"><input type="radio" name="scale" value="M" disabled><label>中型 M(51-1000)</label></label>
+                    <label class="radio-item"><input type="radio" name="scale" value="S" disabled checked><label>小型 S(50 人以下)</label></label>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>多场所类证书附件</td>
+                <td style="color:var(--text-disabled);">-</td>
+              </tr>
+              <tr>
+                <td>多产品类证书附件</td>
+                <td style="color:var(--text-disabled);">-</td>
+              </tr>
+              <tr>
+                <td>错误说明</td>
+                <td><textarea class="form-textarea" readonly></textarea></td>
+              </tr>
+              <tr>
+                <td>是否收费200元/套</td>
+                <td>
+                  <div class="radio-group">
+                    <label class="radio-item"><input type="radio" name="charge" value="yes"><label>是</label></label>
+                    <label class="radio-item"><input type="radio" name="charge" value="no" checked><label>否</label></label>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>是否已经收费</td>
+                <td>
+                  <div class="radio-group">
+                    <label class="radio-item"><input type="radio" name="charged" value="yes"><label>是</label></label>
+                    <label class="radio-item"><input type="radio" name="charged" value="no" checked><label>否</label></label>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>附件列表</td>
+                <td style="color:var(--text-disabled);">-</td>
+              </tr>
+              <tr>
+                <td>备注</td>
+                <td><textarea class="form-textarea" readonly></textarea></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-actions">
+      <button class="btn btn-default" onclick="goBack()">取消</button>
+      <button class="btn btn-success" onclick="handleSave()">保存收费状态</button>
+      <button class="btn btn-primary" onclick="handleExport()">可以导出证书</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSubmenu(e, el) {
+  e.preventDefault();
+  e.stopPropagation();
+  var wrapper = el.closest('.submenu-wrapper');
+  var submenu = wrapper.querySelector('.submenu');
+  var isOpen = submenu.classList.contains('open');
+  document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+  document.querySelectorAll('.menu-item.active').forEach(function(m) { m.classList.remove('active'); });
+  if (!isOpen) {
+    submenu.classList.add('open');
+    el.classList.add('active');
+  }
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.submenu-wrapper')) {
+    document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+  }
+});
+
+// ========== 数据 ==========
+var dataList = [
+  {
+    id: 1, certNo: '00125Q306693R001', orgName: '关键场所公司项目，选择相应的非关键',
+    orgNameEN: 'iiiiill', orgCode: '91230607777858479R',
+    address: '划与委托方所在地区的选择要求', addressEN: 'abc3',
+    operAddress: '划与委托方所在地区的选择要求', operAddressEN: 'abc3',
+    certScope: '某个更大的组织(如集团公司、上级机', certScopeEN: '1',
+    scale: '小型 S(50 人以下)', issueDate: '2025-12-03', validDate: '2027-11-27',
+    certType: '电子证书'
+  },
+  {
+    id: 2, certNo: '00122En20263R0M-2/1100', orgName: '中山远洋物业服务有限公司',
+    orgNameEN: 'Zhongshan Ocean Property Service Co., Ltd.', orgCode: '91442000MA5XXXXX',
+    address: '广东省中山市石岐区', addressEN: 'Shiqi District, Zhongshan, Guangdong',
+    operAddress: '广东省中山市石岐区', operAddressEN: 'Shiqi District, Zhongshan, Guangdong',
+    certScope: '物业管理服务', certScopeEN: 'Property management services',
+    scale: '中型 M(51-1000)', issueDate: '2025-06-15', validDate: '2027-06-14',
+    certType: '电子证书'
+  },
+  {
+    id: 3, certNo: '00123Q31405R5M-3/1100', orgName: '中金数谷科技有限公司',
+    orgNameEN: 'CICC Shugu Technology Co., Ltd.', orgCode: '91110105MA01XXXXX',
+    address: '北京市朝阳区望京东路', addressEN: 'Wangjing East Road, Chaoyang District, Beijing',
+    operAddress: '北京市朝阳区望京东路', operAddressEN: 'Wangjing East Road, Chaoyang District, Beijing',
+    certScope: '数据中心运维服务', certScopeEN: 'Data center operation and maintenance services',
+    scale: '中型 M(51-1000)', issueDate: '2024-11-28', validDate: '2026-11-27',
+    certType: '电子证书'
+  },
+  {
+    id: 4, certNo: '0012023ITSM0084R0N/1100', orgName: '北京开科唯识技术股份有限公司',
+    orgNameEN: 'Beijing Kaike Weishi Technology Co., Ltd.', orgCode: '91110108MA00XXXXX',
+    address: '北京市海淀区中关村', addressEN: 'Zhongguancun, Haidian District, Beijing',
+    operAddress: '北京市海淀区中关村', operAddressEN: 'Zhongguancun, Haidian District, Beijing',
+    certScope: 'IT服务管理', certScopeEN: 'IT service management',
+    scale: '大型 L(1000 人以上)', issueDate: '2024-11-07', validDate: '2026-11-06',
+    certType: '电子证书'
+  },
+  {
+    id: 5, certNo: '00122F23672R4M/1100', orgName: '北京广东健力宝饮料有限公司',
+    orgNameEN: 'Beijing Guangdong Jianlibao Beverage Co., Ltd.', orgCode: '91110105MA01XXXXX',
+    address: '北京市大兴区', addressEN: 'Daxing District, Beijing',
+    operAddress: '北京市大兴区', operAddressEN: 'Daxing District, Beijing',
+    certScope: '饮料的生产与销售', certScopeEN: 'Production and sales of beverages',
+    scale: '大型 L(1000 人以上)', issueDate: '2024-11-06', validDate: '2026-11-05',
+    certType: '电子证书'
+  }
+];
+
+// ========== 初始化 ==========
+function init() {
+  var params = new URLSearchParams(window.location.search);
+  var id = parseInt(params.get('id')) || 1;
+  var data = dataList.find(function(d) { return d.id === id; }) || dataList[0];
+
+  document.getElementById('pageTitle').textContent = data.certNo;
+  document.getElementById('valCertNo').textContent = data.certNo;
+  document.getElementById('valOrgName').textContent = data.orgName;
+  document.getElementById('valOrgNameEN').textContent = data.orgNameEN;
+  document.getElementById('valOrgCode').textContent = data.orgCode;
+  document.getElementById('valAddress').textContent = data.address;
+  document.getElementById('valAddressEN').textContent = data.addressEN;
+  document.getElementById('valOperAddress').textContent = data.operAddress;
+  document.getElementById('valOperAddressEN').textContent = data.operAddressEN;
+  document.getElementById('valCertScope').textContent = data.certScope;
+  document.getElementById('valCertScopeEN').textContent = data.certScopeEN;
+  document.getElementById('valScale').textContent = data.scale;
+  document.getElementById('valIssueDate').textContent = data.issueDate;
+  document.getElementById('valValidDate').textContent = data.validDate;
+  document.getElementById('valCertType').textContent = data.certType;
+
+  // 预填修改表单中的企业名称
+  document.getElementById('modOrgNameCN').value = data.orgName;
+}
+
+function goBack() {
+  window.location.href = 'cert-fee-list.html';
+}
+
+function handleSave() {
+  var charge = document.querySelector('input[name="charge"]:checked').value;
+  var charged = document.querySelector('input[name="charged"]:checked').value;
+  alert('✅ 收费状态已保存！\n是否收费：' + (charge === 'yes' ? '是' : '否') + '\n是否已收费：' + (charged === 'yes' ? '是' : '否'));
+  goBack();
+}
+
+function handleExport() {
+  alert('✅ 证书已导出！');
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  init();
+});
+</script>
+</body>
+</html>

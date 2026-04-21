@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>错证收费管理 - 体系认证管理平台</title>
+<style>
+  :root {
+    --primary: #1890ff;
+    --primary-light: #e6f7ff;
+    --primary-hover: #40a9ff;
+    --sidebar-bg: #001529;
+    --success: #52c41a;
+    --success-bg: #f6ffed;
+    --warning: #fa8c16;
+    --warning-bg: #fff7e6;
+    --danger: #f5222d;
+    --danger-bg: #fff2f0;
+    --info: #1890ff;
+    --info-bg: #e6f7ff;
+    --purple: #722ed1;
+    --purple-bg: #f9f0ff;
+    --bg-page: #f0f2f5;
+    --bg-card: #ffffff;
+    --border: #e8e8e8;
+    --border-light: #f0f0f0;
+    --text-primary: #262626;
+    --text-secondary: #595959;
+    --text-placeholder: #bfbfbf;
+    --text-disabled: #8c8c8c;
+    --shadow-card: 0 2px 8px rgba(0,0,0,0.08);
+    --radius: 4px;
+    --radius-lg: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 14px; color: var(--text-primary); background: var(--bg-page); line-height: 1.6;
+    overflow: hidden; height: 100vh;
+  }
+  .layout { display: flex; height: 100vh; }
+
+  /* ========== Sidebar ========== */
+  .sidebar {
+    width: 64px; min-width: 64px; background: var(--sidebar-bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 8px; position: relative; z-index: 100;
+  }
+  .sidebar-logo {
+    width: 40px; height: 40px; border-radius: 8px; background: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 12px;
+  }
+  .sidebar-menu { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; padding: 4px 0; }
+  .menu-item {
+    width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.65); cursor: pointer; transition: all 0.2s;
+    border-radius: 8px; text-decoration: none; position: relative; gap: 2px;
+  }
+  .menu-item .menu-icon { font-size: 18px; line-height: 1; }
+  .menu-item .menu-label { font-size: 10px; line-height: 1; white-space: nowrap; }
+  .menu-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .menu-item.active { color: #fff; background: var(--primary); }
+  .menu-item.active::before {
+    content: ''; position: absolute; left: 0; top: 10px; bottom: 10px;
+    width: 3px; background: #fff; border-radius: 0 2px 2px 0;
+  }
+
+  /* ========== Submenu ========== */
+  .submenu-wrapper { position: relative; }
+  .submenu {
+    display: none; position: absolute; left: 64px; top: 0;
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.08);
+    min-width: 200px; padding: 8px 0; z-index: 200;
+    border: 1px solid var(--border-light);
+  }
+  .submenu::before {
+    content: ''; position: absolute; left: -16px; top: 0; bottom: 0; width: 16px;
+  }
+  .submenu-wrapper:hover .submenu,
+  .submenu.open { display: block; }
+  .submenu-item {
+    display: flex; align-items: center; height: 36px; padding: 0 12px;
+    color: var(--text-primary); cursor: pointer; transition: all 0.15s;
+    font-size: 13px; border-radius: var(--radius); margin: 1px 0;
+    text-decoration: none; white-space: nowrap;
+  }
+  .submenu-item:hover { background: var(--primary-light); color: var(--primary); }
+  .submenu-item.active { color: var(--primary); font-weight: 500; background: var(--primary-light); }
+  .submenu-item .sub-dot {
+    width: 4px; height: 4px; border-radius: 50%; background: var(--border);
+    margin-right: 10px; flex-shrink: 0;
+  }
+  .submenu-item:hover .sub-dot, .submenu-item.active .sub-dot { background: var(--primary); }
+
+  /* ========== Main ========== */
+  .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ========== Header ========== */
+  .header {
+    height: 56px; background: var(--bg-card); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-title { font-size: 16px; font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-user { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .header-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500;
+  }
+
+  /* ========== Page ========== */
+  .page-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .page-content::-webkit-scrollbar { width: 6px; }
+  .page-content::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+
+  /* ========== Buttons ========== */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 32px; padding: 0 16px; border-radius: var(--radius);
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+    border: 1px solid transparent; gap: 6px; white-space: nowrap; font-family: inherit;
+  }
+  .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+  .btn-default { background: var(--bg-card); color: var(--text-primary); border-color: var(--border); }
+  .btn-default:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-text { background: transparent; color: var(--primary); border: none; padding: 0 8px; height: auto; font-size: 13px; }
+  .btn-text:hover { color: var(--primary-hover); }
+  .btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
+
+  /* ========== Filter Card ========== */
+  .filter-card {
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    padding: 20px 24px; box-shadow: var(--shadow-card); margin-bottom: 16px;
+  }
+  .filter-row { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+  .filter-group { display: flex; flex-direction: column; gap: 6px; }
+  .filter-label { font-size: 13px; color: var(--text-secondary); }
+  .filter-input, .filter-select {
+    height: 36px; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0 12px; font-size: 14px; color: var(--text-primary);
+    background: var(--bg-card); font-family: inherit; transition: border-color 0.2s;
+  }
+  .filter-input:focus, .filter-select:focus {
+    outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(24,144,255,0.1);
+  }
+  .filter-input::placeholder { color: var(--text-placeholder); }
+  .filter-actions { display: flex; gap: 8px; margin-left: auto; }
+
+  /* ========== Table Card ========== */
+  .table-card {
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card); overflow: hidden; display: flex; flex-direction: column;
+  }
+  .table-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--border-light); flex-shrink: 0;
+  }
+  .table-toolbar-left { display: flex; align-items: center; gap: 12px; }
+  .table-toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+  /* ========== Table Container ========== */
+  .table-container { flex: 1; overflow: auto; position: relative; }
+  .table-container::-webkit-scrollbar { height: 8px; width: 8px; }
+  .table-container::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 4px; }
+  .table-container::-webkit-scrollbar-corner { background: #f5f5f5; }
+
+  /* ========== Table ========== */
+  .data-table { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; }
+  .data-table thead th {
+    background: #fafafa; padding: 12px 16px; text-align: left;
+    font-size: 13px; font-weight: 500; color: var(--text-secondary);
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .data-table thead th.fixed-left {
+    position: sticky; left: 0; z-index: 20; background: #fafafa;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+  }
+  .data-table thead th.fixed-right {
+    position: sticky; right: 0; z-index: 20; background: #fafafa;
+    box-shadow: -2px 0 4px rgba(0,0,0,0.05);
+  }
+  .data-table tbody tr { border-bottom: 1px solid var(--border-light); transition: background 0.15s; }
+  .data-table tbody tr:hover { background: #fafbfc; }
+  .data-table tbody td { padding: 14px 16px; font-size: 14px; vertical-align: middle; white-space: nowrap; }
+  .data-table tbody td.fixed-left {
+    position: sticky; left: 0; z-index: 5; background: var(--bg-card);
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+  }
+  .data-table tbody tr:hover td.fixed-left { background: #fafbfc; }
+  .data-table tbody td.fixed-right {
+    position: sticky; right: 0; z-index: 5; background: var(--bg-card);
+    box-shadow: -2px 0 4px rgba(0,0,0,0.05);
+  }
+  .data-table tbody tr:hover td.fixed-right { background: #fafbfc; }
+  .data-table .link { color: var(--primary); cursor: pointer; text-decoration: none; }
+  .data-table .link:hover { text-decoration: underline; }
+
+  /* ========== Tags ========== */
+  .tag {
+    display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
+    border-radius: 4px; font-size: 12px; font-weight: 500; line-height: 1;
+  }
+  .tag-info { background: var(--info-bg); color: var(--info); }
+  .tag-success { background: var(--success-bg); color: var(--success); }
+  .tag-warning { background: var(--warning-bg); color: var(--warning); }
+  .tag-danger { background: var(--danger-bg); color: var(--danger); }
+  .tag-purple { background: var(--purple-bg); color: var(--purple); }
+  .tag-default { background: #f5f5f5; color: var(--text-secondary); }
+
+  /* ========== Checkbox ========== */
+  .checkbox {
+    width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 2px;
+    cursor: pointer; appearance: none; -webkit-appearance: none; transition: all 0.2s; position: relative;
+  }
+  .checkbox:checked { background: var(--primary); border-color: var(--primary); }
+  .checkbox:checked::after {
+    content: ''; position: absolute; left: 4px; top: 1px; width: 5px; height: 9px;
+    border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+
+  /* ========== Pagination ========== */
+  .pagination-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-top: 1px solid var(--border-light); flex-shrink: 0;
+  }
+  .pagination-info { font-size: 13px; color: var(--text-secondary); }
+  .pagination { display: flex; align-items: center; gap: 4px; }
+  .page-btn {
+    min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card);
+    color: var(--text-primary); font-size: 13px; cursor: pointer; transition: all 0.2s;
+    padding: 0 8px; font-family: inherit;
+  }
+  .page-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .page-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; }
+
+  /* ========== Animations ========== */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+</style>
+<script>
+  function toggleSubmenu(e, el) {
+    e.preventDefault();
+    e.stopPropagation();
+    var wrapper = el.closest('.submenu-wrapper');
+    var submenu = wrapper.querySelector('.submenu');
+    var isOpen = submenu.classList.contains('open');
+    document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+    document.querySelectorAll('.menu-item.active').forEach(function(m) { m.classList.remove('active'); });
+    if (!isOpen) {
+      submenu.classList.add('open');
+      el.classList.add('active');
+    }
+  }
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.submenu-wrapper')) {
+      document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+    }
+  });
+
+  // ========== 数据 ==========
+  var tableData = [
+    { id: 1, certNo: '00125Q306693R001', charged: '否', certType: 'ISO9000', approvalDate: '2026-03-11', orgName: '关键场所公司项目，选择相应的非关键' },
+    { id: 2, certNo: '00122En20263R0M-2/1100', charged: '是', certType: '能源管理体系认证', approvalDate: '2026-03-11', orgName: '中山远洋物业服务有限公司' },
+    { id: 3, certNo: '00123Q31405R5M-3/1100', charged: '是', certType: 'ISO9000', approvalDate: '2024-11-28', orgName: '中金数谷科技有限公司' },
+    { id: 4, certNo: '0012023ITSM0084R0N/1100', charged: '否', certType: 'ISO20000', approvalDate: '2024-11-07', orgName: '北京开科唯识技术股份有限公司' },
+    { id: 5, certNo: '00122F23672R4M/1100', charged: '是', certType: 'ISO22000', approvalDate: '2024-11-06', orgName: '北京广东健力宝饮料有限公司' },
+    { id: 6, certNo: '00124Q37242R1S/1100', charged: '否', certType: 'ISO9000', approvalDate: '2024-11-06', orgName: '北京国资环境保护技术有限公司' },
+    { id: 7, certNo: '00124E33235R1M/1100', charged: '是', certType: 'ISO14000', approvalDate: '2024-11-06', orgName: '北京富润成照明系统工程有限公司' },
+    { id: 8, certNo: '00121S33615R1M/1100', charged: '否', certType: 'OHSMS18000', approvalDate: '2024-11-06', orgName: '国网商用大数据有限公司' },
+    { id: 9, certNo: '00123S31610R2M/1100', charged: '是', certType: 'OHSMS18000', approvalDate: '2024-11-05', orgName: '北京笔中文化科技产业集团有限公司' },
+    { id: 10, certNo: '00124En20430R1M/2300', charged: '否', certType: '能源管理体系认证', approvalDate: '2024-09-26', orgName: '黑龙江省农垦龙王食品有限责任公司' },
+    { id: 11, certNo: 'CQC22SH10039R0M/3400', charged: '是', certType: 'GB/T 27922', approvalDate: '2024-09-20', orgName: '讯飞医疗科技股份有限公司' },
+    { id: 12, certNo: 'CQC24F20730R0S/3100', charged: '否', certType: 'ISO22000', approvalDate: '2024-08-30', orgName: '深圳麦嘉乐食品有限公司' },
+    { id: 13, certNo: '00124S30031R0S-1/1500', charged: '是', certType: 'OHSMS18000', approvalDate: '2024-07-19', orgName: '内蒙古浩玮环境科技有限公司' },
+    { id: 14, certNo: '00124S30031R0S/1500', charged: '否', certType: 'OHSMS18000', approvalDate: '2024-07-19', orgName: '内蒙古华强环境科技有限公司' },
+    { id: 15, certNo: '00124Q31091R8M/3302', charged: '是', certType: 'ISO9000', approvalDate: '2024-07-18', orgName: '余姚市洋灵电器有限公司/宁波市洋灵科技有限公司' },
+    { id: 16, certNo: '00122En20030R0L/3200', charged: '否', certType: '能源管理体系认证', approvalDate: '2024-07-09', orgName: '常熟金像电子有限公司' },
+    { id: 17, certNo: '00124S30393R4M/4200', charged: '是', certType: 'OHSMS18000', approvalDate: '2024-05-23', orgName: '航天电工集团有限公司' },
+    { id: 18, certNo: '00124Q31089R4M/4200', charged: '否', certType: 'ISO9000', approvalDate: '2024-05-24', orgName: '航天电工集团有限公司' },
+    { id: 19, certNo: '00124F20388R4S/3200', charged: '是', certType: 'ISO22000', approvalDate: '2024-05-23', orgName: '苏州灵格食品有限公司' },
+    { id: 20, certNo: '00124F20702R2M-2/4403', charged: '否', certType: 'ISO22000', approvalDate: '2024-03-22', orgName: '惠州宠意宠物用品有限公司' }
+  ];
+
+  // ========== 渲染表格 ==========
+  function renderTable(data) {
+    var tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    data.forEach(function(item) {
+      var chargedTag = item.charged === '是' ? '<span class="tag tag-success">是</span>' : '<span class="tag tag-default">否</span>';
+      var certTypeTag = '<span class="tag tag-default">' + item.certType + '</span>';
+      var row = document.createElement('tr');
+      row.innerHTML =
+        '<td class="fixed-left"><input type="checkbox" class="checkbox"></td>' +
+        '<td class="fixed-left"><a class="link" href="cert-fee-detail.html?id=' + item.id + '">' + item.certNo + '</a></td>' +
+        '<td>' + chargedTag + '</td>' +
+        '<td>' + certTypeTag + '</td>' +
+        '<td>' + item.approvalDate + '</td>' +
+        '<td>' + item.orgName + '</td>' +
+        '<td class="fixed-right"><a class="btn-text" href="cert-fee-detail.html?id=' + item.id + '">查看</a></td>';
+      tbody.appendChild(row);
+    });
+    document.querySelector('.table-toolbar-left span').textContent = '共 ' + data.length + ' 条记录';
+    document.querySelector('.pagination-info span').textContent = '共 ' + data.length + ' 条记录';
+  }
+
+  // ========== 筛选 ==========
+  function doFilter() {
+    var certNo = document.getElementById('filterCertNo').value.trim().toLowerCase();
+    var charged = document.getElementById('filterCharged').value;
+    var certType = document.getElementById('filterCertType').value;
+    var approvalDate = document.getElementById('filterApprovalDate').value;
+    var orgName = document.getElementById('filterOrgName').value.trim().toLowerCase();
+
+    var filtered = tableData.filter(function(item) {
+      var show = true;
+      if (certNo && item.certNo.toLowerCase().indexOf(certNo) === -1) show = false;
+      if (charged && item.charged !== charged) show = false;
+      if (certType && item.certType !== certType) show = false;
+      if (approvalDate && item.approvalDate !== approvalDate) show = false;
+      if (orgName && item.orgName.toLowerCase().indexOf(orgName) === -1) show = false;
+      return show;
+    });
+    renderTable(filtered);
+  }
+
+  function resetFilter() {
+    document.getElementById('filterCertNo').value = '';
+    document.getElementById('filterCharged').value = '';
+    document.getElementById('filterCertType').value = '';
+    document.getElementById('filterApprovalDate').value = '';
+    document.getElementById('filterOrgName').value = '';
+    renderTable(tableData);
+  }
+
+  function updatePageSize(val) {}
+
+  // ========== 初始化 ==========
+  window.addEventListener('DOMContentLoaded', function() {
+    renderTable(tableData);
+  });
+</script>
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">📋</div>
+    <nav class="sidebar-menu">
+      <!-- 证书签发 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="证书签发" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🏅</span><span class="menu-label">签发</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-make-list.html"><span class="sub-dot"></span>体系证书签发</a>
+          <a class="submenu-item" href="cert-hf-list.html"><span class="sub-dot"></span>体系证书签发（HF）</a>
+          <a class="submenu-item" href="cert-reissue-auto-list.html"><span class="sub-dot"></span>再认证待签发（自动）</a>
+          <a class="submenu-item" href="cert-all-pending-list.html"><span class="sub-dot"></span>其余全部待签发</a>
+        </div>
+      </div>
+      <!-- 认监委上报 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委上报" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📤</span><span class="menu-label">上报</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-report.html"><span class="sub-dot"></span>认证数据报送认监委(汇总)</a>
+          <a class="submenu-item" href="cert-cnca-return-list.html"><span class="sub-dot"></span>认监委退回证书列表</a>
+        </div>
+      </div>
+      <!-- 认监委编号 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委编号" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📋</span><span class="menu-label">编号</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-list.html"><span class="sub-dot"></span>认监委编号证书管理</a>
+        </div>
+      </div>
+      <!-- 证书打印 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="证书打印" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🖨️</span><span class="menu-label">打印</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-manage-list.html"><span class="sub-dot"></span>证书管理(全量)</a>
+          <a class="submenu-item" href="cert-export-list.html"><span class="sub-dot"></span>证书导出</a>
+          <a class="submenu-item" href="cert-print-pending-list.html"><span class="sub-dot"></span>证书待打印</a>
+          <a class="submenu-item" href="cert-cnca-export-list.html"><span class="sub-dot"></span>农食证书导出</a>
+          <a class="submenu-item" href="cert-cnca-print-pending-list.html"><span class="sub-dot"></span>农食证书待打印</a>
+          <a class="submenu-item" href="cert-upload-manage-list.html"><span class="sub-dot"></span>上传证书文件管理</a>
+          <a class="submenu-item" href="cert-electronic-list.html"><span class="sub-dot"></span>电子证书管理</a>
+          <a class="submenu-item" href="cert-express-manage-list.html"><span class="sub-dot"></span>证书快递管理</a>
+        </div>
+      </div>
+      <!-- 错证管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item active" href="#" title="错证管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">❌</span><span class="menu-label">错证</span></a>
+        <div class="submenu">
+          <a class="submenu-item active" href="cert-fee-list.html"><span class="sub-dot"></span>错证收费管理</a>
+          <a class="submenu-item" href="cert-print-list.html"><span class="sub-dot"></span>错证打印管理</a>
+          <a class="submenu-item" href="cert-express-list.html"><span class="sub-dot"></span>错证快递管理</a>
+          <a class="submenu-item" href="cert-fee-export-list.html"><span class="sub-dot"></span>错证证书数据导出</a>
+        </div>
+      </div>
+      <!-- 模版管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="模版管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📐</span><span class="menu-label">模版</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-template-list.html"><span class="sub-dot"></span>证书模版管理</a>
+          <a class="submenu-item" href="cert-watermark-list.html"><span class="sub-dot"></span>证书底纹管理</a>
+        </div>
+      </div>
+
+      <!-- 通知单管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="通知单管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🔄</span><span class="menu-label">证后</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-suspend-list.html"><span class="sub-dot"></span>暂撤注恢证书通知单</a>
+          <a class="submenu-item" href="cert-recovery-list.html"><span class="sub-dot"></span>暂撤注恢证书电子通知单</a>
+          <a class="submenu-item" href="cert-supervision-list.html"><span class="sub-dot"></span>监督合格通知书</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <span class="header-title">错证收费管理</span>
+        <span style="font-size:13px;color:var(--text-disabled);">管理错证的收费确认与信息修改</span>
+      </div>
+      <div class="header-right">
+        <div class="header-user">
+          <div class="header-avatar">丛</div>
+          <span>丛思远 · 项目主管</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Filter -->
+      <div class="filter-card animate-in">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label class="filter-label">证书编号</label>
+            <input type="text" class="filter-input" id="filterCertNo" placeholder="输入证书编号" style="min-width:200px;">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">是否收费</label>
+            <select class="filter-select" id="filterCharged" style="min-width:100px;">
+              <option value="">全部</option>
+              <option>是</option>
+              <option>否</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">认证类别</label>
+            <select class="filter-select" id="filterCertType" style="min-width:150px;">
+              <option value="">全部</option>
+              <option>ISO9000</option>
+              <option>ISO14000</option>
+              <option>ISO22000</option>
+              <option>ISO20000</option>
+              <option>OHSMS18000</option>
+              <option>能源管理体系认证</option>
+              <option>GB/T 27922</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">体系处处长审批日期</label>
+            <input type="date" class="filter-input" id="filterApprovalDate" style="min-width:150px;">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">受审核方名称</label>
+            <input type="text" class="filter-input" id="filterOrgName" placeholder="支持模糊搜索" style="min-width:200px;">
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-primary btn-sm" onclick="doFilter()">🔍 查询</button>
+            <button class="btn btn-default btn-sm" onclick="resetFilter()">重置</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card animate-in">
+        <div class="table-toolbar">
+          <div class="table-toolbar-left">
+            <label style="font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" class="checkbox"> 全选
+            </label>
+            <span style="font-size:13px;color:var(--text-disabled);">共 20 条记录</span>
+          </div>
+          <div class="table-toolbar-right">
+            <button class="btn btn-default btn-sm">📥 导出</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="fixed-left" style="width:40px;"><input type="checkbox" class="checkbox"></th>
+                <th class="fixed-left" style="min-width:220px;">证书编号</th>
+                <th style="min-width:90px;">是否收费</th>
+                <th style="min-width:150px;">认证类别</th>
+                <th style="min-width:150px;">体系处处长审批日期</th>
+                <th style="min-width:280px;">受审核方名称</th>
+                <th class="fixed-right" style="width:80px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-bar">
+          <div class="pagination-info">
+            <span>共 20 条记录</span>
+            <select style="margin-left:12px;height:28px;border:1px solid var(--border);border-radius:var(--radius);padding:0 8px;font-size:13px;color:var(--text-primary);background:var(--bg-card);cursor:pointer;font-family:inherit;" onchange="updatePageSize(this.value)">
+              <option value="20" selected>20 条/页</option>
+              <option value="50">50 条/页</option>
+              <option value="100">100 条/页</option>
+            </select>
+          </div>
+          <div class="pagination">
+            <button class="page-btn" disabled>&lt;</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">4</button>
+            <span style="color:var(--text-placeholder);padding:0 4px;">...</span>
+            <button class="page-btn">&gt;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

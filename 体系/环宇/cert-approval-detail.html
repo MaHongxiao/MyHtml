@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>认证结果报批表 - 体系认证管理平台</title>
+<style>
+  :root {
+    --primary: #1890ff;
+    --primary-light: #e6f7ff;
+    --primary-hover: #40a9ff;
+    --sidebar-bg: #001529;
+    --success: #52c41a;
+    --success-bg: #f6ffed;
+    --warning: #fa8c16;
+    --warning-bg: #fff7e6;
+    --danger: #f5222d;
+    --danger-bg: #fff2f0;
+    --info: #1890ff;
+    --info-bg: #e6f7ff;
+    --purple: #722ed1;
+    --purple-bg: #f9f0ff;
+    --bg-page: #f0f2f5;
+    --bg-card: #ffffff;
+    --border: #e8e8e8;
+    --border-light: #f0f0f0;
+    --text-primary: #262626;
+    --text-secondary: #595959;
+    --text-placeholder: #bfbfbf;
+    --text-disabled: #8c8c8c;
+    --shadow-card: 0 2px 8px rgba(0,0,0,0.08);
+    --radius: 4px;
+    --radius-lg: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 14px; color: var(--text-primary); background: var(--bg-page); line-height: 1.6;
+    overflow: hidden; height: 100vh;
+  }
+  .layout { display: flex; height: 100vh; }
+
+  /* ========== Sidebar ========== */
+  .sidebar {
+    width: 64px; min-width: 64px; background: var(--sidebar-bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 8px; position: relative; z-index: 100;
+  }
+  .sidebar-logo {
+    width: 40px; height: 40px; border-radius: 8px; background: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 12px;
+  }
+  .sidebar-menu { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; padding: 4px 0; }
+  .menu-item {
+    width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.65); cursor: pointer; transition: all 0.2s;
+    border-radius: 8px; text-decoration: none; position: relative; gap: 2px;
+  }
+  .menu-item .menu-icon { font-size: 18px; line-height: 1; }
+  .menu-item .menu-label { font-size: 10px; line-height: 1; white-space: nowrap; }
+  .menu-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .menu-item.active { color: #fff; background: var(--primary); }
+  .menu-item.active::before {
+    content: ''; position: absolute; left: 0; top: 10px; bottom: 10px;
+    width: 3px; background: #fff; border-radius: 0 2px 2px 0;
+  }
+
+  /* ========== Submenu (Hover Popup) ========== */
+  .submenu-wrapper { position: relative; }
+  .submenu {
+    display: none; position: absolute; left: 64px; top: 0;
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.08);
+    min-width: 200px; padding: 8px 0; z-index: 200;
+    border: 1px solid var(--border-light);
+  }
+  .submenu::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 0;
+    bottom: 0;
+    width: 16px;
+  }
+  .submenu-wrapper:hover .submenu,
+  .submenu.open { display: block; }
+  .submenu-item {
+    display: flex; align-items: center; height: 36px; padding: 0 12px;
+    color: var(--text-primary); cursor: pointer; transition: all 0.15s;
+    font-size: 13px; border-radius: var(--radius); margin: 1px 0;
+    text-decoration: none; white-space: nowrap;
+  }
+  .submenu-item:hover { background: var(--primary-light); color: var(--primary); }
+  .submenu-item.active { color: var(--primary); font-weight: 500; background: var(--primary-light); }
+  .submenu-item .sub-dot {
+    width: 4px; height: 4px; border-radius: 50%; background: var(--border);
+    margin-right: 10px; flex-shrink: 0;
+  }
+  .submenu-item:hover .sub-dot, .submenu-item.active .sub-dot { background: var(--primary); }
+
+  /* ========== Main ========== */
+  .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ========== Header ========== */
+  .header {
+    height: 56px; background: var(--bg-card); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-title { font-size: 16px; font-weight: 500; }
+  .header-tag {
+    display: inline-flex; align-items: center; height: 24px; padding: 0 8px;
+    border-radius: 4px; font-size: 12px;
+  }
+  .header-tag.success { background: var(--success-bg); color: var(--success); }
+  .header-tag.warning { background: var(--warning-bg); color: var(--warning); }
+  .header-tag.danger { background: var(--danger-bg); color: var(--danger); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-user { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .header-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+
+  /* ========== Buttons ========== */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 32px; padding: 0 16px; border-radius: var(--radius);
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+    border: 1px solid transparent; gap: 6px; white-space: nowrap; font-family: inherit;
+  }
+  .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+  .btn-default { background: var(--bg-card); color: var(--text-primary); border-color: var(--border); }
+  .btn-default:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+  .btn-success:hover { background: #389e0d; }
+  .btn-danger-outline { background: #fff; color: var(--danger); border-color: var(--danger); }
+  .btn-danger-outline:hover { background: var(--danger-bg); }
+  .btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
+
+  /* ========== Page ========== */
+  .page-content { flex: 1; overflow-y: auto; padding: 16px 24px; }
+  .page-content::-webkit-scrollbar { width: 6px; }
+  .page-content::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+
+  /* ========== Page Header ========== */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .page-title-group { display: flex; align-items: center; gap: 12px; }
+  .page-title { font-size: 20px; font-weight: 600; }
+  .btn-back {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--text-secondary); cursor: pointer; font-size: 14px;
+    background: none; border: none; font-family: inherit; padding: 4px 0;
+  }
+  .btn-back:hover { color: var(--primary); }
+  .page-actions { display: flex; gap: 12px; }
+
+  /* ========== Card ========== */
+  .card {
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card); margin-bottom: 12px; overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px; border-bottom: 1px solid var(--border-light);
+  }
+  .card-title { font-size: 15px; font-weight: 600; }
+  .card-body { padding: 16px 24px; }
+
+  /* ========== Info Grid ========== */
+  .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 20px; }
+  .info-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .info-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .info-item { display: flex; flex-direction: column; gap: 4px; }
+  .info-item.full { grid-column: 1 / -1; }
+  .info-label { font-size: 13px; color: var(--text-disabled); }
+  .info-value { font-size: 14px; color: var(--text-primary); }
+  .info-value.highlight { color: var(--danger); font-weight: 500; }
+
+  /* ========== Tags ========== */
+  .tag {
+    display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
+    border-radius: 4px; font-size: 12px; font-weight: 500; line-height: 1;
+  }
+  .tag-info { background: var(--info-bg); color: var(--info); }
+  .tag-success { background: var(--success-bg); color: var(--success); }
+  .tag-warning { background: var(--warning-bg); color: var(--warning); }
+  .tag-danger { background: var(--danger-bg); color: var(--danger); }
+  .tag-purple { background: var(--purple-bg); color: var(--purple); }
+  .tag-default { background: #f5f5f5; color: var(--text-secondary); }
+
+  /* ========== Standards List ========== */
+  .standards-list { display: flex; flex-direction: column; gap: 8px; }
+  .standard-item {
+    display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px;
+    background: #fafafa; border-radius: var(--radius); font-size: 13px; line-height: 1.5;
+  }
+  .standard-item .dot { color: var(--primary); margin-top: 2px; flex-shrink: 0; }
+
+  /* ========== Form ========== */
+  .form-row { display: flex; gap: 24px; margin-bottom: 20px; }
+  .form-row:last-child { margin-bottom: 0; }
+  .form-group { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+  .form-label .required { color: var(--danger); margin-left: 2px; }
+  .form-input, .form-textarea, .form-select {
+    height: 36px; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0 12px; font-size: 14px; color: var(--text-primary);
+    background: var(--bg-card); font-family: inherit; transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(24,144,255,0.1);
+  }
+  .form-textarea { height: 80px; padding: 8px 12px; resize: vertical; }
+  .form-input[readonly] { background: #f5f5f5; color: var(--text-secondary); }
+
+  /* ========== Radio ========== */
+  .radio-group { display: flex; gap: 24px; margin-top: 8px; }
+  .radio-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .radio-item input[type="radio"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+  .radio-item label { cursor: pointer; font-size: 14px; }
+
+  /* ========== Version Info ========== */
+  .version-info {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 16px;
+    padding: 12px 16px; background: #fafafa; border-radius: var(--radius);
+  }
+  .version-info span { font-size: 13px; color: var(--text-secondary); }
+
+  /* ========== Footer ========== */
+  .footer-actions {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 12px; padding: 12px 24px; background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    position: sticky; bottom: 0; z-index: 10;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+
+  /* ========== Animations ========== */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">📋</div>
+    <nav class="sidebar-menu">
+      <!-- 证书签发 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item active" href="#" title="证书签发" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🏅</span><span class="menu-label">签发</span></a>
+        <div class="submenu">
+          <a class="submenu-item active" href="cert-make-list.html"><span class="sub-dot"></span>体系证书签发</a>
+          <a class="submenu-item" href="cert-hf-list.html"><span class="sub-dot"></span>体系证书签发（HF）</a>
+          <a class="submenu-item" href="cert-reissue-auto-list.html"><span class="sub-dot"></span>再认证待签发（自动）</a>
+          
+          <a class="submenu-item" href="cert-all-pending-list.html"><span class="sub-dot"></span>其余全部待签发</a>
+        </div>
+      </div>
+      <!-- 认监委上报 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委上报" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📤</span><span class="menu-label">上报</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-report.html"><span class="sub-dot"></span>认证数据报送认监委(汇总)</a>
+          <a class="submenu-item" href="cert-cnca-return-list.html"><span class="sub-dot"></span>认监委退回证书列表</a>
+        </div>
+      </div>
+      <!-- 认监委编号 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委编号" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📋</span><span class="menu-label">编号</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-list.html"><span class="sub-dot"></span>认监委编号证书管理</a>
+        </div>
+      </div>
+      <!-- 证书打印 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="证书打印" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🖨️</span><span class="menu-label">打印</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-mgmt-list.html"><span class="sub-dot"></span>证书管理(全量)</a>
+          <a class="submenu-item" href="cert-export-list.html"><span class="sub-dot"></span>证书导出</a>
+          <a class="submenu-item" href="cert-print-pending-list.html"><span class="sub-dot"></span>证书待打印</a>
+          <a class="submenu-item" href="cert-cnca-export-list.html"><span class="sub-dot"></span>农食证书导出</a>
+          <a class="submenu-item" href="cert-cnca-print-pending-list.html"><span class="sub-dot"></span>农食证书待打印</a>
+          <a class="submenu-item" href="cert-upload-manage-list.html"><span class="sub-dot"></span>上传证书文件管理</a>
+          <a class="submenu-item" href="cert-electronic-list.html"><span class="sub-dot"></span>电子证书管理</a>
+          <a class="submenu-item" href="cert-express-manage-list.html"><span class="sub-dot"></span>证书快递管理</a>
+        </div>
+      </div>
+      <!-- 错证管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="错证管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">❌</span><span class="menu-label">错证</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-fee-list.html"><span class="sub-dot"></span>错证收费确认</a>
+          <a class="submenu-item" href="cert-fee-export-list.html"><span class="sub-dot"></span>错证证书数据导出</a>
+          <a class="submenu-item" href="cert-print-list.html"><span class="sub-dot"></span>错证打印管理</a>
+          <a class="submenu-item" href="cert-express-list.html"><span class="sub-dot"></span>错证快递管理</a>
+        </div>
+      </div>
+      <!-- 模版管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="模版管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📐</span><span class="menu-label">模版</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-template-list.html"><span class="sub-dot"></span>证书模版管理</a>
+          <a class="submenu-item" href="cert-watermark-list.html"><span class="sub-dot"></span>证书底纹管理</a>
+        </div>
+      </div>
+
+      <!-- 通知单管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="通知单管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🔄</span><span class="menu-label">证后</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-suspend-list.html"><span class="sub-dot"></span>暂撤注恢证书通知单</a>
+          <a class="submenu-item" href="cert-recovery-list.html"><span class="sub-dot"></span>暂撤注恢证书电子通知单</a>
+          <a class="submenu-item" href="cert-supervision-list.html"><span class="sub-dot"></span>监督合格通知书</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <button class="btn-back" onclick="goBack()" style="display:inline-flex;align-items:center;gap:4px;color:var(--text-secondary);cursor:pointer;font-size:14px;background:none;border:none;font-family:inherit;padding:4px 0;">← 返回列表</button>
+        <span style="width:1px;height:20px;background:var(--border);"></span>
+        <span class="header-title">认证结果报批表</span>
+      </div>
+      <div class="header-right">
+        <div class="header-user">
+          <div class="header-avatar">丛</div>
+          <span>丛思远 · 项目主管</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Page Header -->
+      <div class="page-header animate-in">
+        <div class="page-title-group">
+          <h1 class="page-title" id="pageTitle">广东好利源食品有限公司051602</h1>
+          <span class="header-tag warning" id="pageTag">待审批</span>
+        </div>
+      </div>
+
+      <!-- 认证结果报批表 -->
+      <div class="card animate-in">
+        <div class="card-header">
+          <span class="card-title">认证结果报批表</span>
+        </div>
+        <div class="card-body">
+          <!-- 第一行：受审核方名称(中文) + 受审核方名称(英文) + 申请类别 + 企业的实际地址 -->
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">受审核方名称(中文)</span>
+              <span class="info-value" id="valAuditeeCN">广东好利源食品有限公司</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">受审核方名称(英文)</span>
+              <span class="info-value" id="valAuditeeEN">Guangdong Haoliyuan Food Co., Ltd.</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">申请类别</span>
+              <span class="info-value" id="valApplyCategory">新申请</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">企业的实际地址</span>
+              <span class="info-value" id="valAddress">北京市朝阳区</span>
+            </div>
+          </div>
+          <!-- 第二行：关键场所公司 + 市场开发公司 + 申请时间 + 认证类别 -->
+          <div class="info-grid" style="margin-top:12px;">
+            <div class="info-item">
+              <span class="info-label">关键场所公司</span>
+              <span class="info-value highlight" id="valKeySite">北京公司</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">市场开发公司</span>
+              <span class="info-value" id="valMarketCompany">天津公司</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">申请时间</span>
+              <span class="info-value" id="valApplyTime">2025-05-16 09:24:20</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">认证类别</span>
+              <span class="info-value" id="valCertCategory">ISO9000（工程建设）</span>
+            </div>
+          </div>
+          <!-- 第三行：受审核方地址(中文) + 受审核方地址(英文) -->
+          <div class="info-grid cols-2" style="margin-top:12px;">
+            <div class="info-item">
+              <span class="info-label">受审核方地址(中文)</span>
+              <span class="info-value" id="valAddrCN">广东省深圳市南山区科技园路88号</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">受审核方地址(英文)</span>
+              <span class="info-value" id="valAddrEN">No. 88, Keji Garden Road, Nanshan District, Shenzhen, Guangdong</span>
+            </div>
+          </div>
+
+          <!-- 标准为ISO9001+GB/T50430 -->
+          <div id="section50430" style="margin-top:16px;">
+            <div class="info-grid">
+              <div class="info-item full">
+                <span class="info-label">标准为ISO9001+GB/T50430的审核范围</span>
+                <span class="info-value" id="valScope50430">工程咨询服务的设计、开发与实施</span>
+              </div>
+            </div>
+            <div class="info-grid cols-2">
+              <div class="info-item">
+                <span class="info-label">标准为ISO9001+GB/T50430的审核标准（中文）</span>
+                <span class="info-value" id="valStd50430CN">GB/T 19001-2016 / ISO 9001:2015 + GB/T 50430-2017</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">标准为ISO9001+GB/T50430的审核标准（英文）</span>
+                <span class="info-value" id="valStd50430EN">GB/T 19001-2016 / ISO 9001:2015 + GB/T 50430-2017</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 标准为ISO9001 -->
+          <div id="section9001" style="margin-top:16px;">
+            <div class="info-grid">
+              <div class="info-item full">
+                <span class="info-label">标准为ISO9001的审核范围</span>
+                <span class="info-value" id="valScope9001">隶属于某个更大的组织</span>
+              </div>
+            </div>
+            <div class="info-grid cols-2">
+              <div class="info-item">
+                <span class="info-label">标准为ISO9001的审核标准（中文）</span>
+                <span class="info-value" id="valStd9001CN">GB/T 19001-2016 / ISO 9001:2015</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">标准为ISO9001的审核标准（英文）</span>
+                <span class="info-value" id="valStd9001EN">GB/T 19001-2016 / ISO 9001:2015</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 体系处认证决定 -->
+      <div class="card animate-in">
+        <div class="card-header">
+          <span class="card-title">体系处认证决定</span>
+        </div>
+        <div class="card-body">
+          <div class="version-info">
+            <span>认证决定操作人员：<strong>wuxia</strong></span>
+            <span>|</span>
+            <span>操作时间：<strong>2025-08-13 14:38:01</strong></span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">结论 <span class="required">*</span></label>
+              <div class="radio-group">
+                <label class="radio-item" style="opacity:0.6;cursor:not-allowed;">
+                  <input type="radio" name="decision" value="approve" id="radioApprove" checked disabled>
+                  <span>同意发证</span>
+                </label>
+                <label class="radio-item" style="opacity:0.6;cursor:not-allowed;">
+                  <input type="radio" name="decision" value="reject" id="radioReject" disabled>
+                  <span>不同意发证</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">说明</label>
+              <div style="font-size:14px;color:var(--text-secondary);padding:8px 0;">无</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer 通栏固定底部 -->
+    <div class="footer-actions">
+      <button class="btn btn-success" onclick="handleApprove()">同意发证</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== 子菜单交互 ==========
+function toggleSubmenu(e, el) {
+  e.preventDefault();
+  e.stopPropagation();
+  var wrapper = el.closest('.submenu-wrapper');
+  var submenu = wrapper.querySelector('.submenu');
+  var isOpen = submenu.classList.contains('open');
+  document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+  document.querySelectorAll('.menu-item.active').forEach(function(m) { m.classList.remove('active'); });
+  if (!isOpen) {
+    submenu.classList.add('open');
+    el.classList.add('active');
+  }
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.submenu-wrapper')) {
+    document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+  }
+});
+
+// ========== 数据映射：根据 URL 参数 id 填充不同数据 ==========
+const dataList = [
+  {
+    id: 1, title: '广东好利源食品有限公司051602', keySite: '北京公司', marketCompany: '天津公司', address: '北京市朝阳区',
+    applyTime: '2025-05-16 09:24:20',
+    auditeeCN: '广东好利源食品有限公司', auditeeEN: 'Guangdong Haoliyuan Food Co., Ltd.',
+    addrCN: '广东省深圳市南山区科技园路88号', addrEN: 'No. 88, Keji Garden Road, Nanshan District, Shenzhen, Guangdong',
+    certCategory: 'ISO9000（工程建设）', applyCategory: '新申请',
+    has50430: true, scope50430: '工程咨询服务的设计、开发与实施',
+    std50430CN: 'GB/T 19001-2016 / ISO 9001:2015 + GB/T 50430-2017',
+    std50430EN: 'GB/T 19001-2016 / ISO 9001:2015 + GB/T 50430-2017',
+    has9001: true, scope9001: '隶属于某个更大的组织',
+    std9001CN: 'GB/T 19001-2016 / ISO 9001:2015',
+    std9001EN: 'GB/T 19001-2016 / ISO 9001:2015'
+  },
+  {
+    id: 2, title: '锐博机械制造有限公司051801', keySite: '山东公司', marketCompany: '济南公司', address: '山东省济南市',
+    applyTime: '2025-05-18 10:15:00',
+    auditeeCN: '锐博机械制造有限公司', auditeeEN: 'Ruibo Machinery Manufacturing Co., Ltd.',
+    addrCN: '山东省济南市历城区工业南路168号', addrEN: 'No. 168, Gongye South Road, Licheng District, Jinan, Shandong',
+    certCategory: 'ISO9001', applyCategory: '监督审核',
+    has50430: false, has9001: true, scope9001: '机械零部件的加工制造与销售',
+    std9001CN: 'GB/T 19001-2016 / ISO 9001:2015',
+    std9001EN: 'GB/T 19001-2016 / ISO 9001:2015'
+  },
+  {
+    id: 3, title: '威海龙德纸业有限公司052201', keySite: '山东公司', marketCompany: '威海公司', address: '山东省威海市',
+    applyTime: '2025-05-22 14:30:00',
+    auditeeCN: '威海龙德纸业有限公司', auditeeEN: 'Weihai Longde Paper Co., Ltd.',
+    addrCN: '山东省威海市环翠区青岛中路56号', addrEN: 'No. 56, Qingdao Middle Road, Huancui District, Weihai, Shandong',
+    certCategory: 'ISO14001', applyCategory: '新申请',
+    has50430: false, has9001: false
+  },
+  {
+    id: 4, title: '北京领航开拓者网络科技有限公司080101', keySite: '北京公司', marketCompany: '海淀公司', address: '北京市海淀区',
+    applyTime: '2025-06-01 08:45:00',
+    auditeeCN: '北京领航开拓者网络科技有限公司', auditeeEN: 'Beijing Linghang Pioneer Network Technology Co., Ltd.',
+    addrCN: '北京市海淀区中关村大街1号', addrEN: 'No. 1, Zhongguancun Street, Haidian District, Beijing',
+    certCategory: 'ISO9001', applyCategory: '新申请',
+    has50430: false, has9001: true, scope9001: '软件开发与信息技术服务',
+    std9001CN: 'GB/T 19001-2016 / ISO 9001:2015',
+    std9001EN: 'GB/T 19001-2016 / ISO 9001:2015'
+  },
+  {
+    id: 5, title: '廊坊乐万家联合家化有限公司080501', keySite: '河北公司', marketCompany: '廊坊公司', address: '河北省廊坊市',
+    applyTime: '2025-06-05 11:20:00',
+    auditeeCN: '廊坊乐万家联合家化有限公司', auditeeEN: 'Langfang Lewanjia United Household Co., Ltd.',
+    addrCN: '河北省廊坊市广阳区新华路99号', addrEN: 'No. 99, Xinhua Road, Guangyang District, Langfang, Hebei',
+    certCategory: 'ISO9001 + ISO45001', applyCategory: '监督审核',
+    has50430: false, has9001: true, scope9001: '日用化学产品的生产与销售',
+    std9001CN: 'GB/T 19001-2016 / ISO 9001:2015',
+    std9001EN: 'GB/T 19001-2016 / ISO 9001:2015'
+  },
+  {
+    id: 6, title: '铁岭陆平专用汽车有限责任公司081001', keySite: '辽宁公司', marketCompany: '铁岭公司', address: '辽宁省铁岭市',
+    applyTime: '2025-06-10 09:00:00',
+    auditeeCN: '铁岭陆平专用汽车有限责任公司', auditeeEN: 'Tieling Luping Special Vehicle Co., Ltd.',
+    addrCN: '辽宁省铁岭市银州区岭东街168号', addrEN: 'No. 168, Lingdong Street, Yinzhou District, Tieling, Liaoning',
+    certCategory: 'ISO9000（工程建设）', applyCategory: '再认证',
+    has50430: true, scope50430: '专用汽车的设计、制造与售后服务',
+    std50430CN: 'GB/T 19001-2016 / ISO 9001:2015 + GB/T 50430-2017',
+    std50430EN: 'GB/T 19001-2016 / ISO 9001:2015 + GB/T 50430-2017',
+    has9001: false
+  },
+  {
+    id: 7, title: '重庆国厦科技长江研究院081501', keySite: '重庆公司', marketCompany: '渝北公司', address: '重庆市渝北区',
+    applyTime: '2025-06-15 16:30:00',
+    auditeeCN: '重庆国厦科技长江研究院', auditeeEN: 'Chongqing Guoxia Technology Yangtze Research Institute',
+    addrCN: '重庆市渝北区金开大道1088号', addrEN: 'No. 1088, Jinkai Avenue, Yubei District, Chongqing',
+    certCategory: 'ISO9001 + ISO14001', applyCategory: '认证转换',
+    has50430: false, has9001: true, scope9001: '建筑工程技术研究与咨询服务',
+    std9001CN: 'GB/T 19001-2016 / ISO 9001:2015',
+    std9001EN: 'GB/T 19001-2016 / ISO 9001:2015'
+  },
+  {
+    id: 8, title: '某包装印刷有限公司082001', keySite: '浙江公司', marketCompany: '温州公司', address: '浙江省温州市',
+    applyTime: '2025-06-20 10:00:00',
+    auditeeCN: '某包装印刷有限公司', auditeeEN: 'A Certain Packaging & Printing Co., Ltd.',
+    addrCN: '浙江省温州市龙湾区永强大道266号', addrEN: 'No. 266, Yongqiang Avenue, Longwan District, Wenzhou, Zhejiang',
+    certCategory: 'ISO9001', applyCategory: '监督审核',
+    has50430: false, has9001: true, scope9001: '包装制品的印刷与加工',
+    std9001CN: 'GB/T 19001-2016 / ISO 9001:2015',
+    std9001EN: 'GB/T 19001-2016 / ISO 9001:2015'
+  },
+  {
+    id: 9, title: '某纸制品制造有限公司090101', keySite: '福建公司', marketCompany: '泉州公司', address: '福建省泉州市',
+    applyTime: '2025-07-01 13:15:00',
+    auditeeCN: '某纸制品制造有限公司', auditeeEN: 'A Certain Paper Products Manufacturing Co., Ltd.',
+    addrCN: '福建省泉州市晋江市安海镇工业区', addrEN: 'Industrial Zone, Anhai Town, Jinjiang, Quanzhou, Fujian',
+    certCategory: 'ISO37301', applyCategory: '新申请',
+    has50430: false, has9001: false
+  },
+  {
+    id: 10, title: '某建设工程有限公司090501', keySite: '四川公司', marketCompany: '成都公司', address: '四川省成都市',
+    applyTime: '2025-07-05 08:30:00',
+    auditeeCN: '某建设工程有限公司', auditeeEN: 'A Certain Construction Engineering Co., Ltd.',
+    addrCN: '四川省成都市武侯区武侯大道100号', addrEN: 'No. 100, Wuhou Avenue, Wuhou District, Chengdu, Sichuan',
+    certCategory: 'ISO9000（工程建设）', applyCategory: '新申请',
+    has50430: true, scope50430: '房屋建筑工程、市政公用工程的施工',
+    std50430CN: 'GB/T 19001-2016 / ISO 9001:2015 + GB/T 50430-2017',
+    std50430EN: 'GB/T 19001-2016 / ISO 9001:2015 + GB/T 50430-2017',
+    has9001: false
+  }
+];
+
+// ========== 页面初始化 ==========
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  const id = parseInt(params.get('id')) || 1;
+  const data = dataList.find(d => d.id === id) || dataList[0];
+
+  document.getElementById('pageTitle').textContent = data.title;
+  document.getElementById('valKeySite').textContent = data.keySite;
+  document.getElementById('valMarketCompany').textContent = data.marketCompany;
+  document.getElementById('valAddress').textContent = data.address;
+  document.getElementById('valApplyTime').textContent = data.applyTime;
+  document.getElementById('valAuditeeCN').textContent = data.auditeeCN;
+  document.getElementById('valAuditeeEN').textContent = data.auditeeEN;
+  document.getElementById('valAddrCN').textContent = data.addrCN;
+  document.getElementById('valAddrEN').textContent = data.addrEN;
+  document.getElementById('valCertCategory').textContent = data.certCategory;
+  document.getElementById('valApplyCategory').textContent = data.applyCategory;
+
+  // 标准为ISO9001+GB/T50430 区域
+  var section50430 = document.getElementById('section50430');
+  if (data.has50430) {
+    section50430.style.display = '';
+    document.getElementById('valScope50430').textContent = data.scope50430;
+    document.getElementById('valStd50430CN').textContent = data.std50430CN;
+    document.getElementById('valStd50430EN').textContent = data.std50430EN;
+  } else {
+    section50430.style.display = 'none';
+  }
+
+  // 标准为ISO9001 区域
+  var section9001 = document.getElementById('section9001');
+  if (data.has9001) {
+    section9001.style.display = '';
+    document.getElementById('valScope9001').textContent = data.scope9001;
+    document.getElementById('valStd9001CN').textContent = data.std9001CN;
+    document.getElementById('valStd9001EN').textContent = data.std9001EN;
+  } else {
+    section9001.style.display = 'none';
+  }
+}
+
+function goBack() {
+  window.location.href = 'cert-make-list.html';
+}
+
+function handleApprove() {
+  const radio = document.getElementById('radioApprove');
+  radio.checked = true;
+  const remark = document.getElementById('remarkInput').value;
+  if (!remark.trim()) {
+    alert('请填写审批说明后再操作');
+    return;
+  }
+  alert('✅ 已同意发证！审批说明：' + remark);
+}
+
+function handleReject() {
+  const radio = document.getElementById('radioReject');
+  radio.checked = true;
+  const remark = document.getElementById('remarkInput').value;
+  if (!remark.trim()) {
+    alert('请填写审批说明后再操作');
+    return;
+  }
+  alert('❌ 已不同意发证。审批说明：' + remark);
+}
+
+// 启动
+init();
+</script>
+</body>
+</html>

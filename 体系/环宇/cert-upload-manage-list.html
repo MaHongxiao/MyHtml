@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上传证书文件管理 - 体系认证管理平台</title>
+<style>
+  :root {
+    --primary: #1890ff;
+    --primary-light: #e6f7ff;
+    --primary-hover: #40a9ff;
+    --sidebar-bg: #001529;
+    --success: #52c41a;
+    --success-bg: #f6ffed;
+    --warning: #fa8c16;
+    --warning-bg: #fff7e6;
+    --danger: #f5222d;
+    --danger-bg: #fff2f0;
+    --info: #1890ff;
+    --info-bg: #e6f7ff;
+    --purple: #722ed1;
+    --purple-bg: #f9f0ff;
+    --bg-page: #f0f2f5;
+    --bg-card: #ffffff;
+    --border: #e8e8e8;
+    --border-light: #f0f0f0;
+    --text-primary: #262626;
+    --text-secondary: #595959;
+    --text-placeholder: #bfbfbf;
+    --text-disabled: #8c8c8c;
+    --shadow-card: 0 2px 8px rgba(0,0,0,0.08);
+    --radius: 4px;
+    --radius-lg: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 14px; color: var(--text-primary); background: var(--bg-page); line-height: 1.6;
+    overflow: hidden; height: 100vh;
+  }
+  .layout { display: flex; height: 100vh; }
+
+  /* ========== Sidebar ========== */
+  .sidebar {
+    width: 64px; min-width: 64px; background: var(--sidebar-bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 8px; position: relative; z-index: 100;
+  }
+  .sidebar-logo {
+    width: 40px; height: 40px; border-radius: 8px; background: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 12px;
+  }
+  .sidebar-menu { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; padding: 4px 0; }
+  .menu-item {
+    width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.65); cursor: pointer; transition: all 0.2s;
+    border-radius: 8px; text-decoration: none; position: relative; gap: 2px;
+  }
+  .menu-item .menu-icon { font-size: 18px; line-height: 1; }
+  .menu-item .menu-label { font-size: 10px; line-height: 1; white-space: nowrap; }
+  .menu-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .menu-item.active { color: #fff; background: var(--primary); }
+  .menu-item.active::before {
+    content: ''; position: absolute; left: 0; top: 10px; bottom: 10px;
+    width: 3px; background: #fff; border-radius: 0 2px 2px 0;
+  }
+
+  /* ========== Submenu ========== */
+  .submenu-wrapper { position: relative; }
+  .submenu {
+    display: none; position: absolute; left: 64px; top: 0;
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.08);
+    min-width: 200px; padding: 8px 0; z-index: 200;
+    border: 1px solid var(--border-light);
+  }
+  .submenu::before {
+    content: ''; position: absolute; left: -16px; top: 0; bottom: 0; width: 16px;
+  }
+  .submenu-wrapper:hover .submenu,
+  .submenu.open { display: block; }
+  .submenu-item {
+    display: flex; align-items: center; height: 36px; padding: 0 12px;
+    color: var(--text-primary); cursor: pointer; transition: all 0.15s;
+    font-size: 13px; border-radius: var(--radius); margin: 1px 0;
+    text-decoration: none; white-space: nowrap;
+  }
+  .submenu-item:hover { background: var(--primary-light); color: var(--primary); }
+  .submenu-item.active { color: var(--primary); font-weight: 500; background: var(--primary-light); }
+  .submenu-item .sub-dot {
+    width: 4px; height: 4px; border-radius: 50%; background: var(--border);
+    margin-right: 10px; flex-shrink: 0;
+  }
+  .submenu-item:hover .sub-dot, .submenu-item.active .sub-dot { background: var(--primary); }
+
+  /* ========== Main ========== */
+  .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ========== Header ========== */
+  .header {
+    height: 56px; background: var(--bg-card); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-title { font-size: 16px; font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-user { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .header-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500;
+  }
+
+  /* ========== Page ========== */
+  .page-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .page-content::-webkit-scrollbar { width: 6px; }
+  .page-content::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+
+  /* ========== Buttons ========== */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 32px; padding: 0 16px; border-radius: var(--radius);
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+    border: 1px solid transparent; gap: 6px; white-space: nowrap; font-family: inherit;
+  }
+  .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+  .btn-default { background: var(--bg-card); color: var(--text-primary); border-color: var(--border); }
+  .btn-default:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+  .btn-success:hover { background: #389e0d; }
+  .btn-warning { background: var(--warning); color: #fff; border-color: var(--warning); }
+  .btn-warning:hover { background: #d46b08; }
+  .btn-text { background: transparent; color: var(--primary); border: none; padding: 0 8px; height: auto; font-size: 13px; }
+  .btn-text:hover { color: var(--primary-hover); }
+  .btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ========== Filter Card ========== */
+  .filter-card {
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    padding: 20px 24px; box-shadow: var(--shadow-card); margin-bottom: 16px;
+  }
+  .filter-row { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+  .filter-group { display: flex; flex-direction: column; gap: 6px; }
+  .filter-label { font-size: 13px; color: var(--text-secondary); }
+  .filter-input, .filter-select {
+    height: 36px; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0 12px; font-size: 14px; color: var(--text-primary);
+    background: var(--bg-card); font-family: inherit; transition: border-color 0.2s;
+  }
+  .filter-input:focus, .filter-select:focus {
+    outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(24,144,255,0.1);
+  }
+  .filter-input::placeholder { color: var(--text-placeholder); }
+  .filter-actions { display: flex; gap: 8px; margin-left: auto; }
+  .date-range { display: flex; align-items: center; gap: 6px; }
+  .date-range span { font-size: 13px; color: var(--text-disabled); }
+
+  /* ========== Table Card ========== */
+  .table-card {
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card); overflow: hidden; display: flex; flex-direction: column;
+  }
+  .table-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--border-light); flex-shrink: 0;
+  }
+  .table-toolbar-left { display: flex; align-items: center; gap: 12px; }
+  .table-toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+  /* ========== Table Container ========== */
+  .table-container { flex: 1; overflow: auto; position: relative; }
+  .table-container::-webkit-scrollbar { height: 8px; width: 8px; }
+  .table-container::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 4px; }
+  .table-container::-webkit-scrollbar-corner { background: #f5f5f5; }
+
+  /* ========== Table ========== */
+  .data-table { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; }
+  .data-table thead th {
+    background: #fafafa; padding: 12px 16px; text-align: left;
+    font-size: 13px; font-weight: 500; color: var(--text-secondary);
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .data-table thead th.fixed-left {
+    position: sticky; left: 0; z-index: 20; background: #fafafa;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+  }
+  .data-table thead th.fixed-right {
+    position: sticky; right: 0; z-index: 20; background: #fafafa;
+    box-shadow: -2px 0 4px rgba(0,0,0,0.05);
+  }
+  .data-table tbody tr { border-bottom: 1px solid var(--border-light); transition: background 0.15s; }
+  .data-table tbody tr:hover { background: #fafbfc; }
+  .data-table tbody td { padding: 14px 16px; font-size: 14px; vertical-align: middle; white-space: nowrap; }
+  .data-table tbody td.fixed-left {
+    position: sticky; left: 0; z-index: 5; background: var(--bg-card);
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+  }
+  .data-table tbody tr:hover td.fixed-left { background: #fafbfc; }
+  .data-table tbody td.fixed-right {
+    position: sticky; right: 0; z-index: 5; background: var(--bg-card);
+    box-shadow: -2px 0 4px rgba(0,0,0,0.05);
+  }
+  .data-table tbody tr:hover td.fixed-right { background: #fafbfc; }
+  .data-table .link { color: var(--primary); cursor: pointer; text-decoration: none; }
+  .data-table .link:hover { text-decoration: underline; }
+
+  /* ========== Tags ========== */
+  .tag {
+    display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
+    border-radius: 4px; font-size: 12px; font-weight: 500; line-height: 1;
+  }
+  .tag-info { background: var(--info-bg); color: var(--info); }
+  .tag-success { background: var(--success-bg); color: var(--success); }
+  .tag-warning { background: var(--warning-bg); color: var(--warning); }
+  .tag-danger { background: var(--danger-bg); color: var(--danger); }
+  .tag-purple { background: var(--purple-bg); color: var(--purple); }
+  .tag-default { background: #f5f5f5; color: var(--text-secondary); }
+
+  /* ========== Checkbox ========== */
+  .checkbox {
+    width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 2px;
+    cursor: pointer; appearance: none; -webkit-appearance: none; transition: all 0.2s; position: relative;
+  }
+  .checkbox:checked { background: var(--primary); border-color: var(--primary); }
+  .checkbox:checked::after {
+    content: ''; position: absolute; left: 4px; top: 1px; width: 5px; height: 9px;
+    border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+
+  /* ========== Pagination ========== */
+  .pagination-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-top: 1px solid var(--border-light); flex-shrink: 0;
+  }
+  .pagination-info { font-size: 13px; color: var(--text-secondary); }
+  .pagination { display: flex; align-items: center; gap: 4px; }
+  .page-btn {
+    min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card);
+    color: var(--text-primary); font-size: 13px; cursor: pointer; transition: all 0.2s;
+    padding: 0 8px; font-family: inherit;
+  }
+  .page-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .page-btn:disabled { color: var(--text-placeholder); cursor: not-allowed; }
+
+  /* ========== Animations ========== */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+
+  /* ========== Modal ========== */
+  .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.45); z-index:1000; display:flex; align-items:center; justify-content:center; }
+  .modal { background:#fff; border-radius:8px; width:680px; max-height:80vh; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,0.15); }
+  .modal-header { padding:16px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .modal-header h3 { font-size:16px; font-weight:500; }
+  .modal-close { width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:4px; font-size:18px; color:var(--text-secondary); }
+  .modal-close:hover { background:#f5f5f5; }
+  .modal-body { padding:20px 24px; overflow-y:auto; max-height:calc(80vh - 130px); }
+  .modal-footer { padding:12px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px; }
+  .upload-tips { background:#fafafa; border-radius:4px; padding:12px 16px; margin-bottom:16px; font-size:13px; color:var(--text-secondary); line-height:2; }
+  .upload-tips b { color:var(--text-primary); }
+  .upload-area { border:2px dashed var(--border); border-radius:8px; padding:40px; text-align:center; cursor:pointer; transition:all 0.2s; margin-bottom:16px; }
+  .upload-area:hover { border-color:var(--primary); background:var(--primary-light); }
+  .upload-area-icon { font-size:40px; color:var(--text-placeholder); margin-bottom:8px; }
+  .upload-area-text { font-size:14px; color:var(--text-secondary); }
+  .upload-area-hint { font-size:12px; color:var(--text-placeholder); margin-top:4px; }
+  .progress-bar { height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden; width:100%; }
+  .progress-bar-fill { height:100%; background:var(--primary); border-radius:3px; transition:width 0.3s; }
+  .file-list-table { width:100%; border-collapse:collapse; margin-top:12px; }
+  .file-list-table th { background:#fafafa; padding:8px 12px; text-align:left; font-size:13px; font-weight:500; border-bottom:1px solid var(--border); }
+  .file-list-table td { padding:8px 12px; font-size:13px; border-bottom:1px solid var(--border-light); }
+</style>
+<script>
+  function toggleSubmenu(e, el) {
+    e.preventDefault();
+    e.stopPropagation();
+    var wrapper = el.closest('.submenu-wrapper');
+    var submenu = wrapper.querySelector('.submenu');
+    var isOpen = submenu.classList.contains('open');
+    document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+    document.querySelectorAll('.menu-item.active').forEach(function(m) { m.classList.remove('active'); });
+    if (!isOpen) {
+      submenu.classList.add('open');
+      el.classList.add('active');
+    }
+  }
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.submenu-wrapper')) {
+      document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+    }
+  });
+
+  // ========== 获取昨天日期 ==========
+  function getYesterday() {
+    var d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split('T')[0];
+  }
+
+  // ========== 数据 ==========
+  var tableData = [
+    { id: 1, certNo: '00125Q306693R001', field: 'ISO9001', issueDate: '2026-04-15', site: '关键场所公司项目', lang: '中文', hasEcert: '有', confirmStatus: '已确认', watermark: '已辨别', uploadDate: '2026-04-17' },
+    { id: 2, certNo: '00122En20263R0M-2/1100', field: '能源管理体系', issueDate: '2026-04-10', site: '中山远洋物业服务有限公司', lang: '中英文', hasEcert: '有', confirmStatus: '已确认', watermark: '已辨别', uploadDate: '2026-04-17' },
+    { id: 3, certNo: '00123Q31405R5M-3/1100', field: 'ISO9001', issueDate: '2026-04-08', site: '中金数谷科技有限公司', lang: '英文', hasEcert: '有', confirmStatus: '未确认', watermark: '未辨别', uploadDate: '2026-04-17' },
+    { id: 4, certNo: '0012023ITSM0084R0N/1100', field: 'ISO20000', issueDate: '2026-04-05', site: '北京开科唯识技术股份有限公司', lang: '中文', hasEcert: '无', confirmStatus: '未确认', watermark: '未辨别', uploadDate: '2026-04-16' },
+    { id: 5, certNo: '00122F23672R4M/1100', field: 'ISO22000', issueDate: '2026-04-03', site: '北京广东健力宝饮料有限公司', lang: '中英文', hasEcert: '有', confirmStatus: '已确认', watermark: '已辨别', uploadDate: '2026-04-16' },
+    { id: 6, certNo: '00124Q37242R1S/1100', field: 'ISO9001', issueDate: '2026-04-01', site: '北京国资环境保护技术有限公司', lang: '中文', hasEcert: '有', confirmStatus: '未确认', watermark: '未辨别', uploadDate: '2026-04-15' },
+    { id: 7, certNo: '00124E33235R1M/1100', field: 'ISO14001', issueDate: '2026-03-28', site: '北京富润成照明系统工程有限公司', lang: '英文', hasEcert: '有', confirmStatus: '已作废', watermark: '已辨别', uploadDate: '2026-04-15' },
+    { id: 8, certNo: '00121S33615R1M/1100', field: 'ISO45001', issueDate: '2026-03-25', site: '国网商用大数据有限公司', lang: '中文', hasEcert: '无', confirmStatus: '未确认', watermark: '未辨别', uploadDate: '2026-04-14' },
+    { id: 9, certNo: '00123S31610R2M/1100', field: 'ISO45001', issueDate: '2026-03-22', site: '北京笔中文化科技产业集团有限公司', lang: '中英文', hasEcert: '有', confirmStatus: '已确认', watermark: '已辨别', uploadDate: '2026-04-14' },
+    { id: 10, certNo: '00124En20430R1M/2300', field: '能源管理体系', issueDate: '2026-03-20', site: '黑龙江省农垦龙王食品有限责任公司', lang: '中文', hasEcert: '有', confirmStatus: '未确认', watermark: '未辨别', uploadDate: '2026-04-13' },
+    { id: 11, certNo: 'CQC22SH10039R0M/3400', field: '商品售后服务', issueDate: '2026-03-18', site: '讯飞医疗科技股份有限公司', lang: '英文', hasEcert: '有', confirmStatus: '已确认', watermark: '已辨别', uploadDate: '2026-04-13' },
+    { id: 12, certNo: 'CQC24F20730R0S/3100', field: 'ISO22000', issueDate: '2026-03-15', site: '深圳麦嘉乐食品有限公司', lang: '中文', hasEcert: '有', confirmStatus: '未确认', watermark: '未辨别', uploadDate: '2026-04-12' },
+    { id: 13, certNo: '00124S30031R0S-1/1500', field: 'ISO45001', issueDate: '2026-03-12', site: '内蒙古浩玮环境科技有限公司', lang: '中英文', hasEcert: '有', confirmStatus: '已作废', watermark: '已辨别', uploadDate: '2026-04-12' },
+    { id: 14, certNo: '00124S30031R0S/1500', field: 'ISO45001', issueDate: '2026-03-10', site: '内蒙古华强环境科技有限公司', lang: '中文', hasEcert: '无', confirmStatus: '未确认', watermark: '未辨别', uploadDate: '2026-04-11' },
+    { id: 15, certNo: '00124Q31091R8M/3302', field: 'ISO9001', issueDate: '2026-03-08', site: '余姚市洋灵电器有限公司', lang: '英文', hasEcert: '有', confirmStatus: '已确认', watermark: '已辨别', uploadDate: '2026-04-11' }
+  ];
+
+  var selectedIds = new Set();
+
+  // ========== 语言Tag ==========
+  function getLangTag(lang) {
+    if (lang === '中文') return '<span class="tag tag-info">中文</span>';
+    if (lang === '英文') return '<span class="tag tag-success">英文</span>';
+    if (lang === '中英文') return '<span class="tag tag-warning">中英文</span>';
+    return '<span class="tag tag-default">' + lang + '</span>';
+  }
+
+  // ========== 确认状态Tag ==========
+  function getConfirmTag(status) {
+    if (status === '已确认') return '<span class="tag tag-success">已确认</span>';
+    if (status === '未确认') return '<span class="tag tag-warning">未确认</span>';
+    if (status === '已作废') return '<span class="tag tag-danger">已作废</span>';
+    return '<span class="tag tag-default">' + status + '</span>';
+  }
+
+  // ========== 底纹辨别Tag ==========
+  function getWatermarkTag(val) {
+    if (val === '已辨别') return '<span class="tag tag-success">已辨别</span>';
+    return '<span class="tag tag-default">未辨别</span>';
+  }
+
+  // ========== 电子证书查看 ==========
+  function getEcertCell(hasEcert) {
+    if (hasEcert === '有') {
+      return '<span class="tag tag-success">有</span> <a class="link" href="javascript:void(0)" style="margin-left:6px;">查看</a>';
+    }
+    return '<span class="tag tag-default">无</span>';
+  }
+
+  // ========== 渲染表格 ==========
+  function renderTable(data) {
+    var tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    data.forEach(function(item, index) {
+      var checked = selectedIds.has(item.id) ? ' checked' : '';
+      var row = document.createElement('tr');
+      row.innerHTML =
+        '<td style="width:40px;"><input type="checkbox" class="checkbox row-cb" data-id="' + item.id + '"' + checked + '></td>' +
+        '<td style="width:60px;">' + (index + 1) + '</td>' +
+        '<td style="min-width:220px;">' + item.certNo + '</td>' +
+        '<td style="min-width:140px;"><span class="tag tag-default">' + item.field + '</span></td>' +
+        '<td style="min-width:110px;">' + item.issueDate + '</td>' +
+        '<td style="min-width:200px;">' + item.site + '</td>' +
+        '<td style="min-width:100px;">' + getLangTag(item.lang) + '</td>' +
+        '<td style="min-width:100px;">' + getEcertCell(item.hasEcert) + '</td>' +
+        '<td style="min-width:100px;">' + getConfirmTag(item.confirmStatus) + '</td>' +
+        '<td style="min-width:100px;">' + getWatermarkTag(item.watermark) + '</td>' +
+        '<td style="min-width:120px;">' + item.uploadDate + '</td>';
+      tbody.appendChild(row);
+    });
+    updateSelection();
+    document.getElementById('totalRecords').textContent = '共 ' + data.length + ' 条记录';
+    document.getElementById('paginationRecords').textContent = '共 ' + data.length + ' 条记录';
+  }
+
+  // ========== 选择逻辑 ==========
+  function updateSelection() {
+    var allCb = document.getElementById('selectAll');
+    var rowCbs = document.querySelectorAll('.row-cb');
+    var total = rowCbs.length;
+    var checked = 0;
+    rowCbs.forEach(function(cb) {
+      if (cb.checked) {
+        checked++;
+        selectedIds.add(parseInt(cb.dataset.id));
+      } else {
+        selectedIds.delete(parseInt(cb.dataset.id));
+      }
+    });
+    allCb.checked = (total > 0 && checked === total);
+    allCb.indeterminate = (checked > 0 && checked < total);
+    document.getElementById('selectedCount').textContent = selectedIds.size > 0 ? '已选 ' + selectedIds.size + ' 项' : '';
+    document.getElementById('confirmPublishBtn').disabled = selectedIds.size === 0;
+    document.getElementById('batchDownloadBtn').disabled = selectedIds.size === 0;
+    document.getElementById('voidBtn').disabled = selectedIds.size === 0;
+  }
+
+  function toggleSelectAll() {
+    var allCb = document.getElementById('selectAll');
+    var rowCbs = document.querySelectorAll('.row-cb');
+    rowCbs.forEach(function(cb) { cb.checked = allCb.checked; });
+    updateSelection();
+  }
+
+  // ========== 上传弹窗 ==========
+  var uploadFiles = [];
+
+  function openUploadModal() {
+    uploadFiles = [];
+    document.getElementById('uploadModal').style.display = 'flex';
+    renderFileList();
+  }
+
+  function closeUploadModal() {
+    document.getElementById('uploadModal').style.display = 'none';
+    uploadFiles = [];
+  }
+
+  function handleFileSelect(e) {
+    var files = e.target.files;
+    for (var i = 0; i < files.length; i++) {
+      uploadFiles.push({
+        name: files[i].name,
+        size: (files[i].size / 1024).toFixed(1) + ' KB',
+        progress: 0,
+        status: '待上传'
+      });
+    }
+    renderFileList();
+    e.target.value = '';
+  }
+
+  function renderFileList() {
+    var tbody = document.getElementById('fileListBody');
+    tbody.innerHTML = '';
+    uploadFiles.forEach(function(f, i) {
+      var statusTag = '';
+      if (f.status === '待上传') statusTag = '<span style="color:var(--text-secondary);">待上传</span>';
+      else if (f.status === '上传中') statusTag = '<span style="color:var(--primary);">上传中 ' + f.progress + '%</span>';
+      else if (f.status === '上传成功') statusTag = '<span style="color:var(--success);">上传成功</span>';
+      else if (f.status === '上传失败') statusTag = '<span style="color:var(--danger);">上传失败</span>';
+
+      var row = document.createElement('tr');
+      row.innerHTML =
+        '<td>' + f.name + '</td>' +
+        '<td>' + f.size + '</td>' +
+        '<td style="min-width:120px;"><div class="progress-bar"><div class="progress-bar-fill" style="width:' + f.progress + '%;"></div></div></td>' +
+        '<td>' + statusTag + '</td>';
+      tbody.appendChild(row);
+    });
+  }
+
+  function startUpload() {
+    if (uploadFiles.length === 0) {
+      alert('请先选择要上传的文件');
+      return;
+    }
+    var completedCount = 0;
+    uploadFiles.forEach(function(f) {
+      f.status = '上传中';
+      f.progress = 0;
+    });
+    renderFileList();
+
+    var interval = setInterval(function() {
+      var allDone = true;
+      uploadFiles.forEach(function(f) {
+        if (f.status === '上传中') {
+          f.progress += Math.floor(Math.random() * 20) + 5;
+          if (f.progress >= 100) {
+            f.progress = 100;
+            f.status = '上传成功';
+          } else {
+            allDone = false;
+          }
+        }
+      });
+      renderFileList();
+      if (allDone) {
+        clearInterval(interval);
+        setTimeout(function() {
+          closeUploadModal();
+          alert('所有文件上传成功！');
+        }, 500);
+      }
+    }, 300);
+  }
+
+  // ========== 确认发布 ==========
+  function confirmPublish() {
+    if (selectedIds.size === 0) return;
+    var count = 0;
+    tableData.forEach(function(item) {
+      if (selectedIds.has(item.id)) {
+        item.confirmStatus = '已确认';
+        count++;
+      }
+    });
+    selectedIds.clear();
+    renderTable(tableData);
+    alert('已确认发布 ' + count + ' 条证书');
+  }
+
+  // ========== 批量下载 ==========
+  function batchDownload() {
+    if (selectedIds.size === 0) return;
+    alert('正在下载已选 ' + selectedIds.size + ' 条证书的电子证书文件...');
+  }
+
+  // ========== 作废 ==========
+  function voidSelected() {
+    if (selectedIds.size === 0) return;
+    var count = 0;
+    tableData.forEach(function(item) {
+      if (selectedIds.has(item.id) && item.confirmStatus === '未确认') {
+        item.confirmStatus = '已作废';
+        count++;
+      }
+    });
+    selectedIds.clear();
+    renderTable(tableData);
+    if (count > 0) {
+      alert('已将 ' + count + ' 条未确认的证书标记为已作废');
+    } else {
+      alert('所选证书中没有未确认状态的证书');
+    }
+  }
+
+  // ========== 筛选 ==========
+  function doFilter() {
+    var certNo = document.getElementById('filterCertNo').value.trim().toLowerCase();
+    var site = document.getElementById('filterSite').value.trim().toLowerCase();
+    var field = document.getElementById('filterField').value;
+    var issueDateFrom = document.getElementById('filterIssueDateFrom').value;
+    var issueDateTo = document.getElementById('filterIssueDateTo').value;
+    var uploadDateFrom = document.getElementById('filterUploadDateFrom').value;
+    var uploadDateTo = document.getElementById('filterUploadDateTo').value;
+
+    var filtered = tableData.filter(function(item) {
+      var show = true;
+      if (certNo && item.certNo.toLowerCase().indexOf(certNo) === -1) show = false;
+      if (site && item.site.toLowerCase().indexOf(site) === -1) show = false;
+      if (field && item.field !== field) show = false;
+      if (issueDateFrom && item.issueDate < issueDateFrom) show = false;
+      if (issueDateTo && item.issueDate > issueDateTo) show = false;
+      if (uploadDateFrom && item.uploadDate < uploadDateFrom) show = false;
+      if (uploadDateTo && item.uploadDate > uploadDateTo) show = false;
+      return show;
+    });
+    selectedIds.clear();
+    renderTable(filtered);
+  }
+
+  function resetFilter() {
+    document.getElementById('filterCertNo').value = '';
+    document.getElementById('filterSite').value = '';
+    document.getElementById('filterField').value = '';
+    document.getElementById('filterIssueDateFrom').value = '';
+    document.getElementById('filterIssueDateTo').value = '';
+    var yesterday = getYesterday();
+    document.getElementById('filterUploadDateFrom').value = yesterday;
+    document.getElementById('filterUploadDateTo').value = yesterday;
+    selectedIds.clear();
+    renderTable(tableData);
+  }
+
+  function updatePageSize(val) {}
+
+  // ========== 初始化 ==========
+  window.addEventListener('DOMContentLoaded', function() {
+    var yesterday = getYesterday();
+    document.getElementById('filterUploadDateFrom').value = yesterday;
+    document.getElementById('filterUploadDateTo').value = yesterday;
+    renderTable(tableData);
+  });
+</script>
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">📋</div>
+    <nav class="sidebar-menu">
+      <!-- 证书签发 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="证书签发" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🏅</span><span class="menu-label">签发</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-make-list.html"><span class="sub-dot"></span>体系证书签发</a>
+          <a class="submenu-item" href="cert-hf-list.html"><span class="sub-dot"></span>体系证书签发（HF）</a>
+          <a class="submenu-item" href="cert-reissue-auto-list.html"><span class="sub-dot"></span>再认证待签发（自动）</a>
+          <a class="submenu-item" href="cert-all-pending-list.html"><span class="sub-dot"></span>其余全部待签发</a>
+        </div>
+      </div>
+      <!-- 认监委上报 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委上报" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📤</span><span class="menu-label">上报</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-report.html"><span class="sub-dot"></span>认证数据报送认监委汇总</a>
+          <a class="submenu-item" href="cert-cnca-return-list.html"><span class="sub-dot"></span>认监委退回证书列表</a>
+        </div>
+      </div>
+      <!-- 认监委编号 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委编号" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📋</span><span class="menu-label">编号</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-list.html"><span class="sub-dot"></span>认监委编号证书管理</a>
+        </div>
+      </div>
+      <!-- 证书打印 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item active" href="#" title="证书打印" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🖨️</span><span class="menu-label">打印</span></a>
+        <div class="submenu open">
+          <a class="submenu-item" href="cert-manage-list.html"><span class="sub-dot"></span>证书管理(全量)</a>
+          <a class="submenu-item" href="cert-export-list.html"><span class="sub-dot"></span>证书导出</a>
+          <a class="submenu-item" href="cert-print-pending-list.html"><span class="sub-dot"></span>证书待打印</a>
+          <a class="submenu-item" href="cert-cnca-export-list.html"><span class="sub-dot"></span>农食证书导出</a>
+          <a class="submenu-item" href="cert-cnca-print-pending-list.html"><span class="sub-dot"></span>农食证书待打印</a>
+          <a class="submenu-item active" href="cert-upload-manage-list.html"><span class="sub-dot"></span>上传证书文件管理</a>
+          <a class="submenu-item" href="cert-electronic-list.html"><span class="sub-dot"></span>电子证书管理</a>
+          <a class="submenu-item" href="cert-express-manage-list.html"><span class="sub-dot"></span>证书快递管理</a>
+        </div>
+      </div>
+      <!-- 错证管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="错证管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">❌</span><span class="menu-label">错证</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-fee-list.html"><span class="sub-dot"></span>错证收费管理</a>
+          <a class="submenu-item" href="cert-print-list.html"><span class="sub-dot"></span>错证打印管理</a>
+          <a class="submenu-item" href="cert-express-list.html"><span class="sub-dot"></span>错证快递管理</a>
+          <a class="submenu-item" href="cert-fee-export-list.html"><span class="sub-dot"></span>错证证书数据导出</a>
+        </div>
+      </div>
+      <!-- 模版管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="模版管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📐</span><span class="menu-label">模版</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-template-list.html"><span class="sub-dot"></span>证书模版管理</a>
+          <a class="submenu-item" href="cert-watermark-list.html"><span class="sub-dot"></span>证书底纹管理</a>
+        </div>
+      </div>
+
+      <!-- 通知单管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="通知单管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🔄</span><span class="menu-label">证后</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-suspend-list.html"><span class="sub-dot"></span>暂撤注恢证书通知单</a>
+          <a class="submenu-item" href="cert-recovery-list.html"><span class="sub-dot"></span>暂撤注恢证书电子通知单</a>
+          <a class="submenu-item" href="cert-supervision-list.html"><span class="sub-dot"></span>监督合格通知书</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <span class="header-title">上传证书文件管理</span>
+        <span style="font-size:13px;color:var(--text-disabled);">管理上传的电子证书文件</span>
+      </div>
+      <div class="header-right">
+        <div class="header-user">
+          <div class="header-avatar">丛</div>
+          <span>丛思远 · 项目主管</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Filter -->
+      <div class="filter-card animate-in">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label class="filter-label">证书编号</label>
+            <input type="text" class="filter-input" id="filterCertNo" placeholder="输入证书编号" style="min-width:200px;">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">关键场所</label>
+            <input type="text" class="filter-input" id="filterSite" placeholder="输入关键场所" style="min-width:200px;">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">认证领域</label>
+            <select class="filter-select" id="filterField" style="min-width:140px;">
+              <option value="">全部</option>
+              <option>ISO9001</option>
+              <option>ISO14001</option>
+              <option>ISO45001</option>
+              <option>ISO22000</option>
+              <option>ISO20000</option>
+              <option>能源管理体系</option>
+              <option>商品售后服务</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">发证日期</label>
+            <div class="date-range">
+              <input type="date" class="filter-input" id="filterIssueDateFrom" style="min-width:140px;">
+              <span>至</span>
+              <input type="date" class="filter-input" id="filterIssueDateTo" style="min-width:140px;">
+            </div>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">上传日期范围</label>
+            <div class="date-range">
+              <input type="date" class="filter-input" id="filterUploadDateFrom" style="min-width:140px;">
+              <span>至</span>
+              <input type="date" class="filter-input" id="filterUploadDateTo" style="min-width:140px;">
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-primary btn-sm" onclick="doFilter()">🔍 查询</button>
+            <button class="btn btn-default btn-sm" onclick="resetFilter()">重置</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card animate-in">
+        <div class="table-toolbar">
+          <div class="table-toolbar-left">
+            <label style="font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" class="checkbox" id="selectAll" onclick="toggleSelectAll()"> 全选
+            </label>
+            <span id="selectedCount" style="font-size:13px;color:var(--primary);"></span>
+            <span id="totalRecords" style="font-size:13px;color:var(--text-disabled);">共 15 条记录</span>
+            <a href="cert-upload-history-list.html" style="font-size:13px;color:var(--primary);text-decoration:none;">历史上传</a>
+          </div>
+          <div class="table-toolbar-right">
+            <button class="btn btn-primary btn-sm" onclick="openUploadModal()">📤 导入电子证书</button>
+            <button class="btn btn-success btn-sm" id="confirmPublishBtn" disabled onclick="confirmPublish()">✅ 确认发布</button>
+            <button class="btn btn-default btn-sm" id="batchDownloadBtn" disabled onclick="batchDownload()">📥 批量下载</button>
+            <button class="btn btn-warning btn-sm" id="voidBtn" disabled onclick="voidSelected()">⚠️ 作废</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:40px;"><input type="checkbox" class="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
+                <th style="width:60px;">序号</th>
+                <th style="min-width:220px;">证书编号</th>
+                <th style="min-width:140px;">认证领域</th>
+                <th style="min-width:110px;">发证日期</th>
+                <th style="min-width:200px;">关键场所</th>
+                <th style="min-width:100px;">是否中英文</th>
+                <th style="min-width:100px;">电子证书查看</th>
+                <th style="min-width:100px;">是否已经确认</th>
+                <th style="min-width:100px;">底纹辨别</th>
+                <th style="min-width:120px;">上传日期</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-bar">
+          <div class="pagination-info">
+            <span id="paginationRecords">共 15 条记录</span>
+            <select style="margin-left:12px;height:28px;border:1px solid var(--border);border-radius:var(--radius);padding:0 8px;font-size:13px;color:var(--text-primary);background:var(--bg-card);cursor:pointer;font-family:inherit;" onchange="updatePageSize(this.value)">
+              <option value="20" selected>20 条/页</option>
+              <option value="50">50 条/页</option>
+              <option value="100">100 条/页</option>
+            </select>
+          </div>
+          <div class="pagination">
+            <button class="page-btn" disabled>&lt;</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">&gt;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="uploadModal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>导入电子证书</h3>
+      <div class="modal-close" onclick="closeUploadModal()">&times;</div>
+    </div>
+    <div class="modal-body">
+      <div class="upload-tips">
+        <b>■ 选择多个文件：</b>支持一次选择多个zip文件<br>
+        <b>■ 开始上传：</b>开始执行上传动作，上传进度达到100%后视为成功<br>
+        <b>■ 上传完成：</b>上传成功后关闭窗口并返回列表页<br>
+        <b>■ 上传说明：</b>文件名需遵守命名规则，多个文件上传时文件名不得重复，单个文件大小不超过5M
+      </div>
+      <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-area-icon">📁</div>
+        <div class="upload-area-text">点击或拖拽文件到此区域</div>
+        <div class="upload-area-hint">支持 .zip 格式，单个文件不超过 5M</div>
+      </div>
+      <input type="file" id="fileInput" accept=".zip" multiple style="display:none;" onchange="handleFileSelect(event)">
+      <table class="file-list-table" id="fileListTable" style="display:none;">
+        <thead>
+          <tr>
+            <th>文件名</th>
+            <th>大小</th>
+            <th>上传进度</th>
+            <th>状态</th>
+          </tr>
+        </thead>
+        <tbody id="fileListBody">
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary btn-sm" onclick="startUpload()">开始上传</button>
+      <button class="btn btn-default btn-sm" onclick="closeUploadModal()">关闭</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

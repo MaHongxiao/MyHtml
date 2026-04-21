@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>再认证待签发（自动） - 体系认证管理平台</title>
+<style>
+  :root {
+    --primary: #1890ff;
+    --primary-light: #e6f7ff;
+    --primary-hover: #40a9ff;
+    --sidebar-bg: #001529;
+    --success: #52c41a;
+    --success-bg: #f6ffed;
+    --warning: #fa8c16;
+    --warning-bg: #fff7e6;
+    --danger: #f5222d;
+    --danger-bg: #fff2f0;
+    --info: #1890ff;
+    --info-bg: #e6f7ff;
+    --purple: #722ed1;
+    --purple-bg: #f9f0ff;
+    --bg-page: #f0f2f5;
+    --bg-card: #ffffff;
+    --border: #e8e8e8;
+    --border-light: #f0f0f0;
+    --text-primary: #262626;
+    --text-secondary: #595959;
+    --text-placeholder: #bfbfbf;
+    --text-disabled: #8c8c8c;
+    --shadow-card: 0 2px 8px rgba(0,0,0,0.08);
+    --radius: 4px;
+    --radius-lg: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 14px; color: var(--text-primary); background: var(--bg-page); line-height: 1.6;
+    overflow: hidden; height: 100vh;
+  }
+  .layout { display: flex; height: 100vh; }
+
+  /* ========== Sidebar ========== */
+  .sidebar {
+    width: 64px; min-width: 64px; background: var(--sidebar-bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 8px; position: relative; z-index: 100;
+  }
+  .sidebar-logo {
+    width: 40px; height: 40px; border-radius: 8px; background: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 12px;
+  }
+  .sidebar-menu { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; padding: 4px 0; }
+  .menu-item {
+    width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.65); cursor: pointer; transition: all 0.2s;
+    border-radius: 8px; text-decoration: none; position: relative; gap: 2px;
+  }
+  .menu-item .menu-icon { font-size: 18px; line-height: 1; }
+  .menu-item .menu-label { font-size: 10px; line-height: 1; white-space: nowrap; }
+  .menu-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .menu-item.active { color: #fff; background: var(--primary); }
+  .menu-item.active::before {
+    content: ''; position: absolute; left: 0; top: 10px; bottom: 10px;
+    width: 3px; background: #fff; border-radius: 0 2px 2px 0;
+  }
+
+  /* ========== Submenu (Hover Popup) ========== */
+  .submenu-wrapper { position: relative; }
+  .submenu {
+    display: none; position: absolute; left: 64px; top: 0;
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.08);
+    min-width: 200px; padding: 8px 0; z-index: 200;
+    border: 1px solid var(--border-light);
+  }
+  .submenu::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 0;
+    bottom: 0;
+    width: 16px;
+  }
+  .submenu-wrapper:hover .submenu,
+  .submenu.open { display: block; }
+  .submenu-item {
+    display: flex; align-items: center; height: 36px; padding: 0 12px;
+    color: var(--text-primary); cursor: pointer; transition: all 0.15s;
+    font-size: 13px; border-radius: var(--radius); margin: 1px 0;
+    text-decoration: none; white-space: nowrap;
+  }
+  .submenu-item:hover { background: var(--primary-light); color: var(--primary); }
+  .submenu-item.active { color: var(--primary); font-weight: 500; background: var(--primary-light); }
+  .submenu-item .sub-dot {
+    width: 4px; height: 4px; border-radius: 50%; background: var(--border);
+    margin-right: 10px; flex-shrink: 0;
+  }
+  .submenu-item:hover .sub-dot, .submenu-item.active .sub-dot { background: var(--primary); }
+
+  /* ========== Main ========== */
+  .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ========== Header ========== */
+  .header {
+    height: 56px; background: var(--bg-card); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-title { font-size: 16px; font-weight: 500; }
+  .header-tag {
+    display: inline-flex; align-items: center; height: 24px; padding: 0 8px;
+    border-radius: 4px; font-size: 12px;
+  }
+  .header-tag.success { background: var(--success-bg); color: var(--success); }
+  .header-tag.warning { background: var(--warning-bg); color: var(--warning); }
+  .header-tag.danger { background: var(--danger-bg); color: var(--danger); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-user { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .header-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+
+  /* ========== Buttons ========== */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 32px; padding: 0 16px; border-radius: var(--radius);
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+    border: 1px solid transparent; gap: 6px; white-space: nowrap; font-family: inherit;
+  }
+  .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+  .btn-default { background: var(--bg-card); color: var(--text-primary); border-color: var(--border); }
+  .btn-default:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+  .btn-success:hover { background: #389e0d; }
+  .btn-danger-outline { background: #fff; color: var(--danger); border-color: var(--danger); }
+  .btn-danger-outline:hover { background: var(--danger-bg); }
+  .btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
+
+  /* ========== Page ========== */
+  .page-content { flex: 1; overflow-y: auto; padding: 16px 24px; }
+  .page-content::-webkit-scrollbar { width: 6px; }
+  .page-content::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+
+  /* ========== Page Header ========== */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .page-title-group { display: flex; align-items: center; gap: 12px; }
+  .page-title { font-size: 20px; font-weight: 600; }
+  .btn-back {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--text-secondary); cursor: pointer; font-size: 14px;
+    background: none; border: none; font-family: inherit; padding: 4px 0;
+  }
+  .btn-back:hover { color: var(--primary); }
+  .page-actions { display: flex; gap: 12px; }
+
+  /* ========== Card ========== */
+  .card {
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card); margin-bottom: 12px; overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px; border-bottom: 1px solid var(--border-light);
+  }
+  .card-title { font-size: 15px; font-weight: 600; }
+  .card-body { padding: 16px 24px; }
+
+  /* ========== Info Grid ========== */
+  .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 20px; }
+  .info-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .info-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .info-item { display: flex; flex-direction: column; gap: 4px; }
+  .info-item.full { grid-column: 1 / -1; }
+  .info-label { font-size: 13px; color: var(--text-disabled); }
+  .info-value { font-size: 14px; color: var(--text-primary); }
+  .info-value.highlight { color: var(--danger); font-weight: 500; }
+
+  /* ========== Tags ========== */
+  .tag {
+    display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
+    border-radius: 4px; font-size: 12px; font-weight: 500; line-height: 1;
+  }
+  .tag-info { background: var(--info-bg); color: var(--info); }
+  .tag-success { background: var(--success-bg); color: var(--success); }
+  .tag-warning { background: var(--warning-bg); color: var(--warning); }
+  .tag-danger { background: var(--danger-bg); color: var(--danger); }
+  .tag-purple { background: var(--purple-bg); color: var(--purple); }
+  .tag-default { background: #f5f5f5; color: var(--text-secondary); }
+
+  /* ========== Standards List ========== */
+  .standards-list { display: flex; flex-direction: column; gap: 8px; }
+  .standard-item {
+    display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px;
+    background: #fafafa; border-radius: var(--radius); font-size: 13px; line-height: 1.5;
+  }
+  .standard-item .dot { color: var(--primary); margin-top: 2px; flex-shrink: 0; }
+
+  /* ========== Form ========== */
+  .form-row { display: flex; gap: 24px; margin-bottom: 20px; }
+  .form-row:last-child { margin-bottom: 0; }
+  .form-group { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+  .form-label .required { color: var(--danger); margin-left: 2px; }
+  .form-input, .form-textarea, .form-select {
+    height: 36px; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0 12px; font-size: 14px; color: var(--text-primary);
+    background: var(--bg-card); font-family: inherit; transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(24,144,255,0.1);
+  }
+  .form-textarea { height: 80px; padding: 8px 12px; resize: vertical; }
+  .form-input[readonly] { background: #f5f5f5; color: var(--text-secondary); }
+
+  /* ========== Radio ========== */
+  .radio-group { display: flex; gap: 24px; margin-top: 8px; }
+  .radio-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .radio-item input[type="radio"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+  .radio-item label { cursor: pointer; font-size: 14px; }
+
+  /* ========== Version Info ========== */
+  .version-info {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 16px;
+    padding: 12px 16px; background: #fafafa; border-radius: var(--radius);
+  }
+  .version-info span { font-size: 13px; color: var(--text-secondary); }
+
+  /* ========== Footer ========== */
+  .footer-actions {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 12px; padding: 12px 24px; background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    position: sticky; bottom: 0; z-index: 10;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+
+  /* ========== Animations ========== */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">📋</div>
+    <nav class="sidebar-menu">
+      <!-- 证书签发 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item active" href="#" title="证书签发" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🏅</span><span class="menu-label">签发</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-make-list.html"><span class="sub-dot"></span>体系证书签发</a>
+          <a class="submenu-item" href="cert-hf-list.html"><span class="sub-dot"></span>体系证书签发（HF）</a>
+          <a class="submenu-item active" href="cert-reissue-auto-list.html"><span class="sub-dot"></span>再认证待签发（自动）</a>
+          
+          <a class="submenu-item" href="cert-all-pending-list.html"><span class="sub-dot"></span>其余全部待签发</a>
+        </div>
+      </div>
+      <!-- 认监委上报 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委上报" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📤</span><span class="menu-label">上报</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-report.html"><span class="sub-dot"></span>认证数据报送认监委(汇总)</a>
+          <a class="submenu-item" href="cert-cnca-return-list.html"><span class="sub-dot"></span>认监委退回证书列表</a>
+        </div>
+      </div>
+      <!-- 认监委编号 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委编号" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📋</span><span class="menu-label">编号</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-list.html"><span class="sub-dot"></span>认监委编号证书管理</a>
+        </div>
+      </div>
+      <!-- 证书打印 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="证书打印" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🖨️</span><span class="menu-label">打印</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-mgmt-list.html"><span class="sub-dot"></span>证书管理(全量)</a>
+          <a class="submenu-item" href="cert-export-list.html"><span class="sub-dot"></span>证书导出</a>
+          <a class="submenu-item" href="cert-print-pending-list.html"><span class="sub-dot"></span>证书待打印</a>
+          <a class="submenu-item" href="cert-cnca-export-list.html"><span class="sub-dot"></span>农食证书导出</a>
+          <a class="submenu-item" href="cert-cnca-print-pending-list.html"><span class="sub-dot"></span>农食证书待打印</a>
+          <a class="submenu-item" href="#"><span class="sub-dot"></span>上传证书文件管理</a>
+          <a class="submenu-item" href="#"><span class="sub-dot"></span>电子证书管理</a>
+          <a class="submenu-item" href="cert-express-manage-list.html"><span class="sub-dot"></span>证书快递管理</a>
+        </div>
+      </div>
+      <!-- 错证管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="错证管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">❌</span><span class="menu-label">错证</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-fee-list.html"><span class="sub-dot"></span>错证收费确认</a>
+          <a class="submenu-item" href="cert-fee-export-list.html"><span class="sub-dot"></span>错证证书数据导出</a>
+          <a class="submenu-item" href="cert-print-list.html"><span class="sub-dot"></span>错证打印管理</a>
+          <a class="submenu-item" href="cert-express-list.html"><span class="sub-dot"></span>错证快递管理</a>
+        </div>
+      </div>
+      <!-- 模版管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="模版管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📐</span><span class="menu-label">模版</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-template-list.html"><span class="sub-dot"></span>证书模版管理</a>
+          <a class="submenu-item" href="cert-watermark-list.html"><span class="sub-dot"></span>证书底纹管理</a>
+        </div>
+      </div>
+
+      <!-- 通知单管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="通知单管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🔄</span><span class="menu-label">证后</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-suspend-list.html"><span class="sub-dot"></span>暂撤注恢证书通知单</a>
+          <a class="submenu-item" href="cert-recovery-list.html"><span class="sub-dot"></span>暂撤注恢证书电子通知单</a>
+          <a class="submenu-item" href="cert-supervision-list.html"><span class="sub-dot"></span>监督合格通知书</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <button class="btn-back" onclick="goBack()" style="display:inline-flex;align-items:center;gap:4px;color:var(--text-secondary);cursor:pointer;font-size:14px;background:none;border:none;font-family:inherit;padding:4px 0;">← 返回列表</button>
+        <span style="width:1px;height:20px;background:var(--border);"></span>
+        <span class="header-title">认证结果报批表</span>
+      </div>
+      <div class="header-right">
+        <div class="header-user">
+          <div class="header-avatar">丛</div>
+          <span>丛思远 · 项目主管</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Page Header -->
+      <div class="page-header animate-in">
+        <div class="page-title-group">
+          <h1 class="page-title" id="pageTitle">国高技术-E-复评-20240830</h1>
+          <span class="header-tag warning" id="pageTag">待审批</span>
+        </div>
+      </div>
+
+      <!-- 认证结果报批表 -->
+      <div class="card animate-in">
+        <div class="card-header">
+          <span class="card-title">认证结果报批表</span>
+        </div>
+        <div class="card-body">
+          <!-- 第一行：关键场所公司 + 市场开发公司 + 企业的实际地址 + 申请时间 -->
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">关键场所公司</span>
+              <span class="info-value highlight" id="valKeySite">重庆公司</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">市场开发公司</span>
+              <span class="info-value" id="valMarketCompany">重庆公司</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">企业的实际地址</span>
+              <span class="info-value" id="valAddress">重庆市永川区</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">申请时间</span>
+              <span class="info-value" id="valApplyTime">2024-08-30 15:14:12</span>
+            </div>
+          </div>
+          <!-- 第二行：受审核方名称(中文) + 受审核方名称(英文) -->
+          <div class="info-grid cols-2" style="margin-top:12px;">
+            <div class="info-item">
+              <span class="info-label">受审核方名称(中文)</span>
+              <span class="info-value" id="valAuditeeCN">重庆固高科技长江研究院有限公司</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">受审核方名称(英文)</span>
+              <span class="info-value" id="valAuditeeEN">CHONG QING GOOGOL CHANGJIANG RESEARCH INSTITUTE</span>
+            </div>
+          </div>
+          <!-- 第三行：受审核方地址(中文) + 受审核方地址(英文) -->
+          <div class="info-grid cols-2" style="margin-top:12px;">
+            <div class="info-item">
+              <span class="info-label">受审核方地址(中文)</span>
+              <span class="info-value" id="valAddrCN">中国重庆市永川区星光大道999号1幢（重庆永川工业园区凤凰湖工业园内）</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">受审核方地址(英文)</span>
+              <span class="info-value" id="valAddrEN">1st Building, NO.999, STAR Boulevard Phoenix Lake Industrial Park, Yongchuan Dist, Chongqing City, China</span>
+            </div>
+          </div>
+          <!-- 第四行：认证类别 + 申请类别 -->
+          <div class="info-grid cols-2" style="margin-top:12px;">
+            <div class="info-item">
+              <span class="info-label">认证类别</span>
+              <span class="info-value" id="valCertCategory">ISO14000</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">申请类别</span>
+              <span class="info-value" id="valApplyCategory">复评申请</span>
+            </div>
+          </div>
+          <!-- 第五行：审核范围（全宽） -->
+          <div style="margin-top:12px;">
+            <div class="info-grid">
+              <div class="info-item full">
+                <span class="info-label">审核范围</span>
+                <span class="info-value" id="valScope">机器人及智能装备系统、非标自动化系统、工业互联网及智能化工厂信息管理平台的研发、集成、运维服务及相关管理活动</span>
+              </div>
+            </div>
+          </div>
+          <!-- 第六行：审核标准（中文） + 审核标准（英文） -->
+          <div class="info-grid cols-2" style="margin-top:12px;">
+            <div class="info-item">
+              <span class="info-label">审核标准（中文）</span>
+              <span class="info-value" id="valStdCN">GB/T 24001-2016/ISO 14001:2015</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">审核标准（英文）</span>
+              <span class="info-value" id="valStdEN">GB/T 24001-2016/ISO 14001:2015</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 体系处认证决定 -->
+      <div class="card animate-in">
+        <div class="card-header">
+          <span class="card-title">体系处认证决定</span>
+        </div>
+        <div class="card-body">
+          <div class="version-info">
+            <span>认证决定操作人员：<strong>wuxia</strong></span>
+            <span>|</span>
+            <span>操作时间：<strong>2025-10-10 10:18:12</strong></span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">结论 <span class="required">*</span></label>
+              <div class="radio-group">
+                <label class="radio-item" style="opacity:0.6;cursor:not-allowed;">
+                  <input type="radio" name="decision" value="approve" id="radioApprove" checked disabled>
+                  <span>同意发证</span>
+                </label>
+                <label class="radio-item" style="opacity:0.6;cursor:not-allowed;">
+                  <input type="radio" name="decision" value="reject" id="radioReject" disabled>
+                  <span>不同意发证</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">说明</label>
+              <div style="font-size:14px;color:var(--text-secondary);padding:8px 0;">无</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer 通栏固定底部 -->
+    <div class="footer-actions">
+      <button class="btn btn-success" onclick="handleApprove()">同意发证</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== 子菜单交互 ==========
+function toggleSubmenu(e, el) {
+  e.preventDefault();
+  e.stopPropagation();
+  var wrapper = el.closest('.submenu-wrapper');
+  var submenu = wrapper.querySelector('.submenu');
+  var isOpen = submenu.classList.contains('open');
+  document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+  document.querySelectorAll('.menu-item.active').forEach(function(m) { m.classList.remove('active'); });
+  if (!isOpen) {
+    submenu.classList.add('open');
+    el.classList.add('active');
+  }
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.submenu-wrapper')) {
+    document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+  }
+});
+
+// ========== 数据映射：根据 URL 参数 id 填充不同数据 ==========
+const dataList = [
+  {
+    id: 1, title: '国高技术-E-复评-20240830', keySite: '重庆公司', marketCompany: '重庆公司', address: '重庆市永川区',
+    applyTime: '2024-08-30 15:14:12',
+    auditeeCN: '重庆固高科技长江研究院有限公司', auditeeEN: 'CHONG QING GOOGOL CHANGJIANG RESEARCH INSTITUTE',
+    addrCN: '中国重庆市永川区星光大道999号1幢（重庆永川工业园区凤凰湖工业园内）', addrEN: '1st Building, NO.999, STAR Boulevard Phoenix Lake Industrial Park, Yongchuan Dist, Chongqing City, China',
+    certCategory: 'ISO14000', applyCategory: '复评申请',
+    scope: '机器人及智能装备系统、非标自动化系统、工业互联网及智能化工厂信息管理平台的研发、集成、运维服务及相关管理活动',
+    stdCN: 'GB/T 24001-2016/ISO 14001:2015', stdEN: 'GB/T 24001-2016/ISO 14001:2015'
+  }
+];
+
+// ========== 页面初始化 ==========
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  const id = parseInt(params.get('id')) || 1;
+  const data = dataList.find(d => d.id === id) || dataList[0];
+
+  document.getElementById('pageTitle').textContent = data.title;
+  document.getElementById('valKeySite').textContent = data.keySite;
+  document.getElementById('valMarketCompany').textContent = data.marketCompany;
+  document.getElementById('valAddress').textContent = data.address;
+  document.getElementById('valApplyTime').textContent = data.applyTime;
+  document.getElementById('valAuditeeCN').textContent = data.auditeeCN;
+  document.getElementById('valAuditeeEN').textContent = data.auditeeEN;
+  document.getElementById('valAddrCN').textContent = data.addrCN;
+  document.getElementById('valAddrEN').textContent = data.addrEN;
+  document.getElementById('valCertCategory').textContent = data.certCategory;
+  document.getElementById('valApplyCategory').textContent = data.applyCategory;
+
+  // 审核范围
+  document.getElementById('valScope').textContent = data.scope;
+
+  // 审核标准
+  document.getElementById('valStdCN').textContent = data.stdCN;
+  document.getElementById('valStdEN').textContent = data.stdEN;
+}
+
+function goBack() {
+  window.location.href = 'cert-reissue-auto-list.html';
+}
+
+function handleApprove() {
+  const radio = document.getElementById('radioApprove');
+  radio.checked = true;
+  alert('已同意发证！');
+}
+
+function handleReject() {
+  const radio = document.getElementById('radioReject');
+  radio.checked = true;
+  alert('已不同意发证。');
+}
+
+// 启动
+init();
+</script>
+</body>
+</html>

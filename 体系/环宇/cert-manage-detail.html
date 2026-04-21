@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>证书详情 - 体系认证管理平台</title>
+<style>
+  :root {
+    --primary: #1890ff;
+    --primary-light: #e6f7ff;
+    --primary-hover: #40a9ff;
+    --sidebar-bg: #001529;
+    --success: #52c41a;
+    --success-bg: #f6ffed;
+    --warning: #fa8c16;
+    --warning-bg: #fff7e6;
+    --danger: #f5222d;
+    --danger-bg: #fff2f0;
+    --info: #1890ff;
+    --info-bg: #e6f7ff;
+    --purple: #722ed1;
+    --purple-bg: #f9f0ff;
+    --bg-page: #f0f2f5;
+    --bg-card: #ffffff;
+    --border: #e8e8e8;
+    --border-light: #f0f0f0;
+    --text-primary: #262626;
+    --text-secondary: #595959;
+    --text-placeholder: #bfbfbf;
+    --text-disabled: #8c8c8c;
+    --shadow-card: 0 2px 8px rgba(0,0,0,0.08);
+    --radius: 4px;
+    --radius-lg: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 14px; color: var(--text-primary); background: var(--bg-page); line-height: 1.6;
+    overflow: hidden; height: 100vh;
+  }
+  .layout { display: flex; height: 100vh; }
+
+  /* ========== Sidebar ========== */
+  .sidebar {
+    width: 64px; min-width: 64px; background: var(--sidebar-bg);
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 8px; position: relative; z-index: 100;
+  }
+  .sidebar-logo {
+    width: 40px; height: 40px; border-radius: 8px; background: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 12px;
+  }
+  .sidebar-menu { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; padding: 4px 0; }
+  .menu-item {
+    width: 52px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.65); cursor: pointer; transition: all 0.2s;
+    border-radius: 8px; text-decoration: none; position: relative; gap: 2px;
+  }
+  .menu-item .menu-icon { font-size: 18px; line-height: 1; }
+  .menu-item .menu-label { font-size: 10px; line-height: 1; white-space: nowrap; }
+  .menu-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .menu-item.active { color: #fff; background: var(--primary); }
+  .menu-item.active::before {
+    content: ''; position: absolute; left: 0; top: 10px; bottom: 10px;
+    width: 3px; background: #fff; border-radius: 0 2px 2px 0;
+  }
+
+  /* ========== Submenu ========== */
+  .submenu-wrapper { position: relative; }
+  .submenu {
+    display: none; position: absolute; left: 64px; top: 0;
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.08);
+    min-width: 200px; padding: 8px 0; z-index: 200;
+    border: 1px solid var(--border-light);
+  }
+  .submenu::before {
+    content: ''; position: absolute; left: -16px; top: 0; bottom: 0; width: 16px;
+  }
+  .submenu-wrapper:hover .submenu,
+  .submenu.open { display: block; }
+  .submenu-item {
+    display: flex; align-items: center; height: 36px; padding: 0 12px;
+    color: var(--text-primary); cursor: pointer; transition: all 0.15s;
+    font-size: 13px; border-radius: var(--radius); margin: 1px 0;
+    text-decoration: none; white-space: nowrap;
+  }
+  .submenu-item:hover { background: var(--primary-light); color: var(--primary); }
+  .submenu-item.active { color: var(--primary); font-weight: 500; background: var(--primary-light); }
+  .submenu-item .sub-dot {
+    width: 4px; height: 4px; border-radius: 50%; background: var(--border);
+    margin-right: 10px; flex-shrink: 0;
+  }
+  .submenu-item:hover .sub-dot, .submenu-item.active .sub-dot { background: var(--primary); }
+
+  /* ========== Main ========== */
+  .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ========== Header ========== */
+  .header {
+    height: 56px; background: var(--bg-card); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-title { font-size: 16px; font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-user { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .header-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+
+  /* ========== Page ========== */
+  .page-content { flex: 1; overflow-y: auto; padding: 16px 24px; }
+  .page-content::-webkit-scrollbar { width: 6px; }
+  .page-content::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+
+  /* ========== Page Header ========== */
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .page-title-group { display: flex; align-items: center; gap: 12px; }
+  .page-title { font-size: 20px; font-weight: 600; }
+  .btn-back {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--text-secondary); cursor: pointer; font-size: 14px;
+    background: none; border: none; font-family: inherit; padding: 4px 0;
+  }
+  .btn-back:hover { color: var(--primary); }
+
+  /* ========== Buttons ========== */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 32px; padding: 0 16px; border-radius: var(--radius);
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+    border: 1px solid transparent; gap: 6px; white-space: nowrap; font-family: inherit;
+  }
+  .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+  .btn-default { background: var(--bg-card); color: var(--text-primary); border-color: var(--border); }
+  .btn-default:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-success { background: var(--success); color: #fff; border-color: var(--success); }
+  .btn-success:hover { background: #389e0d; }
+
+  /* ========== Card ========== */
+  .card {
+    background: var(--bg-card); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card); margin-bottom: 12px; overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px; border-bottom: 1px solid var(--border-light);
+  }
+  .card-title { font-size: 15px; font-weight: 600; }
+  .card-body { padding: 16px 24px; }
+
+  /* ========== Info Grid ========== */
+  .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 24px; }
+  .info-item { display: flex; flex-direction: column; gap: 4px; }
+  .info-item.full { grid-column: 1 / -1; }
+  .info-label { font-size: 13px; color: var(--text-disabled); }
+  .info-value { font-size: 14px; color: var(--text-primary); }
+
+  /* ========== Tag ========== */
+  .tag {
+    display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
+    border-radius: 4px; font-size: 12px; line-height: 1; white-space: nowrap;
+  }
+  .tag-default { color: var(--text-secondary); background: #f5f5f5; border: 1px solid #d9d9d9; }
+  .tag-success { color: var(--success); background: var(--success-bg); border: 1px solid #b7eb8f; }
+
+  /* ========== Tab ========== */
+  .tab-bar { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .tab-item {
+    padding: 10px 24px; cursor: pointer; font-size: 14px;
+    color: var(--text-secondary); border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab-item.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 500; }
+  .tab-item:hover { color: var(--primary); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ========== Data Table ========== */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th, .data-table td {
+    padding: 10px 12px; text-align: left; border: 1px solid var(--border-light);
+    font-size: 13px; vertical-align: middle;
+  }
+  .data-table th {
+    background: #fafafa; font-weight: 500; color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .data-table td { color: var(--text-primary); }
+  .data-table tbody tr:hover { background: var(--primary-light); }
+
+  /* ========== Footer ========== */
+  .footer-actions {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; padding: 12px 24px; background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    position: sticky; bottom: 0; z-index: 10;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+
+  /* ========== Animations ========== */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">📋</div>
+    <nav class="sidebar-menu">
+      <!-- 证书签发 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="证书签发" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🏅</span><span class="menu-label">签发</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-make-list.html"><span class="sub-dot"></span>体系证书签发</a>
+          <a class="submenu-item" href="cert-hf-list.html"><span class="sub-dot"></span>体系证书签发（HF）</a>
+          <a class="submenu-item" href="cert-reissue-auto-list.html"><span class="sub-dot"></span>再认证待签发（自动）</a>
+          <a class="submenu-item" href="cert-all-pending-list.html"><span class="sub-dot"></span>其余全部待签发</a>
+        </div>
+      </div>
+      <!-- 认监委上报 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委上报" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📤</span><span class="menu-label">上报</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-report.html"><span class="sub-dot"></span>认证数据报送认监委汇总</a>
+          <a class="submenu-item" href="cert-cnca-return-list.html"><span class="sub-dot"></span>认监委退回证书列表</a>
+        </div>
+      </div>
+      <!-- 认监委编号 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="认监委编号" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📋</span><span class="menu-label">编号</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-cnca-list.html"><span class="sub-dot"></span>认监委编号证书管理</a>
+        </div>
+      </div>
+      <!-- 证书打印 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item active" href="#" title="证书打印" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🖨️</span><span class="menu-label">打印</span></a>
+        <div class="submenu open">
+          <a class="submenu-item active" href="cert-manage-list.html"><span class="sub-dot"></span>证书管理(全量)</a>
+          <a class="submenu-item" href="cert-export-list.html"><span class="sub-dot"></span>证书导出</a>
+          <a class="submenu-item" href="cert-print-pending-list.html"><span class="sub-dot"></span>证书待打印</a>
+          <a class="submenu-item" href="cert-cnca-export-list.html"><span class="sub-dot"></span>农食证书导出</a>
+          <a class="submenu-item" href="cert-cnca-print-pending-list.html"><span class="sub-dot"></span>农食证书待打印</a>
+          <a class="submenu-item" href="cert-upload-manage-list.html"><span class="sub-dot"></span>上传证书文件管理</a>
+          <a class="submenu-item" href="cert-electronic-list.html"><span class="sub-dot"></span>电子证书管理</a>
+          <a class="submenu-item" href="cert-express-manage-list.html"><span class="sub-dot"></span>证书快递管理</a>
+        </div>
+      </div>
+      <!-- 错证管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="错证管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">❌</span><span class="menu-label">错证</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-fee-list.html"><span class="sub-dot"></span>错证收费管理</a>
+          <a class="submenu-item" href="cert-print-list.html"><span class="sub-dot"></span>错证打印管理</a>
+          <a class="submenu-item" href="cert-express-list.html"><span class="sub-dot"></span>错证快递管理</a>
+          <a class="submenu-item" href="cert-fee-export-list.html"><span class="sub-dot"></span>错证证书数据导出</a>
+        </div>
+      </div>
+      <!-- 模版管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="模版管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">📐</span><span class="menu-label">模版</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-template-list.html"><span class="sub-dot"></span>证书模版管理</a>
+          <a class="submenu-item" href="cert-watermark-list.html"><span class="sub-dot"></span>证书底纹管理</a>
+        </div>
+      </div>
+
+      <!-- 通知单管理 -->
+      <div class="submenu-wrapper">
+        <a class="menu-item" href="#" title="通知单管理" onclick="toggleSubmenu(event,this)"><span class="menu-icon">🔄</span><span class="menu-label">证后</span></a>
+        <div class="submenu">
+          <a class="submenu-item" href="cert-suspend-list.html"><span class="sub-dot"></span>暂撤注恢证书通知单</a>
+          <a class="submenu-item" href="cert-recovery-list.html"><span class="sub-dot"></span>暂撤注恢证书电子通知单</a>
+          <a class="submenu-item" href="cert-supervision-list.html"><span class="sub-dot"></span>监督合格通知书</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="header">
+      <div class="header-left">
+        <button class="btn-back" onclick="goBack()" style="display:inline-flex;align-items:center;gap:4px;color:var(--text-secondary);cursor:pointer;font-size:14px;background:none;border:none;font-family:inherit;padding:4px 0;">← 返回列表</button>
+        <span style="width:1px;height:20px;background:var(--border);"></span>
+        <span class="header-title">证书详情</span>
+      </div>
+      <div class="header-right">
+        <div class="header-user">
+          <div class="header-avatar">丛</div>
+          <span>丛思远 · 项目主管</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Card: 基本信息 -->
+      <div class="card animate-in">
+        <div class="card-header">
+          <span class="card-title">基本信息</span>
+        </div>
+        <div class="card-body">
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">申请标题</span>
+              <span class="info-value">ISO9001质量管理体系认证</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">申请时间</span>
+              <span class="info-value">2023-02-15 09:30:00</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">受理地方公司</span>
+              <span class="info-value">北京公司</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">认证类别</span>
+              <span class="info-value">ISO9001</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">申请类别</span>
+              <span class="info-value">再认证</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">用户名</span>
+              <span class="info-value">丛思远</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Area -->
+      <div class="card animate-in">
+        <div class="card-body">
+          <div class="tab-bar">
+            <div class="tab-item active" onclick="switchTab(0)">证书信息</div>
+            <div class="tab-item" onclick="switchTab(1)">操作记录</div>
+          </div>
+
+          <!-- Tab 1: 证书信息 -->
+          <div class="tab-content active" id="tabContent0">
+            <div class="card" style="box-shadow:none;border:1px solid var(--border-light);">
+              <div class="card-header">
+                <span class="card-title">证书详细信息</span>
+              </div>
+              <div class="card-body">
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">证书编号</span>
+                    <span class="info-value">00125Q306693R001</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">证书类型</span>
+                    <span class="info-value"><span class="tag tag-default">ISO9001</span></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">证书状态</span>
+                    <span class="info-value"><span class="tag tag-default">失效</span></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">受审核方企业</span>
+                    <span class="info-value">关键场所公司项目，选择相应的非关键</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">审核标准</span>
+                    <span class="info-value">GB/T 19001-2016/ISO 9001:2015</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">发证日期</span>
+                    <span class="info-value">2023-03-15</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">CNCA编号</span>
+                    <span class="info-value">2026Q306693R</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">文控员填写时间</span>
+                    <span class="info-value">2023-03-10</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">地方公司</span>
+                    <span class="info-value">北京公司</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">市场开发公司</span>
+                    <span class="info-value">北京公司</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">是否急件</span>
+                    <span class="info-value"><span class="tag tag-default">否</span></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">证书附件</span>
+                    <span class="info-value"><span class="tag tag-success">有</span></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">多场所附件</span>
+                    <span class="info-value"><span class="tag tag-default">无</span></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">多产品附件</span>
+                    <span class="info-value"><span class="tag tag-default">无</span></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">证书有效期至</span>
+                    <span class="info-value">2026-03-14</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">认证范围</span>
+                    <span class="info-value">关键场所公司项目管理服务</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: 操作记录 -->
+          <div class="tab-content" id="tabContent1">
+            <div class="card" style="box-shadow:none;border:1px solid var(--border-light);">
+              <div class="card-header">
+                <span class="card-title">操作记录</span>
+              </div>
+              <div class="card-body" style="padding:0;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="min-width:200px;">操作</th>
+                      <th style="min-width:100px;">操作人</th>
+                      <th style="min-width:170px;">操作时间</th>
+                      <th style="min-width:120px;">部门</th>
+                    </tr>
+                  </thead>
+                  <tbody id="operationTableBody">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-actions">
+      <button class="btn btn-default" onclick="goBack()">返回</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== Submenu Toggle ==========
+function toggleSubmenu(e, el) {
+  e.preventDefault();
+  e.stopPropagation();
+  var wrapper = el.closest('.submenu-wrapper');
+  var submenu = wrapper.querySelector('.submenu');
+  var isOpen = submenu.classList.contains('open');
+  document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+  document.querySelectorAll('.menu-item.active').forEach(function(m) { m.classList.remove('active'); });
+  if (!isOpen) {
+    submenu.classList.add('open');
+    el.classList.add('active');
+  }
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.submenu-wrapper')) {
+    document.querySelectorAll('.submenu.open').forEach(function(m) { m.classList.remove('open'); });
+  }
+});
+
+// ========== Go Back ==========
+function goBack() {
+  window.location.href = 'cert-manage-list.html';
+}
+
+// ========== Tab Switch ==========
+function switchTab(index) {
+  var tabs = document.querySelectorAll('.tab-item');
+  var contents = document.querySelectorAll('.tab-content');
+  tabs.forEach(function(tab, i) {
+    if (i === index) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+  contents.forEach(function(content, i) {
+    if (i === index) {
+      content.classList.add('active');
+    } else {
+      content.classList.remove('active');
+    }
+  });
+}
+
+// ========== Operation Data ==========
+var operationData = [
+  { operation: '证书签发', operator: '丛思远', time: '2023-03-15 14:30:00', dept: '证书签发部' },
+  { operation: '文控员填写证书信息', operator: '张晓明', time: '2023-03-10 10:20:00', dept: '文控部' },
+  { operation: '体系处处长审批通过', operator: '李建国', time: '2023-03-08 16:45:00', dept: '体系处' },
+  { operation: '审核组长提交审核报告', operator: '王芳', time: '2023-03-05 11:30:00', dept: '审核部' },
+  { operation: '现场审核完成', operator: '王芳', time: '2023-02-28 17:00:00', dept: '审核部' },
+  { operation: '申请受理', operator: '丛思远', time: '2023-02-15 09:35:00', dept: '市场部' },
+  { operation: '认证申请提交', operator: '关键场所公司', time: '2023-02-15 09:30:00', dept: '外部' },
+  { operation: '合同签订', operator: '赵磊', time: '2023-02-10 14:20:00', dept: '市场部' }
+];
+
+// ========== Render Operation Table ==========
+function renderOperationTable() {
+  var tbody = document.getElementById('operationTableBody');
+  var html = '';
+  for (var i = 0; i < operationData.length; i++) {
+    var row = operationData[i];
+    html += '<tr>';
+    html += '<td>' + row.operation + '</td>';
+    html += '<td>' + row.operator + '</td>';
+    html += '<td>' + row.time + '</td>';
+    html += '<td>' + row.dept + '</td>';
+    html += '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+// ========== Init ==========
+window.addEventListener('DOMContentLoaded', function() {
+  // 确保证书打印菜单和证书管理(全量)子菜单高亮
+  var printMenu = document.querySelector('.submenu-wrapper:nth-child(3) .menu-item');
+  var printSubmenu = document.querySelector('.submenu-wrapper:nth-child(3) .submenu');
+  if (printMenu) {
+    printMenu.classList.add('active');
+    printSubmenu.classList.add('open');
+  }
+  // 渲染操作记录表格
+  renderOperationTable();
+});
+</script>
+</body>
+</html>
