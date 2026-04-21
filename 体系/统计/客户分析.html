@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>认证线客户管理 - 体系认证管理平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        /* 左侧导航栏 - 深蓝风格 */
+        .sidebar {
+            width: 64px;
+            background: #1a2b4a;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 16px;
+            transition: width 0.3s;
+        }
+        
+        .sidebar:hover { width: 200px; }
+        
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            color: #1a2b4a;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .nav-item {
+            width: 100%;
+            padding: 12px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8b9dc3;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            white-space: nowrap;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 20px;
+            background: #2563eb;
+            border-radius: 0 2px 2px 0;
+        }
+        
+        .nav-item i { font-size: 20px; min-width: 24px; text-align: center; }
+        .nav-item span {
+            display: none;
+            margin-left: 12px;
+            font-size: 14px;
+        }
+        .sidebar:hover .nav-item span { display: inline; }
+        .sidebar:hover .nav-item { justify-content: flex-start; padding: 12px 20px; }
+        
+        /* 顶部头部 */
+        .header {
+            height: 56px;
+            background: #fff;
+            border-bottom: 1px solid #e8e8e8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            /* position: fixed; */
+            top: 0;
+            /* left: 64px; */
+            right: 0;
+            z-index: 99;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a2b4a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .header-title i { color: #2563eb; }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .header-btn {
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        
+        .header-btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+        .header-btn-primary:hover { background: #1d4ed8; }
+        
+        .header-btn-default {
+            background: #fff;
+            color: #666;
+            border-color: #d9d9d9;
+        }
+        .header-btn-default:hover { border-color: #2563eb; color: #2563eb; }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #2563eb;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* 主内容区 */
+        .main-content {
+            /* margin-left: 64px; */
+            /* margin-top: 56px; */
+            padding: 20px 24px;
+            min-height: calc(100vh - 56px);
+        }
+        
+        /* 指标卡片 - 白色卡片风格 */
+        .metric-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .metric-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e8e8e8;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateY(-1px);
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+        
+        .metric-card.blue::before { background: #2563eb; }
+        .metric-card.green::before { background: #10b981; }
+        .metric-card.orange::before { background: #f59e0b; }
+        .metric-card.red::before { background: #ef4444; }
+        .metric-card.purple::before { background: #8b5cf6; }
+        
+        .metric-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a2b4a;
+            margin-bottom: 8px;
+        }
+        
+        .metric-trend {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .trend-up { color: #ef4444; }
+        .trend-down { color: #10b981; }
+        
+        /* 内容卡片 */
+        .content-card {
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #e8e8e8;
+            margin-bottom: 16px;
+        }
+        
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a2b4a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card-title::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: #2563eb;
+            border-radius: 2px;
+        }
+        
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        
+        .data-table th {
+            background: #fafafa;
+            padding: 12px 12px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 1px solid #f0f0f0;
+            white-space: nowrap;
+        }
+        
+        .data-table td {
+            padding: 14px 12px;
+            font-size: 13px;
+            color: #333;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: middle;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .data-table tbody tr:hover {
+            background: #f8fafc;
+            cursor: pointer;
+        }
+        
+        .data-table tbody tr.selected {
+            background: #eff6ff;
+        }
+        
+        /* 列宽定义 */
+        .col-seq { width: 50px; text-align: center; }
+        .col-name { width: 18%; }
+        .col-type { width: 110px; }
+        .col-money { width: 120px; text-align: right; }
+        .col-progress { width: 130px; }
+        .col-region { width: 90px; text-align: center; }
+        .col-star { width: 70px; text-align: center; }
+        .col-action { width: 70px; text-align: center; }
+        
+        /* 徽章 */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .badge-major {
+            background: #fef2f2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
+        }
+        
+        .badge-key {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+        }
+        
+        .badge-normal {
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px solid #e5e7eb;
+        }
+        
+        /* 进度条 */
+        .progress-bar {
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            width: 70px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.6s ease;
+        }
+        
+        /* 操作按钮 */
+        .action-btn {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .action-btn-view {
+            color: #2563eb;
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+        .action-btn-view:hover { background: #dbeafe; }
+        
+        .star-btn {
+            color: #d1d5db;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+        .star-btn.active { color: #f59e0b; }
+        .star-btn:hover { transform: scale(1.2); }
+        
+        /* 筛选栏 */
+        .filter-bar {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            flex-wrap: wrap;
+        }
+        
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-label {
+            font-size: 13px;
+            color: #666;
+            white-space: nowrap;
+        }
+        
+        .filter-select, .filter-input {
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #333;
+            background: #fff;
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        .filter-select:focus, .filter-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+        
+        /* 图表容器 */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .chart-box {
+            padding: 16px;
+        }
+        
+        /* 弹窗 */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.3s;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #f8fafc 0%, #fff 100%);
+        }
+        
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(85vh - 70px);
+        }
+        
+        .close-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #999;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+        }
+        .close-btn:hover { background: #f3f4f6; color: #333; }
+        
+        /* 详情卡片 */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .detail-card {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+        
+        .detail-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        
+        .region-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #2563eb;
+            margin: 4px;
+        }
+        
+        .type-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 4px;
+        }
+        
+        /* Tab */
+        .tab-nav {
+            display: flex;
+            gap: 4px;
+            padding: 0 20px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fafafa;
+        }
+        
+        .tab-item {
+            padding: 12px 20px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        .tab-item:hover { color: #2563eb; }
+        .tab-item.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+            background: #fff;
+        }
+        
+        .tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            background: #ef4444;
+            color: #fff;
+            border-radius: 9px;
+            font-size: 11px;
+            margin-left: 6px;
+        }
+        
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* 响应式 */
+        @media (max-width: 1400px) {
+            .col-name { width: 15%; }
+        }
+        
+        @media (max-width: 1200px) {
+            .metric-row { grid-template-columns: repeat(3, 1fr); }
+            .chart-grid { grid-template-columns: 1fr; }
+        }
+        
+        @media (max-width: 768px) {
+            .metric-row { grid-template-columns: repeat(2, 1fr); }
+            .sidebar { width: 0; overflow: hidden; }
+            .header { left: 0; }
+            .main-content { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧导航栏 -->
+    <!-- <nav class="sidebar">
+        <div class="sidebar-logo">检</div>
+        <div class="nav-item" title="常用">
+            <i class="fas fa-star"></i>
+            <span>常用</span>
+        </div>
+        <div class="nav-item" title="工作台">
+            <i class="fas fa-th-large"></i>
+            <span>工作台</span>
+        </div>
+        <div class="nav-item" title="客户">
+            <i class="fas fa-users"></i>
+            <span>客户</span>
+        </div>
+        <div class="nav-item" title="工单">
+            <i class="fas fa-file-alt"></i>
+            <span>工单</span>
+        </div>
+        <div class="nav-item" title="评审">
+            <i class="fas fa-clipboard-check"></i>
+            <span>评审</span>
+        </div>
+        <div class="nav-item" title="策划">
+            <i class="fas fa-project-diagram"></i>
+            <span>策划</span>
+        </div>
+        <div class="nav-item" title="项目">
+            <i class="fas fa-folder-open"></i>
+            <span>项目</span>
+        </div>
+        <div class="nav-item" title="任务">
+            <i class="fas fa-tasks"></i>
+            <span>任务</span>
+        </div>
+        <div class="nav-item" title="归档">
+            <i class="fas fa-archive"></i>
+            <span>归档</span>
+        </div>
+        <div class="nav-item" title="评定">
+            <i class="fas fa-certificate"></i>
+            <span>评定</span>
+        </div>
+        <div class="nav-item" title="证书">
+            <i class="fas fa-award"></i>
+            <span>证书</span>
+        </div>
+        <div class="nav-item active" title="统计">
+            <i class="fas fa-chart-line"></i>
+            <span>统计</span>
+        </div>
+        <div class="nav-item" title="设置">
+            <i class="fas fa-cog"></i>
+            <span>设置</span>
+        </div>
+    </nav> -->
+
+    <!-- 顶部头部 -->
+    <header class="header">
+        <div class="header-left">
+            <div class="header-title">
+                <i class="fas fa-building"></i>
+                认证线客户管理驾驶舱
+            </div>
+            <span style="color: #999; font-size: 13px;">中检集团/认证线/客户分析</span>
+        </div>
+        <div class="header-right">
+            <button class="header-btn header-btn-primary" onclick="exportData()">
+                <i class="fas fa-download mr-1"></i> 导出数据
+            </button>
+            <button class="header-btn header-btn-default">
+                <i class="fas fa-sync-alt mr-1"></i> 刷新
+            </button>
+            <!-- <div class="user-info">
+                <div class="user-avatar">丛</div>
+                <span style="font-size: 13px; color: #333;">丛志远</span>
+                <span style="font-size: 12px; color: #999;">项目主管</span>
+                <i class="fas fa-chevron-down" style="font-size: 10px; color: #999;"></i>
+            </div> -->
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <!-- 指标卡片区 -->
+        <div class="metric-row">
+            <div class="metric-card blue">
+                <div class="metric-label">
+                    <span>认证线大客户</span>
+                    <i class="fas fa-crown" style="color: #2563eb;"></i>
+                </div>
+                <div class="metric-value" id="majorCount">0</div>
+                <div class="metric-trend trend-up">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>业务金额 ≥ 100万</span>
+                </div>
+            </div>
+            
+            <div class="metric-card orange">
+                <div class="metric-label">
+                    <span>认证线重点客户</span>
+                    <i class="fas fa-star" style="color: #f59e0b;"></i>
+                </div>
+                <div class="metric-value" id="keyCount">0</div>
+                <div class="metric-trend">
+                    <span>管理员手动标记</span>
+                </div>
+            </div>
+            
+            <div class="metric-card green">
+                <div class="metric-label">
+                    <span>总业务金额</span>
+                    <i class="fas fa-yen-sign" style="color: #10b981;"></i>
+                </div>
+                <div class="metric-value" id="totalAmount">0</div>
+                <div class="metric-trend trend-down">
+                    <i class="fas fa-check-circle"></i>
+                    <span>已完工 + 未完工</span>
+                </div>
+            </div>
+            
+            <div class="metric-card purple">
+                <div class="metric-label">
+                    <span>覆盖区域数</span>
+                    <i class="fas fa-map-marker-alt" style="color: #8b5cf6;"></i>
+                </div>
+                <div class="metric-value" id="regionCount">0</div>
+                <div class="metric-trend">
+                    <span>业务分布区域</span>
+                </div>
+            </div>
+            
+            <div class="metric-card red">
+                <div class="metric-label">
+                    <span>本月新增客户</span>
+                    <i class="fas fa-user-plus" style="color: #ef4444;"></i>
+                </div>
+                <div class="metric-value">12</div>
+                <div class="metric-trend trend-up">
+                    <i class="fas fa-arrow-up"></i>
+                    <span>同比上月 +5</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 客户列表卡片 -->
+        <div class="content-card">
+            <!-- Tab导航 -->
+            <div class="tab-nav">
+                <div class="tab-item active" onclick="switchTab('all', this)">
+                    全部客户
+                    <span class="tab-badge" id="tabAll">0</span>
+                </div>
+                <div class="tab-item" onclick="switchTab('major', this)">
+                    大客户
+                    <span class="tab-badge" id="tabMajor">0</span>
+                </div>
+                <div class="tab-item" onclick="switchTab('key', this)">
+                    重点客户
+                    <span class="tab-badge" id="tabKey">0</span>
+                </div>
+            </div>
+            
+            <!-- 筛选栏 -->
+            <div class="filter-bar">
+                <div class="filter-item">
+                    <span class="filter-label">客户名称：</span>
+                    <input type="text" class="filter-input" id="searchInput" placeholder="请输入客户名称" style="width: 200px;">
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">业务区域：</span>
+                    <select class="filter-select" id="regionFilter">
+                        <option value="">全部区域</option>
+                        <option value="华北区">华北区</option>
+                        <option value="华东区">华东区</option>
+                        <option value="华南区">华南区</option>
+                        <option value="华中区">华中区</option>
+                        <option value="西南区">西南区</option>
+                        <option value="西北区">西北区</option>
+                        <option value="东北区">东北区</option>
+                        <option value="海外区">海外区</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">业务类型：</span>
+                    <select class="filter-select" id="typeFilter">
+                        <option value="">全部类型</option>
+                        <option value="体系认证">体系认证</option>
+                        <option value="产品认证">产品认证</option>
+                        <option value="服务认证">服务认证</option>
+                        <option value="培训业务">培训业务</option>
+                        <option value="检验检测">检验检测</option>
+                        <option value="咨询业务">咨询业务</option>
+                    </select>
+                </div>
+                <div class="filter-item" style="margin-left: auto;">
+                    <button class="header-btn header-btn-primary" onclick="applyFilter()">
+                        <i class="fas fa-search mr-1"></i> 查询
+                    </button>
+                    <button class="header-btn header-btn-default" onclick="resetFilter()">
+                        <i class="fas fa-redo mr-1"></i> 重置
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 表格 -->
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="col-seq">序号</th>
+                            <th class="col-name">客户名称</th>
+                            <th class="col-type">客户类型</th>
+                            <th class="col-money">已完工金额</th>
+                            <th class="col-money">未完工金额</th>
+                            <th class="col-money">业务总金额</th>
+                            <th class="col-progress">完工进度</th>
+                            <th class="col-region">覆盖区域</th>
+                            <th class="col-star">重点标记</th>
+                            <th class="col-action">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientTableBody">
+                        <!-- 动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 图表区 -->
+        <div class="chart-grid">
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">客户类型分布</div>
+                </div>
+                <div class="chart-box">
+                    <div id="typeChart" style="height: 280px;"></div>
+                </div>
+            </div>
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-title">Top10 客户业务金额</div>
+                </div>
+                <div class="chart-box">
+                    <div id="topChart" style="height: 280px;"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 客户详情弹窗 -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 48px; height: 48px; border-radius: 10px; background: linear-gradient(135deg, #2563eb, #4f46e5); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: 700;" id="modalAvatar">
+                    </div>
+                    <div>
+                        <h2 style="font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 4px;" id="modalTitle"></h2>
+                        <div id="modalBadges" style="display: flex; gap: 8px;"></div>
+                    </div>
+                </div>
+                <button class="close-btn" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- 金额概览 -->
+                <div class="detail-grid">
+                    <div class="detail-card">
+                        <div class="detail-label">已完工金额</div>
+                        <div class="detail-value" style="color: #10b981;" id="modalCompleted"></div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="detail-label">未完工金额</div>
+                        <div class="detail-value" style="color: #f59e0b;" id="modalUncompleted"></div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="detail-label">业务总金额</div>
+                        <div class="detail-value" style="color: #2563eb;" id="modalTotal"></div>
+                    </div>
+                </div>
+                
+                <!-- 区域分布 -->
+                <div style="margin-bottom: 24px;">
+                    <h3 style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-map-marked-alt" style="color: #2563eb;"></i>
+                        区域业务分布
+                    </h3>
+                    <div id="modalRegions" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                </div>
+                
+                <!-- 业务类型分布 -->
+                <div style="margin-bottom: 24px;">
+                    <h3 style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-chart-pie" style="color: #8b5cf6;"></i>
+                        业务类型占比
+                    </h3>
+                    <div id="modalTypeChart" style="height: 260px;"></div>
+                </div>
+                
+                <!-- 区域金额分布 -->
+                <div>
+                    <h3 style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-chart-bar" style="color: #10b981;"></i>
+                        区域业务金额对比
+                    </h3>
+                    <div id="modalRegionChart" style="height: 260px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 模拟数据 ====================
+        const regions = ['华北区', '华东区', '华南区', '华中区', '西南区', '西北区', '东北区', '海外区'];
+        const bizTypes = ['体系认证', '产品认证', '服务认证', '培训业务', '检验检测', '咨询业务'];
+        
+        const companyNames = [
+            '大连机车车辆有限公司', '恒力石化(大连)有限公司', '华锐重工集团', 
+            '英特尔半导体(大连)', '红沿河核电站', '中国航空工业集团',
+            '中化集团', '中粮集团', '中远海运', '中国中铁',
+            '中国建筑集团', '中国船舶集团', '中国核工业集团', '华为技术',
+            '腾讯科技', '阿里巴巴', '京东集团', '字节跳动',
+            '小米科技', '比亚迪股份', '宁德时代', '三一重工',
+            '徐工集团', '潍柴动力', '海尔集团'
+        ];
+        
+        function generateClients() {
+            const clients = [];
+            
+            companyNames.forEach((name, i) => {
+                const numRegions = Math.floor(Math.random() * 4) + 1;
+                const shuffled = [...regions].sort(() => 0.5 - Math.random());
+                
+                let totalCompleted = 0;
+                let totalUncompleted = 0;
+                const regionData = [];
+                const typeSummary = {};
+                
+                for (let j = 0; j < numRegions; j++) {
+                    const region = shuffled[j];
+                    const baseAmount = i < 10 ? 1500000 : 300000;
+                    const completed = Math.floor(Math.random() * baseAmount) + 100000;
+                    const uncompleted = Math.floor(Math.random() * (baseAmount * 0.6));
+                    totalCompleted += completed;
+                    totalUncompleted += uncompleted;
+                    
+                    const regionTypes = [];
+                    const numTypes = Math.floor(Math.random() * 3) + 1;
+                    for (let k = 0; k < numTypes; k++) {
+                        const type = bizTypes[Math.floor(Math.random() * bizTypes.length)];
+                        const typeAmount = Math.floor((completed + uncompleted) / numTypes);
+                        regionTypes.push({ type, amount: typeAmount });
+                        if (!typeSummary[type]) typeSummary[type] = 0;
+                        typeSummary[type] += typeAmount;
+                    }
+                    
+                    regionData.push({
+                        name: region,
+                        completed,
+                        uncompleted,
+                        types: regionTypes
+                    });
+                }
+                
+                const totalAmount = totalCompleted + totalUncompleted;
+                
+                clients.push({
+                    id: i + 1,
+                    name: name,
+                    totalAmount: totalAmount,
+                    completedAmount: totalCompleted,
+                    uncompletedAmount: totalUncompleted,
+                    isMajor: totalAmount > 1000000,
+                    isKey: [0, 2, 5, 8, 12].includes(i),
+                    regions: regionData,
+                    typeSummary: typeSummary
+                });
+            });
+            
+            return clients.sort((a, b) => b.totalAmount - a.totalAmount);
+        }
+
+        let allClients = generateClients();
+        let currentTab = 'all';
+        let modalChart1 = null;
+        let modalChart2 = null;
+
+        // ==================== 格式化 ====================
+        function formatMoney(amount) {
+            return '¥' + (amount / 10000).toFixed(2) + '万';
+        }
+
+        function formatMoneyShort(amount) {
+            if (amount >= 100000000) return (amount / 100000000).toFixed(2) + '亿';
+            if (amount >= 10000) return (amount / 10000).toFixed(2) + '万';
+            return amount.toLocaleString();
+        }
+
+        // ==================== 渲染表格 ====================
+        function renderTable() {
+            const tbody = document.getElementById('clientTableBody');
+            let filtered = allClients;
+            
+            if (currentTab === 'major') filtered = filtered.filter(c => c.isMajor);
+            else if (currentTab === 'key') filtered = filtered.filter(c => c.isKey);
+            
+            const searchTerm = document.getElementById('searchInput').value;
+            const regionFilter = document.getElementById('regionFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            
+            if (searchTerm) filtered = filtered.filter(c => c.name.includes(searchTerm));
+            if (regionFilter) filtered = filtered.filter(c => c.regions.some(r => r.name === regionFilter));
+            if (typeFilter) filtered = filtered.filter(c => Object.keys(c.typeSummary).includes(typeFilter));
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="10" style="text-align: center; padding: 40px; color: #999;">
+                        <i class="fas fa-inbox" style="font-size: 32px; margin-bottom: 12px; display: block; opacity: 0.5;"></i>
+                        暂无匹配数据
+                    </td></tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = filtered.map((client, index) => {
+                const progress = client.totalAmount > 0 ? (client.completedAmount / client.totalAmount * 100) : 0;
+                const progressColor = progress > 80 ? '#10b981' : progress > 50 ? '#f59e0b' : '#ef4444';
+                return `
+                    <tr onclick="showClientDetail(${client.id})">
+                        <td class="col-seq" style="color: #999;">${index + 1}</td>
+                        <td class="col-name">
+                            <div style="font-weight: 500; color: #1e293b; overflow: hidden; text-overflow: ellipsis;" title="${client.name}">${client.name}</div>
+                        </td>
+                        <td class="col-type">
+                            ${client.isMajor ? '<span class="badge badge-major">大客户</span>' : ''}
+                            ${client.isKey ? '<span class="badge badge-key">重点客户</span>' : ''}
+                            ${!client.isMajor && !client.isKey ? '<span class="badge badge-normal">普通</span>' : ''}
+                        </td>
+                        <td class="col-money" style="color: #10b981; font-weight: 500;">${formatMoney(client.completedAmount)}</td>
+                        <td class="col-money" style="color: #f59e0b; font-weight: 500;">${formatMoney(client.uncompletedAmount)}</td>
+                        <td class="col-money" style="color: #2563eb; font-weight: 700;">${formatMoney(client.totalAmount)}</td>
+                        <td class="col-progress">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${progress}%; background: ${progressColor};"></div>
+                                </div>
+                                <span style="font-size: 12px; color: #666; white-space: nowrap;">${progress.toFixed(0)}%</span>
+                            </div>
+                        </td>
+                        <td class="col-region" style="color: #666;">${client.regions.length} 个区域</td>
+                        <td class="col-star">
+                            <i class="fas fa-star star-btn ${client.isKey ? 'active' : ''}" 
+                               onclick="event.stopPropagation(); toggleKeyClient(${client.id})"
+                               title="${client.isKey ? '取消重点标记' : '标记为重点客户'}"></i>
+                        </td>
+                        <td class="col-action">
+                            <button class="action-btn action-btn-view" onclick="event.stopPropagation(); showClientDetail(${client.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            updateMetrics();
+            updateTabBadges();
+        }
+
+        // ==================== 更新指标 ====================
+        function updateMetrics() {
+            const major = allClients.filter(c => c.isMajor);
+            const key = allClients.filter(c => c.isKey);
+            const total = allClients.reduce((s, c) => s + c.totalAmount, 0);
+            const uniqueRegions = new Set(allClients.flatMap(c => c.regions.map(r => r.name)));
+            
+            document.getElementById('majorCount').textContent = major.length;
+            document.getElementById('keyCount').textContent = key.length;
+            document.getElementById('totalAmount').textContent = formatMoneyShort(total);
+            document.getElementById('regionCount').textContent = uniqueRegions.size;
+        }
+
+        function updateTabBadges() {
+            document.getElementById('tabAll').textContent = allClients.length;
+            document.getElementById('tabMajor').textContent = allClients.filter(c => c.isMajor).length;
+            document.getElementById('tabKey').textContent = allClients.filter(c => c.isKey).length;
+        }
+
+        // ==================== Tab切换 ====================
+        function switchTab(type, el) {
+            currentTab = type;
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            renderTable();
+        }
+
+        // ==================== 切换重点客户 ====================
+        function toggleKeyClient(id) {
+            const client = allClients.find(c => c.id === id);
+            if (client) {
+                client.isKey = !client.isKey;
+                renderTable();
+                renderCharts();
+            }
+        }
+
+        // ==================== 筛选 ====================
+        function applyFilter() {
+            renderTable();
+        }
+
+        function resetFilter() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('regionFilter').value = '';
+            document.getElementById('typeFilter').value = '';
+            renderTable();
+        }
+
+        document.getElementById('searchInput').addEventListener('input', renderTable);
+
+        // ==================== 详情弹窗 ====================
+        function showClientDetail(id) {
+            const client = allClients.find(c => c.id === id);
+            if (!client) return;
+            
+            document.getElementById('modalTitle').textContent = client.name;
+            document.getElementById('modalAvatar').textContent = client.name.substring(0, 2);
+            document.getElementById('modalBadges').innerHTML = `
+                ${client.isMajor ? '<span class="badge badge-major">大客户</span>' : ''}
+                ${client.isKey ? '<span class="badge badge-key">重点客户</span>' : ''}
+                <span style="color: #666; font-size: 12px;"><i class="fas fa-map-marker-alt mr-1"></i>${client.regions.length}个区域</span>
+            `;
+            
+            document.getElementById('modalCompleted').textContent = formatMoney(client.completedAmount);
+            document.getElementById('modalUncompleted').textContent = formatMoney(client.uncompletedAmount);
+            document.getElementById('modalTotal').textContent = formatMoney(client.totalAmount);
+            
+            document.getElementById('modalRegions').innerHTML = client.regions.map(r => `
+                <div class="region-tag">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>${r.name}</span>
+                    <span style="font-weight: 600; margin-left: 4px;">${formatMoney(r.completed + r.uncompleted)}</span>
+                    <span style="font-size: 11px; opacity: 0.7;">(完工${formatMoney(r.completed)})</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('detailModal').classList.add('active');
+            
+            setTimeout(() => {
+                renderModalCharts(client);
+            }, 100);
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+            if (modalChart1) modalChart1.dispose();
+            if (modalChart2) modalChart2.dispose();
+        }
+
+        // ==================== 弹窗图表 ====================
+        function renderModalCharts(client) {
+            const typeData = Object.entries(client.typeSummary).map(([name, value]) => ({ name, value }));
+            
+            modalChart1 = echarts.init(document.getElementById('modalTypeChart'));
+            modalChart1.setOption({
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: 10,
+                    top: 'center',
+                    textStyle: { fontSize: 12 }
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '65%'],
+                    center: ['35%', '50%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 6,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: { show: false },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    data: typeData,
+                    color: ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe']
+                }]
+            });
+            
+            // 修复：区域业务金额对比 - 使用更窄的柱子和合适的间距
+            modalChart2 = echarts.init(document.getElementById('modalRegionChart'));
+            modalChart2.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' }
+                },
+                legend: {
+                    top: 0,
+                    right: 10,
+                    textStyle: { fontSize: 12 }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '15%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: client.regions.map(r => r.name),
+                    axisLine: { lineStyle: { color: '#e2e8f0' } },
+                    axisLabel: { color: '#64748b', fontSize: 12 },
+                    axisTick: { alignWithLabel: true }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { show: false },
+                    splitLine: { lineStyle: { color: '#f1f5f9' } },
+                    axisLabel: {
+                        color: '#64748b',
+                        formatter: (value) => (value / 10000).toFixed(0) + '万'
+                    }
+                },
+                series: [
+                    {
+                        name: '已完工',
+                        type: 'bar',
+                        stack: 'total',
+                        barWidth: '35%',
+                        data: client.regions.map(r => r.completed),
+                        itemStyle: { color: '#10b981', borderRadius: [0, 0, 4, 4] }
+                    },
+                    {
+                        name: '未完工',
+                        type: 'bar',
+                        stack: 'total',
+                        barWidth: '35%',
+                        data: client.regions.map(r => r.uncompleted),
+                        itemStyle: { color: '#f59e0b', borderRadius: [4, 4, 0, 0] }
+                    }
+                ]
+            });
+        }
+
+        // ==================== 主图表 ====================
+        function renderCharts() {
+            const majorCount = allClients.filter(c => c.isMajor).length;
+            const keyCount = allClients.filter(c => c.isKey).length;
+            const normalCount = allClients.length - allClients.filter(c => c.isMajor || c.isKey).length;
+            
+            const typeChart = echarts.init(document.getElementById('typeChart'));
+            typeChart.setOption({
+                tooltip: { trigger: 'item' },
+                legend: {
+                    bottom: 0,
+                    textStyle: { fontSize: 12 }
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['45%', '70%'],
+                    center: ['50%', '45%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 8,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        formatter: '{b}\n{c}家',
+                        fontSize: 12
+                    },
+                    data: [
+                        { value: majorCount, name: '大客户', itemStyle: { color: '#ef4444' } },
+                        { value: keyCount, name: '重点客户', itemStyle: { color: '#f59e0b' } },
+                        { value: normalCount, name: '普通客户', itemStyle: { color: '#94a3b8' } }
+                    ]
+                }]
+            });
+            
+            const top10 = [...allClients].sort((a, b) => b.totalAmount - a.totalAmount).slice(0, 10);
+            const topChart = echarts.init(document.getElementById('topChart'));
+            topChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    formatter: (params) => {
+                        const data = params[0];
+                        return `${data.name}<br/>${formatMoney(data.value)}`;
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '5%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'value',
+                    axisLine: { show: false },
+                    splitLine: { lineStyle: { color: '#f1f5f9' } },
+                    axisLabel: {
+                        color: '#64748b',
+                        formatter: (value) => (value / 10000).toFixed(0) + '万'
+                    }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: top10.map(c => c.name.length > 8 ? c.name.substring(0, 8) + '...' : c.name).reverse(),
+                    axisLine: { lineStyle: { color: '#e2e8f0' } },
+                    axisLabel: { color: '#64748b', fontSize: 11 }
+                },
+                series: [{
+                    type: 'bar',
+                    data: top10.map(c => c.totalAmount).reverse(),
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#3b82f6' },
+                            { offset: 1, color: '#2563eb' }
+                        ]),
+                        borderRadius: [0, 6, 6, 0]
+                    },
+                    barWidth: '60%'
+                }]
+            });
+        }
+
+        // ==================== 导出 ====================
+        function exportData() {
+            let csv = '序号,客户名称,客户类型,已完工金额,未完工金额,业务总金额,完工进度,覆盖区域,区域明细\n';
+            
+            let filtered = allClients;
+            if (currentTab === 'major') filtered = filtered.filter(c => c.isMajor);
+            else if (currentTab === 'key') filtered = filtered.filter(c => c.isKey);
+            
+            filtered.forEach((c, i) => {
+                const type = c.isMajor ? '大客户' : c.isKey ? '重点客户' : '普通';
+                const progress = (c.completedAmount / c.totalAmount * 100).toFixed(1) + '%';
+                const regionNames = c.regions.map(r => r.name).join(';');
+                csv += `${i+1},${c.name},${type},${c.completedAmount},${c.uncompletedAmount},${c.totalAmount},${progress},${c.regions.length},${regionNames}\n`;
+            });
+            
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `认证线客户数据_${new Date().toLocaleDateString()}.csv`;
+            link.click();
+        }
+
+        // ==================== 初始化 ====================
+        window.addEventListener('resize', () => {
+            renderCharts();
+            if (modalChart1) modalChart1.resize();
+            if (modalChart2) modalChart2.resize();
+        });
+
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('detailModal')) closeModal();
+        });
+
+        // 启动
+        renderTable();
+        renderCharts();
+    </script>
+</body>
+</html>
