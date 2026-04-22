@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -881,6 +882,7 @@
                             <h2 class="text-lg font-bold" id="customer-name">丰源新能源集团有限公司</h2>
                             <span class="text-xs bg-white bg-opacity-20 px-2 py-1 rounded" id="customer-type">国内客户</span>
                         </div>
+                        <p class="text-blue-100 text-xs mb-1" id="customer-name-en">Fengyuan New Energy Group Co., Ltd.</p>
                         <p class="text-blue-100 text-xs">客户编号：<span id="customer-code">C20240315001</span></p>
                         <div id="sync-status-container" class="mt-2 hidden">
                             <span class="sync-status success" id="sync-status-text">
@@ -981,9 +983,13 @@
                             <span class="text-xs text-gray-500 block mb-1">省市区</span>
                             <span class="text-sm font-medium text-gray-800" id="address-region">北京市 北京市 东城区</span>
                         </div>
-                        <div>
+                        <div class="mb-3">
                             <span class="text-xs text-gray-500 block mb-1">详细地址</span>
                             <span class="text-sm font-medium text-gray-800" id="address-detail">东直门北大街9号中国石油大厦</span>
+                        </div>
+                        <div>
+                            <span class="text-xs text-gray-500 block mb-1">英文地址</span>
+                            <span class="text-sm font-medium text-gray-800" id="address-detail-en">No.9 Dongzhimen North Street, PetroChina Tower, Dongcheng District, Beijing, China</span>
                         </div>
                     </div>
                 </div>
@@ -1004,6 +1010,10 @@
                             <span class="info-value" id="invoice-name">丰源新能源集团有限公司</span>
                         </div>
                         <div class="info-row">
+                            <span class="info-label">发票名称（英文）</span>
+                            <span class="info-value text-xs" id="invoice-name-en">Fengyuan New Energy Group Co., Ltd.</span>
+                        </div>
+                        <div class="info-row">
                             <span class="info-label">税号</span>
                             <span class="info-value font-mono text-xs" id="invoice-tax">91110000100010433W</span>
                         </div>
@@ -1018,6 +1028,10 @@
                         <div class="info-row">
                             <span class="info-label">开票地址</span>
                             <span class="info-value text-xs" id="invoice-address">北京市东城区东直门北大街9号</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">开票地址（英文）</span>
+                            <span class="info-value text-xs" id="invoice-address-en">No.9 Dongzhimen North Street, Dongcheng District, Beijing, China</span>
                         </div>
                         <div class="info-row">
                             <span class="info-label">开票电话</span>
@@ -1633,6 +1647,10 @@
                     <label class="form-label required">详细地址</label>
                     <textarea class="form-textarea" id="addr-detail" placeholder="请输入详细街道、门牌号等信息">东直门北大街9号中国石油大厦</textarea>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">英文详细地址</label>
+                    <textarea class="form-textarea" id="addr-detail-en" placeholder="请输入英文详细地址">No.9 Dongzhimen North Street, PetroChina Tower, Dongcheng District, Beijing, China</textarea>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('addressEditModal')">取消</button>
@@ -1661,6 +1679,10 @@
                     <input type="text" class="form-input" id="inv-name" value="丰源新能源集团有限公司">
                 </div>
                 <div class="form-group">
+                    <label class="form-label">发票抬头（英文）</label>
+                    <input type="text" class="form-input" id="inv-name-en" value="Fengyuan New Energy Group Co., Ltd.">
+                </div>
+                <div class="form-group">
                     <label class="form-label required">纳税人识别号（税号）</label>
                     <input type="text" class="form-input" id="inv-tax" value="91110000100010433W" maxlength="20">
                 </div>
@@ -1679,6 +1701,12 @@
                         <label class="form-label">注册地址</label>
                         <input type="text" class="form-input" id="inv-address" value="北京市东城区东直门北大街9号">
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">注册地址（英文）</label>
+                        <input type="text" class="form-input" id="inv-address-en" value="No.9 Dongzhimen North Street, Dongcheng District, Beijing, China">
+                    </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">注册电话</label>
                         <input type="text" class="form-input" id="inv-phone" value="010-12345678">
@@ -2081,7 +2109,8 @@
                     
                     if (label.includes('注册资金')) valueSpan.textContent = latestData.capital;
                     if (label.includes('企业规模')) valueSpan.textContent = latestData.scale;
-                    if (label.includes('详细地址')) valueSpan.textContent = latestData.address.detail;
+                    if (label.includes('详细地址') && !label.includes('英文')) valueSpan.textContent = latestData.address.detail;
+                    if (label.includes('英文地址')) valueSpan.textContent = latestData.address.detailEn;
                 });
                 
                 // 显示同步成功状态
