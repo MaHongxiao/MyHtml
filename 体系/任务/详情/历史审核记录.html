@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>历史审核数据查看 - 监督二阶段</title>
+    <title>历史审核数据查看</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
-        
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         body {
             font-family: 'Inter', 'Noto Sans SC', sans-serif;
             background-color: #f3f4f6;
@@ -19,8 +19,7 @@
             line-height: 1.5;
             min-width: 1400px;
         }
-        
-        /* 顶部当前任务栏 */
+
         .current-task-bar {
             background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
             color: white;
@@ -29,13 +28,13 @@
             align-items: center;
             justify-content: space-between;
         }
-        
+
         .current-task-bar .task-info {
             display: flex;
             align-items: center;
             gap: 16px;
         }
-        
+
         .current-task-bar .tag-current {
             background: rgba(255,255,255,0.15);
             border: 1px solid rgba(255,255,255,0.3);
@@ -43,8 +42,7 @@
             border-radius: 4px;
             font-size: 12px;
         }
-        
-        /* 历史任务选择区 */
+
         .history-selector {
             background: white;
             border-bottom: 1px solid #e5e7eb;
@@ -52,11 +50,13 @@
             display: flex;
             gap: 16px;
             align-items: stretch;
+            overflow-x: auto;
         }
-        
+
         .history-card {
             flex: 1;
-            max-width: 400px;
+            min-width: 280px;
+            max-width: 320px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
             padding: 16px 20px;
@@ -66,19 +66,19 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .history-card:hover {
             border-color: #3b82f6;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
         }
-        
+
         .history-card.active {
             border-color: #2563eb;
             background: #eff6ff;
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
         }
-        
+
         .history-card.active::before {
             content: '';
             position: absolute;
@@ -88,7 +88,7 @@
             height: 100%;
             background: #2563eb;
         }
-        
+
         .history-card .history-type {
             font-size: 12px;
             color: #6b7280;
@@ -97,21 +97,21 @@
             align-items: center;
             gap: 6px;
         }
-        
+
         .history-card .history-title {
             font-size: 15px;
             font-weight: 600;
             color: #111827;
             margin-bottom: 8px;
         }
-        
+
         .history-card .history-meta {
             display: flex;
             gap: 12px;
             font-size: 12px;
             color: #6b7280;
         }
-        
+
         .history-card .history-status {
             position: absolute;
             top: 12px;
@@ -121,13 +121,12 @@
             font-size: 11px;
             font-weight: 600;
         }
-        
+
         .status-completed {
             background: #d1fae5;
             color: #065f46;
         }
-        
-        /* 内容区Tab */
+
         .content-tabs {
             background: white;
             border-bottom: 1px solid #e5e7eb;
@@ -135,7 +134,7 @@
             display: flex;
             gap: 0;
         }
-        
+
         .content-tab {
             padding: 14px 24px;
             cursor: pointer;
@@ -148,26 +147,24 @@
             align-items: center;
             gap: 8px;
         }
-        
+
         .content-tab:hover {
             color: #2563eb;
             background: #f9fafb;
         }
-        
+
         .content-tab.active {
             color: #2563eb;
             border-bottom-color: #2563eb;
             background: #fff;
         }
-        
-        /* 主内容区 */
+
         .main-content {
             padding: 20px 24px;
             max-height: calc(100vh - 220px);
             overflow-y: auto;
         }
-        
-        /* 只读标识 */
+
         .readonly-banner {
             background: #f3f4f6;
             border: 1px dashed #d1d5db;
@@ -180,8 +177,7 @@
             color: #6b7280;
             font-size: 13px;
         }
-        
-        /* 卡片样式 */
+
         .section-card {
             background: white;
             border-radius: 10px;
@@ -190,7 +186,7 @@
             overflow: hidden;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        
+
         .section-card .card-header {
             padding: 14px 20px;
             border-bottom: 1px solid #f3f4f6;
@@ -199,7 +195,7 @@
             justify-content: space-between;
             background: #fafafa;
         }
-        
+
         .section-card .card-title {
             font-size: 15px;
             font-weight: 600;
@@ -208,12 +204,11 @@
             align-items: center;
             gap: 8px;
         }
-        
+
         .section-card .card-body {
             padding: 20px;
         }
-        
-        /* 表单只读样式 */
+
         .form-readonly {
             background: #f9fafb;
             border: 1px solid #e5e7eb;
@@ -224,13 +219,13 @@
             min-height: 36px;
             line-height: 1.5;
         }
-        
+
         .form-readonly.textarea {
             min-height: 80px;
             white-space: pre-wrap;
             line-height: 1.6;
         }
-        
+
         .form-label {
             font-size: 13px;
             color: #4b5563;
@@ -238,14 +233,13 @@
             display: block;
             font-weight: 500;
         }
-        
-        /* 表格样式 */
+
         .data-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
         }
-        
+
         .data-table th {
             background: #f9fafb;
             color: #374151;
@@ -256,19 +250,18 @@
             font-size: 12px;
             white-space: nowrap;
         }
-        
+
         .data-table td {
             padding: 12px;
             border-bottom: 1px solid #f3f4f6;
             color: #374151;
             vertical-align: top;
         }
-        
+
         .data-table tr:hover td {
             background: #fafafa;
         }
-        
-        /* 状态标签 */
+
         .badge {
             display: inline-flex;
             align-items: center;
@@ -279,14 +272,14 @@
             font-weight: 500;
             white-space: nowrap;
         }
-        
+
         .badge-green { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
         .badge-blue { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
         .badge-orange { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
         .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
         .badge-gray { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
-        
-        /* 核查记录标签 */
+        .badge-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+
         .personnel-tag {
             display: inline-flex;
             align-items: center;
@@ -296,11 +289,10 @@
             font-weight: 500;
             border: 1px solid;
         }
-        
+
         .tag-leader { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
         .tag-member { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
-        
-        /* 进度条 */
+
         .progress-bar-bg {
             width: 100%;
             height: 8px;
@@ -308,30 +300,29 @@
             border-radius: 4px;
             overflow: hidden;
         }
-        
+
         .progress-bar-fill {
             height: 100%;
             border-radius: 4px;
             background: #10b981;
         }
-        
-        /* 会议通知框 */
+
         .notice-box {
             border-radius: 8px;
             padding: 16px;
             margin-bottom: 16px;
         }
-        
+
         .notice-green {
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
         }
-        
+
         .notice-blue {
             background: #eff6ff;
             border: 1px solid #bfdbfe;
         }
-        
+
         .notice-title {
             font-size: 14px;
             font-weight: 600;
@@ -340,10 +331,10 @@
             align-items: center;
             gap: 8px;
         }
-        
+
         .notice-green .notice-title { color: #15803d; }
         .notice-blue .notice-title { color: #1d4ed8; }
-        
+
         .notice-item {
             display: flex;
             align-items: flex-start;
@@ -352,18 +343,37 @@
             font-size: 13px;
             color: #374151;
         }
-        
+
         .notice-item i {
             color: #10b981;
             margin-top: 2px;
             font-size: 14px;
         }
-        
-        .notice-item.unchecked i {
-            color: #d1d5db;
+
+        .ncr-card {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-left: 4px solid #f97316;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
         }
-        
-        /* 问题卡片 */
+
+        .ncr-card:hover {
+            background: #fffbeb;
+        }
+
+        .ncr-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #c2410c;
+            font-size: 14px;
+        }
+
         .problem-card {
             background: #fff7ed;
             border: 1px solid #fed7aa;
@@ -372,7 +382,7 @@
             margin-bottom: 12px;
             border-radius: 0 8px 8px 0;
         }
-        
+
         .problem-header {
             display: flex;
             justify-content: space-between;
@@ -382,7 +392,7 @@
             color: #c2410c;
             font-size: 14px;
         }
-        
+
         .record-badge {
             display: inline-flex;
             align-items: center;
@@ -392,11 +402,10 @@
             font-size: 12px;
             font-family: monospace;
         }
-        
+
         .record-badge.auto { background: #eff6ff; color: #1d4ed8; }
         .record-badge.manual { background: #f0fdf4; color: #15803d; }
-        
-        /* 报告样式 */
+
         .report-section-title {
             background: #f8fafc;
             border-left: 4px solid #1e40af;
@@ -406,14 +415,14 @@
             margin: 24px 0 16px 0;
             font-size: 15px;
         }
-        
+
         .report-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
             margin-bottom: 16px;
         }
-        
+
         .report-table th {
             background: #f1f5f9;
             color: #475569;
@@ -422,18 +431,18 @@
             text-align: left;
             border: 1px solid #e2e8f0;
         }
-        
+
         .report-table td {
             padding: 10px;
             border: 1px solid #e2e8f0;
             color: #334155;
             vertical-align: top;
         }
-        
+
         .report-table tr:nth-child(even) {
             background: #fafafa;
         }
-        
+
         .info-grid {
             display: grid;
             grid-template-columns: 220px 1fr;
@@ -443,7 +452,7 @@
             overflow: hidden;
             margin-bottom: 16px;
         }
-        
+
         .info-label {
             background: #f8fafc;
             padding: 10px 16px;
@@ -454,7 +463,7 @@
             display: flex;
             align-items: center;
         }
-        
+
         .info-value {
             padding: 10px 16px;
             border-bottom: 1px solid #e2e8f0;
@@ -462,13 +471,12 @@
             color: #1e293b;
             font-size: 13px;
         }
-        
+
         .info-grid > div:last-child,
         .info-grid > div:nth-last-child(2) {
             border-bottom: none;
         }
-        
-        /* 附件项 */
+
         .attachment-item {
             display: flex;
             align-items: center;
@@ -479,7 +487,7 @@
             margin-bottom: 8px;
             gap: 10px;
         }
-        
+
         .attachment-icon {
             width: 32px;
             height: 32px;
@@ -491,30 +499,27 @@
             color: #f59e0b;
             flex-shrink: 0;
         }
-        
-        /* 隐藏模块 */
+
         .module-content {
             display: none;
         }
-        
+
         .module-content.active {
             display: block;
             animation: fadeIn 0.3s ease;
         }
-        
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
-        /* 签名区 */
+
         .signature-area {
             margin-top: 32px;
             padding-top: 24px;
             border-top: 2px solid #e5e7eb;
         }
-        
-        /* 滚动条 */
+
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -530,20 +535,120 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
-        
-        /* 空状态 */
-        .empty-state {
-            text-align: center;
-            padding: 48px;
-            color: #9ca3af;
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
         }
-        
-        .empty-state i {
-            font-size: 48px;
-            margin-bottom: 16px;
-            color: #d1d5db;
+
+        .modal-overlay.show {
+            display: flex;
         }
+
+        .modal-container {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafafa;
+        }
+
+        .modal-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            color: #6b7280;
+        }
+
+        .modal-close:hover {
+            background: #f3f4f6;
+            color: #dc2626;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 12px 24px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            background: #f9fafb;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .btn-default {
+            background: white;
+            border-color: #d1d5db;
+            color: #374151;
+        }
+
+        .btn-default:hover {
+            background: #f9fafb;
+        }
+
+        .phase-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .phase-first { background: #dbeafe; color: #1e40af; }
+        .phase-second { background: #fce7f3; color: #9d174d; }
     </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -559,7 +664,7 @@
         </div>
         <div style="display: flex; gap: 12px; align-items: center;">
             <span style="font-size: 12px; opacity: 0.8;">审核任务编码：RW-202604150001</span>
-            <button class="btn" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px;" onclick="alert('返回审核任务详情')">
+            <button style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px;" onclick="alert('返回审核任务详情')">
                 <i class="fas fa-arrow-left"></i> 返回任务详情
             </button>
         </div>
@@ -572,40 +677,70 @@
             <div class="history-type">
                 <i class="fas fa-certificate text-blue-600"></i>
                 初次认证审核
+                <span class="phase-tag phase-first">一阶段</span>
             </div>
-            <div class="history-title">北京市地铁运营有限公司初次认证</div>
+            <div class="history-title">初次认证一阶段审核</div>
+            <div class="history-meta">
+                <span><i class="far fa-calendar-alt"></i> 2024.04.01 - 2024.04.02</span>
+                <span><i class="fas fa-user-tie"></i> 武荣刚</span>
+            </div>
+        </div>
+
+        <div class="history-card" onclick="switchHistoryTask(1, this)" data-task="1">
+            <div class="history-status status-completed">已完成</div>
+            <div class="history-type">
+                <i class="fas fa-certificate text-blue-600"></i>
+                初次认证审核
+                <span class="phase-tag phase-second">二阶段</span>
+            </div>
+            <div class="history-title">初次认证二阶段审核</div>
             <div class="history-meta">
                 <span><i class="far fa-calendar-alt"></i> 2024.04.15 - 2024.04.18</span>
                 <span><i class="fas fa-user-tie"></i> 武荣刚</span>
             </div>
         </div>
-        
-        <div class="history-card" onclick="switchHistoryTask(1, this)" data-task="1">
+
+        <div class="history-card" onclick="switchHistoryTask(2, this)" data-task="2">
             <div class="history-status status-completed">已完成</div>
             <div class="history-type">
                 <i class="fas fa-redo text-orange-600"></i>
                 第一次监督审核
+                <span class="phase-tag phase-first">一阶段</span>
             </div>
-            <div class="history-title">北京市地铁运营有限公司监督一</div>
+            <div class="history-title">监督一一阶段审核</div>
+            <div class="history-meta">
+                <span><i class="far fa-calendar-alt"></i> 2025.04.08 - 2025.04.09</span>
+                <span><i class="fas fa-user-tie"></i> 张伟</span>
+            </div>
+        </div>
+
+        <div class="history-card" onclick="switchHistoryTask(3, this)" data-task="3">
+            <div class="history-status status-completed">已完成</div>
+            <div class="history-type">
+                <i class="fas fa-redo text-orange-600"></i>
+                第一次监督审核
+                <span class="phase-tag phase-second">二阶段</span>
+            </div>
+            <div class="history-title">监督一二阶段审核</div>
             <div class="history-meta">
                 <span><i class="far fa-calendar-alt"></i> 2025.04.10 - 2025.04.12</span>
                 <span><i class="fas fa-user-tie"></i> 张伟</span>
             </div>
         </div>
-        
-        <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; color: #6b7280; font-size: 13px; background: #f9fafb; padding: 12px 16px; border-radius: 8px; border: 1px dashed #d1d5db;">
+
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; color: #6b7280; font-size: 13px; background: #f9fafb; padding: 12px 16px; border-radius: 8px; border: 1px dashed #d1d5db; flex-shrink: 0;">
             <i class="fas fa-info-circle text-blue-500"></i>
-            <span>点击卡片切换历史审核任务，下方展示该任务的实施记录、整改记录和审核报告</span>
+            <span>点击卡片切换历史审核任务</span>
         </div>
     </div>
 
     <!-- 内容区Tab -->
-    <div class="content-tabs">
+    <div class="content-tabs" id="contentTabs">
         <div class="content-tab active" onclick="switchContentTab('implement', this)">
             <i class="fas fa-tasks"></i>
             审核实施记录
         </div>
-        <div class="content-tab" onclick="switchContentTab('rectify', this)">
+        <div class="content-tab" onclick="switchContentTab('rectify', this)" id="tabRectify">
             <i class="fas fa-wrench"></i>
             整改记录
         </div>
@@ -617,7 +752,7 @@
 
     <!-- 主内容区 -->
     <div class="main-content">
-        
+
         <!-- ==================== 审核实施记录 ==================== -->
         <div id="content-implement" class="module-content active">
             <div class="readonly-banner">
@@ -635,53 +770,7 @@
                     </div>
                     <span class="badge badge-green"><i class="fas fa-check-circle"></i> 已完成</span>
                 </div>
-                <div class="card-body">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
-                        <div>
-                            <span class="form-label">会议日期</span>
-                            <div class="form-readonly">2024-04-15</div>
-                        </div>
-                        <div>
-                            <span class="form-label">开始时间</span>
-                            <div class="form-readonly">09:00</div>
-                        </div>
-                        <div>
-                            <span class="form-label">结束时间</span>
-                            <div class="form-readonly">09:30</div>
-                        </div>
-                    </div>
-
-                    <div class="notice-box notice-green">
-                        <div class="notice-title">
-                            <i class="fas fa-exclamation-circle"></i>
-                            首次会议注意事项确认项
-                        </div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 介绍审核组成员及分工，确认审核计划安排</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 确认审核目的、范围、准则及审核程序</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 确认审核组与受审核方之间的沟通渠道</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 确认审核组所需的资源和设施已齐备</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 确认保密事宜及信息安全事项</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 确认陪同人员安排及向导职责</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 确认审核期间的安全事项和应急程序</div>
-                    </div>
-
-                    <div style="margin-top: 20px;">
-                        <span class="form-label">首次会议签到表扫描件</span>
-                        <div class="attachment-item" style="max-width: 400px;">
-                            <div class="attachment-icon"><i class="fas fa-file-pdf"></i></div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 500; color: #15803d;">首次会议签到表.pdf</div>
-                                <div style="font-size: 12px; color: #6b7280;">856 KB · 2024-04-15上传</div>
-                            </div>
-                            <i class="fas fa-check-circle text-green-500"></i>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 20px;">
-                        <span class="form-label">首次会议记录摘要</span>
-                        <div class="form-readonly textarea">首次会议于上午9:00准时召开，审核组长武荣刚介绍了审核组成员及分工，确认了审核计划安排。双方就审核目的、范围、准则达成一致，确认了沟通渠道和保密事宜。受审核方表示将全力配合审核工作，已安排专人全程陪同。</div>
-                    </div>
-                </div>
+                <div class="card-body" id="implement-first-meeting"></div>
             </div>
 
             <!-- 现场审核 -->
@@ -710,9 +799,7 @@
                                 <th style="width: 140px;">提交时间</th>
                             </tr>
                         </thead>
-                        <tbody id="implementTableBody">
-                            <!-- 动态填充 -->
-                        </tbody>
+                        <tbody id="implementTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -726,58 +813,11 @@
                     </div>
                     <span class="badge badge-green"><i class="fas fa-check-circle"></i> 已完成</span>
                 </div>
-                <div class="card-body">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
-                        <div>
-                            <span class="form-label">会议日期</span>
-                            <div class="form-readonly">2024-04-18</div>
-                        </div>
-                        <div>
-                            <span class="form-label">开始时间</span>
-                            <div class="form-readonly">16:00</div>
-                        </div>
-                        <div>
-                            <span class="form-label">结束时间</span>
-                            <div class="form-readonly">17:00</div>
-                        </div>
-                    </div>
-
-                    <div class="notice-box notice-blue">
-                        <div class="notice-title">
-                            <i class="fas fa-exclamation-circle"></i>
-                            末次会议注意事项确认项
-                        </div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 感谢受审核方的配合与支持</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 重申审核的抽样性质及局限性</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 报告审核发现，包括符合项和不符合项</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 确认不符合项的分类及后续整改要求</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 报告审核结论及推荐意见</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 说明审核后续活动安排及时间安排</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 就审核证据与受审核方达成一致意见</div>
-                        <div class="notice-item"><i class="fas fa-check-circle"></i> 受审核方对审核结果的意见反馈</div>
-                    </div>
-
-                    <div style="margin-top: 20px;">
-                        <span class="form-label">末次会议签到表扫描件</span>
-                        <div class="attachment-item" style="max-width: 400px;">
-                            <div class="attachment-icon"><i class="fas fa-file-pdf"></i></div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 500; color: #15803d;">末次会议签到表.pdf</div>
-                                <div style="font-size: 12px; color: #6b7280;">920 KB · 2024-04-18上传</div>
-                            </div>
-                            <i class="fas fa-check-circle text-green-500"></i>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 20px;">
-                        <span class="form-label">末次会议记录摘要</span>
-                        <div class="form-readonly textarea">末次会议于下午16:00召开，审核组长报告了审核发现：2项轻微不符合项（环境因素识别不充分、危险源辨识不完整），1项手动添加问题（应急演练记录不完整），2项观察项。宣布了推荐意见：在不符合项整改完成后，推荐颁发认证证书。受审核方对审核结果无异议，承诺将在30日内完成整改。</div>
-                    </div>
-                </div>
+                <div class="card-body" id="implement-last-meeting"></div>
             </div>
         </div>
 
-        <!-- ==================== 整改记录 ==================== -->
+        <!-- ==================== 整改记录（一阶段） ==================== -->
         <div id="content-rectify" class="module-content">
             <div class="readonly-banner">
                 <i class="fas fa-lock text-gray-400"></i>
@@ -793,70 +833,7 @@
                     </div>
                     <span class="badge badge-green"><i class="fas fa-check-circle"></i> 整改已完成</span>
                 </div>
-                <div class="card-body">
-                    <div style="margin-bottom: 20px; padding: 12px 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #15803d; font-size: 13px; display: flex; align-items: center; gap: 8px;">
-                        <i class="fas fa-check-double"></i>
-                        <span>所有需整改问题已审核通过，整改流程已完成</span>
-                        <span style="margin-left: auto;">确认时间：2024-04-20 14:30</span>
-                    </div>
-
-                    <!-- 问题1 -->
-                    <div class="problem-card">
-                        <div class="problem-header">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="record-badge auto"><i class="fas fa-link"></i> CR-20240415-001</span>
-                                <span>环境因素识别不充分</span>
-                            </div>
-                            <span class="badge badge-green">已通过</span>
-                        </div>
-                        <div style="margin-bottom: 10px;">
-                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">问题描述</div>
-                            <div style="color: #374151; line-height: 1.6;">组织的环境因素识别不充分，未包含新开通线路的环境影响评价。</div>
-                        </div>
-                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px;">
-                            <div style="font-size: 12px; color: #15803d; margin-bottom: 4px; font-weight: 600;"><i class="fas fa-check-circle"></i> 整改情况</div>
-                            <div style="color: #374151; line-height: 1.6;">已补充新开通线路的环境影响评价报告，更新了环境因素识别清单，并重新进行了环境因素评价。相关文件已提交审核组确认。</div>
-                        </div>
-                    </div>
-
-                    <!-- 问题2 -->
-                    <div class="problem-card">
-                        <div class="problem-header">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="record-badge auto"><i class="fas fa-link"></i> CR-20240416-002</span>
-                                <span>危险源辨识不完整</span>
-                            </div>
-                            <span class="badge badge-green">已通过</span>
-                        </div>
-                        <div style="margin-bottom: 10px;">
-                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">问题描述</div>
-                            <div style="color: #374151; line-height: 1.6;">危险源辨识缺少对地铁施工期间交叉作业的风险评估。</div>
-                        </div>
-                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px;">
-                            <div style="font-size: 12px; color: #15803d; margin-bottom: 4px; font-weight: 600;"><i class="fas fa-check-circle"></i> 整改情况</div>
-                            <div style="color: #374151; line-height: 1.6;">已完成地铁施工期间交叉作业的风险评估，制定了专项安全管理方案，并对相关人员进行了培训。风险评估报告已归档。</div>
-                        </div>
-                    </div>
-
-                    <!-- 问题3 -->
-                    <div class="problem-card">
-                        <div class="problem-header">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="record-badge manual"><i class="fas fa-edit"></i> 手动添加</span>
-                                <span>应急演练记录不完整</span>
-                            </div>
-                            <span class="badge badge-green">已通过</span>
-                        </div>
-                        <div style="margin-bottom: 10px;">
-                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">问题描述</div>
-                            <div style="color: #374151; line-height: 1.6;">应急预案演练记录不完整，缺少2024年第一季度演练记录。</div>
-                        </div>
-                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px;">
-                            <div style="font-size: 12px; color: #15803d; margin-bottom: 4px; font-weight: 600;"><i class="fas fa-check-circle"></i> 整改情况</div>
-                            <div style="color: #374151; line-height: 1.6;">已补充2024年第一季度应急演练记录，包括演练方案、现场照片和总结报告。演练覆盖了火灾应急和列车故障应急两个场景。</div>
-                        </div>
-                    </div>
-                </div>
+                <div class="card-body" id="rectifyContainer"></div>
             </div>
 
             <div class="section-card">
@@ -874,18 +851,29 @@
                                 <th>关注内容</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td style="text-align: center; color: #6b7280; font-weight: 600;">1</td>
-                                <td>建议关注员工心理健康管理，特别是高压岗位（如调度员、司机）的心理疏导机制建立情况。</td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: center; color: #6b7280; font-weight: 600;">2</td>
-                                <td>建议完善供应商管理体系，特别是对关键零部件供应商（如信号系统、车辆零部件）的二方审核频次和深度。</td>
-                            </tr>
-                        </tbody>
+                        <tbody id="rectifyOthersTable"></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- ==================== 不符合项报告（二阶段） ==================== -->
+        <div id="content-ncr" class="module-content">
+            <div class="readonly-banner">
+                <i class="fas fa-lock text-gray-400"></i>
+                <span>以下数据为历史不符合项报告，仅支持查看，不可编辑</span>
+                <span style="margin-left: auto; font-size: 12px; color: #9ca3af;">数据来源：不符合项整改跟踪</span>
+            </div>
+
+            <div class="section-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-clipboard-list text-orange-500"></i>
+                        不符合项清单
+                    </div>
+                    <span class="badge badge-green" id="ncrSummaryBadge"><i class="fas fa-check-circle"></i> 整改已完成</span>
+                </div>
+                <div class="card-body" id="ncrContainer"></div>
             </div>
         </div>
 
@@ -898,36 +886,620 @@
             </div>
 
             <div class="section-card">
-                <div class="card-body">
-                    <!-- 报告头部 -->
+                <div class="card-body" id="reportContainer"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 核查记录详情弹窗（只读） -->
+    <div class="modal-overlay" id="verificationModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-clipboard-check text-blue-500"></i>
+                    核查记录详情 - <span id="modalAuditorName"></span>
+                </div>
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // ========== 假数据 ==========
+
+        const historyData = [
+            {
+                // 0: 初次认证一阶段
+                stage: 'first',
+                phase: '一阶段',
+                taskCode: 'RW-202403240001-YJ',
+                firstMeeting: {
+                    date: '2024-04-01',
+                    startTime: '09:00',
+                    endTime: '09:30',
+                    notices: ['介绍审核组成员及分工，确认审核计划安排', '确认审核目的、范围、准则及审核程序', '确认审核组与受审核方之间的沟通渠道', '确认审核组所需的资源和设施已齐备', '确认保密事宜及信息安全事项', '确认陪同人员安排及向导职责', '确认审核期间的安全事项和应急程序'],
+                    signFile: { name: '首次会议签到表.pdf', size: '856 KB', date: '2024-04-01' },
+                    summary: '首次会议于上午9:00准时召开，审核组长武荣刚介绍了审核组成员及分工，确认了审核计划安排。本次为一阶段审核，目的是收集客户管理体系范围内必要信息，评价客户基本情况和为管理体系策划、准备的情况，确定第二阶段审核的可行性和重点。双方就审核目的、范围、准则达成一致。'
+                },
+                lastMeeting: {
+                    date: '2024-04-02',
+                    startTime: '16:00',
+                    endTime: '16:30',
+                    notices: ['感谢受审核方的配合与支持', '重申审核的抽样性质及局限性', '报告一阶段审核发现的问题', '说明问题清单及整改要求', '确认整改完成时间', '说明二阶段审核的安排及重点', '就审核证据与受审核方达成一致意见', '受审核方对审核结果的意见反馈'],
+                    signFile: { name: '末次会议签到表.pdf', size: '780 KB', date: '2024-04-02' },
+                    summary: '末次会议于下午16:00召开，审核组长报告了一阶段审核发现：3项需整改问题（环境因素识别不充分、危险源辨识不完整、应急演练记录不完整）。宣布了审核结论：具备开展第二阶段审核的条件，但需在二阶段前完成整改。受审核方对审核结果无异议，承诺将在规定时间内完成整改。'
+                },
+                implement: [
+                    { name: '武荣刚', role: '组长', roleTag: 'tag-leader', dateRange: '2024-04-01 至 2024-04-02', sites: '中心职能', progress: 100, records: 2, conform: 1, observation: 0, minor: 0, serious: 0, status: 'confirmed', submitTime: '2024-04-02 17:00:00' },
+                    { name: '王洪伟', role: '组员', roleTag: 'tag-member', dateRange: '2024-04-01', sites: '中心职能', progress: 100, records: 1, conform: 1, observation: 0, minor: 0, serious: 0, status: 'confirmed', submitTime: '2024-04-01 18:00:00' }
+                ],
+                verificationDetails: [
+                    { auditorName: '武荣刚', records: [
+                        { date: '2024-04-01', time: '09:30-12:00', content: '组织环境 4.1-4.4 / 领导作用 5.1-5.3', dept: '中心职能/管理层', record: '审核了公司管理体系的组织环境、领导作用和承诺相关内容。与总经理进行了访谈，了解了管理承诺、方针目标的建立与实施情况。查阅了相关文件化信息，包括内外部环境因素识别表、相关方需求和期望清单等。', decision: '符合', standard: 'GB/T 19001-2016' },
+                        { date: '2024-04-02', time: '09:00-12:00', content: '文件化信息 7.5 / 运行策划 8.1', dept: '中心职能', record: '审核了管理体系文件化信息的充分性和适宜性，检查了质量手册、程序文件及作业指导书。对运行策划和控制过程进行了初步了解。', decision: '符合', standard: 'GB/T 19001-2016' }
+                    ]},
+                    { auditorName: '王洪伟', records: [
+                        { date: '2024-04-01', time: '14:00-17:00', content: '环境因素识别 6.1.2 / 法律法规 6.1.3', dept: '环保部门', record: '审核了环境管理体系的环境因素识别过程和适用法律法规识别情况，检查了环境因素识别表、环境影响评价记录及法律法规清单。', decision: '符合', standard: 'GB/T 24001-2016' }
+                    ]}
+                ],
+                rectify: {
+                    completed: true,
+                    confirmTime: '2024-04-10 14:30',
+                    issues: [
+                        { no: 'CR-20240401-001', type: 'auto', title: '环境因素识别不充分', desc: '组织的环境因素识别不充分，未包含新开通线路的环境影响评价。抽查2024年1月新开通的16号线北段，未提供相应的环境影响评价记录。', rectify: '已补充新开通线路的环境影响评价报告，更新了环境因素识别清单，并重新进行了环境因素评价。相关文件已提交审核组确认。', time: '2024/4/10 14:30' },
+                        { no: 'CR-20240401-002', type: 'auto', title: '危险源辨识不完整', desc: '危险源辨识缺少对地铁施工期间交叉作业的风险评估。抽查2024年2月施工记录，未提供交叉作业风险评估。', rectify: '已完成地铁施工期间交叉作业的风险评估，制定了专项安全管理方案，并对相关人员进行了培训。风险评估报告已归档。', time: '2024/4/10 14:30' },
+                        { no: 'CR-20240402-003', type: 'manual', title: '应急演练记录不完整', desc: '应急预案演练记录不完整，缺少2024年第一季度演练记录。', rectify: '已补充2024年第一季度应急演练记录，包括演练方案、现场照片和总结报告。演练覆盖了火灾应急和列车故障应急两个场景。', time: '2024/4/10 14:30' }
+                    ],
+                    others: [
+                        '建议关注员工心理健康管理，特别是高压岗位（如调度员、司机）的心理疏导机制建立情况。',
+                        '建议完善供应商管理体系，特别是对关键零部件供应商（如信号系统、车辆零部件）的二方审核频次和深度。'
+                    ]
+                },
+                report: {
+                    code: 'RW-202403240001-YJ',
+                    type: '初次认证一阶段',
+                    conclusion: '具备二阶段条件',
+                    date: '2024年4月5日',
+                    isFirstStage: true
+                }
+            },
+            {
+                // 1: 初次认证二阶段
+                stage: 'second',
+                phase: '二阶段',
+                taskCode: 'RW-202403240001-EJ',
+                firstMeeting: {
+                    date: '2024-04-15',
+                    startTime: '09:00',
+                    endTime: '09:30',
+                    notices: ['介绍审核组成员及分工，确认审核计划安排', '确认审核目的、范围、准则及审核程序', '确认审核组与受审核方之间的沟通渠道', '确认审核组所需的资源和设施已齐备', '确认保密事宜及信息安全事项', '确认陪同人员安排及向导职责', '确认审核期间的安全事项和应急程序'],
+                    signFile: { name: '首次会议签到表.pdf', size: '856 KB', date: '2024-04-15' },
+                    summary: '首次会议于上午9:00准时召开，审核组长武荣刚介绍了审核组成员及分工，确认了审核计划安排。双方就审核目的、范围、准则达成一致，确认了沟通渠道和保密事宜。受审核方表示将全力配合审核工作，已安排专人全程陪同。一阶段问题已全部整改完成。'
+                },
+                lastMeeting: {
+                    date: '2024-04-18',
+                    startTime: '16:00',
+                    endTime: '17:00',
+                    notices: ['感谢受审核方的配合与支持', '重申审核的抽样性质及局限性', '报告审核发现，包括符合项和不符合项', '确认不符合项的分类及后续整改要求', '报告审核结论及推荐意见', '说明审核后续活动安排及时间安排', '就审核证据与受审核方达成一致意见', '受审核方对审核结果的意见反馈'],
+                    signFile: { name: '末次会议签到表.pdf', size: '920 KB', date: '2024-04-18' },
+                    summary: '末次会议于下午16:00召开，审核组长报告了审核发现：2项轻微不符合项（环境因素识别不充分、危险源辨识不完整），1项手动添加问题（应急演练记录不完整），2项观察项。宣布了推荐意见：在不符合项整改完成后，推荐颁发认证证书。受审核方对审核结果无异议，承诺将在30日内完成整改。'
+                },
+                implement: [
+                    { name: '武荣刚', role: '组长', roleTag: 'tag-leader', dateRange: '2024-04-15 至 2024-04-18', sites: '中心职能、场所1、场所2', progress: 100, records: 4, conform: 2, observation: 1, minor: 1, serious: 0, status: 'confirmed', submitTime: '2024-04-18 17:30:00' },
+                    { name: '王洪伟', role: '组员', roleTag: 'tag-member', dateRange: '2024-04-15 至 2024-04-16', sites: '场所1', progress: 100, records: 1, conform: 1, observation: 0, minor: 0, serious: 0, status: 'confirmed', submitTime: '2024-04-16 17:45:00' },
+                    { name: '李战', role: '组员', roleTag: 'tag-member', dateRange: '2024-04-17 至 2024-04-18', sites: '场所2', progress: 100, records: 1, conform: 0, observation: 0, minor: 1, serious: 0, status: 'confirmed', submitTime: '2024-04-18 16:20:00' },
+                    { name: '赵强', role: '组员', roleTag: 'tag-member', dateRange: '2024-04-17', sites: '中心职能', progress: 100, records: 1, conform: 0, observation: 1, minor: 0, serious: 0, status: 'confirmed', submitTime: '2024-04-17 19:20:00' }
+                ],
+                verificationDetails: [
+                    { auditorName: '武荣刚', records: [
+                        { date: '2024-04-15', time: '09:00-12:00', content: '组织环境 4.1-4.4', dept: '中心职能/管理层', record: '审核了公司管理体系的组织环境相关内容，与总经理进行了访谈，了解了管理承诺、方针目标的建立与实施情况。查阅了相关文件化信息，包括内外部环境因素识别表、相关方需求和期望清单等。', decision: '符合', standard: 'GB/T 19001-2016' },
+                        { date: '2024-04-15', time: '14:00-17:00', content: '领导作用和承诺 5.1-5.3', dept: '中心职能', record: '审核了管理层的领导作用和承诺，包括质量方针的制定与沟通、组织角色职责权限的确定。与部门负责人进行了访谈，检查了管理评审记录。', decision: '符合', standard: 'GB/T 19001-2016' },
+                        { date: '2024-04-16', time: '09:00-12:00', content: '环境因素识别 6.1.2', dept: '场所1/生产部门', record: '审核了生产现场的环境因素识别与评价过程，检查了重要环境因素清单及控制措施。现场查看了污染物排放控制情况，相关环保设施运行正常。', decision: '观察项', standard: 'GB/T 24001-2016' },
+                        { date: '2024-04-17', time: '09:00-12:00', content: '危险源辨识 6.1.2', dept: '场所2/安全管理部门', record: '审核了职业健康安全管理体系的危险源辨识、风险评价和控制措施的确定。检查了安全操作规程、应急预案及演练记录。现场查看了安全防护设施配置情况。', decision: '轻微不符合', standard: 'GB/T 45001-2020', ncFact: '未提供2024年第一季度安全演练记录，无法证实应急预案的有效性验证。', ncClause: 'GB/T 45001-2020 8.2' }
+                    ]},
+                    { auditorName: '王洪伟', records: [
+                        { date: '2024-04-15', time: '09:00-12:00', content: '环境因素识别 6.1.2', dept: '环保部门', record: '审核了环境管理体系的环境因素识别过程，检查了环境因素识别表、环境影响评价记录。', decision: '符合', standard: 'GB/T 24001-2016' }
+                    ]},
+                    { auditorName: '李战', records: [
+                        { date: '2024-04-17', time: '09:00-12:00', content: '职业健康安全风险识别 6.1.2', dept: '安全管理部门', record: '审核了职业健康安全管理体系的危险源辨识、风险评价和控制措施的确定。', decision: '轻微不符合', standard: 'GB/T 45001-2020', ncFact: '部分岗位安全风险告知卡缺失', ncClause: 'GB/T 45001-2020 6.1.2' }
+                    ]},
+                    { auditorName: '赵强', records: [
+                        { date: '2024-04-17', time: '09:00-12:00', content: '运行策划和控制 8.1', dept: '运营管理部门', record: '审核了地铁运营服务的运行策划和控制过程，检查了调度指挥、客运服务、设备维护等关键过程的运行控制情况。', decision: '观察项', standard: 'GB/T 19001-2016' }
+                    ]}
+                ],
+                ncr: [
+                    { 
+                        id: 'NC-2024-001', 
+                        type: 'minor', 
+                        typeName: '轻微不符合',
+                        dept: '安全管理部门 / 职业健康安全运行控制',
+                        standard: 'GB/T 45001-2020 条款6.1.2',
+                        desc: '审核发现未对新设备操作岗位进行系统的危险源辨识。抽查2024年3月新投入使用的自动检票机维护岗位，未提供相应的危险源辨识记录。不符合GB/T 45001-2020标准6.1.2条款"组织应建立、实施和保持用于持续和主动的危险源辨识的过程"的要求。',
+                        submitter: '武荣刚',
+                        deadline: '2024-05-15',
+                        status: 'completed',
+                        statusName: '整改完成',
+                        cause: '设备更新后，安全管理部门未及时组织对新设备操作岗位进行危险源辨识，相关流程存在漏洞。',
+                        action: '1. 立即补充新设备操作岗位的危险源辨识记录；2. 修订《危险源辨识控制程序》，明确设备变更时的危险源辨识要求；3. 对相关人员进行培训。',
+                        confirmTime: '2024-05-10'
+                    },
+                    { 
+                        id: 'NC-2024-002', 
+                        type: 'minor', 
+                        typeName: '轻微不符合',
+                        dept: '运营管理部门 / 文件控制',
+                        standard: 'GB/T 19001-2016 条款7.5',
+                        desc: '审核发现现场作业指导书未更新，与实际操作不符。2024年3月修订的设备维护流程未在作业指导书中体现，现场使用的作业指导书版本为2023年旧版。不符合GB/T 19001-2016标准7.5条款"文件化信息应得到控制，以确保在需要的场合和时间均可获得并适合使用"的要求。',
+                        submitter: '武荣刚',
+                        deadline: '2024-05-15',
+                        status: 'completed',
+                        statusName: '整改完成',
+                        cause: '文件控制流程执行不到位，文件修订后未及时下发到现场，部门间沟通不畅。',
+                        action: '1. 更新所有现场作业指导书至最新版本；2. 建立文件变更通知机制，确保修订后24小时内下发到现场；3. 每月进行文件有效性检查。',
+                        confirmTime: '2024-05-12'
+                    }
+                ],
+                report: {
+                    code: 'RW-202403240001-EJ',
+                    type: '初次认证二阶段',
+                    conclusion: '推荐认证',
+                    date: '2024年4月20日',
+                    isFirstStage: false
+                }
+            },
+            {
+                // 2: 监督一一阶段
+                stage: 'first',
+                phase: '一阶段',
+                taskCode: 'RW-202504080001-YJ',
+                firstMeeting: {
+                    date: '2025-04-08',
+                    startTime: '08:30',
+                    endTime: '09:00',
+                    notices: ['介绍审核组成员及分工，确认审核计划安排', '确认审核目的、范围、准则及审核程序', '确认审核组与受审核方之间的沟通渠道', '确认审核组所需的资源和设施已齐备', '确认保密事宜及信息安全事项', '确认陪同人员安排及向导职责', '确认审核期间的安全事项和应急程序'],
+                    signFile: { name: '首次会议签到表.pdf', size: '760 KB', date: '2025-04-08' },
+                    summary: '首次会议于上午8:30召开，审核组长张伟介绍了审核组成员及分工。本次为第一次监督审核的一阶段，重点验证体系持续运行情况，确认监督审核的重点和范围。'
+                },
+                lastMeeting: {
+                    date: '2025-04-09',
+                    startTime: '15:30',
+                    endTime: '16:00',
+                    notices: ['感谢受审核方的配合与支持', '重申审核的抽样性质及局限性', '报告一阶段审核发现的问题', '说明问题清单及整改要求', '确认整改完成时间', '说明二阶段审核的安排及重点', '就审核证据与受审核方达成一致意见', '受审核方对审核结果的意见反馈'],
+                    signFile: { name: '末次会议签到表.pdf', size: '790 KB', date: '2025-04-09' },
+                    summary: '末次会议于下午15:30召开，审核组长报告了一阶段审核发现：1项需整改问题（内审记录不完整）。宣布了审核结论：具备开展二阶段审核的条件。受审核方承诺将在规定时间内完成整改。'
+                },
+                implement: [
+                    { name: '张伟', role: '组长', roleTag: 'tag-leader', dateRange: '2025-04-08 至 2025-04-09', sites: '中心职能', progress: 100, records: 2, conform: 1, observation: 0, minor: 0, serious: 0, status: 'confirmed', submitTime: '2025-04-09 16:30:00' },
+                    { name: '刘洋', role: '组员', roleTag: 'tag-member', dateRange: '2025-04-08', sites: '中心职能', progress: 100, records: 1, conform: 1, observation: 0, minor: 0, serious: 0, status: 'confirmed', submitTime: '2025-04-08 17:00:00' }
+                ],
+                verificationDetails: [
+                    { auditorName: '张伟', records: [
+                        { date: '2025-04-08', time: '09:00-12:00', content: '内审和管理评审 9.2/9.3', dept: '质量管理部', record: '审核了2024年度内审和管理评审记录，验证了初次认证不符合项整改的有效性。', decision: '符合', standard: 'GB/T 19001-2016' },
+                        { date: '2025-04-09', time: '09:00-12:00', content: '变更管理 6.3', dept: '中心职能', record: '审核了自上次审核以来组织的变更管理情况，包括人员变动、设备更新等。', decision: '符合', standard: 'GB/T 19001-2016' }
+                    ]},
+                    { auditorName: '刘洋', records: [
+                        { date: '2025-04-08', time: '14:00-17:00', content: '环境因素控制 8.1', dept: '环保部门', record: '审核了环境管理体系的持续运行情况，检查了环境因素控制措施的有效性。', decision: '符合', standard: 'GB/T 24001-2016' }
+                    ]}
+                ],
+                rectify: {
+                    completed: true,
+                    confirmTime: '2025-04-09 18:00',
+                    issues: [
+                        { no: 'CR-20250408-001', type: 'auto', title: '内审记录不完整', desc: '2025年第一季度内审记录缺少对环保部门的审核证据。抽查2025年1月内审计划，环保部门未被纳入审核范围。', rectify: '已补充对环保部门的内审记录，包括检查表、不符合项报告及整改验证记录。', time: '2025/4/09 18:00' }
+                    ],
+                    others: [
+                        '建议加强对新入职员工的安全培训记录管理。',
+                        '建议关注设备维护保养外包方的绩效评价记录更新。'
+                    ]
+                },
+                report: {
+                    code: 'RW-202504080001-YJ',
+                    type: '监督一一阶段',
+                    conclusion: '具备二阶段条件',
+                    date: '2025年4月9日',
+                    isFirstStage: true
+                }
+            },
+            {
+                // 3: 监督一二阶段
+                stage: 'second',
+                phase: '二阶段',
+                taskCode: 'RW-202504100001-EJ',
+                firstMeeting: {
+                    date: '2025-04-10',
+                    startTime: '08:30',
+                    endTime: '09:00',
+                    notices: ['介绍审核组成员及分工，确认审核计划安排', '确认审核目的、范围、准则及审核程序', '确认审核组与受审核方之间的沟通渠道', '确认审核组所需的资源和设施已齐备', '确认保密事宜及信息安全事项', '确认陪同人员安排及向导职责', '确认审核期间的安全事项和应急程序'],
+                    signFile: { name: '首次会议签到表.pdf', size: '780 KB', date: '2025-04-10' },
+                    summary: '首次会议于上午8:30召开，审核组长张伟介绍了审核组成员及分工。本次为第一次监督审核的二阶段，重点验证初次认证不符合项整改的有效性，以及体系持续运行情况。一阶段问题已全部整改完成。'
+                },
+                lastMeeting: {
+                    date: '2025-04-12',
+                    startTime: '15:30',
+                    endTime: '16:30',
+                    notices: ['感谢受审核方的配合与支持', '重申审核的抽样性质及局限性', '报告审核发现，包括符合项和不符合项', '确认不符合项的分类及后续整改要求', '报告审核结论及推荐意见', '说明审核后续活动安排及时间安排', '就审核证据与受审核方达成一致意见', '受审核方对审核结果的意见反馈'],
+                    signFile: { name: '末次会议签到表.pdf', size: '810 KB', date: '2025-04-12' },
+                    summary: '末次会议于下午15:30召开，审核组长报告了监督审核发现：1项轻微不符合项（内审记录不完整）。上次不符合项整改经验证有效。建议继续保持认证资格。受审核方对审核结果无异议，承诺将在规定时间内完成整改。'
+                },
+                implement: [
+                    { name: '张伟', role: '组长', roleTag: 'tag-leader', dateRange: '2025-04-10 至 2025-04-12', sites: '中心职能、1号线、2号线', progress: 100, records: 3, conform: 2, observation: 1, minor: 0, serious: 0, status: 'confirmed', submitTime: '2025-04-12 16:00:00' },
+                    { name: '刘洋', role: '组员', roleTag: 'tag-member', dateRange: '2025-04-10 至 2025-04-11', sites: '1号线', progress: 100, records: 2, conform: 2, observation: 0, minor: 0, serious: 0, status: 'confirmed', submitTime: '2025-04-11 18:00:00' },
+                    { name: '陈静', role: '组员', roleTag: 'tag-member', dateRange: '2025-04-11 至 2025-04-12', sites: '2号线', progress: 100, records: 1, conform: 0, observation: 1, minor: 0, serious: 0, status: 'confirmed', submitTime: '2025-04-12 15:30:00' }
+                ],
+                verificationDetails: [
+                    { auditorName: '张伟', records: [
+                        { date: '2025-04-10', time: '09:00-12:00', content: '内审和管理评审 9.2/9.3', dept: '质量管理部', record: '审核了2024年度内审和管理评审记录，验证了初次认证不符合项整改的有效性。', decision: '符合', standard: 'GB/T 19001-2016' },
+                        { date: '2025-04-11', time: '09:00-12:00', content: '运行策划和控制 8.1', dept: '运营管理部门', record: '审核了地铁运营服务的持续运行情况，检查了调度指挥、客运服务等关键过程。', decision: '符合', standard: 'GB/T 19001-2016' },
+                        { date: '2025-04-12', time: '09:00-12:00', content: '持续改进 10.3', dept: '中心职能', record: '审核了组织的持续改进机制，包括纠正措施的实施情况和改进项目的推进情况。', decision: '观察项', standard: 'GB/T 19001-2016' }
+                    ]},
+                    { auditorName: '刘洋', records: [
+                        { date: '2025-04-10', time: '09:00-12:00', content: '环境因素控制 8.1', dept: '1号线/环保部门', record: '审核了1号线运营现场的环境因素控制情况，检查了能源消耗、废弃物管理等。', decision: '符合', standard: 'GB/T 24001-2016' },
+                        { date: '2025-04-11', time: '14:00-17:00', content: '应急准备和响应 8.2', dept: '1号线/安全管理部门', record: '审核了1号线的应急准备和响应措施，检查了应急预案演练记录。', decision: '符合', standard: 'GB/T 45001-2020' }
+                    ]},
+                    { auditorName: '陈静', records: [
+                        { date: '2025-04-11', time: '09:00-12:00', content: '危险源控制 8.1.3', dept: '2号线/安全管理部门', record: '审核了2号线运营现场的危险源控制情况，检查了安全防护设施配置。', decision: '观察项', standard: 'GB/T 45001-2020' }
+                    ]}
+                ],
+                ncr: [
+                    { 
+                        id: 'NC-2025-001', 
+                        type: 'minor', 
+                        typeName: '轻微不符合',
+                        dept: '质量管理部门 / 内部审核',
+                        standard: 'GB/T 19001-2016 条款9.2',
+                        desc: '审核发现2025年第一季度内审记录缺少对环保部门的审核证据。抽查2025年1月内审计划，环保部门未被纳入审核范围，但环保部门属于体系覆盖范围。不符合GB/T 19001-2016标准9.2条款"组织应按策划的时间间隔进行内部审核"的要求，审核范围未覆盖全部要求。',
+                        submitter: '张伟',
+                        deadline: '2025-05-10',
+                        status: 'completed',
+                        statusName: '整改完成',
+                        cause: '内审策划时遗漏了环保部门，审核人员对内审范围的理解存在偏差。',
+                        action: '1. 补充对环保部门的专项内审；2. 修订《内部审核控制程序》，增加审核范围检查清单；3. 对内审员进行再培训。',
+                        confirmTime: '2025-05-05'
+                    }
+                ],
+                report: {
+                    code: 'RW-202504100001-EJ',
+                    type: '第一次监督审核',
+                    conclusion: '保持认证',
+                    date: '2025年4月15日',
+                    isFirstStage: false
+                }
+            }
+        ];
+
+        let currentTaskIndex = 0;
+        let currentTabType = 'implement';
+
+        // ========== 切换历史任务 ==========
+
+        function switchHistoryTask(index, element) {
+            currentTaskIndex = index;
+
+            document.querySelectorAll('.history-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            element.classList.add('active');
+
+            // 更新Tab栏（一阶段显示整改记录，二阶段显示不符合项报告）
+            updateTabs();
+
+            // 重置到第一个Tab
+            currentTabType = 'implement';
+            document.querySelectorAll('.content-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector('.content-tab').classList.add('active');
+
+            document.querySelectorAll('.module-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById('content-implement').classList.add('active');
+
+            renderImplement();
+
+            const taskNames = ['初次认证一阶段', '初次认证二阶段', '监督一一阶段', '监督一二阶段'];
+            showToast(`已切换至：${taskNames[index]}`, 'success');
+        }
+
+        // ========== 更新Tab栏 ==========
+
+        function updateTabs() {
+            const data = historyData[currentTaskIndex];
+            const tabsContainer = document.getElementById('contentTabs');
+
+            if (data.stage === 'first') {
+                tabsContainer.innerHTML = `
+                    <div class="content-tab active" onclick="switchContentTab('implement', this)">
+                        <i class="fas fa-tasks"></i> 审核实施记录
+                    </div>
+                    <div class="content-tab" onclick="switchContentTab('rectify', this)">
+                        <i class="fas fa-wrench"></i> 整改记录
+                    </div>
+                    <div class="content-tab" onclick="switchContentTab('report', this)">
+                        <i class="fas fa-file-alt"></i> 审核报告
+                    </div>
+                `;
+            } else {
+                tabsContainer.innerHTML = `
+                    <div class="content-tab active" onclick="switchContentTab('implement', this)">
+                        <i class="fas fa-tasks"></i> 审核实施记录
+                    </div>
+                    <div class="content-tab" onclick="switchContentTab('ncr', this)">
+                        <i class="fas fa-exclamation-triangle"></i> 不符合项报告
+                    </div>
+                    <div class="content-tab" onclick="switchContentTab('report', this)">
+                        <i class="fas fa-file-alt"></i> 审核报告
+                    </div>
+                `;
+            }
+        }
+
+        // ========== 切换内容Tab ==========
+
+        function switchContentTab(type, element) {
+            currentTabType = type;
+
+            document.querySelectorAll('.content-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            element.classList.add('active');
+
+            document.querySelectorAll('.module-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            const contentId = type === 'ncr' ? 'content-ncr' : 'content-' + type;
+            document.getElementById(contentId).classList.add('active');
+
+            if (type === 'implement') renderImplement();
+            else if (type === 'rectify') renderRectify();
+            else if (type === 'ncr') renderNcr();
+            else if (type === 'report') renderReport();
+        }
+
+        // ========== 渲染实施记录 ==========
+
+        function renderImplement() {
+            const data = historyData[currentTaskIndex];
+
+            // 首次会议
+            const firstContainer = document.getElementById('implement-first-meeting');
+            firstContainer.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <div>
+                        <span class="form-label">会议日期</span>
+                        <div class="form-readonly">${data.firstMeeting.date}</div>
+                    </div>
+                    <div>
+                        <span class="form-label">开始时间</span>
+                        <div class="form-readonly">${data.firstMeeting.startTime}</div>
+                    </div>
+                    <div>
+                        <span class="form-label">结束时间</span>
+                        <div class="form-readonly">${data.firstMeeting.endTime}</div>
+                    </div>
+                </div>
+                <div class="notice-box notice-green">
+                    <div class="notice-title"><i class="fas fa-exclamation-circle"></i> 首次会议注意事项确认项</div>
+                    ${data.firstMeeting.notices.map(n => `<div class="notice-item"><i class="fas fa-check-circle"></i> ${n}</div>`).join('')}
+                </div>
+                <div style="margin-top: 20px;">
+                    <span class="form-label">首次会议签到表扫描件</span>
+                    <div class="attachment-item" style="max-width: 400px;">
+                        <div class="attachment-icon"><i class="fas fa-file-pdf"></i></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; color: #15803d;">${data.firstMeeting.signFile.name}</div>
+                            <div style="font-size: 12px; color: #6b7280;">${data.firstMeeting.signFile.size} · ${data.firstMeeting.signFile.date}上传</div>
+                        </div>
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <span class="form-label">首次会议记录摘要</span>
+                    <div class="form-readonly textarea">${data.firstMeeting.summary}</div>
+                </div>
+            `;
+
+            // 末次会议
+            const lastContainer = document.getElementById('implement-last-meeting');
+            lastContainer.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <div>
+                        <span class="form-label">会议日期</span>
+                        <div class="form-readonly">${data.lastMeeting.date}</div>
+                    </div>
+                    <div>
+                        <span class="form-label">开始时间</span>
+                        <div class="form-readonly">${data.lastMeeting.startTime}</div>
+                    </div>
+                    <div>
+                        <span class="form-label">结束时间</span>
+                        <div class="form-readonly">${data.lastMeeting.endTime}</div>
+                    </div>
+                </div>
+                <div class="notice-box notice-blue">
+                    <div class="notice-title"><i class="fas fa-exclamation-circle"></i> 末次会议注意事项确认项</div>
+                    ${data.lastMeeting.notices.map(n => `<div class="notice-item"><i class="fas fa-check-circle"></i> ${n}</div>`).join('')}
+                </div>
+                <div style="margin-top: 20px;">
+                    <span class="form-label">末次会议签到表扫描件</span>
+                    <div class="attachment-item" style="max-width: 400px;">
+                        <div class="attachment-icon"><i class="fas fa-file-pdf"></i></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; color: #15803d;">${data.lastMeeting.signFile.name}</div>
+                            <div style="font-size: 12px; color: #6b7280;">${data.lastMeeting.signFile.size} · ${data.lastMeeting.signFile.date}上传</div>
+                        </div>
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <span class="form-label">末次会议记录摘要</span>
+                    <div class="form-readonly textarea">${data.lastMeeting.summary}</div>
+                </div>
+            `;
+
+            // 现场审核表格
+            const tbody = document.getElementById('implementTableBody');
+            tbody.innerHTML = '';
+
+            data.implement.forEach((item, idx) => {
+                const tr = document.createElement('tr');
+
+                let statusBadge = '';
+                if (item.status === 'confirmed') statusBadge = '<span class="badge badge-green">已确认</span>';
+                else if (item.status === 'submitted') statusBadge = '<span class="badge badge-blue">已提交</span>';
+                else statusBadge = '<span class="badge badge-gray">未提交</span>';
+
+                tr.innerHTML = `
+                    <td class="font-medium" style="white-space: nowrap;">${item.name}</td>
+                    <td><span class="personnel-tag ${item.roleTag}">${item.role}</span></td>
+                    <td style="white-space: nowrap;">${item.dateRange}</td>
+                    <td>${item.sites}</td>
+                    <td>
+                        <div class="progress-bar-bg" style="margin-bottom: 4px;">
+                            <div class="progress-bar-fill" style="width: ${item.progress}%;"></div>
+                        </div>
+                        <div style="font-size: 11px; color: #6b7280;">${item.records}条记录</div>
+                    </td>
+                    <td style="text-align: center;">${item.conform > 0 ? `<span style="color: #15803d; font-weight: 600;">${item.conform}</span>` : '<span style="color: #9ca3af;">-</span>'}</td>
+                    <td style="text-align: center;">${item.observation > 0 ? `<span style="color: #92400e; font-weight: 600;">${item.observation}</span>` : '<span style="color: #9ca3af;">-</span>'}</td>
+                    <td style="text-align: center;">${item.minor > 0 ? `<span style="color: #dc2626; font-weight: 600;">${item.minor}</span>` : '<span style="color: #9ca3af;">-</span>'}</td>
+                    <td style="text-align: center;">${item.serious > 0 ? `<span style="color: #991b1b; font-weight: 600;">${item.serious}</span>` : '<span style="color: #9ca3af;">-</span>'}</td>
+                    <td>${statusBadge}</td>
+                    <td style="color: #6b7280; font-size: 12px; white-space: nowrap;">${item.submitTime}</td>
+                `;
+
+                tr.style.cursor = 'pointer';
+                tr.onclick = () => openVerificationModal(idx);
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ========== 渲染整改记录 ==========
+
+        function renderRectify() {
+            const data = historyData[currentTaskIndex];
+            const container = document.getElementById('rectifyContainer');
+            const othersTable = document.getElementById('rectifyOthersTable');
+
+            let issuesHtml = `
+                <div style="margin-bottom: 20px; padding: 12px 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #15803d; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-check-double"></i>
+                    <span>所有需整改问题已审核通过，整改流程已完成</span>
+                    <span style="margin-left: auto;">确认时间：${data.rectify.confirmTime}</span>
+                </div>
+            `;
+
+            data.rectify.issues.forEach(issue => {
+                issuesHtml += `
+                    <div class="problem-card">
+                        <div class="problem-header">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="record-badge ${issue.type === 'auto' ? 'auto' : 'manual'}">
+                                    <i class="fas ${issue.type === 'auto' ? 'fa-link' : 'fa-edit'}"></i> ${issue.no}
+                                </span>
+                                <span>${issue.title}</span>
+                            </div>
+                            <span class="badge badge-green">已通过</span>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">问题描述</div>
+                            <div style="color: #374151; line-height: 1.6;">${issue.desc}</div>
+                        </div>
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px;">
+                            <div style="font-size: 12px; color: #15803d; margin-bottom: 4px; font-weight: 600;"><i class="fas fa-check-circle"></i> 整改情况</div>
+                            <div style="color: #374151; line-height: 1.6;">${issue.rectify}</div>
+                            <div style="text-align: right; font-size: 12px; color: #6b7280; margin-top: 6px;">确认时间：${issue.time}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = issuesHtml;
+
+            othersTable.innerHTML = data.rectify.others.map((item, idx) => `
+                <tr>
+                    <td style="text-align: center; color: #6b7280; font-weight: 600;">${idx + 1}</td>
+                    <td>${item}</td>
+                </tr>
+            `).join('');
+        }
+
+        // ========== 渲染不符合项 ==========
+
+        function renderNcr() {
+            const data = historyData[currentTaskIndex];
+            const container = document.getElementById('ncrContainer');
+
+            document.getElementById('ncrSummaryBadge').innerHTML = `<i class="fas fa-check-circle"></i> ${data.ncr.length}项整改已完成`;
+
+            let html = '';
+            data.ncr.forEach((item, idx) => {
+                html += `
+                    <div class="ncr-card" onclick="openNcrDetail(${idx})">
+                        <div class="ncr-header">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="badge ${item.type === 'serious' ? 'badge-red' : 'badge-orange'}">${item.typeName}</span>
+                                <span style="font-family: monospace; font-size: 13px; color: #6b7280;">${item.id}</span>
+                            </div>
+                            <span class="badge badge-green"><i class="fas fa-check-circle"></i> ${item.statusName}</span>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <div style="display: flex; gap: 16px; margin-bottom: 8px; font-size: 12px; color: #6b7280;">
+                                <span><i class="fas fa-building text-gray-400"></i> ${item.dept}</span>
+                                <span><i class="fas fa-book text-gray-400"></i> ${item.standard}</span>
+                                <span><i class="fas fa-user text-gray-400"></i> ${item.submitter}</span>
+                            </div>
+                            <div style="color: #374151; line-height: 1.6;">${item.desc}</div>
+                        </div>
+                        <div style="display: flex; gap: 12px; font-size: 12px; color: #6b7280;">
+                            <span>整改期限：${item.deadline}</span>
+                            <span>确认时间：${item.confirmTime}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ========== 渲染审核报告 ==========
+
+        function renderReport() {
+            const data = historyData[currentTaskIndex];
+            const container = document.getElementById('reportContainer');
+
+            if (data.stage === 'first') {
+                // 一阶段报告
+                container.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb;">
                         <div>
                             <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">审核任务编码</div>
-                            <div style="font-family: monospace; font-weight: 700; font-size: 16px; color: #1e3a8a;">RW-202403240001</div>
+                            <div style="font-family: monospace; font-weight: 700; font-size: 16px; color: #1e3a8a;">${data.report.code}</div>
                         </div>
                         <div style="text-align: right;">
                             <div style="display: inline-flex; align-items: center; padding: 6px 16px; background: #dcfce7; color: #166534; border: 2px solid #86efac; border-radius: 20px; font-weight: 600; font-size: 14px;">
                                 <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
-                                一阶段审核完成
+                                ${data.report.conclusion}
                             </div>
-                            <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">报告提交日期：2024年4月20日</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">报告提交日期：${data.report.date}</div>
                         </div>
                     </div>
 
-                    <!-- 一、基本信息 -->
-                    <div class="report-section-title">
-                        <i class="fas fa-building" style="margin-right: 8px;"></i>一、基本信息
-                    </div>
+                    <div class="report-section-title"><i class="fas fa-building" style="margin-right: 8px;"></i>一、基本信息</div>
                     <div class="info-grid">
                         <div class="info-label">客户名称</div>
                         <div class="info-value" style="font-weight: 600; font-size: 15px;">北京市地铁运营有限公司</div>
-                        
                         <div class="info-label">地 址</div>
                         <div class="info-value">北京市西城区西直门外大街2号</div>
-                        
                         <div class="info-label">审核目的</div>
                         <div class="info-value">收集客户管理体系范围内必要信息，评价客户基本情况和为管理体系策划、准备的情况，确定第二阶段审核的可行性和重点。</div>
-                        
                         <div class="info-label">审核准则</div>
                         <div class="info-value">
                             <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
@@ -937,26 +1509,20 @@
                             </div>
                             <div style="font-size: 12px; color: #4b5563;">GB/T 19001-2016、GB/T 24001-2016、GB/T 45001-2020</div>
                         </div>
-                        
                         <div class="info-label">一阶段审核方式</div>
                         <div class="info-value"><span class="badge badge-green"><i class="fas fa-building" style="margin-right: 4px;"></i>现场审核</span></div>
-                        
                         <div class="info-label">审核日期区间</div>
-                        <div class="info-value">2024年4月15日 至 2024年4月18日</div>
-                        
+                        <div class="info-value">${data.firstMeeting.date} 至 ${data.lastMeeting.date}</div>
                         <div class="info-label">审核组</div>
                         <div class="info-value">
                             <div style="display: flex; gap: 16px;">
-                                <div><strong>组长：</strong>武荣刚</div>
-                                <div><strong>组员：</strong>王洪伟、李明</div>
+                                <div><strong>组长：</strong>${data.implement[0].name}</div>
+                                <div><strong>组员：</strong>${data.implement.slice(1).map(i => i.name).join('、')}</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 二、评价内容 -->
-                    <div class="report-section-title">
-                        <i class="fas fa-clipboard-list" style="margin-right: 8px;"></i>二、评价内容
-                    </div>
+                    <div class="report-section-title"><i class="fas fa-clipboard-list" style="margin-right: 8px;"></i>二、评价内容</div>
                     <table class="report-table">
                         <thead>
                             <tr>
@@ -999,10 +1565,7 @@
                         </tbody>
                     </table>
 
-                    <!-- 三、体系信息 -->
-                    <div class="report-section-title">
-                        <i class="fas fa-sitemap" style="margin-right: 8px;"></i>三、经确认的管理体系相关信息
-                    </div>
+                    <div class="report-section-title"><i class="fas fa-sitemap" style="margin-right: 8px;"></i>三、经确认的管理体系相关信息</div>
                     <div class="info-grid">
                         <div class="info-label">认证范围</div>
                         <div class="info-value">
@@ -1010,13 +1573,11 @@
                             <div style="margin-bottom: 6px;"><strong>EMS：</strong>城市轨道交通运营管理服务及相关管理活动</div>
                             <div><strong>OHSMS：</strong>城市轨道交通运营管理服务及相关管理活动</div>
                         </div>
-                        
                         <div class="info-label">管理体系范围内的场所</div>
                         <div class="info-value">
                             <div style="margin-bottom: 4px;"><strong>中心职能：</strong>北京市西城区西直门外大街2号</div>
                             <div><strong>多场所：</strong>北京市各运营线路站点（1号线、2号线、4号线等）</div>
                         </div>
-                        
                         <div class="info-label">外包过程</div>
                         <div class="info-value">
                             <div style="display: flex; flex-wrap: wrap; gap: 6px;">
@@ -1025,7 +1586,6 @@
                                 <span class="badge badge-orange">安保服务</span>
                             </div>
                         </div>
-                        
                         <div class="info-label">有效人数</div>
                         <div class="info-value">
                             <div style="display: grid; grid-template-columns: repeat(3, 100px); gap: 12px;">
@@ -1036,65 +1596,33 @@
                         </div>
                     </div>
 
-                    <!-- 四、问题清单 -->
-                    <div class="report-section-title">
-                        <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>四、问题清单
-                        <span class="badge badge-green" style="margin-left: 8px; font-size: 11px;">整改完成</span>
-                    </div>
-                    
+                    <div class="report-section-title"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>四、问题清单</div>
+
                     <div style="margin-bottom: 16px; font-weight: 600; color: #374151; font-size: 14px; display: flex; align-items: center; gap: 8px;">
                         <i class="fas fa-wrench text-orange-500"></i>
-                        需完成整改后方可进入第二阶段审核的问题
-                        <span style="margin-left: auto; font-size: 12px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 4px;">3项</span>
+                        需完成整改后方可进入下一阶段审核的问题
+                        <span style="margin-left: auto; font-size: 12px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 4px;">${data.rectify.issues.length}项</span>
                     </div>
 
-                    <div class="problem-card">
-                        <div class="problem-header">
-                            <span class="record-badge auto"><i class="fas fa-link"></i> CR-20240415-001</span>
-                            <span style="color: #6b7280; font-size: 12px; font-weight: 500;">环境因素识别不充分</span>
+                    ${data.rectify.issues.map((issue, idx) => `
+                        <div class="problem-card">
+                            <div class="problem-header">
+                                <span class="record-badge ${issue.type === 'auto' ? 'auto' : 'manual'}"><i class="fas ${issue.type === 'auto' ? 'fa-link' : 'fa-edit'}"></i> ${issue.no}</span>
+                                <span style="color: #6b7280; font-size: 12px; font-weight: 500;">${issue.title}</span>
+                            </div>
+                            <div style="font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 8px;">
+                                <strong>问题描述：</strong>${issue.desc}
+                            </div>
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; font-size: 13px; color: #15803d;">
+                                <strong><i class="fas fa-check-circle"></i> 整改情况：</strong>${issue.rectify}
+                                <div style="text-align: right; font-size: 12px; color: #6b7280; margin-top: 6px;">确认时间：${issue.time}</div>
+                            </div>
                         </div>
-                        <div style="font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 8px;">
-                            <strong>问题描述：</strong>组织的环境因素识别不充分，未包含新开通线路的环境影响评价。
-                        </div>
-                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; font-size: 13px; color: #15803d;">
-                            <strong><i class="fas fa-check-circle"></i> 整改情况：</strong>已补充新开通线路的环境影响评价报告，更新了环境因素识别清单。
-                            <div style="text-align: right; font-size: 12px; color: #6b7280; margin-top: 6px;">确认时间：2024/4/20 14:30</div>
-                        </div>
-                    </div>
+                    `).join('')}
 
-                    <div class="problem-card">
-                        <div class="problem-header">
-                            <span class="record-badge auto"><i class="fas fa-link"></i> CR-20240416-002</span>
-                            <span style="color: #6b7280; font-size: 12px; font-weight: 500;">危险源辨识不完整</span>
-                        </div>
-                        <div style="font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 8px;">
-                            <strong>问题描述：</strong>危险源辨识缺少对地铁施工期间交叉作业的风险评估。
-                        </div>
-                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; font-size: 13px; color: #15803d;">
-                            <strong><i class="fas fa-check-circle"></i> 整改情况：</strong>已完成地铁施工期间交叉作业的风险评估，制定了专项安全管理方案。
-                            <div style="text-align: right; font-size: 12px; color: #6b7280; margin-top: 6px;">确认时间：2024/4/20 14:30</div>
-                        </div>
-                    </div>
-
-                    <div class="problem-card">
-                        <div class="problem-header">
-                            <span class="record-badge manual"><i class="fas fa-edit"></i> 手动添加</span>
-                            <span style="color: #6b7280; font-size: 12px; font-weight: 500;">应急演练记录不完整</span>
-                        </div>
-                        <div style="font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 8px;">
-                            <strong>问题描述：</strong>应急预案演练记录不完整，缺少2024年第一季度演练记录。
-                        </div>
-                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; font-size: 13px; color: #15803d;">
-                            <strong><i class="fas fa-check-circle"></i> 整改情况：</strong>已补充2024年第一季度应急演练记录，包括演练方案、照片和总结报告。
-                            <div style="text-align: right; font-size: 12px; color: #6b7280; margin-top: 6px;">确认时间：2024/4/20 14:30</div>
-                        </div>
-                    </div>
-
-                    <!-- 五、审核结论 -->
                     <div style="margin-top: 24px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 20px;">
                         <div style="font-weight: 700; color: #1e3a8a; margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-                            <i class="fas fa-clipboard-check"></i>
-                            审核结论
+                            <i class="fas fa-clipboard-check"></i> 审核结论
                         </div>
                         <div style="color: #374151; line-height: 1.8; font-size: 13px;">
                             <p style="margin-bottom: 8px;">经一阶段现场审核确认，<strong>北京市地铁运营有限公司</strong>的质量、环境、职业健康安全管理体系：</p>
@@ -1106,20 +1634,19 @@
                             </ul>
                             <div style="display: flex; align-items: center; gap: 8px; color: #15803d; font-weight: 600; background: white; padding: 12px; border-radius: 6px; border: 1px solid #bbf7d0;">
                                 <i class="fas fa-check-circle" style="font-size: 18px;"></i>
-                                <span>具备开展第二阶段审核的条件，建议实施二阶段审核。</span>
+                                <span>具备开展下一阶段审核的条件，建议实施${data.phase === '一阶段' && data.taskCode.includes('YJ') ? '二阶段' : '后续'}审核。</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 签名区 -->
                     <div class="signature-area">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
                             <div>
                                 <div style="font-size: 13px; color: #4b5563; margin-bottom: 12px;">审核组长（签字）：</div>
                                 <div style="border-bottom: 2px solid #9ca3af; padding-bottom: 8px; height: 48px; display: flex; align-items: flex-end;">
-                                    <span style="font-family: cursive; font-size: 24px; color: #374151;">武荣刚</span>
+                                    <span style="font-family: cursive; font-size: 24px; color: #374151;">${data.implement[0].name}</span>
                                 </div>
-                                <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">日期：2024年4月18日</div>
+                                <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">日期：${data.lastMeeting.date}</div>
                             </div>
                             <div>
                                 <div style="font-size: 13px; color: #4b5563; margin-bottom: 12px;">审核派出机构意见：</div>
@@ -1136,16 +1663,13 @@
                         </div>
                     </div>
 
-                    <!-- 附件 -->
-                    <div class="report-section-title">
-                        <i class="fas fa-paperclip" style="margin-right: 8px;"></i>五、附件清单
-                    </div>
+                    <div class="report-section-title"><i class="fas fa-paperclip" style="margin-right: 8px;"></i>五、附件清单</div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                         <div class="attachment-item">
                             <div class="attachment-icon"><i class="fas fa-file-pdf"></i></div>
                             <div style="flex: 1;">
-                                <div style="font-weight: 500; font-size: 13px; color: #111827;">一阶段审核计划.pdf</div>
-                                <div style="font-size: 12px; color: #6b7280;">2.3 MB · 2024-04-10上传</div>
+                                <div style="font-weight: 500; font-size: 13px; color: #111827;">${data.phase}审核计划.pdf</div>
+                                <div style="font-size: 12px; color: #6b7280;">2.3 MB · ${data.firstMeeting.date}上传</div>
                             </div>
                             <i class="fas fa-check-circle text-green-500"></i>
                         </div>
@@ -1153,276 +1677,345 @@
                             <div class="attachment-icon"><i class="fas fa-file-pdf"></i></div>
                             <div style="flex: 1;">
                                 <div style="font-weight: 500; font-size: 13px; color: #111827;">首末次会议签到表.pdf</div>
-                                <div style="font-size: 12px; color: #6b7280;">856 KB · 2024-04-18上传</div>
-                            </div>
-                            <i class="fas fa-check-circle text-green-500"></i>
-                        </div>
-                        <div class="attachment-item">
-                            <div class="attachment-icon"><i class="fas fa-file-pdf"></i></div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 500; font-size: 13px; color: #111827;">不符合项整改证据.pdf</div>
-                                <div style="font-size: 12px; color: #6b7280;">3.2 MB · 2024-04-20上传</div>
+                                <div style="font-size: 12px; color: #6b7280;">${data.firstMeeting.signFile.size} · ${data.lastMeeting.date}上传</div>
                             </div>
                             <i class="fas fa-check-circle text-green-500"></i>
                         </div>
                     </div>
 
-                    <!-- 页脚 -->
                     <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #d1d5db; text-align: center; font-size: 12px; color: #9ca3af; line-height: 1.8;">
                         <p>注1：本报告附件包括首末次会议签到表、审核计划、必要的用于相关事实的证据或记录。</p>
                         <p>注2：若对本报告或审核人员的工作有异议，可在收到本报告之日起30日内向中国质量认证中心提出申诉/投诉。</p>
                         <p style="font-weight: 600; margin-top: 8px;">本报告所有权属于CQC，未经书面同意不得向第三方泄露。</p>
                     </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <script>
-        // ========== 假数据 ==========
-        
-        const historyData = [
-            {
-                // 初次认证
-                implement: [
-                    { name: '武荣刚', role: '组长', roleTag: 'tag-leader', dateRange: '2024-04-15 至 2024-04-18', sites: '中心职能、场所1、场所2', progress: 100, records: 4, conform: 2, observation: 1, minor: 1, serious: 0, status: 'confirmed', submitTime: '2024-04-18 17:30:00' },
-                    { name: '王洪伟', role: '组员', roleTag: 'tag-member', dateRange: '2024-04-15 至 2024-04-16', sites: '场所1', progress: 100, records: 1, conform: 1, observation: 0, minor: 0, serious: 0, status: 'confirmed', submitTime: '2024-04-16 17:45:00' },
-                    { name: '李明', role: '组员', roleTag: 'tag-member', dateRange: '2024-04-17 至 2024-04-18', sites: '场所2', progress: 100, records: 1, conform: 0, observation: 0, minor: 1, serious: 0, status: 'confirmed', submitTime: '2024-04-18 16:20:00' }
-                ],
-                rectify: {
-                    completed: true,
-                    confirmTime: '2024-04-20 14:30',
-                    issues: [
-                        { no: 'CR-20240415-001', type: 'auto', title: '环境因素识别不充分', desc: '组织的环境因素识别不充分，未包含新开通线路的环境影响评价。', rectify: '已补充新开通线路的环境影响评价报告，更新了环境因素识别清单，并重新进行了环境因素评价。', time: '2024/4/20 14:30' },
-                        { no: 'CR-20240416-002', type: 'auto', title: '危险源辨识不完整', desc: '危险源辨识缺少对地铁施工期间交叉作业的风险评估。', rectify: '已完成地铁施工期间交叉作业的风险评估，制定了专项安全管理方案，并对相关人员进行了培训。', time: '2024/4/20 14:30' },
-                        { no: '手动添加', type: 'manual', title: '应急演练记录不完整', desc: '应急预案演练记录不完整，缺少2024年第一季度演练记录。', rectify: '已补充2024年第一季度应急演练记录，包括演练方案、现场照片和总结报告。', time: '2024/4/20 14:30' }
-                    ],
-                    others: [
-                        '建议关注员工心理健康管理，特别是高压岗位（如调度员、司机）的心理疏导机制建立情况。',
-                        '建议完善供应商管理体系，特别是对关键零部件供应商（如信号系统、车辆零部件）的二方审核频次和深度。'
-                    ]
-                },
-                report: { code: 'RW-202403240001', date: '2024年4月20日', type: '一阶段审核完成' }
-            },
-            {
-                // 监督一
-                implement: [
-                    { name: '张伟', role: '组长', roleTag: 'tag-leader', dateRange: '2025-04-10 至 2025-04-12', sites: '中心职能、1号线、2号线', progress: 100, records: 3, conform: 2, observation: 1, minor: 0, serious: 0, status: 'confirmed', submitTime: '2025-04-12 16:00:00' },
-                    { name: '刘洋', role: '组员', roleTag: 'tag-member', dateRange: '2025-04-10 至 2025-04-11', sites: '1号线', progress: 100, records: 2, conform: 2, observation: 0, minor: 0, serious: 0, status: 'confirmed', submitTime: '2025-04-11 18:00:00' },
-                    { name: '陈静', role: '组员', roleTag: 'tag-member', dateRange: '2025-04-11 至 2025-04-12', sites: '2号线', progress: 100, records: 1, conform: 0, observation: 1, minor: 0, serious: 0, status: 'confirmed', submitTime: '2025-04-12 15:30:00' }
-                ],
-                rectify: {
-                    completed: true,
-                    confirmTime: '2025-04-15 10:00',
-                    issues: [
-                        { no: 'CR-20250410-001', type: 'auto', title: '内审记录不完整', desc: '2025年第一季度内审记录缺少对环保部门的审核证据。', rectify: '已补充对环保部门的内审记录，包括检查表、不符合项报告及整改验证记录。', time: '2025/4/15 10:00' }
-                    ],
-                    others: [
-                        '建议加强对新入职员工的安全培训记录管理。',
-                        '建议关注设备维护保养外包方的绩效评价记录更新。'
-                    ]
-                },
-                report: { code: 'RW-202504100001', date: '2025年4月15日', type: '监督审核完成' }
-            }
-        ];
-
-        let currentTaskIndex = 0;
-
-        // ========== 切换历史任务 ==========
-        
-        function switchHistoryTask(index, element) {
-            currentTaskIndex = index;
-            
-            document.querySelectorAll('.history-card').forEach(card => {
-                card.classList.remove('active');
-            });
-            element.classList.add('active');
-            
-            // 重新渲染当前内容Tab
-            const activeTab = document.querySelector('.content-tab.active');
-            const tabType = activeTab.getAttribute('onclick').match(/'(.*?)'/)[1];
-            
-            if (tabType === 'implement') renderImplement();
-            else if (tabType === 'rectify') renderRectify();
-            // report不需要重新渲染，因为是静态HTML结构，但我们可以更新一些关键信息
-            
-            showToast(`已切换至：${index === 0 ? '初次认证' : '监督一'}`, 'success');
-        }
-
-        // ========== 切换内容Tab ==========
-        
-        function switchContentTab(type, element) {
-            document.querySelectorAll('.content-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            element.classList.add('active');
-            
-            document.querySelectorAll('.module-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById('content-' + type).classList.add('active');
-            
-            if (type === 'implement') renderImplement();
-            else if (type === 'rectify') renderRectify();
-        }
-
-        // ========== 渲染实施记录表格 ==========
-        
-        function renderImplement() {
-            const tbody = document.getElementById('implementTableBody');
-            const data = historyData[currentTaskIndex].implement;
-            
-            tbody.innerHTML = '';
-            
-            data.forEach(item => {
-                const tr = document.createElement('tr');
-                
-                let statusBadge = '';
-                if (item.status === 'confirmed') {
-                    statusBadge = '<span class="badge badge-green">已确认</span>';
-                } else if (item.status === 'submitted') {
-                    statusBadge = '<span class="badge badge-blue">已提交</span>';
-                } else {
-                    statusBadge = '<span class="badge badge-gray">未提交</span>';
-                }
-                
-                tr.innerHTML = `
-                    <td class="font-medium" style="white-space: nowrap;">${item.name}</td>
-                    <td><span class="personnel-tag ${item.roleTag}">${item.role}</span></td>
-                    <td style="white-space: nowrap;">${item.dateRange}</td>
-                    <td>${item.sites}</td>
-                    <td>
-                        <div class="progress-bar-bg" style="margin-bottom: 4px;">
-                            <div class="progress-bar-fill" style="width: ${item.progress}%;"></div>
-                        </div>
-                        <div style="font-size: 11px; color: #6b7280;">${item.records}条记录</div>
-                    </td>
-                    <td style="text-align: center;">${item.conform > 0 ? `<span style="color: #15803d; font-weight: 600;">${item.conform}</span>` : '<span style="color: #9ca3af;">-</span>'}</td>
-                    <td style="text-align: center;">${item.observation > 0 ? `<span style="color: #92400e; font-weight: 600;">${item.observation}</span>` : '<span style="color: #9ca3af;">-</span>'}</td>
-                    <td style="text-align: center;">${item.minor > 0 ? `<span style="color: #dc2626; font-weight: 600;">${item.minor}</span>` : '<span style="color: #9ca3af;">-</span>'}</td>
-                    <td style="text-align: center;">${item.serious > 0 ? `<span style="color: #991b1b; font-weight: 600;">${item.serious}</span>` : '<span style="color: #9ca3af;">-</span>'}</td>
-                    <td>${statusBadge}</td>
-                    <td style="color: #6b7280; font-size: 12px; white-space: nowrap;">${item.submitTime}</td>
                 `;
-                
-                tbody.appendChild(tr);
-            });
-        }
-
-        // ========== 渲染整改记录 ==========
-        
-        function renderRectify() {
-            const data = historyData[currentTaskIndex].rectify;
-            
-            // 更新确认时间
-            const confirmBanner = document.querySelector('#content-rectify .badge-green');
-            if (confirmBanner && confirmBanner.parentElement) {
-                confirmBanner.parentElement.querySelector('span:last-child').textContent = `确认时间：${data.confirmTime}`;
-            }
-            
-            // 这里可以扩展为动态渲染整改列表，当前为静态HTML展示初次认证数据
-            // 如果切换到监督一，可以动态替换DOM内容
-            const cardBody = document.querySelector('#content-rectify .section-card .card-body');
-            
-            let issuesHtml = `
-                <div style="margin-bottom: 20px; padding: 12px 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #15803d; font-size: 13px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-check-double"></i>
-                    <span>所有需整改问题已审核通过，整改流程已完成</span>
-                    <span style="margin-left: auto;">确认时间：${data.confirmTime}</span>
-                </div>
-            `;
-            
-            data.issues.forEach(issue => {
-                issuesHtml += `
-                    <div class="problem-card">
-                        <div class="problem-header">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="record-badge ${issue.type === 'auto' ? 'auto' : 'manual'}">
-                                    <i class="fas ${issue.type === 'auto' ? 'fa-link' : 'fa-edit'}"></i> ${issue.no}
-                                </span>
-                                <span>${issue.title}</span>
+            } else {
+                // 二阶段报告
+                const isInitial = currentTaskIndex === 1;
+                container.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb;">
+                        <div>
+                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">审核任务编码</div>
+                            <div style="font-family: monospace; font-weight: 700; font-size: 16px; color: #1e3a8a;">${data.report.code}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="display: inline-flex; align-items: center; padding: 6px 16px; background: #dcfce7; color: #166534; border: 2px solid #86efac; border-radius: 20px; font-weight: 600; font-size: 14px;">
+                                <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+                                ${data.report.conclusion}
                             </div>
-                            <span class="badge badge-green">已通过</span>
-                        </div>
-                        <div style="margin-bottom: 10px;">
-                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">问题描述</div>
-                            <div style="color: #374151; line-height: 1.6;">${issue.desc}</div>
-                        </div>
-                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px;">
-                            <div style="font-size: 12px; color: #15803d; margin-bottom: 4px; font-weight: 600;"><i class="fas fa-check-circle"></i> 整改情况</div>
-                            <div style="color: #374151; line-height: 1.6;">${issue.rectify}</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">报告提交日期：${data.report.date}</div>
                         </div>
                     </div>
-                `;
-            });
-            
-            // 只更新问题列表部分，保留其他关注项表格结构
-            const problemCards = cardBody.querySelectorAll('.problem-card');
-            const banner = cardBody.querySelector('div[style*="f0fdf4"]');
-            
-            // 简单处理：如果当前是监督一（index=1），且只有1个问题，需要重新构建
-            if (currentTaskIndex === 1) {
-                // 重建问题区域
-                let html = `
-                    <div style="margin-bottom: 20px; padding: 12px 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #15803d; font-size: 13px; display: flex; align-items: center; gap: 8px;">
-                        <i class="fas fa-check-double"></i>
-                        <span>所有需整改问题已审核通过，整改流程已完成</span>
-                        <span style="margin-left: auto;">确认时间：${data.confirmTime}</span>
+
+                    <div class="report-section-title"><i class="fas fa-building" style="margin-right: 8px;"></i>一、基本信息</div>
+                    <div class="info-grid">
+                        <div class="info-label">客户名称</div>
+                        <div class="info-value" style="font-weight: 600; font-size: 15px;">北京市地铁运营有限公司</div>
+                        <div class="info-label">地 址</div>
+                        <div class="info-value">北京市西城区西直门外大街2号</div>
+                        <div class="info-label">审核类型</div>
+                        <div class="info-value">
+                            <span class="badge badge-blue">${isInitial ? '初次认证' : '第一次监督'} QMS</span>
+                            <span class="badge badge-green">${isInitial ? '初次认证' : '第一次监督'} EMS</span>
+                            <span class="badge badge-orange">${isInitial ? '初次认证' : '第一次监督'} OHSMS</span>
+                        </div>
+                        <div class="info-label">审核准则</div>
+                        <div class="info-value">GB/T 19001-2016、GB/T 24001-2016、GB/T 45001-2020</div>
+                        <div class="info-label">审核日期区间</div>
+                        <div class="info-value">${data.firstMeeting.date} 至 ${data.lastMeeting.date}</div>
+                        <div class="info-label">审核组</div>
+                        <div class="info-value">
+                            <div style="display: flex; gap: 16px;">
+                                <div><strong>组长：</strong>${data.implement[0].name}</div>
+                                <div><strong>组员：</strong>${data.implement.slice(1).map(i => i.name).join('、')}</div>
+                            </div>
+                        </div>
                     </div>
-                `;
-                data.issues.forEach(issue => {
-                    html += `
-                        <div class="problem-card">
-                            <div class="problem-header">
+
+                    <div class="report-section-title"><i class="fas fa-clipboard-list" style="margin-right: 8px;"></i>二、审核综述</div>
+                    <div style="line-height: 1.8; color: #374151; font-size: 13px; margin-bottom: 16px;">
+                        <p style="margin-bottom: 12px;"><strong>1. 客户简要</strong></p>
+                        <p style="margin-bottom: 12px;">${isInitial ? '北京市地铁运营有限公司是北京市属大型国有独资企业，主要负责北京市轨道交通的运营管理。公司现有员工850人，运营线路多条，建立了较为完善的管理体系。' : '北京市地铁运营有限公司自2024年4月获得认证以来，体系运行持续稳定。公司现有员工860人，新增运营线路1条，运营里程持续增长。'}</p>
+                        ${isInitial ? `<p style="margin-bottom: 12px;"><strong>2. 文件评审情况</strong></p><p style="margin-bottom: 12px;">于2024年3月20日对受审核方的体系文件进行了评审，结果为：满足要求。</p><p style="margin-bottom: 12px;"><strong>3. 一阶段审核情况</strong></p><p style="margin-bottom: 12px;">于2024年4月1日至4月2日进行了第一阶段现场审核，审核结果：未发现问题，具备二阶段审核条件。</p>` : `<p style="margin-bottom: 12px;"><strong>2. 上次审核不符合项整改验证</strong></p><p style="margin-bottom: 12px;">初次认证开具的2项轻微不符合项（NC-2024-001、NC-2024-002）已按要求完成整改，整改措施经验证有效。详见不符合项整改跟踪记录。</p>`}
+                        <p style="margin-bottom: 12px;"><strong>${isInitial ? '4' : '3'}. 本次审核情况</strong></p>
+                        <p>本次${isInitial ? '二阶段' : '监督'}审核于${data.firstMeeting.date}至${data.lastMeeting.date}进行，审核组一行${data.implement.length}人，审核了${isInitial ? '3个场所' : '3个场所'}。审核发现严重不符合0项，轻微不符合${data.ncr.length}项。</p>
+                    </div>
+
+                    <div class="report-section-title"><i class="fas fa-search-plus" style="margin-right: 8px;"></i>三、主要审核发现</div>
+
+                    <div style="margin-bottom: 16px; font-weight: 600; color: #374151; font-size: 14px;">（一）符合性及有效性评价</div>
+
+                    <div style="border-left: 4px solid #3b82f6; padding-left: 16px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">1. ${isInitial ? '对所处环境的风险和机遇管理' : '管理体系持续运行情况'}</div>
+                        <div style="font-size: 13px; color: #4b5563; line-height: 1.8;">
+                            ${isInitial ? '组织分析了自身的内、外部环境，确定了相关方并理解其需求和期望；合理地确定了需要应对的风险和机遇以及措施；在相关过程中有效地实施了措施；对措施的实施有效性进行了评价；基本达到了风险和机遇管理的预期目标。' : '组织的管理体系在认证周期内持续有效运行，质量、环境、职业健康安全绩效稳定。2024年度质量目标全部达成，未发生重大质量/环境/安全事故。'}
+                        </div>
+                    </div>
+
+                    <div style="border-left: 4px solid #3b82f6; padding-left: 16px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">2. ${isInitial ? '领导作用、职责和权限' : '变更管理'}</div>
+                        <div style="font-size: 13px; color: #4b5563; line-height: 1.8;">
+                            ${isInitial ? '组织的最高管理层基本履行了规定的职责和承诺；组织机构符合实际、职责权限分配明确，并沟通和理解；指定了体系负责人，并职责明确符合。' : '自上次审核以来，组织的管理体系无重大变更。人员变动已按程序要求进行交接和培训，新入职员工均已接受体系培训。'}
+                        </div>
+                    </div>
+
+                    <div style="border-left: 4px solid #3b82f6; padding-left: 16px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">5. 管理体系目标及实现情况</div>
+                        <div style="font-size: 13px; color: #4b5563; line-height: 1.8;">
+                            公司制定了质量和环境目标，能定期测量。质量目标：乘客满意度≥90%（实绩95.8%），运营事故率≤0.01%（实绩0.005%），设备完好率≥98%（实绩99.2%）。环境目标和职业健康安全目标均已达成。
+                        </div>
+                    </div>
+
+                    <div style="border-left: 4px solid #3b82f6; padding-left: 16px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">7. 产品/服务提供过程及运行控制(QMS)</div>
+                        <div style="font-size: 13px; color: #4b5563; line-height: 1.8;">
+                            公司质量管理体系的范围：地铁运营服务的设计开发和生产及相关管理活动。针对组织产品和服务的特点识别的主要过程包括订单接收、设计开发、采购、生产或服务提供、不合格和纠正、更改等。
+                        </div>
+                    </div>
+
+                    <div style="border-left: 4px solid #22c55e; padding-left: 16px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">8. 与重要环境因素有关的过程及运行控制(EMS)</div>
+                        <div style="font-size: 13px; color: #4b5563; line-height: 1.8;">
+                            公司保持实施《环境因素识别和评价控制程序》，能按程序要求每年对环境因素进行更新识别，针对重要环境因素制定相关运行控制程序和运行准则，并按照要求有效运行控制。
+                        </div>
+                    </div>
+
+                    <div style="border-left: 4px solid #f97316; padding-left: 16px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">9. 与OH&S风险有关的过程及运行控制（OHSMS）</div>
+                        <div style="font-size: 13px; color: #4b5563; line-height: 1.8;">
+                            公司保持实施《危险源识别和评价控制程序》，能按程序要求每年对危险源进行更新识别，针对重要危险源制定相关运行控制程序和运行准则，并按照要求有效运行控制。
+                        </div>
+                    </div>
+
+                    <div style="border-left: 4px solid #3b82f6; padding-left: 16px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">14. 内部审核</div>
+                        <div style="font-size: 13px; color: #4b5563; line-height: 1.8;">
+                            公司能按内审程序要求对质量环境职业健康安全管理体系进行策划并实施。质量管理体系于2024年3月15-18日实施，环境管理体系内审于2024年3月20-22日实施，职业健康管理体系内审于2024年3月25-26日实施。
+                        </div>
+                    </div>
+
+                    <div style="border-left: 4px solid #3b82f6; padding-left: 16px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">15. 管理评审</div>
+                        <div style="font-size: 13px; color: #4b5563; line-height: 1.8;">
+                            公司管理评审程序规定每年实施1次管理评审。查到质量、环境、职业健康安全管理评审计划及管理评审报告，核查管理评审输出改进事项已落实责任部门及策划实施计划及完成日期。
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 16px; font-weight: 600; color: #374151; font-size: 14px; margin-top: 24px;">（二）其他事项</div>
+
+                    <div style="border-left: 4px solid #9ca3af; padding-left: 16px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">2. 紧急情况、事故</div>
+                        <div style="font-size: 13px; color: #4b5563; line-height: 1.8;">
+                            组织未发生质量事故、环境事故、安全事故、相关方投诉、被媒体曝光紧急、事故等情况。
+                        </div>
+                    </div>
+
+                    <div style="border-left: 4px solid #9ca3af; padding-left: 16px; margin-bottom: 16px;">
+                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">4. 审核组和客户之间的尚未解决的分歧意见</div>
+                        <div style="font-size: 13px; color: #4b5563; line-height: 1.8;">无</div>
+                    </div>
+
+                    <div class="report-section-title"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>（三）不符合项</div>
+
+                    ${data.ncr.map((item, idx) => `
+                        <div class="ncr-card">
+                            <div class="ncr-header">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="record-badge ${issue.type === 'auto' ? 'auto' : 'manual'}">
-                                        <i class="fas ${issue.type === 'auto' ? 'fa-link' : 'fa-edit'}"></i> ${issue.no}
-                                    </span>
-                                    <span>${issue.title}</span>
+                                    <span class="badge ${item.type === 'serious' ? 'badge-red' : 'badge-orange'}">${item.typeName}</span>
+                                    <span>不符合项 ${String(idx + 1).padStart(2, '0')}</span>
                                 </div>
-                                <span class="badge badge-green">已通过</span>
+                                <span style="font-family: monospace; font-size: 12px; color: #6b7280;">${item.id}</span>
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">问题描述</div>
-                                <div style="color: #374151; line-height: 1.6;">${issue.desc}</div>
-                            </div>
-                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px;">
-                                <div style="font-size: 12px; color: #15803d; margin-bottom: 4px; font-weight: 600;"><i class="fas fa-check-circle"></i> 整改情况</div>
-                                <div style="color: #374151; line-height: 1.6;">${issue.rectify}</div>
+                                <div style="display: flex; gap: 16px; margin-bottom: 8px; font-size: 12px; color: #6b7280;">
+                                    <span>部门：${item.dept}</span>
+                                    <span>条款：${item.standard}</span>
+                                </div>
+                                <div style="color: #374151; line-height: 1.6;">${item.desc}</div>
                             </div>
                         </div>
-                    `;
-                });
-                
-                // 找到第一个section-card的card-body并更新
-                const firstCardBody = document.querySelector('#content-rectify .section-card:first-child .card-body');
-                // 保留前两个子元素（banner和可能的其他），替换问题卡片
-                // 简单起见，直接替换innerHTML的前部分
-                const otherSection = document.querySelector('#content-rectify .section-card:last-child');
-                firstCardBody.innerHTML = html;
-                
-                // 更新其他关注项
-                const otherTbody = otherSection.querySelector('tbody');
-                otherTbody.innerHTML = data.others.map((item, idx) => `
-                    <tr>
-                        <td style="text-align: center; color: #6b7280; font-weight: 600;">${idx + 1}</td>
-                        <td>${item}</td>
-                    </tr>
-                `).join('');
+                    `).join('')}
+
+                    <div style="margin-top: 24px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 20px;">
+                        <div style="font-weight: 700; color: #1e3a8a; margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-clipboard-check"></i> 审核结论
+                        </div>
+                        <div style="color: #374151; line-height: 1.8; font-size: 13px;">
+                            <p style="margin-bottom: 8px;">经现场审核确认，该公司<strong>质量管理体系、环境管理体系、职业健康安全管理体系</strong>${isInitial ? '运行持续符合标准要求' : '在认证周期内持续符合标准要求，体系运行有效'}。</p>
+                            <ul style="margin-left: 20px; margin-bottom: 12px; list-style-type: disc;">
+                                <li>基本符合GB/T 19001-2016、GB/T 24001-2016、GB/T 45001-2020标准要求</li>
+                                <li>体系运行超过3个月，运行记录基本齐全</li>
+                                <li>内审和管理评审已实施，发现的问题已整改</li>
+                                ${!isInitial ? '<li>上次审核不符合项整改经验证有效</li><li>体系持续运行，绩效稳定</li>' : ''}
+                            </ul>
+                            <div style="display: flex; align-items: center; gap: 8px; color: #15803d; font-weight: 600; background: white; padding: 12px; border-radius: 6px; border: 1px solid #bbf7d0;">
+                                <i class="fas fa-check-circle" style="font-size: 18px;"></i>
+                                <span>${isInitial ? '建立、实施符合审核准则的要求，体系运行有效，推荐初次认证。' : '体系运行持续有效，保持认证资格。'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="signature-area">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+                            <div>
+                                <div style="font-size: 13px; color: #4b5563; margin-bottom: 12px;">审核组长（签字）：</div>
+                                <div style="border-bottom: 2px solid #9ca3af; padding-bottom: 8px; height: 48px; display: flex; align-items: flex-end;">
+                                    <span style="font-family: cursive; font-size: 24px; color: #374151;">${data.implement[0].name}</span>
+                                </div>
+                                <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">日期：${data.lastMeeting.date}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 13px; color: #4b5563; margin-bottom: 12px;">审核派出机构意见：</div>
+                                <div style="margin-bottom: 12px;">
+                                    <span style="display: inline-flex; align-items: center; padding: 4px 12px; background: #dbeafe; color: #1e40af; border-radius: 4px; font-size: 13px; font-weight: 500;">
+                                        <i class="fas fa-check" style="margin-right: 6px;"></i>同意审核组意见
+                                    </span>
+                                </div>
+                                <div style="border-bottom: 2px solid #9ca3af; padding-bottom: 8px; height: 48px; display: flex; align-items: flex-end;">
+                                    <span style="color: #9ca3af; font-size: 13px;">已通过系统审批</span>
+                                </div>
+                                <div style="font-size: 12px; color: #6b7280; margin-top: 8px;">授权人（签字）/ 日期</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #d1d5db; text-align: center; font-size: 12px; color: #9ca3af; line-height: 1.8;">
+                        <p>注1：本报告附件包括首末次会议签到表、审核计划、必要的用于相关事实的证据或记录。</p>
+                        <p>注2：由于审核发现和审核结论是在抽样的基础上做出，因此具有一定的不确定性。</p>
+                        <p>注3：若对本报告或审核人员的工作有异议，可在收到本报告之日起30日内向中国质量认证中心提出申诉/投诉。</p>
+                        <p style="font-weight: 600; margin-top: 8px;">本报告所有权属于CQC，未经书面同意不得向第三方泄露。</p>
+                    </div>
+                `;
             }
+        }
+
+        // ========== 打开核查记录弹窗 ==========
+
+        function openVerificationModal(index) {
+            const data = historyData[currentTaskIndex].verificationDetails[index];
+            if (!data) return;
+
+            document.getElementById('modalAuditorName').textContent = data.auditorName;
+
+            let html = '';
+            data.records.forEach((record, idx) => {
+                const isNC = record.decision === '轻微不符合' || record.decision === '严重不符合';
+                html += `
+                    <div style="border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px; overflow: hidden;">
+                        <div style="background: #f9fafb; padding: 12px 16px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="font-weight: 600; color: #1f2937; font-size: 14px;">
+                                ${idx + 1}. ${record.date} ${record.time}
+                            </div>
+                            <span class="badge ${isNC ? 'badge-red' : record.decision === '观察项' ? 'badge-orange' : 'badge-green'}">
+                                ${record.decision}
+                            </span>
+                        </div>
+                        <div style="padding: 16px;">
+                            <div style="margin-bottom: 12px;">
+                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">检查内容 / 涉及标准条款</div>
+                                <div style="color: #374151; font-weight: 500;">${record.content} ${record.standard}</div>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">涉及部门/场所</div>
+                                <div style="color: #374151;">${record.dept}</div>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">审核记录</div>
+                                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; color: #374151; line-height: 1.6; font-size: 13px;">
+                                    ${record.record}
+                                </div>
+                            </div>
+                            ${isNC ? `
+                                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 12px;">
+                                    <div style="font-size: 12px; color: #dc2626; margin-bottom: 4px; font-weight: 600;"><i class="fas fa-exclamation-triangle"></i> 不符合事实</div>
+                                    <div style="color: #991b1b; line-height: 1.6; margin-bottom: 8px;">${record.ncFact}</div>
+                                    <div style="font-size: 12px; color: #dc2626; font-weight: 600;">不符合条款：${record.ncClause}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('verificationModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // ========== 打开不符合项详情 ==========
+
+        function openNcrDetail(index) {
+            const item = historyData[currentTaskIndex].ncr[index];
+            if (!item) return;
+
+            document.getElementById('modalAuditorName').textContent = '不符合项详情';
+
+            let html = `
+                <div style="border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px; overflow: hidden;">
+                    <div style="background: #fff7ed; padding: 12px 16px; border-bottom: 1px solid #fed7aa; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="font-weight: 600; color: #c2410c; font-size: 14px;">
+                            <i class="fas fa-exclamation-triangle"></i> ${item.id}
+                        </div>
+                        <span class="badge ${item.type === 'serious' ? 'badge-red' : 'badge-orange'}">${item.typeName}</span>
+                    </div>
+                    <div style="padding: 16px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                            <div>
+                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">受审核部门/过程</div>
+                                <div style="color: #374151; font-weight: 500;">${item.dept}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">标准条款</div>
+                                <div style="color: #374151; font-weight: 500;">${item.standard}</div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">不符合事实</div>
+                            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 12px; color: #991b1b; line-height: 1.6;">
+                                ${item.desc}
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">原因分析</div>
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px; color: #166534; line-height: 1.6;">
+                                ${item.cause}
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">纠正措施</div>
+                            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px; color: #1e40af; line-height: 1.6;">
+                                ${item.action}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 16px; font-size: 12px; color: #6b7280;">
+                            <span><i class="fas fa-user"></i> 提交人：${item.submitter}</span>
+                            <span><i class="fas fa-calendar"></i> 整改期限：${item.deadline}</span>
+                            <span><i class="fas fa-check-circle"></i> 确认时间：${item.confirmTime}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('verificationModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('verificationModal').classList.remove('show');
+            document.body.style.overflow = 'auto';
         }
 
         // ========== Toast ==========
-        
+
         function showToast(message, type) {
             const toast = document.createElement('div');
             const bgColor = type === 'success' ? '#10b981' : '#3b82f6';
             const icon = type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
-            
+
             toast.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${bgColor}; color: white; padding: 10px 20px; border-radius: 8px; z-index: 9999; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px; font-weight: 500; font-size: 13px;`;
             toast.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
-            
+
             document.body.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';
@@ -1432,9 +2025,13 @@
         }
 
         // ========== 初始化 ==========
-        
+
         document.addEventListener('DOMContentLoaded', function() {
             renderImplement();
+
+            document.getElementById('verificationModal').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
         });
     </script>
 </body>
