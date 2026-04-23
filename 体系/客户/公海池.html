@@ -786,6 +786,7 @@
         }
     </style>
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
     <!-- Toast提示容器 -->
@@ -2269,8 +2270,8 @@
                 validityDays: parseInt(validity),
                 dealTime: dealTime,
                 target: target,
-                status: 'first',
-                statusText: '初审中',
+                status: 'current_review',
+                statusText: '当前区域初审中',
                 statusStep: 1,
                 submitTime: nowStr,
                 firstApproval: null,
@@ -2303,8 +2304,9 @@
         function renderAfProcessSteps(report) {
             const steps = [
                 { title: '提交申请', time: report.submitTime, completed: true },
-                { title: '初审', time: '', completed: false, current: report.statusStep === 1 },
-                { title: '终审', time: '', completed: false, current: report.statusStep === 3 },
+                { title: '当前区域初审', time: '', completed: false, current: report.statusStep === 1 },
+                { title: '跨区域二审', time: '', completed: false, current: report.statusStep === 3 },
+                { title: '跨区域终审', time: '', completed: false, current: report.statusStep === 5 },
                 { title: '权限生效', time: '', completed: false }
             ];
 
@@ -2370,8 +2372,9 @@
 
             const statusMap = {
                 'draft': { text: '草稿', color: '#374151', bg: '#f3f4f6', border: '#d1d5db' },
-                'first': { text: '初审中', color: '#1e40af', bg: '#dbeafe', border: '#bfdbfe' },
-                'second': { text: '终审中', color: '#3730a3', bg: '#e0e7ff', border: '#c7d2fe' },
+                'current_review': { text: '当前区域初审中', color: '#1e40af', bg: '#dbeafe', border: '#bfdbfe' },
+                'cross_review': { text: '跨区域二审中', color: '#3730a3', bg: '#e0e7ff', border: '#c7d2fe' },
+                'final_review': { text: '跨区域终审中', color: '#6b21a8', bg: '#f3e8ff', border: '#d8b4fe' },
                 'approved': { text: '已通过', color: '#065f46', bg: '#d1fae5', border: '#86efac' },
                 'rejected': { text: '已驳回', color: '#991b1b', bg: '#fee2e2', border: '#fecaca' },
                 'expired': { text: '已过期', color: '#991b1b', bg: '#fee2e2', border: '#fecaca' }
@@ -2379,13 +2382,14 @@
 
             container.innerHTML = myApplyReports.map(report => {
                 const s = statusMap[report.status] || statusMap['draft'];
-                const stepText = report.statusStep === 1 ? '待来源区域部门负责人初审' : (report.statusStep === 3 ? '待来源区域负责人终审' : (report.status === 'approved' ? '已通过，权限已生效' : '-'));
+                const stepText = report.statusStep === 1 ? '待当前区域部门经理初审' : (report.statusStep === 3 ? '待跨区域部门经理二审' : (report.statusStep === 5 ? '待跨区域区域总监终审' : (report.status === 'approved' ? '已通过，权限已生效' : '-')));
 
                 // 审批进度步骤
                 const steps = [
                     { title: '提交', completed: true },
-                    { title: '初审', completed: report.statusStep >= 2, current: report.statusStep === 1 },
-                    { title: '终审', completed: report.statusStep >= 4, current: report.statusStep === 3 },
+                    { title: '当前区域初审', completed: report.statusStep >= 2, current: report.statusStep === 1 },
+                    { title: '跨区域二审', completed: report.statusStep >= 4, current: report.statusStep === 3 },
+                    { title: '跨区域终审', completed: report.statusStep >= 6, current: report.statusStep === 5 },
                     { title: '生效', completed: report.status === 'approved', current: false }
                 ];
 
@@ -2619,7 +2623,7 @@
                             <p style="font-weight: 600; margin-bottom: 4px;">报备说明</p>
                             <ul style="list-style: disc; list-inside; font-size: 12px; line-height: 1.6; opacity: 0.9;">
                                 <li>全国公海客户来自不同区域，申请跟进需向客户来源区域提交跨区域报备</li>
-                                <li>报备审批流程：来源区域部门负责人初审 → 来源区域负责人终审</li>
+                                <li>报备审批流程：当前区域部门经理初审 → 跨区域部门经理二审 → 跨区域区域总监终审</li>
                                 <li>审批通过后将开通临时跨区域跟进权限，有效期默认90天</li>
                             </ul>
                         </div>
