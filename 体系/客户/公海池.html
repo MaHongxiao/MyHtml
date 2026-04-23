@@ -298,6 +298,18 @@
         .tag-regional { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
         .tag-auto-transfer { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
+        .region-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .region-from { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .region-to { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+
         .grade-a-plus { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; display: inline-block; }
         .grade-a { background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; display: inline-block; }
         .grade-b { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; display: inline-block; }
@@ -570,6 +582,83 @@
         .op-transfer { background: #fce7f3; color: #be185d; }
 
         .hidden { display: none !important; }
+        /* Toast提示 */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast-item {
+            background: white;
+            border-left: 4px solid;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 280px;
+            max-width: 400px;
+            animation: toastSlideIn 0.3s ease-out;
+            font-size: 13px;
+        }
+        .toast-item.success { border-color: #22c55e; }
+        .toast-item.error { border-color: #ef4444; }
+        .toast-item.warning { border-color: #f59e0b; }
+        .toast-item.info { border-color: #3b82f6; }
+        @keyframes toastSlideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast-item.hide {
+            animation: toastSlideOut 0.3s ease-in forwards;
+        }
+        @keyframes toastSlideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+
+        /* 申请跟进弹窗步骤条 */
+        .af-step-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1;
+            position: relative;
+        }
+        .af-step-circle.completed {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+        .af-step-circle.current {
+            background-color: white;
+            border-color: #3b82f6;
+            color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .af-step-line {
+            position: absolute;
+            top: 14px;
+            left: -50%;
+            width: 100%;
+            height: 2px;
+            background-color: #e2e8f0;
+            z-index: 0;
+        }
+        .af-step-line.active {
+            background-color: #3b82f6;
+        }
 
         /* 弹窗内表单样式 */
         .form-group {
@@ -696,8 +785,11 @@
             margin: 0 auto 16px;
         }
     </style>
+<base target="_blank">
 </head>
 <body>
+    <!-- Toast提示容器 -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <!-- 顶部栏 -->
     <div class="top-bar">
@@ -741,6 +833,11 @@
             <button class="btn btn-primary btn-sm" onclick="showBatchAssignModal()" id="batchAssignBtn">
                 <i class="fas fa-user-plus"></i>
                 批量分配
+            </button>
+            <button class="btn btn-primary btn-sm hidden" onclick="openMyApplyModal()" id="myApplyBtn">
+                <i class="fas fa-file-signature"></i>
+                我的报备申请
+                <span style="background: white; color: #3b82f6; font-size: 10px; padding: 1px 5px; border-radius: 8px; margin-left: 4px; font-weight: 700;" id="myApplyBtnCount">0</span>
             </button>
         </div>
     </div>
@@ -865,7 +962,7 @@
                         <th class="col-warning">预警/流转提示</th>
                         <th class="col-source">客户来源</th>
                         <th class="col-enter-date sortable" onclick="sortTable('enterDate')">进入公海时间<span class="sort-icon"><i class="fas fa-sort"></i></span></th>
-                        <th class="col-status col-sticky-right">公海状态</th>
+                        <th class="col-status col-sticky-right" id="statusColumnHeader">公海状态</th>
                         <th class="col-action col-sticky-right-2">操作</th>
                     </tr>
                 </thead>
@@ -897,6 +994,31 @@
                     <option>50</option>
                 </select>
                 <span>条</span>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- 我的报备申请弹窗 -->
+    <div class="modal-overlay" id="myApplyModal">
+        <div class="modal-container" style="width: 800px; max-height: 90vh;">
+            <div class="modal-header" style="background: #f8fafc;">
+                <h3 class="text-lg font-bold text-gray-800">
+                    <i class="fas fa-file-signature text-blue-600 mr-2"></i>
+                    我的报备申请
+                    <span style="background: #dbeafe; color: #1e40af; font-size: 12px; padding: 2px 10px; border-radius: 10px; margin-left: 8px; font-weight: 600;" id="myApplyModalCount">0</span>
+                </h3>
+                <button class="close-btn" onclick="closeModal('myApplyModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; padding: 0;">
+                <div style="padding: 16px 20px;" id="myApplyModalList">
+                    <!-- 动态生成报备列表 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('myApplyModal')">关闭</button>
             </div>
         </div>
     </div>
@@ -1680,11 +1802,8 @@
                     `;
                 } else {
                     actionButtons = `
-                        <button class="action-btn warning" onclick="openRegionalModal('${row.id}')">
-                            <i class="fas fa-map-marker-alt"></i> 领至区域
-                        </button>
-                        <button class="action-btn" onclick="openAssignModal(['${row.id}'])">
-                            <i class="fas fa-user-check"></i> 直接分配
+                        <button class="action-btn warning" onclick="openApplyFollowModal('${row.id}')">
+                            <i class="fas fa-file-signature"></i> 申请跟进
                         </button>
                     `;
                 }
@@ -1720,7 +1839,7 @@
                         <td class="col-source">${row.source}</td>
                         <td class="col-enter-date" style="color: #64748b; font-size: 12px;">${row.enterDate}</td>
                         <td class="col-status col-sticky-right">
-                            <span class="status-badge ${statusClass}">${row.status}</span>
+                            ${currentSeaType === 'regional' ? `<span class="status-badge ${statusClass}">${row.status}</span>` : `<span class="region-tag region-from">${row.region}</span>`}
                         </td>
                         <td class="col-action col-sticky-right-2">
                             <div class="action-btns">
@@ -1754,12 +1873,19 @@
                 infoBanner.style.borderColor = '#bfdbfe';
                 infoBanner.style.color = '#1e40af';
                 document.getElementById('batchClaimBtn').style.display = 'inline-flex';
+                document.getElementById('batchAssignBtn').style.display = 'inline-flex';
+                document.getElementById('myApplyBtn').classList.add('hidden');
+                document.getElementById('statusColumnHeader').textContent = '公海状态';
             } else {
-                ruleText.textContent = '全国公海包含各区域超过2年无成交自动转入的客户，以及主动申请转入的区域客户；部门经理可领至本区域或直接分配给销售人员。';
+                ruleText.textContent = '全国公海包含各区域超过2年无成交自动转入的客户。申请跟进需向客户来源区域提交跨区域跟进报备，审批通过后方可获得跟进权限。';
                 infoBanner.style.background = '#fef3c7';
                 infoBanner.style.borderColor = '#fcd34d';
                 infoBanner.style.color = '#92400e';
                 document.getElementById('batchClaimBtn').style.display = 'none';
+                document.getElementById('batchAssignBtn').style.display = 'none';
+                document.getElementById('myApplyBtn').classList.remove('hidden');
+                document.getElementById('statusColumnHeader').textContent = '来源区域';
+                updateMyApplyBtnCount();
             }
 
             const data = type === 'regional' ? regionalData : nationalData;
@@ -1850,7 +1976,7 @@
             const salesPerson = document.getElementById('regionalSalesSelect').value;
 
             if (assignNow && !salesPerson) {
-                alert('请选择销售人员');
+                showToast('请选择销售人员', 'error');
                 return;
             }
 
@@ -1915,11 +2041,11 @@
             const reason = document.getElementById('assignReason').value;
 
             if (!salesPerson) {
-                alert('请选择销售人员');
+                showToast('请选择销售人员', 'error');
                 return;
             }
             if (!reason) {
-                alert('请输入分配原因');
+                showToast('请输入分配原因', 'error');
                 return;
             }
 
@@ -1938,7 +2064,7 @@
         // 批量分配
         function showBatchAssignModal() {
             if (selectedCustomers.length === 0) {
-                alert('请先选择客户');
+                showToast('请先选择客户', 'warning');
                 return;
             }
             openAssignModal(selectedCustomers.map(c => c.id));
@@ -2060,11 +2186,8 @@
                 } else {
                     footer.innerHTML = `
                         <button class="btn btn-secondary" onclick="closeModal('detailModal')">关闭</button>
-                        <button class="btn btn-warning" onclick="openRegionalModal('${customer.id}'); closeModal('detailModal');">
-                            <i class="fas fa-map-marker-alt"></i> 领至本区域
-                        </button>
-                        <button class="btn btn-primary" onclick="openAssignModal(['${customer.id}']); closeModal('detailModal');">
-                            <i class="fas fa-user-check"></i> 直接分配
+                        <button class="btn btn-warning" onclick="openApplyFollowModal('${customer.id}'); closeModal('detailModal');">
+                            <i class="fas fa-file-signature"></i> 申请跟进
                         </button>
                     `;
                 }
@@ -2076,6 +2199,242 @@
         // 关闭弹窗
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
+        }
+
+        // 申请跟进（跨区域报备）
+        let currentApplyCustomer = null;
+        let myApplyReports = [];
+
+        function openApplyFollowModal(id) {
+            const customer = nationalData.find(d => d.id === id);
+            if (!customer) return;
+            currentApplyCustomer = customer;
+
+            // 重置到step1
+            document.getElementById('af-step1').classList.remove('hidden');
+            document.getElementById('af-step2').classList.add('hidden');
+            document.getElementById('af-btn-cancel').style.display = 'inline-flex';
+            document.getElementById('af-btn-submit').style.display = 'inline-flex';
+            document.getElementById('af-btn-submit').classList.remove('hidden');
+            document.getElementById('af-btn-done').classList.add('hidden');
+
+            document.getElementById('af-customer-name').value = customer.name;
+            document.getElementById('af-customer-id').value = customer.id;
+            document.getElementById('af-from-region').value = customer.region;
+            document.getElementById('af-reason').value = '';
+            document.getElementById('af-target').value = '';
+            document.getElementById('af-confirm').checked = false;
+            document.getElementById('af-validity').value = '90';
+
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('af-deal-time').value = `${year}-${month}`;
+
+            document.querySelectorAll('.af-cert-field').forEach(cb => cb.checked = false);
+
+            document.getElementById('applyFollowModal').classList.add('active');
+        }
+
+        function submitApplyFollow() {
+            const reason = document.getElementById('af-reason').value.trim();
+            const confirm = document.getElementById('af-confirm').checked;
+            const validity = document.getElementById('af-validity').value;
+            const dealTime = document.getElementById('af-deal-time').value;
+            const target = document.getElementById('af-target').value.trim();
+            const certFields = Array.from(document.querySelectorAll('.af-cert-field:checked')).map(cb => cb.value);
+
+            if (!reason) {
+                showToast('请填写报备事由', 'error');
+                return;
+            }
+            if (!confirm) {
+                showToast('请确认理解报备规则', 'error');
+                return;
+            }
+
+            const now = new Date();
+            const nowStr = now.toLocaleString('zh-CN');
+            const reportId = 'BR' + now.toISOString().slice(0,10).replace(/-/g,'') + String(Math.random()).slice(2,5);
+
+            // 保存报备记录
+            const report = {
+                id: reportId,
+                customerId: currentApplyCustomer.id,
+                customerName: currentApplyCustomer.name,
+                fromRegion: currentApplyCustomer.region,
+                toRegion: '华北区域',
+                reason: reason,
+                certFields: certFields,
+                validityDays: parseInt(validity),
+                dealTime: dealTime,
+                target: target,
+                status: 'first',
+                statusText: '初审中',
+                statusStep: 1,
+                submitTime: nowStr,
+                firstApproval: null,
+                secondApproval: null
+            };
+            myApplyReports.unshift(report);
+
+            // 填充成功确认信息
+            document.getElementById('af-success-report-id').textContent = reportId;
+            document.getElementById('af-success-customer').textContent = currentApplyCustomer.name;
+            document.getElementById('af-success-cross').textContent = `${currentApplyCustomer.region} → 华北区域`;
+            document.getElementById('af-success-fields').textContent = certFields.length > 0 ? certFields.join('、') : '未选择';
+            document.getElementById('af-success-validity').textContent = validity + '天';
+            document.getElementById('af-success-time').textContent = nowStr;
+
+            // 渲染审批进度步骤条
+            renderAfProcessSteps(report);
+
+            // 切换到step2
+            document.getElementById('af-step1').classList.add('hidden');
+            document.getElementById('af-step2').classList.remove('hidden');
+            document.getElementById('af-btn-cancel').style.display = 'none';
+            document.getElementById('af-btn-submit').classList.add('hidden');
+            document.getElementById('af-btn-done').classList.remove('hidden');
+
+            // 如果当前在全国公海视图，刷新报备列表
+            updateMyApplyBtnCount();
+        }
+
+        function renderAfProcessSteps(report) {
+            const steps = [
+                { title: '提交申请', time: report.submitTime, completed: true },
+                { title: '初审', time: '', completed: false, current: report.statusStep === 1 },
+                { title: '终审', time: '', completed: false, current: report.statusStep === 3 },
+                { title: '权限生效', time: '', completed: false }
+            ];
+
+            let html = '<div style="display: flex; align-items: flex-start; justify-content: space-between; width: 100%; position: relative;">';
+
+            // 先渲染连接线（在圆圈下层）
+            steps.forEach((step, idx) => {
+                if (idx < steps.length - 1) {
+                    const nextCompleted = steps[idx + 1].completed || steps[idx + 1].current;
+                    const lineColor = step.completed && nextCompleted ? '#3b82f6' : '#e2e8f0';
+                    const leftPct = (idx / (steps.length - 1)) * 100;
+                    const widthPct = 100 / (steps.length - 1);
+                    html += `<div style="position: absolute; top: 13px; left: ${leftPct}%; width: ${widthPct}%; height: 2px; background: ${lineColor}; z-index: 0;"></div>`;
+                }
+            });
+
+            // 再渲染步骤节点（在连接线上层）
+            steps.forEach((step, idx) => {
+                const icon = step.completed ? '<i class="fas fa-check" style="font-size: 10px;"></i>' : (idx + 1);
+                const timeHtml = step.time ? `<div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">${step.time.split(' ')[0]}</div>` : '';
+
+                html += `
+                    <div style="display: flex; flex-direction: column; align-items: center; z-index: 1; position: relative; flex: 1;">
+                        <div style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; background-color: ${step.completed ? '#3b82f6' : (step.current ? 'white' : 'white')}; border: 2px solid ${step.completed ? '#3b82f6' : (step.current ? '#3b82f6' : '#e2e8f0')}; color: ${step.completed ? 'white' : (step.current ? '#2563eb' : '#94a3b8')};">${icon}</div>
+                        <div style="font-size: 11px; margin-top: 6px; color: ${step.completed || step.current ? '#475569' : '#94a3b8'}; font-weight: ${step.current ? '600' : '500'}; white-space: nowrap;">${step.title}</div>
+                        ${timeHtml}
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            document.getElementById('af-process-steps').innerHTML = html;
+        }
+
+        function openMyApplyModal() {
+            renderMyApplyModalList();
+            document.getElementById('myApplyModal').classList.add('active');
+        }
+
+        function updateMyApplyBtnCount() {
+            const btn = document.getElementById('myApplyBtnCount');
+            if (btn) btn.textContent = myApplyReports.length;
+        }
+
+        function renderMyApplyModalList() {
+            const container = document.getElementById('myApplyModalList');
+            const countEl = document.getElementById('myApplyModalCount');
+            const btnCount = document.getElementById('myApplyBtnCount');
+
+            countEl.textContent = myApplyReports.length;
+            if (btnCount) btnCount.textContent = myApplyReports.length;
+
+            if (myApplyReports.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #9ca3af;">
+                        <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block; color: #d1d5db;"></i>
+                        <h3 style="font-size: 16px; color: #374151; margin-bottom: 8px;">暂无报备申请</h3>
+                        <p style="font-size: 13px;">您尚未从全国公海发起任何跨区域跟进报备</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const statusMap = {
+                'draft': { text: '草稿', color: '#374151', bg: '#f3f4f6', border: '#d1d5db' },
+                'first': { text: '初审中', color: '#1e40af', bg: '#dbeafe', border: '#bfdbfe' },
+                'second': { text: '终审中', color: '#3730a3', bg: '#e0e7ff', border: '#c7d2fe' },
+                'approved': { text: '已通过', color: '#065f46', bg: '#d1fae5', border: '#86efac' },
+                'rejected': { text: '已驳回', color: '#991b1b', bg: '#fee2e2', border: '#fecaca' },
+                'expired': { text: '已过期', color: '#991b1b', bg: '#fee2e2', border: '#fecaca' }
+            };
+
+            container.innerHTML = myApplyReports.map(report => {
+                const s = statusMap[report.status] || statusMap['draft'];
+                const stepText = report.statusStep === 1 ? '待来源区域部门负责人初审' : (report.statusStep === 3 ? '待来源区域负责人终审' : (report.status === 'approved' ? '已通过，权限已生效' : '-'));
+
+                // 审批进度步骤
+                const steps = [
+                    { title: '提交', completed: true },
+                    { title: '初审', completed: report.statusStep >= 2, current: report.statusStep === 1 },
+                    { title: '终审', completed: report.statusStep >= 4, current: report.statusStep === 3 },
+                    { title: '生效', completed: report.status === 'approved', current: false }
+                ];
+
+                let stepsHtml = '<div style="display: flex; align-items: center; gap: 4px; margin-top: 8px;">';
+                steps.forEach((step, idx) => {
+                    const dotColor = step.completed ? '#22c55e' : (step.current ? '#3b82f6' : '#e2e8f0');
+                    const textColor = step.completed ? '#166534' : (step.current ? '#1e40af' : '#94a3b8');
+                    const textWeight = step.current ? '600' : '400';
+                    stepsHtml += `
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: ${dotColor}; display: inline-block;"></span>
+                            <span style="font-size: 11px; color: ${textColor}; font-weight: ${textWeight};">${step.title}</span>
+                        </div>
+                        ${idx < steps.length - 1 ? '<span style="color: #cbd5e1; font-size: 11px;">→</span>' : ''}
+                    `;
+                });
+                stepsHtml += '</div>';
+
+                return `
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">${report.customerName}</div>
+                                <div style="font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span style="font-family: monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${report.id}</span>
+                                    <span style="color: #cbd5e1;">|</span>
+                                    <span><span style="background: #dbeafe; color: #1e40af; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">${report.fromRegion}</span> → <span style="background: #dcfce7; color: #166534; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;">${report.toRegion}</span></span>
+                                    <span style="color: #cbd5e1;">|</span>
+                                    <span>${report.certFields.join('、') || '-'}</span>
+                                    <span style="color: #cbd5e1;">|</span>
+                                    <span>有效期${report.validityDays}天</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; margin-left: 12px;">
+                                <span style="display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: ${s.bg}; color: ${s.color}; border: 1px solid ${s.border};">${s.text}</span>
+                                <span style="font-size: 11px; color: #94a3b8;">${report.submitTime.split(' ')[0]}</span>
+                            </div>
+                        </div>
+                        <div style="background: #f8fafc; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;">
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;"><span style="font-weight: 600;">报备事由：</span>${report.reason}</div>
+                            <div style="font-size: 12px; color: #64748b;"><span style="font-weight: 600;">预期目标：</span>${report.target || '未填写'}</div>
+                        </div>
+                        ${stepsHtml}
+                        <div style="margin-top: 8px; font-size: 11px; color: #94a3b8;">
+                            <i class="fas fa-info-circle mr-1"></i>${stepText}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // 全选/取消全选
@@ -2117,10 +2476,10 @@
         // 批量认领
         function batchClaim() {
             if (selectedCustomers.length === 0) {
-                alert('请先选择客户');
+                showToast('请先选择客户', 'warning');
                 return;
             }
-            alert(`批量认领 ${selectedCustomers.length} 个客户成功\n\n客户已转入您的个人客户池，请在我的客户中查看。`);
+            showToast(`批量认领 ${selectedCustomers.length} 个客户成功，已转入个人客户池`, 'success', 4000);
             selectedCustomers = [];
             renderTable(currentSeaType === 'regional' ? regionalData : nationalData);
         }
@@ -2141,7 +2500,7 @@
 
         // 搜索
         function searchData() {
-            alert('执行筛选查询...');
+            showToast('筛选查询已执行', 'info', 2000);
         }
 
         // 重置
@@ -2200,6 +2559,28 @@
             renderTable(data);
         }
 
+        // Toast提示
+        function showToast(message, type = 'success', duration = 3000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast-item ${type}`;
+
+            const icons = {
+                success: '<i class="fas fa-check-circle" style="color: #22c55e; font-size: 18px;"></i>',
+                error: '<i class="fas fa-times-circle" style="color: #ef4444; font-size: 18px;"></i>',
+                warning: '<i class="fas fa-exclamation-triangle" style="color: #f59e0b; font-size: 18px;"></i>',
+                info: '<i class="fas fa-info-circle" style="color: #3b82f6; font-size: 18px;"></i>'
+            };
+
+            toast.innerHTML = `${icons[type] || icons.info}<span style="color: #374151; font-weight: 500;">${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('hide');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
             renderTable(regionalData);
@@ -2216,5 +2597,197 @@
             });
         });
     </script>
+
+    <!-- 申请跟进弹窗（跨区域报备） -->
+    <div class="modal-overlay" id="applyFollowModal">
+        <div class="modal-container" style="width: 700px; max-height: 90vh;">
+            <div class="modal-header" style="background: #eff6ff; border-bottom-color: #bfdbfe;">
+                <h3 class="text-lg font-bold text-gray-800">
+                    <i class="fas fa-file-signature text-blue-600 mr-2"></i>
+                    申请跟进（跨区域报备）
+                </h3>
+                <button class="close-btn" onclick="closeModal('applyFollowModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto;">
+                <!-- Step 1: 填写表单 -->
+                <div id="af-step1">
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 12px; color: #1e40af; font-size: 13px;">
+                        <i class="fas fa-info-circle mt-0.5"></i>
+                        <div>
+                            <p style="font-weight: 600; margin-bottom: 4px;">报备说明</p>
+                            <ul style="list-style: disc; list-inside; font-size: 12px; line-height: 1.6; opacity: 0.9;">
+                                <li>全国公海客户来自不同区域，申请跟进需向客户来源区域提交跨区域报备</li>
+                                <li>报备审批流程：来源区域部门负责人初审 → 来源区域负责人终审</li>
+                                <li>审批通过后将开通临时跨区域跟进权限，有效期默认90天</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                        <div style="font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+                            <i class="fas fa-building text-blue-600"></i>
+                            客户信息
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <span style="font-size: 12px; color: #6b7280; font-weight: 500;">客户名称</span>
+                                <input type="text" id="af-customer-name" class="readonly-field" readonly style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: #1e293b; width: 100%;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <span style="font-size: 12px; color: #6b7280; font-weight: 500;">客户编号</span>
+                                <input type="text" id="af-customer-id" class="readonly-field" readonly style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: #1e293b; width: 100%;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <span style="font-size: 12px; color: #6b7280; font-weight: 500;">来源区域</span>
+                                <input type="text" id="af-from-region" class="readonly-field" readonly style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: #1e293b; width: 100%;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <span style="font-size: 12px; color: #6b7280; font-weight: 500;">跟单人所在区域</span>
+                                <input type="text" class="readonly-field" readonly value="华北区域" style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: #1e293b; width: 100%;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                        <div style="font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+                            <i class="fas fa-edit text-blue-600"></i>
+                            报备内容
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">报备事由 <span style="color: #ef4444;">*</span></label>
+                            <textarea id="af-reason" rows="3" placeholder="请详细说明跨区域跟进的原因，如：客户总部在北京，生产基地在来源区域，需协调审核资源..." style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; outline: none; transition: all 0.2s; resize: vertical; min-height: 80px;"></textarea>
+                            <p style="font-size: 11px; color: #9ca3af; margin-top: 4px;">需说明"报备事由合理性"及"是否影响原归属区域利益"</p>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">关联认证领域</label>
+                            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="af-cert-field" value="QMS" style="width: 16px; height: 16px; accent-color: #3b82f6;">
+                                    <span style="font-size: 13px; color: #374151;">QMS</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="af-cert-field" value="EMS" style="width: 16px; height: 16px; accent-color: #3b82f6;">
+                                    <span style="font-size: 13px; color: #374151;">EMS</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="af-cert-field" value="OHSMS" style="width: 16px; height: 16px; accent-color: #3b82f6;">
+                                    <span style="font-size: 13px; color: #374151;">OHSMS</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="checkbox" class="af-cert-field" value="FSMS" style="width: 16px; height: 16px; accent-color: #3b82f6;">
+                                    <span style="font-size: 13px; color: #374151;">FSMS</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">申请有效期</label>
+                                <select id="af-validity" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; outline: none; background: white;">
+                                    <option value="30">30天</option>
+                                    <option value="90" selected>90天（默认）</option>
+                                    <option value="180">180天</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">预计成交时间</label>
+                                <input type="month" id="af-deal-time" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; outline: none;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px;">预期目标</label>
+                            <textarea id="af-target" rows="2" placeholder="请说明预期达成的业务目标" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; outline: none; transition: all 0.2s; resize: vertical; min-height: 60px;"></textarea>
+                        </div>
+                    </div>
+
+                    <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px 16px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="af-confirm" style="margin-top: 2px; width: 16px; height: 16px; accent-color: #f59e0b;">
+                            <div style="font-size: 13px; color: #92400e;">
+                                <span style="font-weight: 600; display: block; margin-bottom: 2px;">确认理解报备规则</span>
+                                <span style="font-size: 12px; opacity: 0.9;">我确认了解跨区域跟进需遵守的区域利益协调原则，获批后将严格按报备范围开展工作，接受原归属区域监督。</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Step 2: 提交成功 + 审批进度 -->
+                <div id="af-step2" class="hidden">
+                    <div style="text-align: center; padding: 20px 0;">
+                        <div style="width: 64px; height: 64px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <i class="fas fa-check" style="font-size: 28px; color: #16a34a;"></i>
+                        </div>
+                        <h4 style="font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">报备申请提交成功</h4>
+                        <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">您的跨区域跟进报备申请已提交至来源区域审批</p>
+                    </div>
+
+                    <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                        <div style="font-weight: 600; color: #166534; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-clipboard-check"></i>
+                            报备信息确认
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #bbf7d0;">
+                            <span style="color: #64748b;">报备单号</span>
+                            <span style="font-weight: 600; color: #1e293b; font-family: monospace;" id="af-success-report-id">-</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #bbf7d0;">
+                            <span style="color: #64748b;">客户名称</span>
+                            <span style="font-weight: 600; color: #1e293b;" id="af-success-customer">-</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #bbf7d0;">
+                            <span style="color: #64748b;">跨区域情况</span>
+                            <span style="font-weight: 600; color: #1e293b;" id="af-success-cross">-</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #bbf7d0;">
+                            <span style="color: #64748b;">关联领域</span>
+                            <span style="font-weight: 600; color: #1e293b;" id="af-success-fields">-</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #bbf7d0;">
+                            <span style="color: #64748b;">申请有效期</span>
+                            <span style="font-weight: 600; color: #1e293b;" id="af-success-validity">-</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                            <span style="color: #64748b;">提交时间</span>
+                            <span style="font-weight: 600; color: #1e293b;" id="af-success-time">-</span>
+                        </div>
+                    </div>
+
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                        <div style="font-size: 14px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                            <i class="fas fa-tasks text-blue-600"></i>
+                            审批进度
+                        </div>
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; position: relative; padding: 0 10px;" id="af-process-steps">
+                            <!-- 动态生成步骤 -->
+                        </div>
+                    </div>
+
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #1e40af; display: flex; align-items: flex-start; gap: 8px;">
+                        <i class="fas fa-lightbulb mt-0.5"></i>
+                        <div>
+                            <span style="font-weight: 600;">温馨提示：</span>
+                            您可以在页面下方"我的报备申请"区域查看所有报备的实时审批进度，也可前往【跨区域跟进报备管理】页面进行详细管理。
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="af-modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('applyFollowModal')" id="af-btn-cancel">取消</button>
+                <button class="btn btn-primary" onclick="submitApplyFollow()" id="af-btn-submit">
+                    <i class="fas fa-paper-plane"></i>
+                    提交报备申请
+                </button>
+                <button class="btn btn-primary hidden" onclick="closeModal('applyFollowModal')" id="af-btn-done">
+                    <i class="fas fa-check"></i>
+                    完成
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
