@@ -939,6 +939,7 @@
             color: #9ca3af;
         }
 </style>
+<base target="_blank">
 </head>
 <body>
     <!-- 顶部栏 -->
@@ -996,13 +997,17 @@
                     <span class="stat-value" id="stat-all-approval">6</span>
                     <span class="stat-label">全部</span>
                 </div>
-                <div class="stat-item" onclick="filterByStatus('first')">
-                    <span class="stat-value" id="stat-first-approval">2</span>
-                    <span class="stat-label">待初审</span>
+                <div class="stat-item" onclick="filterByStatus('current_review')">
+                    <span class="stat-value" id="stat-current-approval">2</span>
+                    <span class="stat-label">待当前区域初审</span>
                 </div>
-                <div class="stat-item" onclick="filterByStatus('second')">
-                    <span class="stat-value" id="stat-second-approval">2</span>
-                    <span class="stat-label">待终审</span>
+                <div class="stat-item" onclick="filterByStatus('cross_review')">
+                    <span class="stat-value" id="stat-cross-approval">2</span>
+                    <span class="stat-label">待跨区域二审</span>
+                </div>
+                <div class="stat-item" onclick="filterByStatus('final_review')">
+                    <span class="stat-value" id="stat-final-approval">0</span>
+                    <span class="stat-label">待跨区域终审</span>
                 </div>
                 <div class="stat-item" onclick="filterByStatus('approved')">
                     <span class="stat-value" id="stat-approved-approval">2</span>
@@ -1056,8 +1061,9 @@
                 <select id="filter-status" style="width: 110px;">
                     <option value="">全部</option>
                     <option value="draft">草稿</option>
-                    <option value="first">初审中</option>
-                    <option value="second">终审中</option>
+                    <option value="current_review">当前区域初审中</option>
+                    <option value="cross_review">跨区域二审中</option>
+                    <option value="final_review">跨区域终审中</option>
                     <option value="approved">已通过</option>
                     <option value="rejected">已驳回</option>
                     <option value="expired">已过期</option>
@@ -1368,7 +1374,7 @@
                         <ul class="list-disc list-inside space-y-1 text-xs opacity-90">
                             <li>客户归属区域与跟单人区域不一致时，需提交跨区域报备</li>
                             <li>报备有效期默认90天，到期前可申请续期</li>
-                            <li>审批流程：部门负责人初审 → 区域负责人终审</li>
+                            <li>审批流程：当前区域部门经理初审 → 跨区域部门经理二审 → 跨区域区域总监终审</li>
                         </ul>
                     </div>
                 </div>
@@ -1490,7 +1496,7 @@
                 <div class="flex items-center gap-3">
                     <i class="fas fa-gavel text-blue-600"></i>
                     <div>
-                        <h2 class="text-lg font-bold text-slate-900" id="approval-title">报备审批（二级终审）</h2>
+                        <h2 class="text-lg font-bold text-slate-900" id="approval-title">报备审批（跨区域区域总监终审）</h2>
                         <p class="text-xs text-gray-500">审批单号：<span id="approval-report-id">BR20240308001</span></p>
                     </div>
                 </div>
@@ -1543,21 +1549,9 @@
                     </div>
                 </div>
 
-                <!-- 初审意见（仅终审时显示） -->
-                <div class="mb-4" id="first-opinion-section">
-                    <div class="section-title">
-                        <i class="fas fa-check-circle text-green-500"></i>
-                        初审意见（华东区域市场部负责人）
-                    </div>
-                    <div class="approval-opinion approved">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="flex items-center gap-2">
-                                <span class="status-badge status-approved">初审通过</span>
-                                <span class="text-xs text-slate-500">2024-03-08 14:30</span>
-                            </div>
-                        </div>
-                        <p class="text-sm text-slate-700">事由真实，客户确有跨区域服务需求，建议通过。已核实客户联系人及业务需求。</p>
-                    </div>
+                <!-- 前置审批意见（仅二审/终审时显示） -->
+                <div class="mb-4" id="previous-opinion-section">
+                    <!-- 动态插入前置审批意见 -->
                 </div>
 
                 <!-- 审批决策 -->
@@ -1593,7 +1587,7 @@
                     <p id="comment-tip-reject" class="text-xs text-red-500 mt-1 hidden">审批驳回时，必须填写审批意见</p>
                 </div>
 
-                <!-- 二级终审额外选项：业绩分配 -->
+                <!-- 跨区域区域总监终审额外选项：业绩分配 -->
                 <div class="field-group border-blue-100 bg-blue-50/30" id="profit-share-section">
                     <div class="section-title border-blue-200 text-blue-900">
                         <i class="fas fa-pie-chart text-blue-600"></i>
@@ -1795,31 +1789,40 @@
                 target: '完成QMS和EMS双体系初次认证，预计合同金额15万元。',
                 status: 'approved',
                 statusText: '已通过',
-                statusStep: 4,
+                statusStep: 6,
                 initUser: '张营销',
                 initRegion: '华北区域',
                 initTime: '2024-03-08 10:30',
                 profitShare: { from: 70, to: 30 },
-                firstApproval: {
-                    approver: '李经理',
-                    region: '华东区域',
-                    role: '市场部负责人',
+                currentAreaManagerApproval: {
+                    approver: '赵主管',
+                    region: '华北区域',
+                    role: '部门经理',
                     result: 'approve',
                     opinion: '事由真实，客户确有跨区域服务需求，建议通过。已核实客户联系人及业务需求。',
                     time: '2024-03-08 14:30'
                 },
-                secondApproval: {
+                crossAreaManagerApproval: {
+                    approver: '李经理',
+                    region: '华东区域',
+                    role: '部门经理',
+                    result: 'approve',
+                    opinion: '客户情况属实，确有跨区域服务需求，建议提交区域总监终审。',
+                    time: '2024-03-08 16:00'
+                },
+                crossAreaDirectorApproval: {
                     approver: '王总监',
                     region: '华东区域',
-                    role: '区域负责人',
+                    role: '区域总监',
                     result: 'approve',
                     opinion: '同意报备，业绩按70%归属区域、30%跟单人区域分配。请协调好与原归属区域跟单人的沟通。',
                     time: '2024-03-09 09:15'
                 },
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '张营销提交跨区域跟进报备申请', time: '2024-03-08 10:30:00', operator: '张营销' },
-                    { action: 'update', title: '初审通过', desc: '李经理（华东区域市场部负责人）初审通过', time: '2024-03-08 14:30:00', operator: '李经理' },
-                    { action: 'update', title: '终审通过', desc: '王总监（华东区域负责人）终审通过，开通权限', time: '2024-03-09 09:15:00', operator: '王总监' },
+                    { action: 'update', title: '当前区域初审通过', desc: '赵主管（华北区域部门经理）当前区域初审通过', time: '2024-03-08 14:30:00', operator: '赵主管' },
+                    { action: 'update', title: '跨区域二审通过', desc: '李经理（华东区域部门经理）二审通过', time: '2024-03-08 16:00:00', operator: '李经理' },
+                    { action: 'update', title: '跨区域终审通过', desc: '王总监（华东区域总监）跨区域终审通过，开通权限', time: '2024-03-09 09:15:00', operator: '王总监' },
                     { action: 'complete', title: '权限生效', desc: '系统自动开通跨区域操作权限', time: '2024-03-09 09:16:00', operator: '系统' }
                 ]
             },
@@ -1840,25 +1843,34 @@
                 remainingDays: 45,
                 expectedDealTime: '2024年6月',
                 target: '完成信息安全管理体系认证',
-                status: 'second',
-                statusText: '终审中',
+                status: 'cross_review',
+                statusText: '跨区域二审中',
                 statusStep: 3,
                 initUser: '张营销',
                 initRegion: '华北区域',
                 initTime: '2024-04-12 09:00',
                 profitShare: null,
-                firstApproval: {
-                    approver: '赵经理',
-                    region: '华东区域',
-                    role: '市场部负责人',
+                currentAreaManagerApproval: {
+                    approver: '赵主管',
+                    region: '华北区域',
+                    role: '部门经理',
                     result: 'approve',
-                    opinion: '客户情况属实，建议终审通过。',
+                    opinion: '客户情况属实，建议通过。',
+                    time: '2024-04-12 14:00'
+                },
+                crossAreaManagerApproval: {
+                    approver: '钱经理',
+                    region: '华东区域',
+                    role: '部门经理',
+                    result: 'approve',
+                    opinion: '客户情况属实，建议提交区域总监终审。',
                     time: '2024-04-12 16:00'
                 },
-                secondApproval: null,
+                crossAreaDirectorApproval: null,
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '张营销提交跨区域跟进报备申请', time: '2024-04-12 09:00:00', operator: '张营销' },
-                    { action: 'update', title: '初审通过', desc: '赵经理初审通过，提交终审', time: '2024-04-12 16:00:00', operator: '赵经理' }
+                    { action: 'update', title: '当前区域初审通过', desc: '赵主管（华北区域部门经理）当前区域初审通过', time: '2024-04-12 14:00:00', operator: '赵主管' },
+                    { action: 'update', title: '跨区域二审通过', desc: '钱经理（华东区域部门经理）二审通过，提交区域总监终审', time: '2024-04-12 16:00:00', operator: '钱经理' }
                 ]
             },
             {
@@ -1885,8 +1897,8 @@
                 initRegion: '华北区域',
                 initTime: '2024-04-15 16:00',
                 profitShare: null,
-                firstApproval: null,
-                secondApproval: null,
+                currentAreaManagerApproval: null,
+                crossAreaDirectorApproval: null,
                 logs: [
                     { action: 'create', title: '保存草稿', desc: '张营销保存报备草稿', time: '2024-04-15 16:00:00', operator: '张营销' }
                 ]
@@ -1915,8 +1927,8 @@
                 initRegion: '华北区域',
                 initTime: '2024-04-18 10:30',
                 profitShare: null,
-                firstApproval: null,
-                secondApproval: null,
+                currentAreaManagerApproval: null,
+                crossAreaDirectorApproval: null,
                 logs: [
                     { action: 'create', title: '保存草稿', desc: '张营销保存报备草稿', time: '2024-04-18 10:30:00', operator: '张营销' }
                 ]
@@ -1940,31 +1952,40 @@
                 target: '完成年度监督审核',
                 status: 'expired',
                 statusText: '已过期',
-                statusStep: 7,
+                statusStep: 9,
                 initUser: '张营销',
                 initRegion: '华北区域',
                 initTime: '2024-03-01 09:00',
                 profitShare: { from: 80, to: 20 },
-                firstApproval: {
-                    approver: '孙经理',
-                    region: '华中区域',
-                    role: '市场部负责人',
+                currentAreaManagerApproval: {
+                    approver: '赵主管',
+                    region: '华北区域',
+                    role: '部门经理',
                     result: 'approve',
                     opinion: '同意报备。',
+                    time: '2024-03-01 12:00'
+                },
+                crossAreaManagerApproval: {
+                    approver: '孙经理',
+                    region: '华中区域',
+                    role: '部门经理',
+                    result: 'approve',
+                    opinion: '同意，建议提交区域总监终审。',
                     time: '2024-03-01 14:00'
                 },
-                secondApproval: {
+                crossAreaDirectorApproval: {
                     approver: '周总监',
                     region: '华中区域',
-                    role: '区域负责人',
+                    role: '区域总监',
                     result: 'approve',
                     opinion: '同意，业绩按80:20分配。',
                     time: '2024-03-02 10:00'
                 },
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '张营销提交跨区域跟进报备申请', time: '2024-03-01 09:00:00', operator: '张营销' },
-                    { action: 'update', title: '初审通过', desc: '孙经理初审通过', time: '2024-03-01 14:00:00', operator: '孙经理' },
-                    { action: 'update', title: '终审通过', desc: '周总监终审通过', time: '2024-03-02 10:00:00', operator: '周总监' },
+                    { action: 'update', title: '当前区域初审通过', desc: '赵主管（华北区域部门经理）当前区域初审通过', time: '2024-03-01 12:00:00', operator: '赵主管' },
+                    { action: 'update', title: '跨区域二审通过', desc: '孙经理（华中区域部门经理）二审通过', time: '2024-03-01 14:00:00', operator: '孙经理' },
+                    { action: 'update', title: '跨区域终审通过', desc: '周总监（华中区域总监）跨区域终审通过', time: '2024-03-02 10:00:00', operator: '周总监' },
                     { action: 'complete', title: '权限生效', desc: '系统开通权限', time: '2024-03-02 10:01:00', operator: '系统' },
                     { action: 'update', title: '权限过期', desc: '报备有效期已过期', time: '2024-04-01 00:00:00', operator: '系统' }
                 ]
@@ -1988,31 +2009,40 @@
                 target: '完成双体系认证',
                 status: 'revoked',
                 statusText: '已撤销',
-                statusStep: 6,
+                statusStep: 8,
                 initUser: '张营销',
                 initRegion: '华北区域',
                 initTime: '2024-02-20 10:00',
                 profitShare: { from: 70, to: 30 },
-                firstApproval: {
-                    approver: '钱经理',
-                    region: '东北区域',
-                    role: '市场部负责人',
+                currentAreaManagerApproval: {
+                    approver: '赵主管',
+                    region: '华北区域',
+                    role: '部门经理',
                     result: 'approve',
                     opinion: '同意报备。',
+                    time: '2024-02-20 14:00'
+                },
+                crossAreaManagerApproval: {
+                    approver: '钱经理',
+                    region: '东北区域',
+                    role: '部门经理',
+                    result: 'approve',
+                    opinion: '同意，建议提交区域总监终审。',
                     time: '2024-02-20 16:00'
                 },
-                secondApproval: {
+                crossAreaDirectorApproval: {
                     approver: '吴总监',
                     region: '东北区域',
-                    role: '区域负责人',
+                    role: '区域总监',
                     result: 'approve',
                     opinion: '同意。',
                     time: '2024-02-21 09:00'
                 },
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '张营销提交报备申请', time: '2024-02-20 10:00:00', operator: '张营销' },
-                    { action: 'update', title: '初审通过', desc: '钱经理初审通过', time: '2024-02-20 16:00:00', operator: '钱经理' },
-                    { action: 'update', title: '终审通过', desc: '吴总监终审通过', time: '2024-02-21 09:00:00', operator: '吴总监' },
+                    { action: 'update', title: '当前区域初审通过', desc: '赵主管（华北区域部门经理）当前区域初审通过', time: '2024-02-20 14:00:00', operator: '赵主管' },
+                    { action: 'update', title: '跨区域二审通过', desc: '钱经理（东北区域部门经理）二审通过', time: '2024-02-20 16:00:00', operator: '钱经理' },
+                    { action: 'update', title: '跨区域终审通过', desc: '吴总监（东北区域总监）跨区域终审通过', time: '2024-02-21 09:00:00', operator: '吴总监' },
                     { action: 'update', title: '撤销报备', desc: '张营销主动撤销报备，原因：客户项目延期', time: '2024-03-15 14:00:00', operator: '张营销' }
                 ]
             },
@@ -2033,15 +2063,15 @@
                 remainingDays: null,
                 expectedDealTime: '2024年8月',
                 target: '完成质量管理体系认证',
-                status: 'first',
-                statusText: '初审中',
+                status: 'current_review',
+                statusText: '当前区域初审中',
                 statusStep: 1,
                 initUser: '张营销',
                 initRegion: '华北区域',
                 initTime: '2024-04-20 14:00',
                 profitShare: null,
-                firstApproval: null,
-                secondApproval: null,
+                currentAreaManagerApproval: null,
+                crossAreaDirectorApproval: null,
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '张营销提交跨区域跟进报备申请', time: '2024-04-20 14:00:00', operator: '张营销' }
                 ]
@@ -2065,23 +2095,32 @@
                 target: '完成三体系认证，支持上市流程',
                 status: 'rejected',
                 statusText: '已驳回',
-                statusStep: 5,
+                statusStep: 7,
                 initUser: '张营销',
                 initRegion: '华北区域',
                 initTime: '2024-04-10 11:00',
                 profitShare: null,
-                firstApproval: {
+                currentAreaManagerApproval: {
+                    approver: '赵主管',
+                    region: '华北区域',
+                    role: '部门经理',
+                    result: 'approve',
+                    opinion: '客户情况属实，建议通过。',
+                    time: '2024-04-10 14:00'
+                },
+                crossAreaManagerApproval: {
                     approver: '马经理',
                     region: '西北区域',
-                    role: '市场部负责人',
+                    role: '部门经理',
                     result: 'reject',
                     opinion: '经核实，该客户已有西北区域专属服务人员跟进，建议由原区域继续跟进。',
                     time: '2024-04-11 10:30'
                 },
-                secondApproval: null,
+                crossAreaDirectorApproval: null,
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '张营销提交跨区域跟进报备申请', time: '2024-04-10 11:00:00', operator: '张营销' },
-                    { action: 'update', title: '初审驳回', desc: '马经理初审驳回', time: '2024-04-11 10:30:00', operator: '马经理' }
+                    { action: 'update', title: '当前区域初审通过', desc: '赵主管（华北区域部门经理）当前区域初审通过', time: '2024-04-10 14:00:00', operator: '赵主管' },
+                    { action: 'update', title: '跨区域二审驳回', desc: '马经理（西北区域部门经理）二审驳回', time: '2024-04-11 10:30:00', operator: '马经理' }
                 ]
             },
             // ========== 我审批的（其他区域发起，需要华北区域审批）==========
@@ -2102,20 +2141,20 @@
                 remainingDays: null,
                 expectedDealTime: '2024年8月',
                 target: '完成质量管理体系认证',
-                status: 'first',
-                statusText: '初审中',
+                status: 'current_review',
+                statusText: '当前区域初审中',
                 statusStep: 1,
                 initUser: '陈销售',
                 initRegion: '华东区域',
                 initTime: '2024-04-21 09:30',
                 profitShare: null,
-                firstApproval: null,
-                secondApproval: null,
+                currentAreaManagerApproval: null,
+                crossAreaDirectorApproval: null,
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '陈销售提交跨区域跟进报备申请', time: '2024-04-21 09:30:00', operator: '陈销售' }
                 ],
-                needMyApproval: true,
-                myApprovalLevel: 'first'
+                needMyApproval: false,
+                myApprovalLevel: null
             },
             {
                 id: 'BR20240420002',
@@ -2134,20 +2173,20 @@
                 remainingDays: null,
                 expectedDealTime: '2024年9月',
                 target: '完成双体系认证',
-                status: 'first',
-                statusText: '初审中',
+                status: 'current_review',
+                statusText: '当前区域初审中',
                 statusStep: 1,
                 initUser: '刘业务员',
                 initRegion: '华南区域',
                 initTime: '2024-04-20 15:00',
                 profitShare: null,
-                firstApproval: null,
-                secondApproval: null,
+                currentAreaManagerApproval: null,
+                crossAreaDirectorApproval: null,
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '刘业务员提交跨区域跟进报备申请', time: '2024-04-20 15:00:00', operator: '刘业务员' }
                 ],
-                needMyApproval: true,
-                myApprovalLevel: 'first'
+                needMyApproval: false,
+                myApprovalLevel: null
             },
             {
                 id: 'BR20240418003',
@@ -2166,14 +2205,14 @@
                 remainingDays: null,
                 expectedDealTime: '2024年10月',
                 target: '完成三体系认证',
-                status: 'second',
-                statusText: '终审中',
+                status: 'cross_review',
+                statusText: '跨区域二审中',
                 statusStep: 3,
                 initUser: '王经理',
                 initRegion: '西南区域',
                 initTime: '2024-04-18 10:00',
                 profitShare: null,
-                firstApproval: {
+                currentAreaManagerApproval: {
                     approver: '赵主管',
                     region: '华北区域',
                     role: '市场部负责人',
@@ -2181,13 +2220,13 @@
                     opinion: '客户情况属实，建议通过终审。',
                     time: '2024-04-18 16:00'
                 },
-                secondApproval: null,
+                crossAreaDirectorApproval: null,
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '王经理提交跨区域跟进报备申请', time: '2024-04-18 10:00:00', operator: '王经理' },
-                    { action: 'update', title: '初审通过', desc: '赵主管初审通过，提交终审', time: '2024-04-18 16:00:00', operator: '赵主管' }
+                    { action: 'update', title: '当前区域初审通过', desc: '赵主管初审通过，提交终审', time: '2024-04-18 16:00:00', operator: '赵主管' }
                 ],
                 needMyApproval: true,
-                myApprovalLevel: 'second'
+                myApprovalLevel: 'final'
             },
             {
                 id: 'BR20240415004',
@@ -2206,14 +2245,14 @@
                 remainingDays: null,
                 expectedDealTime: '2024年8月',
                 target: '完成质量管理体系认证',
-                status: 'second',
-                statusText: '终审中',
+                status: 'cross_review',
+                statusText: '跨区域二审中',
                 statusStep: 3,
                 initUser: '李销售',
                 initRegion: '东北区域',
                 initTime: '2024-04-15 14:00',
                 profitShare: null,
-                firstApproval: {
+                currentAreaManagerApproval: {
                     approver: '周经理',
                     region: '华北区域',
                     role: '市场部负责人',
@@ -2221,13 +2260,13 @@
                     opinion: '同意报备，建议业绩分配80:20。',
                     time: '2024-04-15 16:30'
                 },
-                secondApproval: null,
+                crossAreaDirectorApproval: null,
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '李销售提交跨区域跟进报备申请', time: '2024-04-15 14:00:00', operator: '李销售' },
-                    { action: 'update', title: '初审通过', desc: '周经理初审通过，提交终审', time: '2024-04-15 16:30:00', operator: '周经理' }
+                    { action: 'update', title: '当前区域初审通过', desc: '周经理初审通过，提交终审', time: '2024-04-15 16:30:00', operator: '周经理' }
                 ],
                 needMyApproval: true,
-                myApprovalLevel: 'second'
+                myApprovalLevel: 'final'
             },
             {
                 id: 'BR20240410005',
@@ -2248,12 +2287,12 @@
                 target: '完成质量及信息安全双体系认证',
                 status: 'approved',
                 statusText: '已通过',
-                statusStep: 4,
+                statusStep: 6,
                 initUser: '张业务',
                 initRegion: '华南区域',
                 initTime: '2024-04-10 09:00',
                 profitShare: { from: 75, to: 25 },
-                firstApproval: {
+                currentAreaManagerApproval: {
                     approver: '王主管',
                     region: '华北区域',
                     role: '市场部负责人',
@@ -2261,7 +2300,7 @@
                     opinion: '同意报备，已核实客户情况。',
                     time: '2024-04-10 14:00'
                 },
-                secondApproval: {
+                crossAreaDirectorApproval: {
                     approver: '李总监',
                     region: '华北区域',
                     role: '区域负责人',
@@ -2271,8 +2310,9 @@
                 },
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '张业务提交跨区域跟进报备申请', time: '2024-04-10 09:00:00', operator: '张业务' },
-                    { action: 'update', title: '初审通过', desc: '王主管初审通过', time: '2024-04-10 14:00:00', operator: '王主管' },
-                    { action: 'update', title: '终审通过', desc: '李总监终审通过', time: '2024-04-11 10:00:00', operator: '李总监' }
+                    { action: 'update', title: '当前区域初审通过', desc: '陈主管（华南区域部门经理）当前区域初审通过', time: '2024-04-10 12:00:00', operator: '陈主管' },
+                    { action: 'update', title: '跨区域二审通过', desc: '王主管（华北区域部门经理）二审通过', time: '2024-04-10 14:00:00', operator: '王主管' },
+                    { action: 'update', title: '跨区域终审通过', desc: '李总监（华北区域总监）跨区域终审通过', time: '2024-04-11 10:00:00', operator: '李总监' }
                 ],
                 needMyApproval: false
             },
@@ -2295,12 +2335,12 @@
                 target: '完成三体系认证',
                 status: 'approved',
                 statusText: '已通过',
-                statusStep: 4,
+                statusStep: 6,
                 initUser: '赵营销',
                 initRegion: '华东区域',
                 initTime: '2024-04-05 10:30',
                 profitShare: { from: 80, to: 20 },
-                firstApproval: {
+                currentAreaManagerApproval: {
                     approver: '钱主管',
                     region: '华北区域',
                     role: '市场部负责人',
@@ -2308,7 +2348,7 @@
                     opinion: '同意报备。',
                     time: '2024-04-05 15:00'
                 },
-                secondApproval: {
+                crossAreaDirectorApproval: {
                     approver: '孙总监',
                     region: '华北区域',
                     role: '区域负责人',
@@ -2318,8 +2358,9 @@
                 },
                 logs: [
                     { action: 'create', title: '提交报备申请', desc: '赵营销提交跨区域跟进报备申请', time: '2024-04-05 10:30:00', operator: '赵营销' },
-                    { action: 'update', title: '初审通过', desc: '钱主管初审通过', time: '2024-04-05 15:00:00', operator: '钱主管' },
-                    { action: 'update', title: '终审通过', desc: '孙总监终审通过', time: '2024-04-06 09:00:00', operator: '孙总监' }
+                    { action: 'update', title: '当前区域初审通过', desc: '郑主管（华东区域部门经理）当前区域初审通过', time: '2024-04-05 14:00:00', operator: '郑主管' },
+                    { action: 'update', title: '跨区域二审通过', desc: '钱主管（华北区域部门经理）二审通过', time: '2024-04-05 15:00:00', operator: '钱主管' },
+                    { action: 'update', title: '跨区域终审通过', desc: '孙总监（华北区域总监）跨区域终审通过', time: '2024-04-06 09:00:00', operator: '孙总监' }
                 ],
                 needMyApproval: false
             }
@@ -2393,8 +2434,9 @@
             // 我审批的统计
             const approvalData = reportData.filter(r => r.fromRegion === '华北区域');
             document.getElementById('stat-all-approval').textContent = approvalData.length;
-            document.getElementById('stat-first-approval').textContent = approvalData.filter(r => r.status === 'first').length;
-            document.getElementById('stat-second-approval').textContent = approvalData.filter(r => r.status === 'second').length;
+            document.getElementById('stat-current-approval').textContent = approvalData.filter(r => r.status === 'current_review').length;
+            document.getElementById('stat-cross-approval').textContent = approvalData.filter(r => r.status === 'cross_review').length;
+            document.getElementById('stat-final-approval').textContent = approvalData.filter(r => r.status === 'final_review').length;
             document.getElementById('stat-approved-approval').textContent = approvalData.filter(r => ['approved', 'rejected'].includes(r.status)).length;
         }
 
@@ -2559,7 +2601,7 @@
             // 再按状态过滤
             if (status !== 'all') {
                 if (status === 'pending') {
-                    currentData = currentData.filter(r => ['first', 'second'].includes(r.status));
+                    currentData = currentData.filter(r => ['current_review', 'cross_review', 'final_review'].includes(r.status));
                 } else if (status === 'expired') {
                     currentData = currentData.filter(r => ['expired', 'revoked'].includes(r.status));
                 } else {
@@ -2670,9 +2712,10 @@
             // 审批流程步骤
             const steps = [
                 { title: '提交申请', time: report.initTime, completed: report.statusStep >= 0 },
-                { title: '初审', time: report.firstApproval?.time || '', completed: report.statusStep >= 2, rejected: report.status === 'rejected' && report.firstApproval?.result === 'reject' },
-                { title: '终审', time: report.secondApproval?.time || '', completed: report.statusStep >= 4, rejected: report.status === 'rejected' && report.secondApproval?.result === 'reject' },
-                { title: '权限生效', time: report.status === 'approved' ? report.secondApproval?.time : '', completed: report.status === 'approved' }
+                { title: '当前区域初审', time: report.currentAreaManagerApproval?.time || '', completed: report.statusStep >= 2, rejected: report.status === 'rejected' && report.currentAreaManagerApproval?.result === 'reject' },
+                { title: '跨区域二审', time: report.crossAreaManagerApproval?.time || '', completed: report.statusStep >= 4, rejected: report.status === 'rejected' && report.crossAreaManagerApproval?.result === 'reject' },
+                { title: '跨区域终审', time: report.crossAreaDirectorApproval?.time || '', completed: report.statusStep >= 6, rejected: report.status === 'rejected' && report.crossAreaDirectorApproval?.result === 'reject' },
+                { title: '权限生效', time: report.status === 'approved' ? report.crossAreaDirectorApproval?.time : '', completed: report.status === 'approved' }
             ];
 
             let stepsHtml = '';
@@ -2695,10 +2738,10 @@
 
             // 审批意见
             let opinionsHtml = '';
-            if (report.firstApproval) {
-                const resultClass = report.firstApproval.result === 'approve' ? 'approved' : 'rejected';
-                const resultText = report.firstApproval.result === 'approve' ? '初审通过' : '初审驳回';
-                const resultBadge = report.firstApproval.result === 'approve' ? 
+            if (report.currentAreaManagerApproval) {
+                const resultClass = report.currentAreaManagerApproval.result === 'approve' ? 'approved' : 'rejected';
+                const resultText = report.currentAreaManagerApproval.result === 'approve' ? '初审通过' : '初审驳回';
+                const resultBadge = report.currentAreaManagerApproval.result === 'approve' ? 
                     '<span class="status-badge status-approved">通过</span>' : 
                     '<span class="status-badge status-rejected">驳回</span>';
 
@@ -2709,16 +2752,16 @@
                                 <span class="font-semibold text-sm text-slate-900">初审意见</span>
                                 ${resultBadge}
                             </div>
-                            <span class="text-xs text-slate-500">${report.firstApproval.time}</span>
+                            <span class="text-xs text-slate-500">${report.currentAreaManagerApproval.time}</span>
                         </div>
-                        <div class="text-xs text-slate-500 mb-1">${report.firstApproval.region} - ${report.firstApproval.role}：${report.firstApproval.approver}</div>
-                        <p class="text-sm text-slate-700">${report.firstApproval.opinion}</p>
+                        <div class="text-xs text-slate-500 mb-1">${report.currentAreaManagerApproval.region} - ${report.currentAreaManagerApproval.role}：${report.currentAreaManagerApproval.approver}</div>
+                        <p class="text-sm text-slate-700">${report.currentAreaManagerApproval.opinion}</p>
                     </div>
                 `;
             }
-            if (report.secondApproval) {
-                const resultClass = report.secondApproval.result === 'approve' ? 'approved' : 'rejected';
-                const resultBadge = report.secondApproval.result === 'approve' ? 
+            if (report.crossAreaDirectorApproval) {
+                const resultClass = report.crossAreaDirectorApproval.result === 'approve' ? 'approved' : 'rejected';
+                const resultBadge = report.crossAreaDirectorApproval.result === 'approve' ? 
                     '<span class="status-badge status-approved">通过</span>' : 
                     '<span class="status-badge status-rejected">驳回</span>';
 
@@ -2729,10 +2772,10 @@
                                 <span class="font-semibold text-sm text-slate-900">终审意见</span>
                                 ${resultBadge}
                             </div>
-                            <span class="text-xs text-slate-500">${report.secondApproval.time}</span>
+                            <span class="text-xs text-slate-500">${report.crossAreaDirectorApproval.time}</span>
                         </div>
-                        <div class="text-xs text-slate-500 mb-1">${report.secondApproval.region} - ${report.secondApproval.role}：${report.secondApproval.approver}</div>
-                        <p class="text-sm text-slate-700">${report.secondApproval.opinion}</p>
+                        <div class="text-xs text-slate-500 mb-1">${report.crossAreaDirectorApproval.region} - ${report.crossAreaDirectorApproval.role}：${report.crossAreaDirectorApproval.approver}</div>
+                        <p class="text-sm text-slate-700">${report.crossAreaDirectorApproval.opinion}</p>
                         ${report.profitShare ? `
                             <div class="mt-2 pt-2 border-t ${resultClass === 'approved' ? 'border-green-200/50' : 'border-red-200/50'} text-xs ${resultClass === 'approved' ? 'text-green-800' : 'text-red-800'}">
                                 <span class="font-medium">业绩分配：</span>${report.fromRegion}${report.profitShare.from}% / ${report.toRegion}${report.profitShare.to}%
@@ -3131,14 +3174,14 @@
                 remainingDays: null,
                 expectedDealTime: document.getElementById('report-deal-time').value,
                 target: '',
-                status: 'first',
-                statusText: '初审中',
+                status: 'current_review',
+                statusText: '当前区域初审中',
                 statusStep: 1,
                 initUser: '张营销',
                 initRegion: '华北区域',
                 initTime: new Date().toLocaleString('zh-CN'),
-                firstApproval: null,
-                secondApproval: null,
+                currentAreaManagerApproval: null,
+                crossAreaDirectorApproval: null,
                 logs: [{ action: 'create', title: '提交报备申请', desc: '张营销提交跨区域跟进报备申请', time: new Date().toLocaleString('zh-CN'), operator: '张营销' }]
             };
 
@@ -3182,18 +3225,23 @@
             // 根据级别调整显示
             const header = document.getElementById('approval-header');
             const title = document.getElementById('approval-title');
-            const firstOpinionSection = document.getElementById('first-opinion-section');
+            const previousOpinionSection = document.getElementById('previous-opinion-section');
             const profitShareSection = document.getElementById('profit-share-section');
 
-            if (level === 'first') {
+            if (level === 'current') {
                 header.className = 'modal-header modal-header-green';
-                title.textContent = '报备审批（三级初审）';
-                firstOpinionSection.style.display = 'none';
+                title.textContent = '报备审批（当前区域部门经理初审）';
+                previousOpinionSection.style.display = 'none';
+                profitShareSection.style.display = 'none';
+            } else if (level === 'cross') {
+                header.className = 'modal-header modal-header-blue';
+                title.textContent = '报备审批（跨区域部门经理二审）';
+                previousOpinionSection.style.display = 'block';
                 profitShareSection.style.display = 'none';
             } else {
                 header.className = 'modal-header modal-header-blue';
-                title.textContent = '报备审批（二级终审）';
-                firstOpinionSection.style.display = 'block';
+                title.textContent = '报备审批（跨区域区域总监终审）';
+                previousOpinionSection.style.display = 'block';
                 profitShareSection.style.display = 'block';
             }
 
@@ -3285,62 +3333,89 @@
             const report = currentDetailReport;
             const now = new Date().toLocaleString('zh-CN');
 
-            if (currentApprovalLevel === 'first') {
-                report.firstApproval = {
+            if (currentApprovalLevel === 'current') {
+                // 当前区域部门经理初审
+                report.currentAreaManagerApproval = {
                     approver: '赵主管',
                     region: '华北区域',
-                    role: '市场部负责人',
+                    role: '部门经理',
                     result: decision,
-                    opinion: comment || '初审通过',
+                    opinion: comment || '当前区域初审通过',
                     time: now
                 };
 
                 if (decision === 'approve') {
-                    report.status = 'second';
-                    report.statusText = '终审中';
+                    report.status = 'cross_review';
+                    report.statusText = '跨区域二审中';
                     report.statusStep = 3;
-                    report.logs.push({ action: 'update', title: '初审通过', desc: '赵主管初审通过，提交终审', time: now, operator: '赵主管' });
-                    showToast('初审通过，已提交终审', 'success');
+                    report.logs.push({ action: 'update', title: '当前区域初审通过', desc: '赵主管（华北区域部门经理）当前区域初审通过，提交跨区域二审', time: now, operator: '赵主管' });
+                    showToast('当前区域初审通过，已提交跨区域部门经理二审', 'success');
                 } else {
                     report.status = 'rejected';
                     report.statusText = '已驳回';
-                    report.statusStep = 5;
-                    report.logs.push({ action: 'update', title: '初审驳回', desc: '赵主管初审驳回：' + comment, time: now, operator: '赵主管' });
+                    report.statusStep = 7;
+                    report.logs.push({ action: 'update', title: '当前区域初审驳回', desc: '赵主管初审驳回：' + comment, time: now, operator: '赵主管' });
                     report.needMyApproval = false;
                     showToast('已驳回申请', 'warning');
                 }
-            } else {
+            } else if (currentApprovalLevel === 'cross') {
+                // 跨区域部门经理二审
+                report.crossAreaManagerApproval = {
+                    approver: '钱经理',
+                    region: report.fromRegion,
+                    role: '部门经理',
+                    result: decision,
+                    opinion: comment || '跨区域二审通过',
+                    time: now
+                };
+
+                if (decision === 'approve') {
+                    report.status = 'final_review';
+                    report.statusText = '跨区域终审中';
+                    report.statusStep = 5;
+                    report.logs.push({ action: 'update', title: '跨区域二审通过', desc: '钱经理（' + report.fromRegion + '部门经理）二审通过，提交跨区域区域总监终审', time: now, operator: '钱经理' });
+                    showToast('跨区域二审通过，已提交跨区域区域总监终审', 'success');
+                } else {
+                    report.status = 'rejected';
+                    report.statusText = '已驳回';
+                    report.statusStep = 7;
+                    report.logs.push({ action: 'update', title: '跨区域二审驳回', desc: '钱经理二审驳回：' + comment, time: now, operator: '钱经理' });
+                    report.needMyApproval = false;
+                    showToast('已驳回申请', 'warning');
+                }
+            } else if (currentApprovalLevel === 'final') {
+                // 跨区域区域总监终审
                 const shareFrom = parseInt(document.querySelector('input[onchange*="follower"]').value) || 70;
                 const shareTo = parseInt(document.getElementById('follower-percent').value) || 30;
 
-                report.secondApproval = {
+                report.crossAreaDirectorApproval = {
                     approver: '李总监',
-                    region: '华北区域',
-                    role: '区域负责人',
+                    region: report.fromRegion,
+                    role: '区域总监',
                     result: decision,
-                    opinion: comment || '终审通过',
+                    opinion: comment || '跨区域终审通过',
                     time: now
                 };
 
                 if (decision === 'approve') {
                     report.status = 'approved';
                     report.statusText = '已通过';
-                    report.statusStep = 4;
+                    report.statusStep = 6;
                     report.startDate = new Date().toISOString().slice(0,10);
                     const end = new Date();
                     end.setDate(end.getDate() + report.validityDays);
                     report.endDate = end.toISOString().slice(0,10);
                     report.remainingDays = report.validityDays;
                     report.profitShare = { from: shareFrom, to: shareTo };
-                    report.logs.push({ action: 'update', title: '终审通过', desc: '李总监终审通过，开通权限', time: now, operator: '李总监' });
+                    report.logs.push({ action: 'update', title: '跨区域终审通过', desc: '李总监（' + report.fromRegion + '区域总监）跨区域终审通过，开通权限', time: now, operator: '李总监' });
                     report.logs.push({ action: 'complete', title: '权限生效', desc: '系统自动开通跨区域操作权限', time: now, operator: '系统' });
                     report.needMyApproval = false;
-                    showToast('终审通过，系统已开通跨区域操作权限', 'success');
+                    showToast('跨区域终审通过，系统已开通跨区域操作权限', 'success');
                 } else {
                     report.status = 'rejected';
                     report.statusText = '已驳回';
-                    report.statusStep = 5;
-                    report.logs.push({ action: 'update', title: '终审驳回', desc: '李总监终审驳回：' + comment, time: now, operator: '李总监' });
+                    report.statusStep = 7;
+                    report.logs.push({ action: 'update', title: '跨区域终审驳回', desc: '李总监终审驳回：' + comment, time: now, operator: '李总监' });
                     report.needMyApproval = false;
                     showToast('已驳回申请', 'warning');
                 }
@@ -3387,8 +3462,8 @@
             report.status = 'first';
             report.statusText = '初审中（续期）';
             report.statusStep = 1;
-            report.firstApproval = null;
-            report.secondApproval = null;
+            report.currentAreaManagerApproval = null;
+            report.crossAreaDirectorApproval = null;
             report.logs.push({ action: 'update', title: '续期申请', desc: '张营销提交续期申请，原因：' + reason, time: now, operator: '张营销' });
 
             showToast('续期申请已提交，需重新走审批流程', 'success');
