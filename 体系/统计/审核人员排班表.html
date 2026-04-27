@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1432,9 +1433,8 @@
                             barClass += ' audit';
                         }
 
-                        // 计算宽度：每个工作日46px，减去边距
-                        const actualWorkdays = countWorkdaysInRange(plan.startDay, plan.endDay, year, month);
-                        let width = Math.max(actualWorkdays * 46 - 4, 18);
+                        // 计算宽度：按实际天数比例 × 每日列宽(46px)，减去边距
+                        let width = Math.max(plan.days * 46 - 4, 18);
 
                         // 半天任务使用简化展示
                         let taskContent = '';
@@ -1454,7 +1454,10 @@
                                            </div>`;
                         }
 
-                        html += `<div class="${barClass}" style="width:${width}px;"
+                        const hasHalfDay = plan.days % 1 !== 0;
+                        const dataAttr = hasHalfDay ? ' data-has-half="true"' : '';
+
+                        html += `<div class="${barClass}" style="width:${width}px;"${dataAttr}
                             onclick="showPlanDetail('${plan.id}', event)">
                             ${taskContent}
                         </div>`;
