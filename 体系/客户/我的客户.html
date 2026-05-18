@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -63,7 +64,9 @@
             margin: 20px 20px 0 20px;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
-            overflow: hidden;
+            overflow: visible;
+            position: relative;
+            z-index: 300;
         }
 
         .quick-filters {
@@ -106,7 +109,7 @@
 
         .filter-panel {
             max-height: 0;
-            overflow: hidden;
+            overflow: visible;
             transition: max-height 0.3s ease-out;
             border-top: 1px solid #e2e8f0;
         }
@@ -124,31 +127,121 @@
             background: white;
         }
 
+        .multi-select {
+            position: relative;
+            width: 220px;
+        }
+        .multi-select-trigger {
+            width: 100%;
+            min-height: 32px;
+            padding: 5px 30px 5px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 13px;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            position: relative;
+        }
+        .multi-select-trigger i {
+            position: absolute;
+            right: 10px;
+            color: #94a3b8;
+            font-size: 11px;
+        }
+        .multi-select-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            z-index: 10000;
+            width: 280px;
+            padding: 10px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+        }
+        .multi-select.open .multi-select-menu { display: block; }
+        .multi-select-search {
+            width: 100%;
+            padding: 7px 9px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            margin-bottom: 8px;
+        }
+        .multi-select-search:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        .multi-select-group {
+            padding: 4px 0;
+        }
+        .multi-select-group-title {
+            padding: 6px 8px 4px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            background: #f8fafc;
+            border-radius: 6px;
+            margin-bottom: 4px;
+        }
+        .multi-select-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #334155;
+            cursor: pointer;
+        }
+        .multi-select-option:hover { background: #f1f5f9; }
+        .multi-select-empty {
+            display: none;
+            padding: 12px 8px;
+            color: #94a3b8;
+            font-size: 13px;
+            text-align: center;
+        }
+        .multi-select-summary {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         .table-container {
             background: white;
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             margin: 20px;
             overflow: hidden;
+            position: relative;
+            z-index: 1;
         }
 
         .table-wrapper {
-            overflow-x: auto;
+            overflow: auto;
             max-height: calc(100vh - 320px);
             position: relative;
         }
 
         .data-table {
-            width: 100%;
+            width: max-content;
             border-collapse: separate;
             border-spacing: 0;
-            min-width: 2400px;
+            min-width: 1910px;
             table-layout: fixed;
         }
 
         .data-table th,
         .data-table td {
-            padding: 12px 16px;
+            padding: 9px 10px;
             text-align: left;
             font-size: 13px;
             border-bottom: 1px solid #e2e8f0;
@@ -173,108 +266,55 @@
         .data-table tbody tr:hover td {
             background: #f8fafc;
         }
-
-        /* 左侧冻结列 */
-        .col-sticky-left {
-            position: sticky;
-            left: 0;
-            z-index: 30;
-            background: white;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-            width: 140px;
-            min-width: 140px;
+        .data-table td.col-followScopes {
+            overflow: visible;
+        }
+        .data-table td.col-tags {
+            overflow: visible;
+            position: relative;
         }
 
-        .col-sticky-left-2 {
+        .col-id { width: 135px; }
+        .col-name { width: 240px; }
+        .col-followScopes { width: 150px; }
+        .col-type { width: 105px; }
+        .col-tags { width: 155px; }
+        .col-industry { width: 180px; }
+        .col-region-zone,
+        .col-regionZone { width: 110px; }
+        .col-location { width: 130px; }
+        .col-registry { width: 155px; }
+        .col-grade { width: 80px; }
+        .col-follower { width: 90px; }
+        .col-followDays { width: 95px; }
+        .col-latestFollow { width: 110px; }
+        .col-status { width: 86px; }
+        .col-action { width: 96px; }
+        .col-freeze-1,
+        .col-freeze-2,
+        .col-freeze-right-1,
+        .col-freeze-right-2 {
             position: sticky;
-            left: 140px;
-            z-index: 30;
             background: white;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-            width: 260px;
-            min-width: 260px;
+            z-index: 25;
         }
-
-        /* 右侧冻结列 */
-        .col-sticky-right {
-            position: sticky;
-            right: 100px;
-            z-index: 30;
-            background: white;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
-            width: 100px;
-            min-width: 100px;
+        .col-freeze-1 { left: 0; }
+        .col-freeze-2 { left: 135px; box-shadow: 1px 0 0 #e2e8f0; }
+        .col-freeze-right-1 { right: 96px; box-shadow: -8px 0 10px -10px rgba(15, 23, 42, 0.5), -1px 0 0 #e2e8f0; }
+        .col-freeze-right-2 { right: 0; }
+        .data-table th.col-freeze-1,
+        .data-table th.col-freeze-2,
+        .data-table th.col-freeze-right-1,
+        .data-table th.col-freeze-right-2 {
+            background: #f8fafc;
+            z-index: 35;
         }
-
-        .col-sticky-right-2 {
-            position: sticky;
-            right: 0;
-            z-index: 30;
-            background: white;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
-            width: 100px;
-            min-width: 100px;
-        }
-
-        /* 表头冻结需要更高层级 */
-        .data-table th.col-sticky-left,
-        .data-table th.col-sticky-left-2 {
-            z-index: 40;
+        .data-table tbody tr:hover .col-freeze-1,
+        .data-table tbody tr:hover .col-freeze-2,
+        .data-table tbody tr:hover .col-freeze-right-1,
+        .data-table tbody tr:hover .col-freeze-right-2 {
             background: #f8fafc;
         }
-
-        .data-table th.col-sticky-right,
-        .data-table th.col-sticky-right-2 {
-            z-index: 40;
-            background: #f8fafc;
-        }
-
-        /* 悬停时冻结列背景色保持一致 */
-        .data-table tbody tr:hover .col-sticky-left,
-        .data-table tbody tr:hover .col-sticky-left-2,
-        .data-table tbody tr:hover .col-sticky-right,
-        .data-table tbody tr:hover .col-sticky-right-2 {
-            background: #f8fafc;
-        }
-
-        /* 列宽定义 - 国内客户 */
-        .domestic .col-id { width: 140px; }
-        .domestic .col-name { width: 260px; }
-        .domestic .col-type { width: 110px; }
-        .domestic .col-tags { width: 180px; }
-        .domestic .col-industry { width: 120px; }
-        .domestic .col-region-zone { width: 100px; }
-        .domestic .col-region { width: 80px; }
-        .domestic .col-grade { width: 90px; }
-        .domestic .col-follower { width: 120px; }
-        .domestic .col-days { width: 130px; }
-        .domestic .col-warning { width: 220px; }
-        .domestic .col-rule { width: 130px; }
-        .domestic .col-lock { width: 110px; }
-        .domestic .col-expiry { width: 160px; }
-        .domestic .col-time { width: 120px; }
-        .domestic .col-status { width: 100px; }
-        .domestic .col-action { width: 100px; }
-
-        /* 列宽定义 - 国外客户 */
-        .foreign .col-id { width: 140px; }
-        .foreign .col-name { width: 260px; }
-        .foreign .col-country { width: 120px; }
-        .foreign .col-type { width: 110px; }
-        .foreign .col-tags { width: 180px; }
-        .foreign .col-industry { width: 120px; }
-        .foreign .col-region-zone { width: 100px; }
-        .foreign .col-tax { width: 140px; }
-        .foreign .col-grade { width: 90px; }
-        .foreign .col-follower { width: 120px; }
-        .foreign .col-days { width: 130px; }
-        .foreign .col-warning { width: 220px; }
-        .foreign .col-rule { width: 130px; }
-        .foreign .col-lock { width: 110px; }
-        .foreign .col-expiry { width: 160px; }
-        .foreign .col-time { width: 120px; }
-        .foreign .col-status { width: 100px; }
-        .foreign .col-action { width: 100px; }
 
         /* 排序样式 */
         .sortable {
@@ -306,12 +346,16 @@
         .tag {
             display: inline-flex;
             align-items: center;
-            padding: 2px 8px;
+            padding: 2px 6px;
             border-radius: 4px;
             font-size: 11px;
             font-weight: 500;
-            margin-right: 4px;
+            margin-right: 3px;
             margin-bottom: 2px;
+            max-width: 62px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .tag-enterprise { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
@@ -319,6 +363,75 @@
         .tag-strategic { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; }
         .tag-normal { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
         .tag-foreign { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+        .tag-cell-inner {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            max-width: 100%;
+            overflow: visible;
+            white-space: nowrap;
+        }
+
+        .scope-cell {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 3px;
+            white-space: nowrap;
+        }
+        .scope-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 6px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+        .scope-chip.cross-region { background: #fef3c7; color: #92400e; border-color: #fde68a; border-radius: 4px; }
+        .scope-chip.following { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+        .scope-chip.mine { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .scope-chip.pool { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+        .scope-chip.cross { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+        .scope-chip.pending { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+        .scope-chip.empty { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+        .hover-more {
+            position: relative;
+            cursor: default;
+            z-index: 300;
+            max-width: none;
+            overflow: visible;
+        }
+        .hover-more-popup {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            z-index: 9999;
+            min-width: 220px;
+            max-width: 320px;
+            padding: 10px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+            white-space: normal;
+        }
+        .hover-more:hover .hover-more-popup { display: none; }
+        .floating-tag-tooltip {
+            position: fixed;
+            z-index: 10000;
+            display: none;
+            max-width: 320px;
+            padding: 10px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .floating-tag-tooltip.show { display: flex; }
 
         /* 企业分类 */
         .grade-a-plus { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; display: inline-block; }
@@ -331,7 +444,7 @@
         .status-badge {
             display: inline-flex;
             align-items: center;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 12px;
             font-size: 12px;
             font-weight: 600;
@@ -340,7 +453,6 @@
         .status-signed { background: #dcfce7; color: #166534; }
         .status-protected { background: #dbeafe; color: #1e40af; }
 
-        /* 预警 */
         .warning-tag {
             display: inline-flex;
             align-items: center;
@@ -387,7 +499,7 @@
             border: none;
             cursor: pointer;
             font-size: 13px;
-            padding: 4px 8px;
+            padding: 4px 6px;
             border-radius: 4px;
             transition: all 0.2s;
             white-space: nowrap;
@@ -417,7 +529,7 @@
             color: #1e293b;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
         .customer-name i { color: #3b82f6; font-size: 14px; }
         .customer-name .foreign-icon { color: #6366f1; }
@@ -426,7 +538,7 @@
         .region-zone-badge {
             display: inline-flex;
             align-items: center;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 4px;
             font-size: 12px;
             font-weight: 500;
@@ -472,8 +584,8 @@
         .country-badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
+            gap: 5px;
+            padding: 3px 8px;
             border-radius: 4px;
             font-size: 12px;
             font-weight: 500;
@@ -497,25 +609,12 @@
         <div class="flex items-center">
             <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <i class="fas fa-users text-blue-600"></i>
-                客户列表
+                我的客户
             </h1>
-
-            <!-- 国内/国外切换 -->
-            <div class="customer-type-tabs">
-                <button class="customer-type-tab active" id="tab-domestic" onclick="switchCustomerType('domestic')">
-                    <i class="fas fa-flag mr-1"></i>国内客户
-                </button>
-                <button class="customer-type-tab" id="tab-foreign" onclick="switchCustomerType('foreign')">
-                    <i class="fas fa-globe mr-1"></i>国外客户
-                </button>
-            </div>
 
             <span class="text-gray-300 mx-4">|</span>
             <div class="flex items-center gap-3 text-sm">
                 <span class="text-gray-600">共 <strong class="text-gray-900 text-lg" id="total-count">14</strong> 家客户</span>
-                <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium" id="warning-count">
-                    <i class="fas fa-exclamation-circle mr-1"></i>预警 3
-                </span>
             </div>
         </div>
 
@@ -571,8 +670,7 @@
                 </select>
             </div>
 
-            <!-- 国内专属筛选 - 所在区域 -->
-            <div class="filter-item domestic-filter" id="domestic-region-filter">
+            <div class="filter-item" id="region-filter">
                 <label>所在区域</label>
                 <select style="width: 100px;">
                     <option value="">全部</option>
@@ -586,14 +684,6 @@
                     <option>江苏公司</option>
                     <option>西北区域</option>
                     <option>西南区域</option>
-                </select>
-            </div>
-
-            <!-- 国外专属筛选 - 所在区域 -->
-            <div class="filter-item foreign-filter hidden-col" id="foreign-region-filter">
-                <label>所在区域</label>
-                <select style="width: 100px;">
-                    <option value="">全部</option>
                     <option>非洲区域</option>
                     <option>欧洲区域</option>
                     <option>港澳台区域</option>
@@ -604,24 +694,20 @@
             </div>
 
             <div class="filter-item">
-                <label>跟进人</label>
-                <select style="width: 90px;">
+                <label>跟进领域</label>
+                <select style="width: 130px;">
                     <option value="">全部</option>
-                    <option>刘明</option>
-                    <option>王芳</option>
-                    <option>李明</option>
+                    <option>QMS</option>
+                    <option>EMS</option>
+                    <option>OHSMS</option>
+                    <option>FSMS</option>
+                    <option>HACCP</option>
+                    <option>ISMS</option>
+                    <option>ITSMS</option>
+                    <option>EnMS</option>
                 </select>
             </div>
 
-            <div class="filter-item">
-                <label>预警状态</label>
-                <select style="width: 130px;">
-                    <option value="">全部</option>
-                    <option value="critical">即将入区域池</option>
-                    <option value="high">即将入公海</option>
-                    <option value="medium">保护期将到期</option>
-                </select>
-            </div>
             <div class="flex-1"></div>
             <button class="btn btn-primary btn-sm" onclick="searchData()">
                 <i class="fas fa-search"></i>
@@ -651,35 +737,38 @@
                         <option value="">全部</option>
                         <option>未签单</option>
                         <option>已签单</option>
-                        <option>保护期内</option>
-                    </select>
-                </div>
-                <div class="filter-item">
-                    <label>距上次跟进</label>
-                    <select style="width: 130px;">
-                        <option value="">全部</option>
-                        <option value="90">≥90天(将入池)</option>
-                        <option value="80">≥80天(预警)</option>
-                        <option value="60">≥60天</option>
-                    </select>
-                </div>
-                <div class="filter-item">
-                    <label>保护期剩余</label>
-                    <select style="width: 120px;">
-                        <option value="">全部</option>
-                        <option value="30"><30天</option>
-                        <option value="90"><90天</option>
                     </select>
                 </div>
                 <div class="filter-item">
                     <label>客户标签</label>
-                    <div class="flex gap-3 items-center">
-                        <label class="flex items-center gap-1 text-sm cursor-pointer">
-                            <input type="checkbox" class="rounded text-blue-600"> 战略客户
-                        </label>
-                        <label class="flex items-center gap-1 text-sm cursor-pointer">
-                            <input type="checkbox" class="rounded text-blue-600"> 政府客户
-                        </label>
+                    <div class="multi-select" id="tagFilter">
+                        <button type="button" class="multi-select-trigger" onclick="toggleTagFilter(event)">
+                            <span class="multi-select-summary" id="tagFilterSummary">全部标签</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="multi-select-menu">
+                            <input type="text" class="multi-select-search" id="tagFilterSearch" placeholder="搜索标签" oninput="filterTagOptions()" onclick="event.stopPropagation()">
+                            <div class="multi-select-group" data-tag-group="system">
+                                <div class="multi-select-group-title">系统类型</div>
+                                <label class="multi-select-option" data-tag-option="战略客户"><input type="checkbox" value="战略客户" onchange="updateTagFilterSummary()">战略客户</label>
+                                <label class="multi-select-option" data-tag-option="集团客户"><input type="checkbox" value="集团客户" onchange="updateTagFilterSummary()">集团客户</label>
+                                <label class="multi-select-option" data-tag-option="政府客户"><input type="checkbox" value="政府客户" onchange="updateTagFilterSummary()">政府客户</label>
+                                <label class="multi-select-option" data-tag-option="A+级客户"><input type="checkbox" value="A+级客户" onchange="updateTagFilterSummary()">A+级客户</label>
+                                <label class="multi-select-option" data-tag-option="重大客户"><input type="checkbox" value="重大客户" onchange="updateTagFilterSummary()">重大客户</label>
+                                <label class="multi-select-option" data-tag-option="保密单位"><input type="checkbox" value="保密单位" onchange="updateTagFilterSummary()">保密单位</label>
+                                <label class="multi-select-option" data-tag-option="A级客户"><input type="checkbox" value="A级客户" onchange="updateTagFilterSummary()">A级客户</label>
+                            </div>
+                            <div class="multi-select-group" data-tag-group="region">
+                                <div class="multi-select-group-title">区域类型</div>
+                                <label class="multi-select-option" data-tag-option="华北重点"><input type="checkbox" value="华北重点" onchange="updateTagFilterSummary()">华北重点</label>
+                                <label class="multi-select-option" data-tag-option="华东重点"><input type="checkbox" value="华东重点" onchange="updateTagFilterSummary()">华东重点</label>
+                                <label class="multi-select-option" data-tag-option="华南重点"><input type="checkbox" value="华南重点" onchange="updateTagFilterSummary()">华南重点</label>
+                                <label class="multi-select-option" data-tag-option="山东区域"><input type="checkbox" value="山东区域" onchange="updateTagFilterSummary()">山东区域</label>
+                                <label class="multi-select-option" data-tag-option="江苏区域"><input type="checkbox" value="江苏区域" onchange="updateTagFilterSummary()">江苏区域</label>
+                                <label class="multi-select-option" data-tag-option="海外区域"><input type="checkbox" value="海外区域" onchange="updateTagFilterSummary()">海外区域</label>
+                            </div>
+                            <div class="multi-select-empty" id="tagFilterEmpty">未找到匹配标签</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -689,7 +778,7 @@
     <!-- 表格区域 -->
     <div class="table-container">
         <div class="table-wrapper">
-            <table class="data-table domestic" id="customerTable">
+            <table class="data-table" id="customerTable">
                 <thead id="tableHead">
                     <!-- 表头由JS动态生成 -->
                 </thead>
@@ -730,13 +819,13 @@
         const domesticData = [
             {
                 id: 'C20240315001',
-                name: '中国石油天然气集团有限公司',
+                name: '丰源新能源集团有限公司',
                 type: '中央企业',
                 typeCode: 'central_enterprise',
-                tags: ['战略客户', '集团客户'],
-                industry: '采矿业',
+                tags: ['战略客户', '集团客户', 'A+级客户'],
+                industry: '电力、热力生产供应',
                 regionZone: '华北区域',
-                region: '北京',
+                region: '北京市',
                 certNo: '91110000100010433W',
                 grade: 'A+',
                 follower: '刘明',
@@ -749,7 +838,17 @@
                 lockExpiry: '2026-04-20',
                 lockDaysLeft: 5,
                 status: '未签单',
-                source: '自主开发'
+                source: '自主开发',
+                scopes: [
+                    { code: 'QMS', state: 'mine', owner: '刘明', last: '2026-01-17' },
+                    { code: 'EMS', state: 'mine', owner: '刘明', last: '2026-01-17' },
+                    { code: 'OHSMS', state: 'following', owner: '陈静', last: '2026-01-10' },
+                    { code: 'FSMS', state: 'following', owner: '赵倩', last: '2025-12-20' },
+                    { code: 'HACCP', state: 'cross', owner: '周海', last: '2025-12-20' },
+                    { code: 'ISMS', state: 'cross', owner: '张磊', last: '2025-08-15' },
+                    { code: 'ITSMS', state: 'pool' },
+                    { code: 'EnMS', state: 'pool' }
+                ]
             },
             {
                 id: 'C20240201002',
@@ -759,7 +858,7 @@
                 tags: ['集团客户'],
                 industry: '电力、热力、燃气及水生产和供应业',
                 regionZone: '华东区域',
-                region: '上海',
+                region: '上海市',
                 certNo: '9111000010006289X1',
                 grade: 'A',
                 follower: '刘明',
@@ -782,7 +881,7 @@
                 tags: ['B级客户'],
                 industry: '批发和零售业',
                 regionZone: '西北区域',
-                region: '西安',
+                region: '陕西省西安市',
                 certNo: '9111000010001065XA',
                 grade: 'B',
                 follower: '王芳',
@@ -805,7 +904,7 @@
                 tags: ['政府客户', '战略客户'],
                 industry: '公共管理、社会保障和社会组织',
                 regionZone: '华北区域',
-                region: '北京',
+                region: '北京市',
                 certNo: '11110005000098765',
                 grade: 'A+',
                 follower: '李明',
@@ -817,7 +916,7 @@
                 lockType: '签单保护',
                 lockExpiry: '2027-03-15',
                 lockDaysLeft: 334,
-                status: '保护期内',
+                status: '已签单',
                 source: '内部推荐'
             },
             {
@@ -828,7 +927,7 @@
                 tags: ['重大客户', '保密单位'],
                 industry: '科学研究和技术服务业',
                 regionZone: '华北区域',
-                region: '北京',
+                region: '北京市',
                 certNo: '91110000100011111',
                 grade: 'A+',
                 follower: '张华',
@@ -840,7 +939,7 @@
                 lockType: '签单保护',
                 lockExpiry: '2028-03-20',
                 lockDaysLeft: 705,
-                status: '保护期内',
+                status: '已签单',
                 source: '内部推荐'
             },
             {
@@ -851,14 +950,14 @@
                 tags: ['A级客户'],
                 industry: '批发和零售业',
                 regionZone: '华北区域',
-                region: '北京',
+                region: '北京市',
                 certNo: '91110000717834567',
                 grade: 'A',
                 follower: '陈静',
                 followDays: 3,
                 lastFollowDate: '2026-04-12',
                 warningLevel: 'medium',
-                warningText: '保护期剩余25天',
+                warningText: '',
                 protectRule: '标准(1年)',
                 lockType: '签单保护',
                 lockExpiry: '2026-05-10',
@@ -874,7 +973,7 @@
                 tags: ['集团客户', '战略客户'],
                 industry: '制造业',
                 regionZone: '华南区域',
-                region: '广西',
+                region: '广西壮族自治区柳州市',
                 certNo: '91450000198205967A',
                 grade: 'A+',
                 follower: '刘强',
@@ -897,7 +996,7 @@
                 tags: ['战略客户', 'A+级'],
                 industry: '信息传输、软件和信息技术服务业',
                 regionZone: '华北区域',
-                region: '北京',
+                region: '北京市',
                 certNo: '91110108MA004E1G2X',
                 grade: 'A+',
                 follower: '王磊',
@@ -920,14 +1019,14 @@
                 tags: ['集团客户'],
                 industry: '金融业',
                 regionZone: '华东区域',
-                region: '上海',
+                region: '上海市',
                 certNo: '91110000100003962T',
                 grade: 'A+',
                 follower: '李芳',
                 followDays: 20,
                 lastFollowDate: '2026-03-26',
                 warningLevel: 'medium',
-                warningText: '保护期剩余45天',
+                warningText: '',
                 protectRule: '标准(1年)',
                 lockType: '签单保护',
                 lockExpiry: '2026-05-30',
@@ -943,7 +1042,7 @@
                 tags: ['战略客户'],
                 industry: '信息传输、软件和信息技术服务业',
                 regionZone: '华南区域',
-                region: '广东',
+                region: '广东省深圳市',
                 certNo: '91440300708461136T',
                 grade: 'A',
                 follower: '张伟',
@@ -966,7 +1065,7 @@
                 tags: ['A级客户'],
                 industry: '建筑业',
                 regionZone: '山东公司',
-                region: '山东',
+                region: '山东省济南市',
                 certNo: '9131000063126503X1',
                 grade: 'A',
                 follower: '赵敏',
@@ -989,7 +1088,7 @@
                 tags: ['重大客户', '集团客户'],
                 industry: '电力、热力、燃气及水生产和供应业',
                 regionZone: '华北区域',
-                region: '北京',
+                region: '北京市',
                 certNo: '9111000010001065XA',
                 grade: 'A+',
                 follower: '孙强',
@@ -1001,7 +1100,7 @@
                 lockType: '签单保护',
                 lockExpiry: '2027-04-15',
                 lockDaysLeft: 365,
-                status: '保护期内',
+                status: '已签单',
                 source: '内部推荐'
             },
             {
@@ -1012,7 +1111,7 @@
                 tags: ['A级客户'],
                 industry: '制造业',
                 regionZone: '江苏公司',
-                region: '江苏',
+                region: '江苏省南京市',
                 certNo: '91110108MA004E1G2Y',
                 grade: 'A',
                 follower: '周杰',
@@ -1035,7 +1134,7 @@
                 tags: ['政府客户', '保密单位'],
                 industry: '卫生和社会工作',
                 regionZone: '华北区域',
-                region: '北京',
+                region: '北京市',
                 certNo: '11100000MB0X12345',
                 grade: 'A+',
                 follower: '吴刚',
@@ -1047,7 +1146,7 @@
                 lockType: '签单保护',
                 lockExpiry: '2027-04-15',
                 lockDaysLeft: 365,
-                status: '保护期内',
+                status: '已签单',
                 source: '内部推荐'
             }
         ];
@@ -1160,7 +1259,7 @@
                 lockType: '签单保护',
                 lockExpiry: '2028-03-20',
                 lockDaysLeft: 705,
-                status: '保护期内',
+                status: '已签单',
                 source: '合作伙伴',
                 legalPerson: 'Akio Toyoda',
                 capital: '600000000',
@@ -1211,7 +1310,7 @@
                 followDays: 25,
                 lastFollowDate: '2026-03-21',
                 warningLevel: 'medium',
-                warningText: '保护期剩余30天',
+                warningText: '',
                 protectRule: '标准(1年)',
                 lockType: '签单保护',
                 lockExpiry: '2026-05-15',
@@ -1272,7 +1371,7 @@
                 lockType: '签单保护',
                 lockExpiry: '2027-06-30',
                 lockDaysLeft: 441,
-                status: '保护期内',
+                status: '已签单',
                 source: '合作伙伴',
                 legalPerson: 'Jae-yong Lee',
                 capital: '300000000',
@@ -1448,63 +1547,36 @@
             }
         ];
 
-        let currentType = 'domestic';
         let currentSort = { field: null, order: null };
+        let currentRows = [];
 
-        // 表头定义 - 添加所在区域列
-        const domesticHeaders = [
-            { field: 'id', label: '客户编号', width: '140px', sortable: true, sticky: 'left' },
-            { field: 'name', label: '客户名称', width: '260px', sortable: false, sticky: 'left-2' },
-            { field: 'type', label: '客户类型', width: '110px', sortable: false },
-            { field: 'tags', label: '客户标签', width: '180px', sortable: false },
-            { field: 'industry', label: '行业分类', width: '120px', sortable: false },
-            { field: 'regionZone', label: '所在区域', width: '100px', sortable: false },
-            { field: 'region', label: '省市', width: '80px', sortable: false },
-            { field: 'grade', label: '企业分类', width: '90px', sortable: true },
-            { field: 'follower', label: '跟进人', width: '120px', sortable: false },
-            { field: 'followDays', label: '距上次跟进(天)', width: '130px', sortable: true },
-            { field: 'warning', label: '预警状态', width: '220px', sortable: false },
-            { field: 'protectRule', label: '保护期规则', width: '130px', sortable: false },
-            { field: 'lockType', label: '锁定类型', width: '110px', sortable: false },
-            { field: 'lockDaysLeft', label: '保护期剩余', width: '160px', sortable: true },
-            { field: 'lastFollowDate', label: '最后跟进时间', width: '120px', sortable: true },
-            { field: 'status', label: '客户状态', width: '100px', sortable: true, sticky: 'right' },
-            { field: 'action', label: '操作', width: '100px', sortable: false, sticky: 'right-2' }
-        ];
-
-        const foreignHeaders = [
-            { field: 'id', label: '客户编号', width: '140px', sortable: true, sticky: 'left' },
-            { field: 'name', label: '客户名称(外文)', width: '260px', sortable: false, sticky: 'left-2' },
-            { field: 'country', label: '国家及代码', width: '120px', sortable: false },
-            { field: 'type', label: '客户类型', width: '110px', sortable: false },
-            { field: 'tags', label: '客户标签', width: '180px', sortable: false },
-            { field: 'industry', label: '行业分类', width: '120px', sortable: false },
-            { field: 'regionZone', label: '所在区域', width: '100px', sortable: false },
-            { field: 'taxNo', label: '税号/登记号', width: '140px', sortable: false },
-            { field: 'grade', label: '企业分类', width: '90px', sortable: true },
-            { field: 'follower', label: '跟进人', width: '120px', sortable: false },
-            { field: 'followDays', label: '距上次跟进(天)', width: '130px', sortable: true },
-            { field: 'warning', label: '预警状态', width: '220px', sortable: false },
-            { field: 'protectRule', label: '保护期规则', width: '130px', sortable: false },
-            { field: 'lockType', label: '锁定类型', width: '110px', sortable: false },
-            { field: 'lockDaysLeft', label: '保护期剩余', width: '160px', sortable: true },
-            { field: 'lastFollowDate', label: '最后跟进时间', width: '120px', sortable: true },
-            { field: 'status', label: '客户状态', width: '100px', sortable: true, sticky: 'right' },
-            { field: 'action', label: '操作', width: '100px', sortable: false, sticky: 'right-2' }
+        const customerHeaders = [
+            { field: 'id', label: '客户编号', sortable: true, freeze: 'col-freeze-1' },
+            { field: 'name', label: '客户名称', sortable: false, freeze: 'col-freeze-2' },
+            { field: 'followScopes', label: '跟进领域', sortable: false },
+            { field: 'type', label: '客户类型', sortable: false },
+            { field: 'tags', label: '客户标签', sortable: false },
+            { field: 'industry', label: '行业分类', sortable: false },
+            { field: 'regionZone', label: '所在区域', sortable: false },
+            { field: 'location', label: '地区/国家', sortable: false },
+            { field: 'registry', label: '登记编号', sortable: false },
+            { field: 'grade', label: '企业分类', sortable: true },
+            { field: 'follower', label: '跟进人', sortable: false },
+            { field: 'followDays', label: '跟进天数', sortable: true },
+            { field: 'latestFollow', label: '最近跟进', sortable: true },
+            { field: 'status', label: '客户状态', sortable: true, freeze: 'col-freeze-right-1' },
+            { field: 'action', label: '操作', sortable: false, freeze: 'col-freeze-right-2' }
         ];
 
         // 渲染表头
         function renderHeaders() {
-            const headers = currentType === 'domestic' ? domesticHeaders : foreignHeaders;
+            const headers = customerHeaders;
             const thead = document.getElementById('tableHead');
 
             let html = '<tr>';
             headers.forEach(h => {
                 let className = `col-${h.field}`;
-                if (h.sticky === 'left') className += ' col-sticky-left';
-                if (h.sticky === 'left-2') className += ' col-sticky-left-2';
-                if (h.sticky === 'right') className += ' col-sticky-right';
-                if (h.sticky === 'right-2') className += ' col-sticky-right-2';
+                if (h.freeze) className += ` ${h.freeze}`;
                 if (h.sortable) className += ' sortable';
 
                 if (h.sortable) {
@@ -1529,21 +1601,124 @@
             return names[country] || country;
         }
 
+        const scopeNames = {
+            QMS: '质量管理体系',
+            EMS: '环境管理体系',
+            OHSMS: '职业健康安全',
+            FSMS: '食品安全管理',
+            HACCP: '危害分析控制点',
+            ISMS: '信息安全管理',
+            ITSMS: '信息技术服务',
+            EnMS: '能源管理体系'
+        };
+
+        const scopeShortCodes = {
+            QMS: 'Q',
+            EMS: 'E',
+            OHSMS: 'S',
+            ISMS: 'I',
+            ITSMS: 'IT',
+            FSMS: 'F',
+            HACCP: 'H',
+            EnMS: 'EN'
+        };
+
+        function getScopeProfile(row, index) {
+            if (row.scopes) return row.scopes;
+            const templates = [
+                [
+                    { code: 'QMS', state: 'mine', owner: row.follower, last: row.lastFollowDate },
+                    { code: 'EMS', state: 'mine', owner: row.follower, last: row.lastFollowDate },
+                    { code: 'OHSMS', state: 'following', owner: '陈静', last: '2026-03-26' },
+                    { code: 'ISMS', state: 'cross', owner: '张磊', last: '2026-03-11' },
+                    { code: 'ITSMS', state: 'pool' },
+                    { code: 'EnMS', state: 'pool' }
+                ],
+                [
+                    { code: 'QMS', state: 'mine', owner: row.follower, last: row.lastFollowDate },
+                    { code: 'EMS', state: 'following', owner: row.follower, last: row.lastFollowDate },
+                    { code: 'OHSMS', state: 'following', owner: row.follower, last: row.lastFollowDate },
+                    { code: 'FSMS', state: 'pool' }
+                ],
+                [
+                    { code: 'QMS', state: 'mine', owner: row.follower, last: row.lastFollowDate },
+                    { code: 'EMS', state: 'pending', owner: '审批中', last: row.lastFollowDate },
+                    { code: 'ISMS', state: 'pool' }
+                ],
+                [
+                    { code: 'QMS', state: 'mine', owner: row.follower, last: row.lastFollowDate },
+                    { code: 'EMS', state: 'mine', owner: row.follower, last: row.lastFollowDate },
+                    { code: 'OHSMS', state: 'mine', owner: row.follower, last: row.lastFollowDate }
+                ]
+            ];
+            return templates[index % templates.length];
+        }
+
+        function renderScopeChips(scopes, filterFn = () => true) {
+            const visible = scopes.filter(filterFn);
+            if (!visible.length) return '<span class="scope-chip empty">-</span>';
+            const allText = visible.map(scope => `${scope.code} ${scopeNames[scope.code] || ''}`).join('、');
+            const chips = visible.map(scope => `
+                <span class="scope-chip ${scope.state}" title="${scope.code}：${scopeNames[scope.code] || scope.code}">
+                    ${scopeShortCodes[scope.code] || scope.code}
+                </span>
+            `).join('');
+            return `<div class="scope-cell" title="${allText}">${chips}</div>`;
+        }
+
+        function renderLimitedTags(tags, isDomestic) {
+            const allText = tags.join('、');
+            const tagHtml = tags.slice(0, 2).map(tag => {
+                let tagClass = 'tag-normal';
+                if (tag.includes('战略')) tagClass = 'tag-strategic';
+                if (tag.includes('政府')) tagClass = 'tag-government';
+                if (tag.includes('集团') || tag.includes('重大') || tag.includes('保密')) tagClass = 'tag-enterprise';
+                if (!isDomestic && (tag.includes('客户') || tag.includes('A+') || tag.includes('A级'))) tagClass = 'tag-foreign';
+                return `<span class="tag ${tagClass}" title="${tag}">${tag}</span>`;
+            }).join('');
+            const popup = tags.map(tag => `<span class="tag tag-normal" title="${tag}">${tag}</span>`).join('');
+            const more = tags.length > 2 ? `<span class="tag tag-normal hover-more" data-tags="${tags.join('、')}">+${tags.length - 2}<span class="hover-more-popup">${popup}</span></span>` : '';
+            return `<div class="tag-cell-inner" title="${allText}">${tagHtml}${more}</div>`;
+        }
+
+        function normalizeCustomers() {
+            const domesticRows = domesticData.map(row => ({
+                ...row,
+                customerScope: 'domestic',
+                location: row.region || '-',
+                registry: row.certNo || '-'
+            }));
+            const foreignRows = foreignData.map(row => ({
+                ...row,
+                customerScope: 'foreign',
+                location: `${getCountryName(row.country)} (${row.countryCode || row.country || '-'})`,
+                registry: row.taxNo || '-'
+            }));
+            return [...domesticRows, ...foreignRows];
+        }
+
+        function getLatestScopeDate(scopes, row) {
+            const dates = scopes.map(scope => scope.last).filter(Boolean).sort().reverse();
+            return dates[0] || row.lastFollowDate || '-';
+        }
+
+        function getActiveScopes(scopes) {
+            return scopes.filter(scope => scope.state === 'mine' || scope.state === 'following' || scope.state === 'cross' || scope.state === 'pending');
+        }
+
+        function hasCrossRegionScope(scopes) {
+            return scopes.some(scope => scope.state === 'cross' || scope.crossRegion);
+        }
+
         // 渲染表格
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
-            const isDomestic = currentType === 'domestic';
             let html = '';
 
             data.forEach((row, index) => {
-                // 预警样式
-                const warningClass = row.warningLevel === 'critical' ? 'warning-tag critical urgent-pulse' : 
-                                   row.warningLevel === 'high' ? 'warning-tag high' : 
-                                   row.warningLevel === 'medium' ? 'warning-tag medium' : '';
-
-                const warningIcon = row.warningLevel === 'critical' ? '<i class="fas fa-exclamation-circle"></i>' : 
-                                   row.warningLevel === 'high' ? '<i class="fas fa-exclamation-triangle"></i>' : 
-                                   row.warningLevel === 'medium' ? '<i class="fas fa-clock"></i>' : '';
+                const isDomestic = row.customerScope !== 'foreign';
+                const scopes = getScopeProfile(row, index);
+                const activeScopes = getActiveScopes(scopes);
 
                 // 企业分类样式
                 const gradeClass = {
@@ -1554,206 +1729,70 @@
                     'D': 'grade-d'
                 }[row.grade] || 'grade-d';
 
-                // 客户标签渲染
-                const tagsHtml = row.tags.map(tag => {
-                    let tagClass = 'tag-normal';
-                    if (tag.includes('战略')) tagClass = 'tag-strategic';
-                    if (tag.includes('政府')) tagClass = 'tag-government';
-                    if (tag.includes('集团') || tag.includes('重大') || tag.includes('保密')) tagClass = 'tag-enterprise';
-                    if (!isDomestic && (tag.includes('客户') || tag.includes('A+') || tag.includes('A级'))) tagClass = 'tag-foreign';
-                    return `<span class="tag ${tagClass}">${tag}</span>`;
-                }).join('');
-
-                // 保护期进度条颜色
-                let progressColor = 'green';
-                if (row.lockDaysLeft !== null) {
-                    if (row.lockDaysLeft <= 30) progressColor = 'red';
-                    else if (row.lockDaysLeft <= 90) progressColor = 'orange';
-                    else if (row.lockDaysLeft <= 180) progressColor = 'yellow';
-                }
-
-                let totalDays = 365;
-                if (row.protectRule.includes('2年')) totalDays = 730;
-                else if (row.protectRule.includes('政府') || row.protectRule.includes('重大')) totalDays = 545;
-
-                const protectDisplay = row.lockDaysLeft !== null 
-                    ? `${row.lockDaysLeft}天<div class="progress-bar"><div class="progress-fill ${progressColor}" style="width: ${Math.min(100, (row.lockDaysLeft / totalDays) * 100)}%"></div></div>`
-                    : '-';
+                const tagsHtml = renderLimitedTags(row.tags, isDomestic);
 
                 // 状态样式
-                const statusClass = row.status === '未签单' ? 'status-unsigned' : 
-                                   row.status === '已签单' ? 'status-signed' : 'status-protected';
+                const statusClass = 'status-signed';
 
-                // 跟进天数高亮
-                let daysClass = '';
-                if (row.followDays >= 90) daysClass = 'days-highlight-red';
-                else if (row.followDays >= 80) daysClass = 'days-highlight-orange';
-                else if (row.followDays >= 60) daysClass = 'days-highlight-yellow';
+                const latestScopeDate = getLatestScopeDate(activeScopes.length ? activeScopes : scopes, row);
 
-                // 所在区域标签样式
                 const regionZoneClass = isDomestic ? 'region-zone-badge domestic' : 'region-zone-badge foreign';
 
-                if (isDomestic) {
-                    // 国内客户行
-                    html += `
-                        <tr>
-                            <td class="col-id col-sticky-left font-mono text-gray-600">${row.id}</td>
-                            <td class="col-name col-sticky-left-2">
-                                <div class="customer-name">
-                                    ${row.name}
-                                    ${row.type === '政府机构' || row.type === '中央部委' || row.tags.some(t => t.includes('重大')) ? '<i class="fas fa-landmark" title="政府/重大客户"></i>' : ''}
-                                </div>
-                            </td>
-                            <td class="col-type">${row.type}</td>
-                            <td class="col-tags">${tagsHtml}</td>
-                            <td class="col-industry">${row.industry}</td>
-                            <td class="col-region-zone">
-                                <span class="${regionZoneClass}">${row.regionZone}</span>
-                            </td>
-                            <td class="col-region">${row.region}</td>
-                            <td class="col-grade"><span class="${gradeClass}">${row.grade}</span></td>
-                            <td class="col-follower">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
-                                        ${row.follower.charAt(0)}
-                                    </div>
-                                    <span>${row.follower}</span>
-                                </div>
-                            </td>
-                            <td class="col-days ${daysClass}">${row.followDays}</td>
-                            <td class="col-warning">
-                                ${row.warningLevel !== 'none' ? `
-                                    <div class="${warningClass}">
-                                        ${warningIcon} ${row.warningText}
-                                    </div>
-                                ` : '<span class="text-gray-400">-</span>'}
-                            </td>
-                            <td class="col-rule">
-                                <span class="tag ${row.protectRule.includes('延长') || row.protectRule.includes('政府') || row.protectRule.includes('重大') ? 'tag-strategic' : 'tag-normal'}">
-                                    ${row.protectRule}
-                                </span>
-                            </td>
-                            <td class="col-lock">${row.lockType}</td>
-                            <td class="col-expiry">${protectDisplay}</td>
-                            <td class="col-time" style="color: #64748b; font-size: 12px;">${row.lastFollowDate}</td>
-                            <td class="col-status col-sticky-right">
-                                <span class="status-badge ${statusClass}">${row.status}</span>
-                            </td>
-                            <td class="col-action col-sticky-right-2">
-                                <button class="action-btn" onclick="viewCustomer('${row.id}')">
-                                    <i class="fas fa-eye"></i> 详情
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    // 国外客户行
-                    html += `
-                        <tr>
-                            <td class="col-id col-sticky-left font-mono text-gray-600">${row.id}</td>
-                            <td class="col-name col-sticky-left-2">
-                                <div class="customer-name">
-                                    <i class="fas fa-building foreign-icon"></i>
-                                    ${row.name}
-                                </div>
-                            </td>
-                            <td class="col-country">
-                                <div class="country-badge">
-                                    <span class="flag">${getCountryFlag(row.country)}</span>
-                                    <span>${getCountryName(row.country)} (${row.countryCode})</span>
-                                </div>
-                            </td>
-                            <td class="col-type">${row.type}</td>
-                            <td class="col-tags">${tagsHtml}</td>
-                            <td class="col-industry">${row.industry}</td>
-                            <td class="col-region-zone">
-                                <span class="${regionZoneClass}">${row.regionZone}</span>
-                            </td>
-                            <td class="col-tax font-mono text-xs">${row.taxNo || '-'}</td>
-                            <td class="col-grade"><span class="${gradeClass}">${row.grade}</span></td>
-                            <td class="col-follower">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
-                                        ${row.follower.charAt(0)}
-                                    </div>
-                                    <span>${row.follower}</span>
-                                </div>
-                            </td>
-                            <td class="col-days ${daysClass}">${row.followDays}</td>
-                            <td class="col-warning">
-                                ${row.warningLevel !== 'none' ? `
-                                    <div class="${warningClass}">
-                                        ${warningIcon} ${row.warningText}
-                                    </div>
-                                ` : '<span class="text-gray-400">-</span>'}
-                            </td>
-                            <td class="col-rule">
-                                <span class="tag ${row.protectRule.includes('延长') || row.protectRule.includes('重大') ? 'tag-strategic' : 'tag-normal'}">
-                                    ${row.protectRule}
-                                </span>
-                            </td>
-                            <td class="col-lock">${row.lockType}</td>
-                            <td class="col-expiry">${protectDisplay}</td>
-                            <td class="col-time" style="color: #64748b; font-size: 12px;">${row.lastFollowDate}</td>
-                            <td class="col-status col-sticky-right">
-                                <span class="status-badge ${statusClass}">${row.status}</span>
-                            </td>
-                            <td class="col-action col-sticky-right-2">
-                                <button class="action-btn" onclick="viewCustomer('${row.id}')">
-                                    <i class="fas fa-eye"></i> 详情
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }
+                html += `
+                    <tr>
+                        <td class="col-id col-freeze-1 font-mono text-gray-600">${row.id}</td>
+                        <td class="col-name col-freeze-2">
+                            <div class="customer-name">
+                                ${isDomestic ? '' : '<i class="fas fa-building foreign-icon" title="海外客户"></i>'}
+                                ${row.name}
+                                ${isDomestic && (row.type === '政府机构' || row.type === '中央部委' || row.tags.some(t => t.includes('重大'))) ? '<i class="fas fa-landmark" title="政府/重大客户"></i>' : ''}
+                                ${hasCrossRegionScope(activeScopes) ? '<span class="scope-chip cross-region" title="存在跨区域跟进领域">跨区</span>' : ''}
+                            </div>
+                        </td>
+                        <td class="col-followScopes">
+                            ${renderScopeChips(activeScopes)}
+                        </td>
+                        <td class="col-type">${row.type}</td>
+                        <td class="col-tags">${tagsHtml}</td>
+                        <td class="col-industry">${row.industry}</td>
+                        <td class="col-region-zone">
+                            <span class="${regionZoneClass}">${row.regionZone}</span>
+                        </td>
+                        <td class="col-location">
+                            ${isDomestic ? row.location : `<div class="country-badge"><span class="flag">${getCountryFlag(row.country)}</span><span>${row.location}</span></div>`}
+                        </td>
+                        <td class="col-registry font-mono text-xs">${row.registry}</td>
+                        <td class="col-grade"><span class="${gradeClass}">${row.grade}</span></td>
+                        <td class="col-follower">${row.follower || '-'}</td>
+                        <td class="col-followDays">${row.followDays ?? '-'}天</td>
+                        <td class="col-latestFollow">
+                            <span class="text-gray-800">${latestScopeDate}</span>
+                        </td>
+                        <td class="col-status col-freeze-right-1">
+                            <span class="status-badge ${statusClass}">正常</span>
+                        </td>
+                        <td class="col-action col-freeze-right-2">
+                            <button class="action-btn" onclick="viewCustomer('${row.id}')">
+                                <i class="fas fa-eye"></i> 详情
+                            </button>
+                        </td>
+                    </tr>
+                `;
             });
 
             tbody.innerHTML = html;
         }
 
-        // 切换客户类型
-        function switchCustomerType(type) {
-            currentType = type;
-
-            // 更新标签样式
-            document.getElementById('tab-domestic').classList.toggle('active', type === 'domestic');
-            document.getElementById('tab-foreign').classList.toggle('active', type === 'foreign');
-
-            // 更新表格类名
-            const table = document.getElementById('customerTable');
-            table.className = `data-table ${type}`;
-
-            // 显示/隐藏特定筛选条件
-            if (type === 'domestic') {
-                document.getElementById('domestic-region-filter').classList.remove('hidden-col');
-                document.getElementById('foreign-region-filter').classList.add('hidden-col');
-            } else {
-                document.getElementById('domestic-region-filter').classList.add('hidden-col');
-                document.getElementById('foreign-region-filter').classList.remove('hidden-col');
-            }
-
-            // 更新统计数据
-            updateStats();
-
-            // 重新渲染
-            renderHeaders();
-            currentSort = { field: null, order: null };
-            renderTable(type === 'domestic' ? domesticData : foreignData);
-        }
-
         // 更新统计数据
         function updateStats() {
-            const data = currentType === 'domestic' ? domesticData : foreignData;
-            const warningCount = data.filter(d => d.warningLevel !== 'none').length;
-
-            document.getElementById('total-count').textContent = data.length;
-            document.getElementById('warning-count').innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>预警 ${warningCount}`;
-            document.getElementById('page-total').textContent = data.length;
+            document.getElementById('total-count').textContent = currentRows.length;
+            document.getElementById('page-total').textContent = currentRows.length;
+            document.getElementById('page-size').textContent = currentRows.length;
         }
 
         // 排序功能
         function sortTable(field) {
-            const data = currentType === 'domestic' ? [...domesticData] : [...foreignData];
+            const data = [...currentRows];
 
             if (currentSort.field === field) {
                 if (currentSort.order === 'asc') {
@@ -1794,10 +1833,9 @@
                 let valA = a[field];
                 let valB = b[field];
 
-                if (field === 'lockDaysLeft') {
-                    if (valA === null) valA = 9999;
-                    if (valB === null) valB = 9999;
-                } else if (field === 'lastFollowDate') {
+                if (field === 'lastFollowDate' || field === 'latestFollow') {
+                    valA = field === 'latestFollow' ? getLatestScopeDate(getScopeProfile(a, 0), a) : valA;
+                    valB = field === 'latestFollow' ? getLatestScopeDate(getScopeProfile(b, 0), b) : valB;
                     valA = new Date(valA).getTime();
                     valB = new Date(valB).getTime();
                 } else {
@@ -1835,38 +1873,115 @@
             alert('执行筛选查询...');
         }
 
+        function toggleTagFilter(event) {
+            event.stopPropagation();
+            const filter = document.getElementById('tagFilter');
+            filter.classList.toggle('open');
+            if (filter.classList.contains('open')) {
+                setTimeout(() => document.getElementById('tagFilterSearch')?.focus(), 0);
+            }
+        }
+
+        function updateTagFilterSummary() {
+            const selected = Array.from(document.querySelectorAll('#tagFilter input:checked')).map(input => input.value);
+            const summary = document.getElementById('tagFilterSummary');
+            if (!selected.length) {
+                summary.textContent = '全部标签';
+            } else if (selected.length <= 2) {
+                summary.textContent = selected.join('、');
+            } else {
+                summary.textContent = `${selected.slice(0, 2).join('、')} +${selected.length - 2}`;
+                summary.title = selected.join('、');
+            }
+        }
+
+        function filterTagOptions() {
+            const keyword = (document.getElementById('tagFilterSearch')?.value || '').trim().toLowerCase();
+            let totalVisible = 0;
+            document.querySelectorAll('#tagFilter .multi-select-group').forEach(group => {
+                let groupVisible = 0;
+                group.querySelectorAll('.multi-select-option').forEach(option => {
+                    const text = (option.dataset.tagOption || option.innerText || '').toLowerCase();
+                    const visible = !keyword || text.includes(keyword);
+                    option.style.display = visible ? 'flex' : 'none';
+                    if (visible) groupVisible += 1;
+                });
+                group.style.display = groupVisible ? 'block' : 'none';
+                totalVisible += groupVisible;
+            });
+            const empty = document.getElementById('tagFilterEmpty');
+            if (empty) empty.style.display = totalVisible ? 'none' : 'block';
+        }
+
+        document.addEventListener('click', function(event) {
+            const filter = document.getElementById('tagFilter');
+            if (filter && !filter.contains(event.target)) filter.classList.remove('open');
+        });
+
+        function ensureFloatingTagTooltip() {
+            let tooltip = document.getElementById('floatingTagTooltip');
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.id = 'floatingTagTooltip';
+                tooltip.className = 'floating-tag-tooltip';
+                document.body.appendChild(tooltip);
+            }
+            return tooltip;
+        }
+
+        document.addEventListener('mouseover', function(event) {
+            const target = event.target.closest('.hover-more');
+            if (!target) return;
+            const tooltip = ensureFloatingTagTooltip();
+            const tags = (target.dataset.tags || '').split('、').filter(Boolean);
+            tooltip.innerHTML = tags.map(tag => `<span class="tag tag-normal" title="${tag}">${tag}</span>`).join('');
+            const rect = target.getBoundingClientRect();
+            tooltip.style.left = `${Math.min(rect.left, window.innerWidth - 340)}px`;
+            tooltip.style.top = `${rect.bottom + 8}px`;
+            tooltip.classList.add('show');
+        });
+
+        document.addEventListener('mouseout', function(event) {
+            if (!event.target.closest('.hover-more')) return;
+            document.getElementById('floatingTagTooltip')?.classList.remove('show');
+        });
+
         // 重置功能
         function resetData() {
             document.querySelectorAll('.filter-item input, .filter-item select').forEach(el => {
                 if (el.type === 'checkbox') el.checked = false;
                 else el.value = '';
             });
+            updateTagFilterSummary();
+            const search = document.getElementById('tagFilterSearch');
+            if (search) search.value = '';
+            filterTagOptions();
+            document.getElementById('tagFilter')?.classList.remove('open');
             currentSort = { field: null, order: null };
             document.querySelectorAll('.sortable').forEach(th => {
                 th.classList.remove('asc', 'desc');
                 th.querySelector('.sort-icon i').className = 'fas fa-sort';
             });
-            renderTable(currentType === 'domestic' ? domesticData : foreignData);
+            renderTable(currentRows);
         }
 
         // 查看详情
         function viewCustomer(id) {
-            const data = currentType === 'domestic' ? domesticData : foreignData;
-            const customer = data.find(d => d.id === id);
-            if (customer) {
-                alert(`${currentType === 'domestic' ? '国内' : '国外'}客户详情：\n客户编号：${customer.id}\n客户名称：${customer.name}\n所在区域：${customer.regionZone}\n跟进人：${customer.follower}\n状态：${customer.status}`);
-            }
+            const customer = currentRows.find(row => row.id === id);
+            const type = customer?.customerScope || (id.startsWith('F') ? 'foreign' : 'domestic');
+            window.location.href = `./我的客户详情.html?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}`;
         }
 
         // 新增客户
         function addNewCustomer() {
-            alert(`打开${currentType === 'domestic' ? '国内' : '国外'}客户新增页面`);
+            window.location.href = './新增客户-新.html';
         }
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
+            currentRows = normalizeCustomers();
             renderHeaders();
-            renderTable(domesticData);
+            renderTable(currentRows);
             updateStats();
         });
     </script>
